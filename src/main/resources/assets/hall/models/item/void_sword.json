@@ -1,0 +1,33 @@
+{
+	"format_version": "1.21.11",
+	"credit": "Made with Blockbench",
+	"parent": "minecraft:item/handheld",
+	"textures": {
+		"layer0": "hall:item/void_sword"
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [141.82, 86.84, -91.98],
+			"translation": [0.5, 7.25, 2.75]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [51.32, 86.84, -91.98],
+			"translation": [0.5, 7.25, 2.75]
+		},
+		"firstperson_righthand": {
+			"rotation": [62.25, 76.34, -28.99],
+			"translation": [0.5, 5.75, 2.25]
+		},
+		"firstperson_lefthand": {
+			"rotation": [44.07, 86.84, -91.98],
+			"translation": [0.5, 7.25, 2.25]
+		},
+		"ground": {
+			"translation": [0, 4, 0]
+		}
+	},
+	"loader": "hall:cosmic",
+	"cosmic": {
+		"mask": "hall:item/void_sword_mask"
+	}
+}

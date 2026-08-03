@@ -1,0 +1,22 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "depthtest": {
+    "function": "always"
+  },
+  "depthwrite": false,
+  "vertex": "hall:rendertype_gui_horror_voronoi",
+  "fragment": "hall:rendertype_gui_horror_voronoi",
+  "attributes": ["Position", "UV0"],
+  "samplers": [],
+  "uniforms": [
+    { "name": "ProjMat",      "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "ScreenSize",   "type": "float",     "count": 2,  "values": [ 1920, 1080 ] },
+    { "name": "Time",         "type": "float",     "count": 1,  "values": [ 0.0 ] },
+    { "name": "uIntensity",   "type": "float",     "count": 1,  "values": [ 0.0 ] }
+  ]
+}

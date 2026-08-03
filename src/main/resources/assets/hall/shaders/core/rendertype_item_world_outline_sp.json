@@ -1,0 +1,1 @@
+{"vertex":"hall:rendertype_item_world_outline_sp","fragment":"hall:rendertype_item_world_outline","attributes":["Position","Color","UV0"],"samplers":[{"name":"Sampler0"}],"uniforms":[{"name":"ColorModulator","type":"float","count":4,"values":[1,1,1,1]},{"name":"OutlineColor","type":"float","count":4,"values":[0.23,0.95,1,1]}]}

@@ -1,0 +1,120 @@
+package org.bytechen.hall.overworld.registry;
+
+import org.bytechen.hall.HallMod;
+import org.bytechen.hall.api.IAutoRenderableItem;
+import org.bytechen.hall.overworld.registry.items.BaseGlowingGeoItem;
+import org.bytechen.hall.overworld.registry.items.GeoItemRenderManager;
+import org.bytechen.hall.overworld.registry.items.VoidSword;
+import org.bytechen.hall.overworld.registry.items.InfEnderPearItem;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.item.Item;
+import net.minecraftforge.common.ForgeSpawnEggItem;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+import org.bytechen.hall.overworld.registry.items.*;
+
+import java.util.function.Supplier;
+
+public class RegisterItem {
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, HallMod.MODID);
+
+    public static RegistryObject<Item> registerSimpleItem(String name) {
+        return ITEMS.register(name, () -> new Item(new Item.Properties().stacksTo(64)));
+    }
+
+    /**
+     * Registers an item that implements {@link IAutoRenderableItem} and also
+     * adds it to {@link GeoItemRenderManager} for automatic Geo model/renderer creation.
+     * <p>
+     * This mirrors the entity auto-registration pattern ({@code SplendidingEntityManager.registerAll}).
+     * </p>
+     *
+     * @param name     registry name
+     * @param supplier supplier for the item instance
+     * @param <T>      item type implementing IAutoRenderableItem
+     * @return RegistryObject holding the registered item
+     */
+    public static <T extends Item & IAutoRenderableItem> RegistryObject<T> registerGeoItem(
+            String name, Supplier<T> supplier) {
+        RegistryObject<T> regObj = ITEMS.register(name, supplier);
+        GeoItemRenderManager.register(name, regObj);
+        return regObj;
+    }
+
+    /**
+     * Registers an existing {@link RegistryObject} item with {@link GeoItemRenderManager}
+     * for automatic renderer creation. Use this when the item registration doesn't go through
+     * {@link #registerGeoItem} directly.
+     *
+     * @param name   the registry name (same as used in ITEMS.register)
+     * @param regObj the already-registered item
+     * @param <T>    item type implementing IAutoRenderableItem
+     * @return the same RegistryObject for chaining
+     */
+    public static <T extends Item & IAutoRenderableItem> RegistryObject<T> registerGeoRenderer(
+            String name, RegistryObject<T> regObj) {
+        GeoItemRenderManager.register(name, regObj);
+        return regObj;
+    }
+
+    public static RegistryObject<Item> registerSpawnEgg(String name,
+                                                        Supplier<? extends EntityType<? extends Mob>> entityTypeSupplier) {
+        return ITEMS.register(name + "_spawn_egg",
+                () -> new ForgeSpawnEggItem(entityTypeSupplier, -1, -1, new Item.Properties().stacksTo(64)));
+    }
+
+    // ==================== Your Items ====================
+
+    public static final RegistryObject<Item> EXAMPLE_ITEM = registerSimpleItem("example_item");
+
+    /** VoidSword with cosmic starfield shader (from Live reference mod). */
+    public static final RegistryObject<Item> VOID_SWORD = ITEMS.register("void_sword",
+            VoidSword::new);
+
+    /** Infested ender pearl — teleportation item with glitch twitch visual effect. */
+    public static final RegistryObject<Item> INF_ENDER_PEAR = ITEMS.register("inf_ender_pear",
+            () -> new InfEnderPearItem(new Item.Properties().stacksTo(16)));
+
+    //impl
+    public static final RegistryObject<BaseGlowingGeoItem> ACID_ANOMALY_EXTRACT =
+            registerGeoItem("acid_anomaly_extract",
+                    () -> new BaseGlowingGeoItem(
+                            new Item.Properties().stacksTo(64), "acid_anomaly_extract", true));
+
+    public static final RegistryObject<BaseGlowingGeoItem> COLD_ANOMALY_EXTRACT =
+            registerGeoItem("cold_anomaly_extract",
+                    () -> new BaseGlowingGeoItem(
+                            new Item.Properties().stacksTo(64), "cold_anomaly_extract", true));
+
+    public static final RegistryObject<BaseGlowingGeoItem> HEAT_ANOMALY_EXTRACT =
+            registerGeoItem("heat_anomaly_extract",
+                    () -> new BaseGlowingGeoItem(
+                            new Item.Properties().stacksTo(64), "heat_anomaly_extract", true));
+
+    public static final RegistryObject<Item> HALL_TENDON = registerSimpleItem("hall_tendon");
+    public static final RegistryObject<Item> HALL_BONE_FRAGMENTS = registerSimpleItem("hall_bone_fragments");
+    public static final RegistryObject<Item> DOMITE_ORE = registerSimpleItem("domite_ore");
+    public static final RegistryObject<Item> DOMITE_CRYSTAL = registerSimpleItem("domite_crystal");
+    public static final RegistryObject<Item> DOMERITE_ORE = registerSimpleItem("domerite_ore");
+    public static final RegistryObject<Item> DOMERITE_INGOT = registerSimpleItem("domerite_ingot");
+
+    // domerite tools (alloy/netherite tier, stats scale with Y-level)
+    public static final RegistryObject<Item> DOMERITE_SWORD = ITEMS.register("domerite_sword",
+            () -> new DomeriteSword(new Item.Properties()));
+    public static final RegistryObject<Item> DOMERITE_PICKAXE = ITEMS.register("domerite_pickaxe",
+            () -> new DomeritePickaxe(new Item.Properties()));
+    public static final RegistryObject<Item> DOMERITE_AXE = ITEMS.register("domerite_axe",
+            () -> new DomeriteAxe(new Item.Properties()));
+    public static final RegistryObject<Item> DOMERITE_SHOVEL = ITEMS.register("domerite_shovel",
+            () -> new DomeriteShovel(new Item.Properties()));
+    public static final RegistryObject<Item> DOMERITE_HOE = ITEMS.register("domerite_hoe",
+            () -> new DomeriteHoe(new Item.Properties()));
+
+
+    public static final RegistryObject<Item> INF_PLAYER_SPAWN_EGG = registerSpawnEgg("inf_player",EntityTypeRegistry.INF_PLAYER);
+    public static final RegistryObject<Item> INF_ENDERMAN_SPAWN_EGG = registerSpawnEgg("inf_enderman",EntityTypeRegistry.INF_ENDERMAN);
+    public static final RegistryObject<Item> BONECRUSHER_SPAWN_EGG = registerSpawnEgg("bonecrusher",EntityTypeRegistry.BONECRUSHER);
+
+}

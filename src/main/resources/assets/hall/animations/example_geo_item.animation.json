@@ -1,0 +1,18 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.hall.idle": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "rotation": {
+            "vector": [0, 0, 0]
+          },
+          "position": {
+            "vector": [0, 0, 0]
+          }
+        }
+      }
+    }
+  }
+}

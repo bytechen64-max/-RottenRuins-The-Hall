@@ -1,0 +1,33 @@
+{
+	"format_version": "1.21.11",
+	"credit": "Made with Blockbench",
+	"parent": "minecraft:item/generated",
+	"textures": {
+		"layer0": "hall:item/domerite_pickaxe"
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [89.45, -85.39, 134.11],
+			"translation": [0, 5.25, 3.25],
+			"scale": [1, 1, 1]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [60.54, 89.1, -103.12],
+			"translation": [0, 5.25, 2.5],
+			"scale": [1, 1, 1]
+		},
+		"firstperson_righthand": {
+			"rotation": [151.82, -72.65, -158.3],
+			"translation": [2.25, 3.75, 0],
+			"scale": [1, 1, 1]
+		},
+		"firstperson_lefthand": {
+			"rotation": [-150.18, 82.86, 97.66],
+			"translation": [2.25, 3.5, -1],
+			"scale": [1, 1, 1]
+		},
+		"ground": {
+			"translation": [0, 3.25, 0]
+		}
+	}
+}

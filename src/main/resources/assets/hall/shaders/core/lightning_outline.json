@@ -1,0 +1,5 @@
+{
+  "vertex": "hall:lightning_outline",
+  "fragment": "hall:lightning_outline",
+  "attributes": ["Position", "Color", "Normal"]
+}

@@ -1,0 +1,16 @@
+{
+  "blend": { "func": "add", "srcrgb": "srcalpha", "dstrgb": "1-srcalpha" },
+  "depthtest": { "function": "lequal" },
+  "vertex": "hall:rendertype_shockwave",
+  "fragment": "hall:rendertype_shockwave",
+  "attributes": ["Position", "Color", "Normal"],
+  "samplers": [{ "name": "ScreenTexture" }],
+  "uniforms": [
+    { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "uIntensity", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "uLifeProgress", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "uRingPosition", "type": "float", "count": 1, "values": [ 0.1 ] },
+    { "name": "uRingWidth", "type": "float", "count": 1, "values": [ 0.88 ] }
+  ]
+}

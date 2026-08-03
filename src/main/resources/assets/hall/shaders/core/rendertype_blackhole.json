@@ -1,0 +1,14 @@
+{
+  "blend": { "func": "add", "srcrgb": "srcalpha", "dstrgb": "1-srcalpha" },
+  "depthtest": { "function": "lequal" },
+  "vertex": "hall:rendertype_blackhole",
+  "fragment": "hall:rendertype_blackhole",
+  "attributes": ["Position", "Color", "Normal"],
+  "samplers": [{ "name": "ScreenTexture" }],
+  "uniforms": [
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "uBlackHolePos", "type": "float", "count": 3, "values": [ 0.0, 0.0, -10.0 ] },
+    { "name": "uRadius", "type": "float", "count": 1, "values": [ 1.5 ] },
+    { "name": "uGrav", "type": "float", "count": 1, "values": [ 6.75 ] }
+  ]
+}

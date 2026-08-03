@@ -1,0 +1,32 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.bytechen.hall.mixin",
+  "plugin": "org.bytechen.hall.mixin.ItemGlintMixinPlugin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "hall.refmap.json",
+  "mixins": [
+    "MixinAnimationController",
+    "accessor.AccessorDisplay",
+    "accessor.ItemDisplayAccessor"
+  ],
+  "client": [
+    "CosmicAfterLevelMixin",
+    "GameRendererAccessor",
+    "GameRendererMixin",
+    "GameRendererOculusMixin",
+    "ItemInHandRendererMixin",
+    "LevelRendererEmbeddiumMixin",
+    "ItemRendererMixin",
+    "MixinItemRendererCosmic",
+    "MixinItemRendererTwitch",
+    "OutlineReplayMixin",
+    "accessor.AccessorRenderStateShard"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}
