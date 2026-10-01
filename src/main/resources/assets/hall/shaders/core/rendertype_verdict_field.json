@@ -1,0 +1,28 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "one"
+  },
+  "depthtest": {
+    "function": "lequal"
+  },
+  "depthwrite": false,
+  "vertex": "hall:rendertype_verdict_field",
+  "fragment": "hall:rendertype_verdict_field",
+  "attributes": ["Position", "Color", "Normal"],
+  "samplers": [],
+  "uniforms": [
+    { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "ProjMat",      "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "uTime",        "type": "float",     "count": 1,  "values": [ 0.0 ] },
+    { "name": "uIntensity",   "type": "float",     "count": 1,  "values": [ 1.0 ] },
+    { "name": "uRadius",      "type": "float",     "count": 1,  "values": [ 6.0 ] },
+    { "name": "uMeshRadius",  "type": "float",     "count": 1,  "values": [ 7.7 ] },
+    { "name": "uHalo",        "type": "float",     "count": 1,  "values": [ 1.28 ] },
+    { "name": "uPulse",       "type": "float",     "count": 1,  "values": [ 1.0 ] },
+    { "name": "uProgress",    "type": "float",     "count": 1,  "values": [ 0.0 ] },
+    { "name": "uFieldColor",  "type": "float",     "count": 3,  "values": [ 0.529, 0.808, 0.980 ] },
+    { "name": "uCoreColor",   "type": "float",     "count": 3,  "values": [ 0.941, 0.973, 1.0 ] }
+  ]
+}

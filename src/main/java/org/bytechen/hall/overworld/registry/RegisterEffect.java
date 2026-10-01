@@ -22,4 +22,9 @@ public class RegisterEffect {
             registerEffect("cold_anomaly_adaptation", () -> org.bytechen.hall.overworld.registry.effect.ColdAnomalyAdaptationEffect.INSTANCE);
     public static final RegistryObject<MobEffect> ACID_ANOMALY_ADAPTATION =
             registerEffect("acid_anomaly_adaptation", () -> org.bytechen.hall.overworld.registry.effect.AcidAnomalyAdaptationEffect.INSTANCE);
+
+    // —— 裁决（天穹裁决的覆盖增益，见 VerdictEffect）——
+    //  只加光柱半径与领域出剑速度，不加伤害：伤害已由 VerdictDamage 定死成 25 + 5。
+    public static final RegistryObject<MobEffect> VERDICT =
+            registerEffect("verdict", () -> org.bytechen.hall.overworld.registry.effect.VerdictEffect.INSTANCE);
 }

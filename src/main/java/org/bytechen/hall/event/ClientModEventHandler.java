@@ -10,12 +10,16 @@ import org.bytechen.hall.client.entity.render.GeoProjectileRenderer;
 import org.bytechen.hall.client.entity.render.impl.MeteoriteRenderer;
 import org.bytechen.hall.client.entity.render.impl.ShockwaveRenderer;
 import org.bytechen.hall.client.entity.render.impl.SwordAuraRenderer;
+import org.bytechen.hall.client.entity.render.impl.VerdictBeamRenderer;
+import org.bytechen.hall.client.entity.render.impl.VerdictFieldRenderer;
+import org.bytechen.hall.client.particle.UlceratedMeatParticle;
 import org.bytechen.hall.overworld.registry.EntityTypeRegistry;
 import org.bytechen.hall.client.rend.glint.GlintEffectProfile;
 import org.bytechen.hall.client.rend.glint.GlintRenderManager;
 import org.bytechen.hall.client.rend.glint.HeldItemGlintHelper;
 import org.bytechen.hall.client.rend.glint.HeldItemOutlineSettings;
 import org.bytechen.hall.overworld.registry.RegisterItem;
+import org.bytechen.hall.overworld.registry.RegisterParticles;
 import org.bytechen.hall.overworld.registry.entities.base.EntityManager;
 import org.bytechen.hall.overworld.registry.entities.base.HallEntityManager;
 import org.bytechen.hall.overworld.registry.entities.base.HallProjectileManager;
@@ -58,6 +62,12 @@ public class ClientModEventHandler {
 
         // 自定义渲染器 —— 黑洞（光线追踪引力透镜，视空间 billboard，光影兼容）
         event.registerEntityRenderer(EntityTypeRegistry.BLACK_HOLE.get(), BlackHoleRenderer::new);
+
+        // 自定义渲染器 —— 天穹裁决的光柱（自主发光体积光束，加法混合）
+        event.registerEntityRenderer(EntityTypeRegistry.VERDICT_BEAM.get(), VerdictBeamRenderer::new);
+
+        // 自定义渲染器 —— 裁决领域（地面光纹圆盘 + 悬浮二十面体棱片）
+        event.registerEntityRenderer(EntityTypeRegistry.VERDICT_FIELD.get(), VerdictFieldRenderer::new);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -84,7 +94,8 @@ public class ClientModEventHandler {
 
     @SubscribeEvent
     public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
-        // Register particle providers here
+        // 溃烂肉屑
+        event.registerSpriteSet(RegisterParticles.ULCERATED_MEAT.get(), UlceratedMeatParticle.Provider::new);
     }
 
     @SubscribeEvent
@@ -115,17 +126,10 @@ public class ClientModEventHandler {
                         .outlineShaderKey("warp_fbm")
                         .build());
 
-        // void_sword — same warp_fbm outline as example_item, purple-gold tint
-//        GlintRenderManager.registerForItem(RegisterItem.VOID_SWORD.get(),
-//                GlintEffectProfile.builder()
-//                        .worldOutlineWidth(0.1f)
-//                        .color(0.63f, 0.13f, 1.0f)                      // purple
-//                        .secondaryColor(1.0f, 0.84f, 0.0f)              // gold
-//                        .colorMode(GlintEffectProfile.ColorMode.AUTO_SAMPLE_SCROLL)
-//                        .bloomStrength(0.6f).bloomRadius(1.2f)
-//                        .speed(0.9f).intensity(0.85f)
-//                        .outlineShaderKey("warp_fbm")
-//                        .build());
+        // void_sword 不在这里注册。它走 ICustomOutline 接口（见 VoidSword 类），
+        // 因为 GlintEffectProfile 是"描边 + GUI 辉光"打包的 —— 注册一个 profile
+        // 顺带会把辉光画到物品表面，把那层宇宙星空糊掉。
+        // 接口路径下 glintSettings() 返回 null，就只描边、不动表面。
     }
 
 }

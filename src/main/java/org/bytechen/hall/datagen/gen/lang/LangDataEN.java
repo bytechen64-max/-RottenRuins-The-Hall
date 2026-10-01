@@ -21,6 +21,8 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterItem.VOID_SWORD.get(), "Void Sword");
         add(RegisterItem.HALL_BONE_FRAGMENTS.get(), "Hall Bone Fragments");
         add(RegisterItem.HALL_TENDON.get(), "Hall Tendon");
+        // 补充缺失条目：畸骸末影珍珠
+        add(RegisterItem.INF_ENDER_PEAR.get(), "Infected Ender Pearl");
         add(RegisterItem.DOMITE_ORE.get(), "Domite Ore");
         add(RegisterItem.DOMERITE_ORE.get(), "Domerite Ore");
         add(RegisterItem.DOMITE_CRYSTAL.get(), "Domite Crystal");
@@ -35,7 +37,13 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterItem.HEAT_ANOMALY_EXTRACT.get(), "Heat Anomaly Extract");
         add(RegisterItem.INF_PLAYER_SPAWN_EGG.get(), "Infected Player Spawn Egg");
         add(RegisterItem.INF_ENDERMAN_SPAWN_EGG.get(), "Infected Enderman Spawn Egg");
+        add(RegisterItem.INF_SKELETON_SPAWN_EGG.get(), "Infected Skeleton Spawn Egg");
         add(RegisterItem.BONECRUSHER_SPAWN_EGG.get(), "Hall Shell Spawn Egg");
+        // 补充缺失条目：王庭重型轰炸刷怪蛋
+        add(RegisterItem.HEAVY_BOMB_SPAWN_EGG.get(), "Heavy Bomb Spawn Egg");
+        add(RegisterItem.COLLAPSAR_SPAWN_EGG.get(), "Collapsar Spawn Egg");
+
+        // 方块
         add(RegisterBlock.HALL_GRASS_BLOCK.get(), "Hall Grass Block");
         add(RegisterBlock.HALL_DIRT.get(), "Hall Dirt");
         add(RegisterBlock.HALL_STONE.get(), "Hall Stone");
@@ -61,14 +69,37 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterBlock.HALL_VINE.get(), "Hall Vine");
         add(RegisterBlock.HALL_FLOWER.get(), "Hall Flower");
         add(RegisterBlock.HALL_GRASS.get(), "Hall Grass");
+        add(RegisterBlock.HALL_SANDSTONE.get(), "Hall Sandstone");
+        add(RegisterBlock.HALL_ASH_SAND.get(), "Hall Ash Sand");
+        add(RegisterBlock.HALL_ASH_CUT_SANDSTONE.get(), "Hall Ash Cut Sandstone");
+        add(RegisterBlock.HALL_ASH_SMOOTH_SANDSTONE.get(), "Hall Ash Smooth Sandstone");
+        add(RegisterBlock.HALL_ASH_COLLAPSED_CHISELED_SANDSTONE.get(), "Hall Ash Collapsed Chiseled Sandstone");
+        add(RegisterBlock.HALL_ASH_CACTUS.get(), "Hall Ash Cactus");
+        add(RegisterBlock.HALL_ASH_DEAD_BUSH.get(), "Hall Ash Dead Bush");
+
+        // 实体
         add(EntityTypeRegistry.INF_PLAYER.get(), "Infected Player");
         add(EntityTypeRegistry.INF_ENDERMAN.get(), "Infected Enderman");
+        add(EntityTypeRegistry.INF_SKELETON.get(), "Infected Skeleton");
+        add(EntityTypeRegistry.INF_SKELETON_ARROW.get(), "Infected Skeleton Arrow");
+        add(EntityTypeRegistry.HEAVY_BOMB.get(), "Heavy Bomb");
+        add(EntityTypeRegistry.HEAVY_BOMB_TNT.get(), "Heavy Bomb TNT");
         add(EntityTypeRegistry.BONECRUSHER.get(), "Hall Shell");
         add(EntityTypeRegistry.SHOCKWAVE.get(), "Shockwave");
         add(EntityTypeRegistry.METEORITE.get(), "Meteorite");
+        add(EntityTypeRegistry.SCOUT.get(), "Ulcerated Scout");
+        add(EntityTypeRegistry.PURSUER.get(), "Ulcerated Pursuer");
+        add(EntityTypeRegistry.MONOLITH.get(), "Ulcerated Monolith");
+
+        // 状态效果
         add(RegisterEffect.ACID_ANOMALY_ADAPTATION.get(), "Acid Anomaly Adaptation");
         add(RegisterEffect.COLD_ANOMALY_ADAPTATION.get(), "Cold Anomaly Adaptation");
         add(RegisterEffect.HEAT_ANOMALY_ADAPTATION.get(), "Heat Anomaly Adaptation");
+        add(RegisterEffect.VERDICT.get(), "Verdict");
+        // Skyfall Verdict: action-bar hint when right-clicking during cooldown
+        add("item.hall.domerite_longsword.cooldown", "Verdict not ready (%s s)");
+
+        // 难度选择 UI
         add(TranslateUtils.DIFFICULTY_EASY, "Easy");
         add(TranslateUtils.DIFFICULTY_NORMAL, "Normal");
         add(TranslateUtils.DIFFICULTY_HARD, "Hard");
@@ -79,5 +110,12 @@ public class LangDataEN extends LanguageProvider {
         add(TranslateUtils.DIFFICULTY_INCOMPREHENSIBLE_TOOLTIP, "All laws collapse, all order dissolves. Are you sure you can comprehend this?");
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_TITLE, "Select Difficulty");
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_HINT, "Choose the world difficulty (can be changed later via commands)");
+
+        // 血肉庭园维度 (hall:heall)
+        // 地形复用现有王庭方块，因此这里只有通道方块的译名
+        add(RegisterBlock.FLESH_RIFT.get(), "Flesh Rift");
+        add("dimension." + HallMod.MODID + ".heall", "Carrion Marrow");
+        add("biome." + HallMod.MODID + ".flesh_marrow", "Carrion Marrow");
+        add("block." + HallMod.MODID + ".flesh_rift.no_dimension", "The other end of the rift has not yet formed...");
     }
 }

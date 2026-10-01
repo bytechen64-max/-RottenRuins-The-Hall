@@ -20,21 +20,30 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.HALL_BONE_FRAGMENTS.get(),  "王庭骨");
         add(RegisterItem.HALL_TENDON.get(), "王庭肌腱");
         add(RegisterItem.INF_ENDER_PEAR.get(), "畸骸末影珍珠");
+        add(RegisterItem.BONECRUSHER_CORE.get(), "碎骨核心");
         add(RegisterItem.DOMITE_ORE.get(), "穹顶胚晶矿");
         add(RegisterItem.DOMERITE_ORE.get(), "穹顶云铁矿");
         add(RegisterItem.DOMITE_CRYSTAL.get(), "穹顶胚晶");
         add(RegisterItem.DOMERITE_INGOT.get(), "穹顶云铁锭");
+        add(RegisterItem.DOMERITE_STICK.get(), "穹顶只杖");
         add(RegisterItem.DOMERITE_SWORD.get(), "云顶之剑");
         add(RegisterItem.DOMERITE_PICKAXE.get(), "云顶之镐");
         add(RegisterItem.DOMERITE_AXE.get(), "云顶之斧");
         add(RegisterItem.DOMERITE_SHOVEL.get(), "云顶之锹");
         add(RegisterItem.DOMERITE_HOE.get(), "云顶之锄");
+        add(RegisterItem.DOMERITE_LONGSWORD.get(), "天穹裁决");
         add(RegisterItem.ACID_ANOMALY_EXTRACT.get(), "酸异常提取物");
         add(RegisterItem.COLD_ANOMALY_EXTRACT.get(), "冷异常提取物");
         add(RegisterItem.HEAT_ANOMALY_EXTRACT.get(), "热异常提取物");
         add(RegisterItem.INF_PLAYER_SPAWN_EGG.get(), "畸骸玩家刷怪蛋");
         add(RegisterItem.INF_ENDERMAN_SPAWN_EGG.get(), "畸骸末影人刷怪蛋");
+        add(RegisterItem.INF_SKELETON_SPAWN_EGG.get(), "畸骸骷髅刷怪蛋");
+        add(RegisterItem.SCOUT_SPAWN_EGG.get(), "溃烂纠察刷怪蛋");
+        add(RegisterItem.PURSUER_SPAWN_EGG.get(), "溃烂追蹤者刷怪蛋");
+        add(RegisterItem.MONOLITH_SPAWN_EGG.get(), "溃烂巨岩刷怪蛋");
         add(RegisterItem.BONECRUSHER_SPAWN_EGG.get(), "王庭碎骨刷怪蛋");
+        add(RegisterItem.HEAVY_BOMB_SPAWN_EGG.get(), "王庭重型轰炸刷怪蛋");
+        add(RegisterItem.COLLAPSAR_SPAWN_EGG.get(), "萨米使徒刷怪蛋【未完成】");
         add(RegisterBlock.HALL_GRASS_BLOCK.get(), "王庭草方块");
         add(RegisterBlock.HALL_DIRT.get(), "王庭泥土");
         add(RegisterBlock.HALL_STONE.get(), "王庭石块");
@@ -60,14 +69,32 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterBlock.HALL_VINE.get(), "王庭藤蔓");
         add(RegisterBlock.HALL_FLOWER.get(), "王庭花");
         add(RegisterBlock.HALL_GRASS.get(), "王庭草");
+        add(RegisterBlock.HALL_SANDSTONE.get(), "王庭砂岩");
+        add(RegisterBlock.HALL_ASH_SAND.get(), "王庭烬痕沙子");
+        add(RegisterBlock.HALL_ASH_CUT_SANDSTONE.get(), "王庭烬痕切制砂岩");
+        add(RegisterBlock.HALL_ASH_SMOOTH_SANDSTONE.get(), "王庭烬痕平滑砂岩");
+        add(RegisterBlock.HALL_ASH_COLLAPSED_CHISELED_SANDSTONE.get(), "王庭烬痕坍缩雕纹砂岩");
+        add(RegisterBlock.HALL_ASH_CACTUS.get(), "王庭烬痕仙人掌");
+        add(RegisterBlock.HALL_ASH_DEAD_BUSH.get(), "王庭烬痕枯灌木");
         add(EntityTypeRegistry.INF_PLAYER.get(), "畸骸玩家");
         add(EntityTypeRegistry.INF_ENDERMAN.get(), "畸骸末影人");
+        add(EntityTypeRegistry.INF_SKELETON.get(), "畸骸骷髅");
+        add(EntityTypeRegistry.INF_SKELETON_ARROW.get(), "畸骸骷髅炸弹");
+        add(EntityTypeRegistry.HEAVY_BOMB.get(), "王庭重型轰炸");
+        add(EntityTypeRegistry.HEAVY_BOMB_TNT.get(), "重型炸弹TNT");
         add(EntityTypeRegistry.BONECRUSHER.get(), "王庭碎骨");
+        add(EntityTypeRegistry.COLLAPSAR.get(), "萨米使徒");
+        add(EntityTypeRegistry.SCOUT.get(), "溃烂纠察");
+        add(EntityTypeRegistry.PURSUER.get(), "溃烂追蹤者");
+        add(EntityTypeRegistry.MONOLITH.get(), "溃烂巨岩");
         add(EntityTypeRegistry.SHOCKWAVE.get(), "冲击波");
         add(EntityTypeRegistry.METEORITE.get(), "陨石");
         add(RegisterEffect.ACID_ANOMALY_ADAPTATION.get(), "酸异常适应");
         add(RegisterEffect.COLD_ANOMALY_ADAPTATION.get(), "冷异常适应");
         add(RegisterEffect.HEAT_ANOMALY_ADAPTATION.get(), "热异常适应");
+        add(RegisterEffect.VERDICT.get(), "裁决");
+        // 天穹裁决：冷却中右键时的动作栏提示
+        add("item.hall.domerite_longsword.cooldown", "裁决尚未就绪（%s 秒）");
         add(TranslateUtils.DIFFICULTY_EASY, "简单");
         add(TranslateUtils.DIFFICULTY_NORMAL, "普通");
         add(TranslateUtils.DIFFICULTY_HARD, "困难");
@@ -78,5 +105,12 @@ public class LangDataCN extends LanguageProvider {
         add(TranslateUtils.DIFFICULTY_INCOMPREHENSIBLE_TOOLTIP, "你确定你要这么做吗？");
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_TITLE, "选择难度");
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_HINT, "请选择世界难度");
+
+        // ---- 血肉庭园维度（hall:heall） ----
+        // 该维度的地形完全复用现有王庭方块，因此这里只有通道方块的译名
+        add(RegisterBlock.FLESH_RIFT.get(), "血肉裂隙");
+        add("dimension." + HallMod.MODID + ".heall", "血肉庭园");
+        add("biome." + HallMod.MODID + ".flesh_marrow", "血肉庭园");
+        add("block." + HallMod.MODID + ".flesh_rift.no_dimension", "裂隙的另一端尚未形成……");
     }
 }
