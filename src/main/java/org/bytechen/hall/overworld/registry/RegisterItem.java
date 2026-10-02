@@ -65,13 +65,21 @@ public class RegisterItem {
                 () -> new ForgeSpawnEggItem(entityTypeSupplier, -1, -1, new Item.Properties().stacksTo(64)));
     }
 
-    // ==================== Your Items ====================
+
 
     public static final RegistryObject<Item> EXAMPLE_ITEM = registerSimpleItem("example_item");
 
     /** VoidSword with cosmic starfield shader (from Live reference mod). */
     public static final RegistryObject<Item> VOID_SWORD = ITEMS.register("void_sword",
             VoidSword::new);
+
+    /**
+     * CrimsonVow — 同一个 {@code hall:cosmic} 遮罩填充 loader，但换了一整套
+     * 着色器内容：深粉等离子漩涡（{@code style: 17}）而不是宇宙星空。
+     * 模型走普通剑的 {@code minecraft:item/handheld}。
+     */
+    public static final RegistryObject<Item> CRIMSON_VOW = ITEMS.register("crimson_vow",
+            CrimsonVow::new);
 
     /** Infested ender pearl — teleportation item with glitch twitch visual effect. */
     public static final RegistryObject<Item> INF_ENDER_PEAR = ITEMS.register("inf_ender_pear",
@@ -99,6 +107,8 @@ public class RegisterItem {
     public static final RegistryObject<Item> DOMITE_CRYSTAL = registerSimpleItem("domite_crystal");
     public static final RegistryObject<Item> DOMERITE_ORE = registerSimpleItem("domerite_ore");
     public static final RegistryObject<Item> DOMERITE_INGOT = registerSimpleItem("domerite_ingot");
+    public static final RegistryObject<Item> DOMERITE_STICK = registerSimpleItem("domerite_stick");
+    public static final RegistryObject<Item> BONECRUSHER_CORE = registerSimpleItem("bonecrusher_core");
 
     // domerite tools (alloy/netherite tier, stats scale with Y-level)
     public static final RegistryObject<Item> DOMERITE_SWORD = ITEMS.register("domerite_sword",
@@ -111,10 +121,20 @@ public class RegisterItem {
             () -> new DomeriteShovel(new Item.Properties()));
     public static final RegistryObject<Item> DOMERITE_HOE = ITEMS.register("domerite_hoe",
             () -> new DomeriteHoe(new Item.Properties()));
+    public static final RegistryObject<Item> DOMERITE_LONGSWORD = ITEMS.register("domerite_longsword",
+            () -> new DomeriteLongsword(new Item.Properties()));
+
+
 
 
     public static final RegistryObject<Item> INF_PLAYER_SPAWN_EGG = registerSpawnEgg("inf_player",EntityTypeRegistry.INF_PLAYER);
     public static final RegistryObject<Item> INF_ENDERMAN_SPAWN_EGG = registerSpawnEgg("inf_enderman",EntityTypeRegistry.INF_ENDERMAN);
+    public static final RegistryObject<Item> INF_SKELETON_SPAWN_EGG = registerSpawnEgg("inf_skeleton",EntityTypeRegistry.INF_SKELETON);
+    public static final RegistryObject<Item> SCOUT_SPAWN_EGG = registerSpawnEgg("scout",EntityTypeRegistry.SCOUT);
+    public static final RegistryObject<Item> PURSUER_SPAWN_EGG = registerSpawnEgg("pursuer",EntityTypeRegistry.PURSUER);
+    public static final RegistryObject<Item> MONOLITH_SPAWN_EGG = registerSpawnEgg("monolith",EntityTypeRegistry.MONOLITH);
     public static final RegistryObject<Item> BONECRUSHER_SPAWN_EGG = registerSpawnEgg("bonecrusher",EntityTypeRegistry.BONECRUSHER);
+    public static final RegistryObject<Item> HEAVY_BOMB_SPAWN_EGG = registerSpawnEgg("heavy_bomb",EntityTypeRegistry.HEAVY_BOMB);
+    public static final RegistryObject<Item> COLLAPSAR_SPAWN_EGG = registerSpawnEgg("collapsar",EntityTypeRegistry.COLLAPSAR);
 
 }

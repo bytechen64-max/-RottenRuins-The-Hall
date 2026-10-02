@@ -1,9 +1,11 @@
 package org.bytechen.hall.overworld.registry.blocks.impl;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RotatedPillarBlock;
@@ -56,6 +58,25 @@ public class SpreadPillarBlock extends RotatedPillarBlock implements ISpreadBloc
 
         SpreadHelper.trySpreadNearby(state, level, pos, random, this,
                 SPREAD_ATTEMPTS, SPREAD_CHANCE);
+    }
+
+    // ==================== 燃烧特性 ====================
+
+    /**
+     * 王庭原木的燃烧特性 —— 对齐原版 {@code oak_log}（引燃 5 / 可燃 5）。
+     * <p>
+     * 原版把数值写死在 {@code FireBlock} 的私有表里，模组方块必须自行重写；
+     * 详见 {@link HallWoodBlocks}。
+     */
+    @Override
+    public int getFlammability(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
+        return HallWoodBlocks.LOG_FLAMMABILITY;
+    }
+
+    /** 王庭原木的火焰蔓延速度 —— 对齐原版 {@code oak_log} */
+    @Override
+    public int getFireSpreadSpeed(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
+        return HallWoodBlocks.LOG_ENCOURAGEMENT;
     }
 
     // ==================== 子类可重写 ====================

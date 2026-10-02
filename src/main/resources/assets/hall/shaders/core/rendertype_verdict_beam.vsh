@@ -28,14 +28,33 @@ in vec4 Color;
 in vec3 Normal;
 
 uniform mat4 ProjMat;
+uniform mat3 uNormalToView;
 
 out vec4 vertexColor;
 out vec3 vLocal;
 out vec3 vRadial;
+/** 视图空间的径向法线（已归一化）。z > 0 表示该面背对相机。 */
+out vec3 vRadialView;
 
 void main() {
+    // 顶点变换与第一版完全一致：poseStack 已由 EntityRenderDispatcher 处理了
+    // 相机旋转与"实体位置 − 相机位置"的平移，顶点喂进来就已经在视图空间里，
+    // 所以这里只差一次投影。
+    //
+    // 扩散（缩放）**不在这里做**：它由 Java 侧压进 poseStack 的矩阵
+    // （push → scale → pop），于是"位移"和"缩放"待在同一个地方。
+    // 曾经把缩放写在这一行上（`Position * scale`），它会把矩阵里的平移一起乘掉，
+    // 柱子会从脚底上方几百格开始长 —— 那一版的症状就是"光柱没固定在坐标上"。
     gl_Position = ProjMat * vec4(Position, 1.0);
+
+    // 局部坐标原样传出：片元侧靠它算径向距离与高度，也是第一版的语义。
     vLocal      = Position;
+    // 径向法线不受等比缩放影响（方向不变）；本几何的侧面法线 Y 分量为 0，
+    // 且 x/z 同比，所以旋转矩阵给出的法线方向正确。
     vRadial     = Normal;
     vertexColor = Color;
+
+    // 归一化之后再转换。几何上 Normal 本来就是单位向量，但插值到面片中间会变短，
+    // 所以片元里还会再归一化一次（见 .fsh 的 ⓪ 段）。
+    vRadialView = uNormalToView * normalize(Normal);
 }

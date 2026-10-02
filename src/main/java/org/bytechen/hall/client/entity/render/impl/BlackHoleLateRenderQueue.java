@@ -36,8 +36,10 @@ public final class BlackHoleLateRenderQueue {
     private BlackHoleLateRenderQueue() {}
 
     /** 入队一个黑洞的延迟渲染。必须在渲染线程调用。 */
-    public static void enqueue(Vector3f bhView, Matrix4f modelView, float radius, float bend) {
-        ENTRIES.add(new Entry(new Vector3f(bhView), new Matrix4f(modelView), radius, bend));
+    public static void enqueue(Vector3f bhView, Matrix4f modelView,
+                                float radius, float bend, float sphereRadius) {
+        ENTRIES.add(new Entry(new Vector3f(bhView), new Matrix4f(modelView),
+                radius, bend, sphereRadius));
     }
 
     /** 回放所有入队的黑洞。由 {@code CosmicAfterLevelMixin} 在 renderLevel() TAIL 调用。 */
@@ -54,7 +56,8 @@ public final class BlackHoleLateRenderQueue {
 
         try {
             for (Entry e : ENTRIES) {
-                BlackHoleRenderer.renderOneDeferred(e.bhView, e.modelView, e.radius, e.bend);
+                BlackHoleRenderer.renderOneDeferred(
+                        e.bhView, e.modelView, e.radius, e.bend, e.sphereRadius);
             }
         } finally {
             LateOutlineRenderState.finishMainTargetPass();
@@ -64,5 +67,6 @@ public final class BlackHoleLateRenderQueue {
 
     // ── internal ──────────────────────────────────────────────
 
-    private record Entry(Vector3f bhView, Matrix4f modelView, float radius, float bend) {}
+    private record Entry(Vector3f bhView, Matrix4f modelView,
+                         float radius, float bend, float sphereRadius) {}
 }

@@ -5,22 +5,6 @@
 			"loop": true,
 			"animation_length": 2.3333,
 			"bones": {
-				"group": {
-					"position": {
-						"0.0": {
-							"post": {
-								"vector": [-29, 44, 7]
-							},
-							"lerp_mode": "catmullrom"
-						},
-						"2.3333": {
-							"post": {
-								"vector": [-29, 44, 7]
-							},
-							"lerp_mode": "catmullrom"
-						}
-					}
-				},
 				"group2": {
 					"rotation": {
 						"0.0": {

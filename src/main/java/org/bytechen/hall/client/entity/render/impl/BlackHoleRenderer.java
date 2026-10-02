@@ -40,8 +40,13 @@ public class BlackHoleRenderer extends EntityRenderer<BlackHoleEntity> {
 
     private static final ResourceLocation DUMMY = ResourceLocation.withDefaultNamespace("textures/misc/white.png");
 
-    /** 球体半径（以 Rs 计）—— 覆盖阴影(2.6Rs) + 透镜区 + 淡出余量 */
-    private static final float SPHERE_RADIUS = 6.0f;
+    /**
+     * 球体半径（以 Rs 计）—— 决定**透镜的可见范围**。
+     * <p>黑洞盘面本身恒定是 2·Rs（被视界捕获的光），球体放大只放大
+     * 外围的折射扭曲区，因此“很小的黑洞本体 + 很大的折射范围”是可以
+     * 同时成立的：Rs=0.65 时盘面直径 1.3 格，而透镜直径 13 格。</p>
+     */
+    private static final float SPHERE_RADIUS = 10.0f;
 
     // Per-frame scene-copy texture（与 ShockwaveRenderer 相同的 blit 方案）
     private static int copyTex = -1, copyFbo = -1;
@@ -89,7 +94,14 @@ public class BlackHoleRenderer extends EntityRenderer<BlackHoleEntity> {
 
         float Rs = Math.max(e.getRadius(), 0.05f);
         float bend = Math.max(e.getBend(), 0.0f);
-        float sphereR = SPHERE_RADIUS * Rs;
+
+        // ── 生长 / 消退动画 ──
+        // 黑洞不会“啪”地出现：开场约 1 秒从小长到略大于 1，再回落稳定；
+        // 寿命最后 1.5 秒缩回 0。缩放直接乘进 modelView，同时据此算出
+        // 球体半径传给着色器（透镜包络要跟着一起缩放，否则缩小时会变硬边）。
+        float scale = lifeScale(e);
+        if (scale <= 0.0005f) return;                        // 完全消失
+        float sphereR = SPHERE_RADIUS * Rs * scale;
 
         // ps 在 handler 已含相机旋转并平移到世界原点，这里平移至实体位置 →
         // pose 即“视图空间模型矩阵”（含相机旋转，不含缩放）
@@ -107,29 +119,69 @@ public class BlackHoleRenderer extends EntityRenderer<BlackHoleEntity> {
         // 近平面裁剪，远处半球仍在视野内，必须继续渲染，否则靠近时会整体消失。
         if (bhView.z >= -0.5f && camDist >= sphereR) return;
 
-        // 完整 modelView = 视图 * 平移 * 缩放（单位球 → 半径为 sphereR 的球）
+        // 完整 modelView = 视图 * 平移 * 缩放（单位球 → 半径 sphereR 的球）
         Matrix4f modelView = new Matrix4f(pose).scale(sphereR);
 
         // ── 光影激活 → 延迟入队 ──
         if (HeldItemOutlineCompat.isOculusShaderPackActive()) {
-            BlackHoleLateRenderQueue.enqueue(bhView, modelView, Rs, bend);
+            BlackHoleLateRenderQueue.enqueue(bhView, modelView, Rs, bend, sphereR);
             return;
         }
 
         // ── 即时渲染（无光影） ──
         doSceneCopy();
-        drawBlackHole(bhView, modelView, Rs, bend);
+        drawBlackHole(bhView, modelView, Rs, bend, sphereR);
+    }
+
+    /**
+     * 生命周期缩放：淡入（长出）→ 稳定 → 淡出（缩回）。
+     * <p>{@code age / lifetime} 为进度：</p>
+     * <ul>
+     *   <li>0 → 0.05：0 长到 1.35（带一点过冲，出现时更有冲击力）</li>
+     *   <li>0.05 → 0.12：回落到 1.0</li>
+     *   <li>0.12 → 0.85：稳定在 1.0</li>
+     *   <li>0.85 → 1.0：缩回 0</li>
+     * </ul>
+     */
+    private static float lifeScale(BlackHoleEntity e) {
+        int life = Math.max(e.getLifetime(), 1);
+        float t = Math.min(1.0f, e.getAge() / (float) life);
+        final float overshoot = 1.35f;
+        if (t < 0.05f) {
+            return easeOutCubic(t / 0.05f) * overshoot;
+        }
+        if (t < 0.12f) {
+            float k = (t - 0.05f) / 0.07f;
+            return overshoot + (1.0f - overshoot) * easeInOut(k);
+        }
+        if (t < 0.85f) {
+            return 1.0f;
+        }
+        float k = (t - 0.85f) / 0.15f;
+        return 1.0f - easeInOut(k);
+    }
+
+    private static float easeOutCubic(float t) {
+        t = Math.max(0.0f, Math.min(1.0f, t));
+        float u = 1.0f - t;
+        return 1.0f - u * u * u;
+    }
+
+    private static float easeInOut(float t) {
+        t = Math.max(0.0f, Math.min(1.0f, t));
+        return t * t * (3.0f - 2.0f * t);
     }
 
     /**
      * 延迟回放路径（{@link BlackHoleLateRenderQueue#renderAll()}），
      * 先拷贝合成后的主帧，再绘制球体。
      */
-    static void renderOneDeferred(Vector3f bhView, Matrix4f modelView, float Rs, float bend) {
+    static void renderOneDeferred(Vector3f bhView, Matrix4f modelView, float Rs, float bend,
+                                   float sphereR) {
         ShaderInstance sh = SplendidingShaders.blackHoleShader;
         if (sh == null) return;
         doSceneCopy();
-        drawBlackHole(bhView, modelView, Rs, bend);
+        drawBlackHole(bhView, modelView, Rs, bend, sphereR);
     }
 
     // ── internal helpers ──────────────────────────────────────
@@ -169,7 +221,8 @@ public class BlackHoleRenderer extends EntityRenderer<BlackHoleEntity> {
      * <p>深度：depthMask(true) + LEQUAL，前半球写入深度后自动遮住后半球，
      * 且与场景深度正确比较 —— 前方方块可部分遮挡黑洞。</p>
      */
-    private static void drawBlackHole(Vector3f bhView, Matrix4f modelView, float Rs, float bend) {
+    private static void drawBlackHole(Vector3f bhView, Matrix4f modelView, float Rs, float bend,
+                                       float sphereR) {
         ShaderInstance sh = SplendidingShaders.blackHoleShader;
         if (sh == null) return;
 
@@ -185,6 +238,11 @@ public class BlackHoleRenderer extends EntityRenderer<BlackHoleEntity> {
         sh.safeGetUniform("uBlackHolePos").set(bhView.x, bhView.y, bhView.z);
         sh.safeGetUniform("uRadius").set(Rs);
         sh.safeGetUniform("uGrav").set(bend * Rs * Rs);
+        // 球体半径（含动画缩放）——着色器据此决定透镜包络的覆盖范围，
+        // 保证缩小时也铺满球面、边缘平滑归零。
+        if (sh.getUniform("uSphereRadius") != null) {
+            sh.safeGetUniform("uSphereRadius").set(sphereR);
+        }
         sh.safeGetUniform("ScreenTexture").set(0);
 
         // ── 绑定场景拷贝纹理 ──

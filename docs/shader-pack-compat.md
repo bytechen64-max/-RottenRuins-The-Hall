@@ -140,6 +140,15 @@ record Entry(
 → renderAll()
 ```
 
+> 物品描边**不用这两个时机**。它的遮罩（"这件物品占了哪些像素"）在物品渲染的当帧
+> 立刻捕获 —— 只有那一刻场景深度才是对的；而最后那次全屏合成统一放在 `renderLevel` 的
+> **TAIL**，只有一个注入点（`OutlineReplayMixin`）。
+>
+> 曾经把世界物品拆到 `renderHand` 字段那个点去合成，结果**第三人称开光影时描边整个消失**：
+> 光影的最终合成晚于那一行，会把写进去的描边覆盖掉。教训是**别用比光影最终合成更早的点
+> 去写主 RT**，并且判"往哪儿画"（当前绑定的 FBO 是不是主 RT）比判"装了什么光影"可靠。
+> 详见 `docs/item-shader-outline.md` 第三章。
+
 ### 4. GL 状态守卫 — `LateOutlineRenderState`
 
 ```java
@@ -329,3 +338,34 @@ buffers.endBatch(CosmicRenderType.ELECTRO_HAND_AFTER_LEVEL);
 5. **PoseStack 矩阵必须在入队时快照** — 回放时 PoseStack 状态已经变了
 6. **Embeddium 的 `markSpriteActive` 必须每帧调** — `postTick` 会重置
 7. **shader 检测用反射** — 避免对 Oculus/Iris 的编译期硬依赖
+
+---
+
+## 世界空间特效的延迟回放（冲击波 / 黑洞 / 斩击扭曲 / 六芒星光环）
+
+物品层之外还有一类"画在世界里、并且要看到完整场景"的自定义 shader 特效。它们不走
+`ItemRenderer`，而是在 `RenderLevelStageEvent.Stage.AFTER_TRIPWIRE_BLOCKS`
+（实体全部画完、深度就位）里工作。理由相同：光影激活时那一刻主帧缓冲里还只是 GBuffer
+原始数据，所以这些处理器检测到光影包就**只入队不画**，交给 `CosmicAfterLevelMixin`
+的 `renderLevel()` TAIL 回放。
+
+| 队列 | 快照内容 | 场景拷贝 | 回放入口 |
+|------|----------|----------|----------|
+| `ShockwaveLateRenderQueue` | pose + normal + 半径/生命/环参数 | ✅ | TAIL |
+| `BlackHoleLateRenderQueue` | pose + modelView + 半径/弯曲 | ✅ | TAIL |
+| `ApostleSlashWarpQueue` | pose + normal + 斩击参数 | ✅（与冲击波共用同一张） | TAIL |
+| `CollapsarHaloLateRenderQueue` | pose + 四个角点 + uniform 值 + **投影矩阵** | ❌（纯程序化加法发光，无纹理） | TAIL |
+
+共同规则：
+
+1. **阴影 pass 一律不画** —— `HeldItemOutlineCompat.isOculusShadowPass()` 时直接 `return`，
+   否则阴影贴图里会多出一整块特效（六芒星光环尤其明显）。
+2. 回放前 `LateOutlineRenderState.prepareMainTargetPass()`（绑主 RT、关 scissor、重置混合
+   与颜色掩码），回放后 `finishMainTargetPass()`。
+3. **顶点在相机相对空间烘焙的特效，必须连投影矩阵一起快照**并在回放时重新设置：第一人称
+   手部渲染会临时切换到手部 FOV 的投影，而回放时机在它之后。
+4. 场景拷贝的尺寸取 `mainRenderTarget` 而非窗口 —— Oculus 的 resolution scale 会让主 RT
+   比窗口小，用窗口尺寸会 blit 越界、拷贝静默失败（表现为"扭曲不生效/卡在旧图"）。
+5. **实体通道里的自定义 RenderType 不做延迟**：它们会被光影当普通几何收进 GBuffer、被
+   光影的光照重新着色（使徒剑气本体就是这样）。要完全不受影响只能改成世界空间特效，
+   代价是无法再用实体模型/动画。

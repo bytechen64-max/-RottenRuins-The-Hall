@@ -24,10 +24,35 @@ public class ClientEventHelpers {
         ClientRenderRegistry.registerRenderLayer(
                 EntityTypeRegistry.INF_ENDERMAN.get(),
                 new GlowLayer("textures/entity/inf_enderman_glow_layer.png"));
-
+        ClientRenderRegistry.registerRenderLayer(
+                EntityTypeRegistry.INF_SKELETON.get(),
+                new GlowLayer("textures/entity/inf_skeleton_glow_layer.png"));
+        ClientRenderRegistry.registerRenderLayer(
+                EntityTypeRegistry.INF_SKELETON_ARROW.get(),
+                new GlowLayer("textures/entity/inf_skeleton_arrow_glow_layer.png"));
+        ClientRenderRegistry.registerRenderLayer(
+                EntityTypeRegistry.SCOUT.get(),
+                new GlowLayer("textures/entity/scout_glow_layer.png"));
+        ClientRenderRegistry.registerRenderLayer(
+                EntityTypeRegistry.PURSUER.get(),
+                new GlowLayer("textures/entity/pursuer_glow_layer.png"));
+        ClientRenderRegistry.registerRenderLayer(
+                EntityTypeRegistry.MONOLITH.get(),
+                new GlowLayer("textures/entity/monolith_glow_layer.png"));
         ClientRenderRegistry.registerRenderLayer(
                 EntityTypeRegistry.BONECRUSHER.get(),
                 new GlowLayer("textures/entity/bonecrusher_glow_layer.png"));
+        ClientRenderRegistry.registerRenderLayer(
+                EntityTypeRegistry.HEAVY_BOMB.get(),
+                new GlowLayer("textures/entity/hall_heavy_bomb_glow_layer.png"));
+        ClientRenderRegistry.registerRenderLayer(
+                EntityTypeRegistry.HEAVY_BOMB_TNT.get(),
+                new GlowLayer("textures/entity/heavy_bomb_tnt_glow_layer.png"));
+        ClientRenderRegistry.registerRenderLayer(
+                EntityTypeRegistry.COLLAPSAR.get(),
+                new GlowLayer("textures/entity/collapsar_glow_layer.png"));
+
+
 
 
         // 注册行为时使用 createHeadTrackingBehavior()

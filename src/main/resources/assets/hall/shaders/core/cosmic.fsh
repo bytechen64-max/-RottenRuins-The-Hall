@@ -23,6 +23,15 @@ uniform int useType;
 
 uniform mat2 cosmicuvs[cosmiccount];
 
+// ── Blocks 图案（CRIMSON_VOW / useType == 17）专用 ──
+uniform float blockPatternScale;   // 每 1.0 UV 放多少个 blocks 单元
+uniform float blockTimeScale;      // 动画速度
+uniform float blockTimeOffset;     // 额外时间偏移（相位微调）
+
+// ── DEEP_SPACE(0) 专用 ──
+uniform float flowMixStrength;     // 流动混色的强度（0 = 关掉，退回原来的纯紫虚空）
+uniform float irisSpeed;           // 七彩琉璃星的色相流转速度
+
 in float vertexDistance;
 in vec4 vertexColor;
 in vec2 texCoord0;
@@ -60,6 +69,106 @@ vec3 hsv2rgb(vec3 c){ vec4 K=vec4(1.0,2.0/3.0,1.0/3.0,3.0); vec3 p=abs(fract(c.x
 
 float hash2D(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
 
+// ── Blocks（useType == 17 / CRIMSON_VOW）───────────────────────
+//
+// 移植 shadertoy「Fast, Minimal Animated Blocks」。原理是 Voronoi 三角形度量
+// 的廉价等价物：在可平铺的 cell 里放两个点、量距离，再把坐标旋转 120° 重复
+// 一次，取四个距离的最小值 —— 没有随机点、没有循环，图案却足够"随机"。
+//
+//     作者原话保留在下面的 s()/m() 注释里，配色按装备需求改成粉色系。
+//
+// 为什么换成它：上一版用的 1/abs(sin) 等离子场是"暗底 + 极窄亮丝"，
+// 量下来剑身亮部只占 4%，且在 7x24 像素的剑身上天然低于 Nyquist，
+// 满屏摩尔纹。Blocks 是结构化图案，自带边缘高光与曲率明暗，
+// 同样面积下能读出"块"的形状。实测 7x24 剑身上 blockPatternScale≈1.4
+// 时每块约 5~6 像素，结构清晰。
+
+// 距离度量。这里用的是略微圆化的三角形 —— 也就是"方块感"的来源。
+// 作者注释里列了其它度量（正三角形 / 点积 / 曼哈顿 …），换掉就能出别的图案。
+float blockDist(vec2 p) {
+    p = fract(p) - 0.5;
+    // return max(abs(p.x)*.866 + p.y*.5, -p.y);          // 正三角形
+    return (dot(p, p) * 2.0 + 0.5) * max(abs(p.x) * 0.866 + p.y * 0.5, -p.y);
+}
+
+// 极廉价的可平铺蜂窝格。两个可平铺的点 + 一次 120° 旋转 = 足够随机的图案。
+float blockCell(vec2 p, float t) {
+    // 动画偏移：原作 iDate.w；这里接游戏时间（连续时间，由 Java 侧提供）
+    vec2 o = sin(vec2(1.93, 0.0) + t) * 0.166;
+
+    // 两个可平铺、在动的点的距离
+    float a = blockDist(p + vec2(o.x, 0.0));
+    float b = blockDist(p + vec2(0.0, 0.5 + o.y));
+
+    // 把这一层（坐标）旋转 120°
+    p = -mat2(0.5, -0.866, 0.866, 0.5) * (p + 0.5);
+
+    // 另外两个可平铺、在动的点的距离
+    float c = blockDist(p + vec2(o.x, 0.0));
+    float d = blockDist(p + vec2(0.0, 0.5 + o.y));
+
+    return min(min(a, b), min(c, d)) * 2.0;
+}
+
+// 完整着色。返回粉色系 rgb，明度结构照搬原作：
+//   o   = 方块主体（pow 分级）
+//   b   = 边缘高光（沿坐标轴差分）
+//   curv= 曲率明暗（四邻域采样）
+//
+// ★ 移植时踩到的坑（务必留意，否则整把剑会变成一坨纯粉色）：
+//   原作里 b 是「单独叠加」的项：o = pow(...) + b*b*(.5+b*b)。
+//   b = max(o - m(p+.01), 0)/.05 的量级能到几十，单独相加只是让边缘过曝白，
+//   但如果像第一版那样把 0.9*b*b*(0.5+b*b) 折进「分级用的明度」里，几乎
+//   所有边缘像素都会把明度顶到上限 —— 实测 24.5% 的像素撞顶后被压成同一个
+//   近白粉，剑身看起来就是纯色。现在把 b 的缩放压到 0.15，撞顶率降到 0.9%。
+//   另一半原因是渐变端点：亮粉的 B=0.63 会让 t1 在 lum≈0.55 处就钳到 1，
+//   超过一半像素提前锁死在同一个颜色。现在端点改成 B=0.52 并改用
+//   log 软膝分级，把整条色路摊到真实 lum 范围上。
+vec3 blockShade(vec2 p, float t, float maskVal) {
+    float o = blockCell(p, t);
+
+    // 廉价高光：o - m(p + eps)，横向 / 纵向各一次
+    vec2 eps = vec2(0.032, 0.032);
+    float bx = max(o - blockCell(p + vec2(eps.x, 0.0), t), 0.0) / 0.05;
+    float by = max(o - blockCell(p + vec2(0.0, eps.y), t), 0.0) / 0.05;
+    // 0.15 是量出来的：再大就开始撞顶变纯色（见上面的注释）
+    float hilite = (bx + by) * 0.15;
+
+    // 原作 o = pow(vec4(1.5,1,1,0)*o, vec4(1,3.5,16,0))：
+    // 这里把三级 pow 的合成分量当作「明度」用，颜色另按粉色梯度重映射。
+    float lum = o
+              + pow(clamp(o, 0.0, 1.0), 3.5) * 0.5
+              + pow(clamp(o, 0.0, 1.0), 16.0) * 0.7;
+    lum += hilite * hilite * (0.5 + hilite * hilite);
+
+    // 曲率 → 明暗，让块面有起伏（原作: o *= curv*1.5 + .5，亮线版）
+    float e = 0.016;
+    float curv = (o * 4.0
+                  - blockCell(p - vec2(e, 0.0), t)
+                  - blockCell(p + vec2(e, 0.0), t)
+                  - blockCell(p - vec2(0.0, e), t)
+                  - blockCell(p + vec2(0.0, e), t)) / e / 2.0 + 0.5;
+    curv = clamp(curv, 0.0, 1.0);
+    lum *= curv * 0.9 + 0.55;
+
+    // log 软膝：真实 lum 集中在 0.0~1.6，直接用会把大半像素压在端点附近
+    float k = clamp(log(1.0 + lum * 1.1) / log(3.4), 0.0, 1.0);
+
+    // ── 粉色分级：深洋红 → 亮粉 → 近白高光 ──
+    vec3 deepMagenta = vec3(0.30, 0.02, 0.21);
+    vec3 hotPink     = vec3(1.00, 0.16, 0.52);
+    vec3 lightPink   = vec3(1.00, 0.86, 0.95);
+
+    vec3 col = (k < 0.5) ? mix(deepMagenta, hotPink, k * 2.0)
+                         : mix(hotPink, lightPink, (k - 0.5) * 2.0);
+
+    // 原作最后 sqrt 做粗糙 gamma；这里改 pow(0.85) 免得把粉色冲淡
+    col = pow(max(col, 0.0), vec3(0.85));
+
+    // 遮罩越亮（物品实心处）越实，遮罩外只剩极淡一层
+    return col * mix(0.20, 1.0, clamp(maskVal, 0.0, 1.0));
+}
+
 // ── 背景函数 ──────────────────────────────────────────────────
 
 vec3 getFbmNebula(vec3 pos, float t) {
@@ -75,6 +184,28 @@ vec3 getAurora(vec3 pos, float t) {
     vec2 uv=pos.xy/(length(pos)+0.5);
     float band=smoothstep(0.2,0.7,sin(uv.x*4.0+uv.y*3.0+t*0.06)*cos(uv.y*2.5+uv.x*1.7+t*0.04)*0.5+0.5)*0.12;
     return mix(vec3(0.12,0.03,0.30),vec3(0.10,0.04,0.25),sin(t*0.03)*0.5+0.5)*band;
+}
+
+// ── 流动混色（DEEP_SPACE 专用）──────────────────────────────────
+//
+// 目标：让紫色虚空"缓慢换色"，而不是整片同时呼吸。
+// 做法：拿一个低频噪声场当流场，它决定每个区域此刻停在色环的哪个位置；
+//       色相里再叠一个极慢的时间项，于是色带整体缓缓漂移过去。
+//
+// 为什么不用 getFbmNebula 里那种 hsv2rgb(0.78 + n2*0.06 - 0.03, ...)：
+//   那个色相幅度只有 ±0.03，肉眼读不出"混色"，只能算同色系微调。
+//   这里幅度给到 0.62（绕色环大半圈），再用 strength 锁在"混进紫底"的程度上。
+//
+// 为什么流场用两层单倍频 noise3D 而不是 fbm6：
+//   色相场要的是"大块的、平滑的"分布，高频细节只会让它碎成噪点；
+//   而且 getFbmNebula 每帧已经跑两次 fbm6（各 6 个倍频），这里再上一个不划算。
+vec3 getFlowingMix(vec3 pos, float t, float strength) {
+    vec3 flowPos = pos*0.30 + vec3(t*0.010, -t*0.007, t*0.013);
+    float flow = noise3D(flowPos)*0.65 + noise3D(flowPos*2.7)*0.35;
+    float hue  = fract(0.74 + flow*0.62 + t*0.0045);   // 0.74 = 紫，从这里出发绕色环
+    vec3 tint  = 0.5 + 0.5*cos(6.28318*(hue + vec3(0.0,0.33,0.67)));
+    tint = mix(tint, vec3(1.0), 0.18);                 // 压一点饱和，免得读成"彩虹塑料"
+    return mix(vec3(1.0), tint, clamp(strength, 0.0, 1.0));
 }
 
 vec3 getRichNebula(vec3 pos, float t) {
@@ -139,12 +270,31 @@ void main(void) {
         float bgBlend = sin(time*0.05)*0.5+0.5;
         col.rgb = mix(vec3(0.035,0.025,0.04), vec3(0.04,0.02,0.055), bgBlend);
     } else {
-        // DEEP_SPACE(0) — FBM星云 + 极光
+        // DEEP_SPACE(0) — FBM星云 + 极光 + 流动混色
         vec3 nearC=vec3(0.04,0.015,0.10), farC=vec3(0.005,0.003,0.015);
-        col = vec4(mix(farC, nearC, depthFade), 1.0);
-        col.rgb += getFbmNebula(fPos, time)*0.35;
-        col.rgb += getAurora(fPos, time);
+        // 流动的混色：低频流场决定每个区域此刻的色相，整体缓慢漂移。
+        // 紫色底子刻意保留 —— nearC/farC 只染 35%，混色主要作用在星云那一层，
+        // 于是"还是这片紫黑虚空，但它在缓慢换色"，而不是变成一整片彩虹。
+        vec3 flow = getFlowingMix(fPos, time, flowMixStrength);
+        col = vec4(mix(farC, nearC, depthFade) * mix(vec3(1.0), flow, 0.35), 1.0);
+        // 1.35 用来补回"按色相染色"损失的能量：乘性染色必然压暗非主色通道，
+        // 不补的话开了混色整体会明显变暗（看起来像调低了亮度而不是换了颜色）。
+        col.rgb += getFbmNebula(fPos, time)*0.35*flow*1.35;
+        col.rgb += getAurora(fPos, time)*flow;
         col.rgb += vec3(breathe*0.8, breathe*0.3, breathe);
+    }
+
+    // ── Blocks 图案：完全独立的片元路径，不出星星 ──
+    // 放在星空循环之前提前返回，省掉 16 次星空采样和整个恒星色分支。
+    if (useType == 17) {
+        vec2 centered = texCoord0.xy - 0.5;   // 挪到物品中心
+        // 原作 p /= iResolution.y/3.（像素空间）→ 这里 1.0 UV = blockPatternScale 个 cell
+        vec2 bp = centered * blockPatternScale;
+        float bt = time * blockTimeScale + blockTimeOffset;
+        col = vec4(blockShade(bp, bt, mask.r), 1.0);
+        col.a *= mask.r * opacity;
+        fragColor = clamp(col * ColorModulator, 0.0, 1.0);
+        return;
     }
 
     // ── 视角旋转 ──
@@ -232,13 +382,26 @@ void main(void) {
                 starC*=blink*distFade*1.2;
                 starC+=vec3(1.0,0.85,0.95)*smoothstep(0.7,1.0,tcol.r)*0.3;
             } else {
-                // DEEP_SPACE(0) — 冷白/蓝星星
-                starC=vec3(fract(rand1*0.123)*0.4+0.6,
-                           fract(rand2*0.456)*0.3+0.7,
-                           fract(rand3*0.789)*0.3+0.7);
-                starC*=vec3(1.0+mod(rand1,20.0)/500.0,1.0+mod(rand2,20.0)/500.0,1.0+mod(rand3,20.0)/500.0);
+                // DEEP_SPACE(0) — 七彩琉璃星
+                //
+                // 色相 = 星号(rand1/rand2) + 深度 + 时间：
+                //   星号 → 同一颗星永远保持同一个颜色，不会每帧闪成乱码
+                //   深度 → 前后层次拉开，像琉璃里裹了不同的矿物
+                //   时间 → 整体缓慢流转（irisSpeed=1 时约 70 秒绕色环一圈）。
+                //          要的是"变色"不是"闪烁"，所以系数比下面的 twinkle 小两个量级。
+                float irisHue = fract(rand1*0.021 + rand2*0.013 + depth*0.06
+                                      + time*0.0012*irisSpeed);
+                vec3 iris = 0.5 + 0.5*cos(6.28318*(irisHue + vec3(0.0,0.33,0.67)));
+                // 琉璃 = "彩而透亮"：色相先往白里拉 15%，亮核再压到近白。
+                // 纯饱和的彩虹色会读成塑料，少了"琉璃"里那层透光感。
+                iris = mix(iris, vec3(1.0), 0.15);
+                float hotCore = smoothstep(0.55, 1.0, tcol.r);
+                starC = mix(iris, vec3(1.0), hotCore*0.5);
+
                 starC*=twinkle*distFade;
                 float dGlow=1.0+sin(depth*M_PI+time*0.003)*0.3;
+                // 紫色底噪保留：它负责让这些彩星仍然属于"同一片宇宙"，
+                // 而不是像贴了一堆彩色亮片上去。
                 starC=starC*dGlow+vec3(0.15,0.08,0.35)*0.15;
                 starC+=vec3(0.12,0.06,0.30)*(1.0-distFade)*0.3;
             }

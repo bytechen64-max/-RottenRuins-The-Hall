@@ -114,6 +114,8 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
     protected void registerGoals() {
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .range(40.0)
+                // 威胁点数过滤器：玩家威胁 < 5 不主动索敌；非玩家生物照常索敌
+                .filter(this)
                 .build());
         this.goalSelector.addGoal(5, new RandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));

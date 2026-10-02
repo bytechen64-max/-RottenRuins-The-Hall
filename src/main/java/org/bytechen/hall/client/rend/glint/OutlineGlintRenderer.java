@@ -2,12 +2,9 @@ package org.bytechen.hall.client.rend.glint;
 
 import org.bytechen.hall.api.ICustomOutline;
 import org.bytechen.hall.client.rend.SplendidingShaders;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import org.joml.Matrix3f;
-import org.joml.Matrix4f;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -19,6 +16,16 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
+/**
+ * 物品表面的 GUI 辉光（glint）叠加层。
+ *
+ * <p>注意：<b>描边已经从这里搬走了。</b> 旧实现里这个类还有一个
+ * {@code renderWorldOutlinePass} —— 它把物品模型整体放大 6% 再重画一遍当描边，
+ * 等于给整件物品（连同内部）盖了一层颜色，而且声明的 RenderType 是
+ * {@code NO_DEPTH_TEST}，所以既穿墙又会把宇宙星空层整片糊住。
+ * 现在描边由 {@link ItemOutlinePipeline} 负责：屏幕空间的「剪影遮罩 + 环形膨胀」，
+ * 只画在物品剪影外侧，跟贴在表面的星空层永不重叠。</p>
+ */
 public final class OutlineGlintRenderer {
 
     private OutlineGlintRenderer() {}
@@ -99,161 +106,8 @@ public final class OutlineGlintRenderer {
             consumer.putBulkData(poseStack.last(), quad, 1.0f, 1.0f, 1.0f, combinedLight, combinedOverlay);
     }
 
-    /**
-     * Renders outline expansion around the item silhouette.
-     *
-     * <p>The RenderType setup callback runs inside {@code buffer.getBuffer()},
-     * setting up its own blend/depth state.  We override blend AFTER getting
-     * the buffer so ADDITIVE mode sticks.</p>
-     *
-     * <p>Depth strategy:
-     * <ul>
-     *   <li>World (ground/3rd/frame): LEQUAL — blocks in front occlude outline</li>
-     *   <li>First-person: NO_DEPTH — hand buffer is unreliable under shaders</li>
-     * </ul>
-     */
-    public static void renderWorldOutlinePass(ItemStack stack, ItemDisplayContext context,
-                                               PoseStack poseStack, MultiBufferSource buffer,
-                                               int combinedLight, int combinedOverlay, BakedModel model) {
-        if (ShaderPackDetector.isShadowPass()) return;
-
-        boolean isVertexMode = HeldItemOutlineSettings.getOutlineMode()
-                == HeldItemOutlineSettings.OutlineMode.VERTEX_SHADER
-                || HeldItemOutlineSettings.getOutlineMode()
-                == HeldItemOutlineSettings.OutlineMode.AUTO;
-
-        boolean isWorldCtx = switch (context) {
-            case THIRD_PERSON_LEFT_HAND, THIRD_PERSON_RIGHT_HAND, GROUND, NONE, FIXED -> true;
-            default -> false;
-        };
-        if (!isWorldCtx && !isVertexMode) return;
-
-        ICustomOutline custom = stack.getItem() instanceof ICustomOutline c ? c : null;
-        GlintEffectProfile profile = GlintRenderManager.getProfile(stack);
-
-        boolean enabled;
-        float width, r, g, b, alpha;
-        ICustomOutline.BlendMode blend;
-        String shaderKey;
-
-        if (custom != null && custom.outlineEnabled(context)) {
-            enabled = true;
-            width  = custom.outlineWidth();
-            int c = custom.outlineColor();
-            r = ((c >> 16) & 0xFF) / 255f;
-            g = ((c >> 8) & 0xFF) / 255f;
-            b = (c & 0xFF) / 255f;
-            alpha = ((c >> 24) & 0xFF) / 255f;
-            blend = custom.outlineBlend();
-            String key = custom.outlineShaderKey();
-            shaderKey = key != null ? key : SplendidingShaders.KEY_DEFAULT;
-        } else if (profile != null && profile.isWorldOutlineEnabled() && profile.shouldRender(context)) {
-            enabled = true;
-            width  = profile.getWorldOutlineWidth();
-            r = profile.getRed();
-            g = profile.getGreen();
-            b = profile.getBlue();
-            alpha = profile.getAlpha();
-            blend = ICustomOutline.BlendMode.ADDITIVE;
-            String profileKey = profile.getOutlineShaderKey();
-            shaderKey = profileKey != null ? profileKey : SplendidingShaders.KEY_DEFAULT;
-        } else {
-            return;
-        }
-        if (!enabled) return;
-
-        // shader pack → deferred replay
-        if (ShaderPackDetector.shouldUseShaderPackPipeline()) {
-            if (SplendidingShaders.getOutlineShader(shaderKey) == null) return;
-            List<BakedQuad> eq = model.getQuads(null, null, RandomSource.create());
-            if (eq.isEmpty()) return;
-            float[] bb = OutlineRenderQueue.computeBbox(eq);
-            OutlineRenderQueue.enqueue(model, custom, profile,
-                    new float[]{r, g, b, alpha}, shaderKey, blend, width,
-                    bb[0], bb[1],
-                    new Matrix4f(poseStack.last().pose()),
-                    new Matrix3f(poseStack.last().normal()),
-                    new Matrix4f(RenderSystem.getModelViewMatrix()),
-                    context);
-            return;
-        }
-
-        ShaderInstance shader = SplendidingShaders.getOutlineShader(shaderKey);
-        // Pick RenderType: LEQUAL depth for world, NONE for first-person
-        RenderType outlineType = isWorldCtx
-                ? SplendidingShaders.getWorldOutlineRenderType(shaderKey)
-                : SplendidingShaders.getOutlineRenderType(shaderKey);
-        if (shader == null || outlineType == null) return;
-
-        List<BakedQuad> quads = model.getQuads(null, null, RandomSource.create());
-        if (quads.isEmpty()) return;
-
-        // Center is always (0.5, 0.5) — item quads are in 0–1 model space
-        // after translate(-0.5, -0.5, -0.5).  ArcaneVortex hardcodes this.
-        final float cx = 0.5f, cy = 0.5f;
-
-        poseStack.pushPose();
-        poseStack.translate(cx, cy, 0f);
-        poseStack.scale(1.0f + width, 1.0f + width, 1.0f);
-        poseStack.translate(-cx, -cy, 0f);
-
-        if (custom != null) {
-            custom.configureOutlineShader(shader);
-        } else if (profile != null && "gradient".equals(shaderKey)) {
-            int gc = profile.getGradientColorCount();
-            setIntUniform(shader, "ColorCount", gc);
-            for (int i = 0; i < gc; i++)
-                setIntUniform(shader, "Color" + i, profile.getGradientColor(i));
-            setFloatUniform(shader, "FlowSpeed", profile.getGradientFlowSpeed());
-            setFloatUniform(shader, "GradientSpan", profile.getGradientSpan());
-        }
-        if (shader.getUniform("OutlineColor") != null)
-            shader.safeGetUniform("OutlineColor").set(r, g, b, alpha);
-        if (shader.getUniform("TintColor") != null)
-            shader.safeGetUniform("TintColor").set(r, g, b, 0.8f);
-        long gt = net.minecraft.client.Minecraft.getInstance().level != null
-                ? net.minecraft.client.Minecraft.getInstance().level.getGameTime() : 0;
-        if (shader.getUniform("Time") != null)
-            shader.safeGetUniform("Time").set((gt % 360000L) / 20f);
-
-        // getBuffer runs RenderType setup (NO_DEPTH + TRANSLUCENT blend).
-        // Override blend AFTER so ADDITIVE stays.
-        VertexConsumer consumer = buffer.getBuffer(outlineType);
-
-        RenderSystem.enableBlend();
-        if (blend == ICustomOutline.BlendMode.ADDITIVE)
-            RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
-        else
-            RenderSystem.defaultBlendFunc();
-
-        // World-space: LEQUAL depth so walls/entities in front occlude outline.
-        // First-person: NO_DEPTH (hand depth buffer is unreliable).
-        // No depth WRITE in either case — outline never writes depth.
-        if (isWorldCtx) {
-            RenderSystem.enableDepthTest();
-        } else {
-            RenderSystem.disableDepthTest();
-        }
-        RenderSystem.depthMask(false);
-
-        for (BakedQuad quad : quads)
-            consumer.putBulkData(poseStack.last(), quad, 1.0f, 1.0f, 1.0f, combinedLight, combinedOverlay);
-
-        RenderSystem.depthMask(true);
-        RenderSystem.disableBlend();
-        poseStack.popPose();
-    }
-
     private static void setPalette(int i, float r, float g, float b, float a) {
         ShaderInstance s = SplendidingShaders.itemGlintShader;
         if (s != null) s.safeGetUniform("PaletteColor" + i).set(r, g, b, a);
-    }
-
-    private static void setIntUniform(ShaderInstance s, String name, int value) {
-        if (s != null && s.getUniform(name) != null) s.safeGetUniform(name).set(value);
-    }
-
-    private static void setFloatUniform(ShaderInstance s, String name, float value) {
-        if (s != null && s.getUniform(name) != null) s.safeGetUniform(name).set(value);
     }
 }

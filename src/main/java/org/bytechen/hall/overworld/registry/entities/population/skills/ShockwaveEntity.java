@@ -29,7 +29,15 @@ public class ShockwaveEntity extends Entity {
             SynchedEntityData.defineId(ShockwaveEntity.class, EntityDataSerializers.FLOAT);
 
     private static final float DEF_SPEED = 3f, DEF_RADIUS = 8f, DEF_ALPHA = 1f;
-    private static final float DEF_RING_POS = 0.08f, DEF_RING_WID = 0.95f;
+    /**
+     * ringPos / ringWidth 供着色器决定“压缩壳”的厚度：
+     * {@code 壳厚 = 波半径 × (0.18 + 0.34 × ringWidth)}，
+     * ringWidth = 0.95 时壳厚约为波半径的 50%。
+     * 取值偏厚是为了让波前在远处也仍是一整条厚带而不是发丝线；
+     * 想更薄/更厚只需调这两个同步参数（配合
+     * {@code rendertype_shockwave.fsh} 里的 BAND_BASE / BAND_PER_RING）。
+     */
+    private static final float DEF_RING_POS = 0.10f, DEF_RING_WID = 0.95f;
     private static final int DEF_LIFE = 60;
 
     private int age;

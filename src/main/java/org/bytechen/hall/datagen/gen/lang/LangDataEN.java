@@ -19,6 +19,7 @@ public class LangDataEN extends LanguageProvider {
         add("itemGroup." + HallMod.MODID + ".main", "Rotten Ruins: Splendiding");
         add(RegisterItem.EXAMPLE_ITEM.get(), "Example Item");
         add(RegisterItem.VOID_SWORD.get(), "Void Sword");
+        add(RegisterItem.CRIMSON_VOW.get(), "Crimson Vow");
         add(RegisterItem.HALL_BONE_FRAGMENTS.get(), "Hall Bone Fragments");
         add(RegisterItem.HALL_TENDON.get(), "Hall Tendon");
         // 补充缺失条目：畸骸末影珍珠
@@ -42,7 +43,17 @@ public class LangDataEN extends LanguageProvider {
         // 补充缺失条目：王庭重型轰炸刷怪蛋
         add(RegisterItem.HEAVY_BOMB_SPAWN_EGG.get(), "Heavy Bomb Spawn Egg");
         add(RegisterItem.COLLAPSAR_SPAWN_EGG.get(), "Collapsar Spawn Egg");
+// 物品：补缺失条目
+        add(RegisterItem.BONECRUSHER_CORE.get(), "Bonecrusher Core");
+        add(RegisterItem.DOMERITE_STICK.get(), "Domerite Stick");
+        add(RegisterItem.DOMERITE_LONGSWORD.get(), "Skyfall Verdict");
 
+        add(RegisterItem.SCOUT_SPAWN_EGG.get(), "Ulcerated Scout Spawn Egg");
+        add(RegisterItem.PURSUER_SPAWN_EGG.get(), "Ulcerated Pursuer Spawn Egg");
+        add(RegisterItem.MONOLITH_SPAWN_EGG.get(), "Ulcerated Monolith Spawn Egg");
+
+// 实体：补缺失条目
+        add(EntityTypeRegistry.COLLAPSAR.get(), "Collapsar");
         // 方块
         add(RegisterBlock.HALL_GRASS_BLOCK.get(), "Hall Grass Block");
         add(RegisterBlock.HALL_DIRT.get(), "Hall Dirt");
@@ -87,6 +98,9 @@ public class LangDataEN extends LanguageProvider {
         add(EntityTypeRegistry.BONECRUSHER.get(), "Hall Shell");
         add(EntityTypeRegistry.SHOCKWAVE.get(), "Shockwave");
         add(EntityTypeRegistry.METEORITE.get(), "Meteorite");
+        // Skyfall Verdict: the field's descending blade (a pure-VFX skill entity,
+        // but it still gets a readable name for debugging)
+        add(EntityTypeRegistry.VERDICT_SWORD_DROP.get(), "Verdict Blade");
         add(EntityTypeRegistry.SCOUT.get(), "Ulcerated Scout");
         add(EntityTypeRegistry.PURSUER.get(), "Ulcerated Pursuer");
         add(EntityTypeRegistry.MONOLITH.get(), "Ulcerated Monolith");
@@ -98,6 +112,10 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterEffect.VERDICT.get(), "Verdict");
         // Skyfall Verdict: action-bar hint when right-clicking during cooldown
         add("item.hall.domerite_longsword.cooldown", "Verdict not ready (%s s)");
+        // Skyfall Verdict: pitch too low for the beam (this used to be completely silent)
+        add("item.hall.domerite_longsword.no_aim", "Not aimed — look up to bring down the verdict");
+        // Skyfall Verdict: the skill hit nothing (a whiff only records a short cooldown)
+        add("item.hall.domerite_longsword.missed", "Whiff — cooldown refunded");
 
         // 难度选择 UI
         add(TranslateUtils.DIFFICULTY_EASY, "Easy");

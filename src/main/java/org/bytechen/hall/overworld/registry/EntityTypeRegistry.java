@@ -22,6 +22,7 @@ import org.bytechen.hall.overworld.registry.entities.population.skills.Shockwave
 import org.bytechen.hall.overworld.registry.entities.population.skills.SwordAuraEntity;
 import org.bytechen.hall.overworld.registry.entities.population.skills.VerdictBeamEntity;
 import org.bytechen.hall.overworld.registry.entities.population.skills.VerdictFieldEntity;
+import org.bytechen.hall.overworld.registry.entities.population.skills.VerdictSwordDropEntity;
 import org.bytechen.hall.overworld.registry.entities.population.ulcerated.MonolithEntity;
 import org.bytechen.hall.overworld.registry.entities.population.ulcerated.PursuerEntity;
 import org.bytechen.hall.overworld.registry.entities.population.ulcerated.ScoutEntity;
@@ -185,6 +186,14 @@ public class EntityTypeRegistry {
     public static final RegistryObject<EntityType<VerdictFieldEntity>> VERDICT_FIELD =
             registerNoopEntity("verdict_field", 0.5f, 0.5f,
                     (type, level) -> new VerdictFieldEntity(type, level));
+
+    // ────────── 技能实体 —— 天穹裁决的落剑（剑阵） ──────────
+    //  视觉上是"从天而降、落地后插在地上"的剑气；实体本身不移动，
+    //  位移由渲染侧按同步数据重建（见 VerdictSwordDropEntity 的类注释）。
+    //  碰撞箱给得极小：它的"体积"是渲染出来的锥体，不是碰撞箱。
+    public static final RegistryObject<EntityType<VerdictSwordDropEntity>> VERDICT_SWORD_DROP =
+            registerNoopEntity("verdict_sword_drop", 0.5f, 0.5f,
+                    (type, level) -> new VerdictSwordDropEntity(type, level));
 
     // ────────── 技能实体 —— 坍缩（多类型坍缩渲染） ──────────
     public static final RegistryObject<EntityType<CollapseEntity>> COLLAPSE =

@@ -3,6 +3,7 @@ package org.bytechen.hall.overworld.registry;
 import org.bytechen.hall.HallMod;
 import org.bytechen.hall.overworld.registry.capability.anomaly.AnomalyCapability;
 import org.bytechen.hall.overworld.registry.capability.base.AbstractCapability;
+import org.bytechen.hall.overworld.registry.capability.threat.ThreatCapability;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
@@ -17,11 +18,16 @@ public class CapabilityRegistry {
     public static final Capability<AnomalyCapability> ANOMALY_CAP =
             CapabilityManager.get(new CapabilityToken<>(){});
 
+    /** 威胁点数：所有生物 / 玩家通用 */
+    public static final Capability<ThreatCapability> THREAT_CAP =
+            CapabilityManager.get(new CapabilityToken<>(){});
+
     private static final Map<ResourceLocation, Capability<?>> BY_KEY = new HashMap<>();
     private static final Map<Capability<?>, ResourceLocation> BY_CAP = new HashMap<>();
 
     static {
         register(ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "anomaly"), ANOMALY_CAP);
+        register(ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "threat"), THREAT_CAP);
     }
 
     public static <T extends AbstractCapability<T>> void register(ResourceLocation key, Capability<T> cap) {

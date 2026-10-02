@@ -51,6 +51,11 @@ public abstract class MixinItemRendererTwitch {
 
         if (!ItemTwitchHelper.shouldTwitch(stack, model)) return;
 
+        // Per-model opt-out ("cosmic": { "twitch": false }).
+        // needed in addition to shouldTwitch: in the deferred path the renderer
+        // may be handed a wrapper model rather than the BakedModelCosmic itself.
+        if (!ItemTwitchHelper.twitchEnabledFor(stack, model)) return;
+
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
 

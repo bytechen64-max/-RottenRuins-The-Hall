@@ -1,6 +1,7 @@
 package org.bytechen.hall.datagen.gen;
 
 import org.bytechen.hall.HallMod;
+import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
@@ -76,6 +77,18 @@ public class BlockStateData extends BlockStateProvider {
         leavesBlockWithItem(RegisterBlock.HALL_LEAVES.get());
         crossBlockWithItem(RegisterBlock.HALL_FLOWER.get());
         crossBlockWithItem(RegisterBlock.HALL_GRASS.get());
+
+        // 王庭烬痕沙漠系列
+        sandstoneBlockWithItem(RegisterBlock.HALL_SANDSTONE.get(), RegisterBlock.HALL_ASH_CUT_SANDSTONE.get());
+        simpleBlockWithItem(RegisterBlock.HALL_ASH_SAND.get());
+        sandstoneColumnBlockWithItem(RegisterBlock.HALL_ASH_CUT_SANDSTONE.get());
+        sandstoneColumnBlockWithItem(RegisterBlock.HALL_ASH_SMOOTH_SANDSTONE.get());
+        sandstoneColumnBlockWithItem(RegisterBlock.HALL_ASH_COLLAPSED_CHISELED_SANDSTONE.get());
+        cactusBlockWithItem(RegisterBlock.HALL_ASH_CACTUS.get());
+        crossBlockWithItem(RegisterBlock.HALL_ASH_DEAD_BUSH.get());
+
+        // 血肉庭园维度只需通道方块，地形全部复用现有王庭方块族
+        simpleBlockWithItem(RegisterBlock.FLESH_RIFT.get());
 
         // 若要为原木生成，使用 logBlockWithItem(...)
         // 等等
@@ -375,6 +388,92 @@ public class BlockStateData extends BlockStateProvider {
         simpleBlock(block, models().cubeBottomTop(name(block), side, bottom, top));
         // 生成物品模型：直接复用该方块模型
         simpleBlockItem(block, models().cubeBottomTop(name(block), side, bottom, top));
+    }
+
+    /**
+     * 14. 砂岩方块（顶/底与侧面使用不同纹理）
+     * 侧面复用指定的砂岩纹理方块，顶/底使用本方块 + "_top"/"_bottom" 后缀。
+     *
+     * @param block     砂岩方块实例
+     * @param sideBlock 提供侧面纹理的方块实例
+     */
+    protected void sandstoneBlockWithItem(Block block, Block sideBlock) {
+        ResourceLocation side = blockTexture(sideBlock);
+        ResourceLocation top = extend(blockTexture(block), "_top");
+        ResourceLocation bottom = extend(blockTexture(block), "_bottom");
+        simpleBlock(block, models().cubeBottomTop(name(block), side, bottom, top));
+        simpleBlockItem(block, models().cubeBottomTop(name(block), side, bottom, top));
+    }
+
+    /**
+     * 14b. 砂岩类变体方块（切制/雕纹等）
+     * 顶/底使用 hall_sandstone_top/bottom，四周使用方块自身纹理。
+     *
+     * @param block 砂岩变体方块实例
+     */
+    protected void sandstoneColumnBlockWithItem(Block block) {
+        ResourceLocation side = blockTexture(block);
+        ResourceLocation top = extend(blockTexture(RegisterBlock.HALL_SANDSTONE.get()), "_top");
+        ResourceLocation bottom = extend(blockTexture(RegisterBlock.HALL_SANDSTONE.get()), "_bottom");
+        simpleBlock(block, models().cubeBottomTop(name(block), side, bottom, top));
+        simpleBlockItem(block, models().cubeBottomTop(name(block), side, bottom, top));
+    }
+
+    /**
+     * 15. 仙人掌类方块（侧面/底面/顶面纹理不同）
+     * <p>
+     * 模型结构对齐原版 {@code minecraft:block/cactus}：中心一个 16×16×16 的柱体
+     * （只出面 up/down，负责顶面与底面的贴图），外加南北、东西两片 1 像素内缩的侧片。
+     * <p>
+     * <b>为什么不用 {@code withExistingParent(name, "block/cactus")：</b>
+     * 本模组这三张贴图在四周各留了 <b>1 像素透明留白</b>（实际可见像素为 x/y = 1..15，
+     * 即 14×14 内容 + 1 像素内边距，和原版 16×16 满幅贴图不同）。
+     * 原版父模型六面 UV 都是 {@code [0,0,16,16]}，会把留白一起铺开：
+     * <ul>
+     *   <li>侧面 {@code [0,0,16,16]}：南北两片与东西两片之间各漏出 1 像素缝隙，
+     *       直接看进柱体内部 → 四周一圈黑边；</li>
+     *   <li>顶/底 {@code [0,0,16,16]}：顶面外围一圈透明环直接露出柱体内部暗面 → 顶底也有黑边。</li>
+     * </ul>
+     * 所以这里显式写 UV，把每一面都映射到贴图真正有像素的区域内：
+     * 侧面 {@code [1,0,15,16]}（横向内缩 1），顶/底 {@code [1,1,15,15]}（四周内缩 1）。
+     *
+     * @param block 仙人掌方块实例
+     */
+    protected void cactusBlockWithItem(Block block) {
+        ResourceLocation base = blockTexture(block);
+        ResourceLocation side = extend(base, "_side");
+        ResourceLocation bottom = extend(base, "_bottom");
+        ResourceLocation top = extend(base, "_top");
+
+        ModelFile cactusModel = models().withExistingParent(name(block), "block/block")
+                .texture("particle", side)
+                .texture("side", side)
+                .texture("top", top)
+                .texture("bottom", bottom)
+                // 中心柱体：只出面 up / down，负责顶底贴图（UV 四周内缩 1 像素，避开透明内边距）
+                .element()
+                    .from(0.0F, 0.0F, 0.0F)
+                    .to(16.0F, 16.0F, 16.0F)
+                    .face(Direction.DOWN).uvs(1.0F, 1.0F, 15.0F, 15.0F).texture("#bottom").cullface(Direction.DOWN).end()
+                    .face(Direction.UP).uvs(1.0F, 1.0F, 15.0F, 15.0F).texture("#top").cullface(Direction.UP).end()
+                .end()
+                // 南北侧片：UV 横向内缩 1 像素，正好落在不透明像素上
+                .element()
+                    .from(0.0F, 0.0F, 1.0F)
+                    .to(16.0F, 16.0F, 15.0F)
+                    .face(Direction.NORTH).uvs(1.0F, 0.0F, 15.0F, 16.0F).texture("#side").end()
+                    .face(Direction.SOUTH).uvs(1.0F, 0.0F, 15.0F, 16.0F).texture("#side").end()
+                .end()
+                // 东西侧片：UV 横向内缩 1 像素
+                .element()
+                    .from(1.0F, 0.0F, 0.0F)
+                    .to(15.0F, 16.0F, 16.0F)
+                    .face(Direction.WEST).uvs(1.0F, 0.0F, 15.0F, 16.0F).texture("#side").end()
+                    .face(Direction.EAST).uvs(1.0F, 0.0F, 15.0F, 16.0F).texture("#side").end()
+                .end();
+
+        simpleBlock(block, cactusModel);
+        simpleBlockItem(block, cactusModel);
     }
 
     /**

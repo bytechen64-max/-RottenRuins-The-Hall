@@ -138,7 +138,7 @@ dependencies {
     runtimeOnly fg.deobf("mezz.jei:jei-1.20.1-forge:15.2.0.27")
 
     // InfectionCoreFramework 前置 — 提供进化系统、击杀计数、方块扩散和全局难度框架
-    implementation fg.deobf("org.bytechen:infcore:0.1.1")
+    implementation fg.deobf("org.bytechen:infcore:0.1.2")
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }

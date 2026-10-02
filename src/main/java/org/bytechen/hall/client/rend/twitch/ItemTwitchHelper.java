@@ -55,14 +55,46 @@ public final class ItemTwitchHelper {
      *
      * <p>Currently applies to:
      * <ul>
-     *   <li>Models wrapped by {@link BakedModelCosmic} (cosmic shader items)</li>
+     *   <li>Models wrapped by {@link BakedModelCosmic} (cosmic shader items)
+     *       — unless the model JSON opted out with {@code "twitch": false}</li>
      *   <li>Items implementing {@link ITwitchItem}</li>
      * </ul>
      */
     public static boolean shouldTwitch(ItemStack stack, BakedModel model) {
         if (stack == null || stack.isEmpty()) return false;
-        if (model instanceof BakedModelCosmic) return true;
+        if (model instanceof BakedModelCosmic bc) return bc.isTwitchEnabled();
         return stack.getItem() instanceof ITwitchItem;
+    }
+
+    /**
+     * Resolve the twitch opt-out from the item's <b>baked model</b>.
+     *
+     * <p>{@link #shouldTwitch} can only see the model instance that
+     * {@code ItemRenderer.render()} was handed.  In the deferred path
+     * (Oculus/Iris active) the renderer is invoked with the wrapper model, and
+     * the cosmic layer is enqueued separately — so the caller may not be
+     * holding the {@link BakedModelCosmic} at all.  This helper re-resolves it
+     * from the item stack, which is the reliable route.
+     *
+     * <p>Returns {@code true} when there is nothing to opt out of.
+     *
+     * @param stack the item stack being rendered (may be null/empty)
+     * @param model the model passed to the renderer (may be null)
+     * @return false only when the resolved model explicitly disabled twitch
+     */
+    public static boolean twitchEnabledFor(ItemStack stack, BakedModel model) {
+        // 物品层面的硬声明最先检查 —— 没有任何包装器能覆盖它
+        if (stack != null && !stack.isEmpty()
+                && stack.getItem() instanceof ITwitchItem ti && ti.twitchDisabled()) return false;
+
+        if (model instanceof BakedModelCosmic bc) return bc.isTwitchEnabled();
+        if (stack == null || stack.isEmpty()) return true;
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.getItemRenderer() == null) return true;
+        BakedModel resolved = mc.getItemRenderer().getModel(stack, null, null, 0);
+        if (resolved instanceof BakedModelCosmic bc) return bc.isTwitchEnabled();
+        return true;
     }
 
     /**

@@ -107,7 +107,9 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public boolean verdictSkillsEnabled = true;
 
-    @Comment("① 天穹裁决·垂直光柱：蓄力右键 ≥0.25s 后松开，在脚下竖起一根光柱。")
+    @Comment("① 天穹裁决·垂直光柱：蓄力右键 ≥0.4 秒后松开，在脚下立起一根通天光柱。"
+            + "落柱之后它一路扩散：半径从起始值涨到约 20 格（约 1.5 秒）、高度同时长高；"
+            + "伤害分三波打在扩散的起始 / 中段 / 完成上。")
     @ConfigEntry.Gui.Tooltip
     public boolean verdictBeamEnabled = true;
 
@@ -115,7 +117,8 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public float verdictBeamBrightness = 1.0f;
 
-    @Comment("② 截空·凌空斩：右键短按 (<0.25s) 朝视线突进，路径上的敌人各吃一次裁决伤害。")
+    @Comment("② 截空·凌空斩：右键短按 (<0.4 秒) 朝视线突进，路径上的敌人各吃一次裁决伤害。"
+            + "整招完全没命中时只记一笔很短的冷却，且不推进连打等级。")
     @ConfigEntry.Gui.Tooltip
     public boolean verdictDashEnabled = true;
 
@@ -124,7 +127,8 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public float verdictDashDistanceScale = 1.0f;
 
-    @Comment("③ 裁决领域·空中剑阵：潜行 + 按住右键 0.6s，在脚下展开持续 10 秒的领域。")
+    @Comment("③ 裁决领域·空中剑阵：潜行 + 按住右键 0.7 秒，在脚下展开持续 10 秒的领域。"
+            + "展开时边界会落下 7 道立柱剑，之后每次出剑都是从天而降的落剑。")
     @ConfigEntry.Gui.Tooltip
     public boolean verdictFieldEnabled = true;
 
@@ -147,4 +151,11 @@ public class SplendidingConfig implements ConfigData {
             + "层数只加覆盖（光柱半径 / 领域出剑速度），不加伤害。0 = 完全关掉层数机制。")
     @ConfigEntry.Gui.Tooltip
     public float verdictStackScale = 1.0f;
+
+    @Comment("裁决领域每次出剑<b>同时锁定几个目标</b>（1 ~ 6）。"
+            + "默认 3：领域半径最大能到 11 格，只锁一个会让它看起来完全没在打别人；"
+            + "调高会让群怪场景的落剑数量线性增加（每把剑是一个实体），"
+            + "觉得卡就调回 2。")
+    @ConfigEntry.Gui.Tooltip
+    public int verdictFieldMaxTargets = 3;
 }

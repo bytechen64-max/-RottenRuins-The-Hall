@@ -7,7 +7,7 @@
   "depthtest": {
     "function": "lequal"
   },
-  "depthwrite": false,
+  "depthwrite": true,
   "vertex": "hall:rendertype_verdict_beam",
   "fragment": "hall:rendertype_verdict_beam",
   "attributes": ["Position", "Color", "Normal"],
@@ -18,8 +18,12 @@
     { "name": "uTime",        "type": "float",     "count": 1,  "values": [ 0.0 ] },
     { "name": "uIntensity",   "type": "float",     "count": 1,  "values": [ 1.0 ] },
     { "name": "uRadius",      "type": "float",     "count": 1,  "values": [ 2.6 ] },
-    { "name": "uHeight",      "type": "float",     "count": 1,  "values": [ 44.0 ] },
+    { "name": "uHeight",      "type": "float",     "count": 1,  "values": [ 154.0 ] },
     { "name": "uScanT",       "type": "float",     "count": 1,  "values": [ 1.0 ] },
+    { "name": "uProgress",    "type": "float",     "count": 1,  "values": [ 0.0 ] },
+    { "name": "uAge",         "type": "float",     "count": 1,  "values": [ 0.0 ] },
+    { "name": "uBackCull",    "type": "float",     "count": 1,  "values": [ 1.0 ] },
+    { "name": "uNormalToView","type": "matrix3x3", "count": 9,  "values": [ 1,0,0, 0,1,0, 0,0,1 ] },
     { "name": "uCoreColor",   "type": "float",     "count": 3,  "values": [ 0.941, 0.973, 1.0 ] },
     { "name": "uEdgeColor",   "type": "float",     "count": 3,  "values": [ 0.529, 0.808, 0.980 ] }
   ]

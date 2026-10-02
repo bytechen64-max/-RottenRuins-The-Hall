@@ -28,6 +28,8 @@
 	},
 	"loader": "hall:cosmic",
 	"cosmic": {
-		"mask": "hall:item/void_sword_mask"
+		"mask": "hall:item/void_sword_mask",
+		"style": 0,
+		"corruption": true
 	}
 }

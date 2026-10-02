@@ -12,6 +12,7 @@
   ],
   "client": [
     "CosmicAfterLevelMixin",
+    "CrimsonVowBlockMixin",
     "GameRendererAccessor",
     "GameRendererMixin",
     "GameRendererOculusMixin",
@@ -21,7 +22,8 @@
     "MixinItemRendererCosmic",
     "MixinItemRendererTwitch",
     "OutlineReplayMixin",
-    "accessor.AccessorRenderStateShard"
+    "accessor.AccessorRenderStateShard",
+    "accessor.InvokerHandTransforms"
   ],
   "injectors": {
     "defaultRequire": 1

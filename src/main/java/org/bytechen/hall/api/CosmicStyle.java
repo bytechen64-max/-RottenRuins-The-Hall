@@ -13,6 +13,7 @@ package org.bytechen.hall.api;
  *   <tr><td>{@link #CRYSTAL_DREAM}</td><td>Deep blue-purple</td><td>Crystal blink, blue glow</td><td>Ethereal, magical</td></tr>
  *   <tr><td>{@link #NEBULA_RICH}</td><td>Rich purple nebula + dust</td><td>Purple-white, trailing</td><td>Lush, immersive</td></tr>
  *   <tr><td>{@link #PINK_BLUE_DUAL}</td><td>Dark grey</td><td>Pink + blue binary</td><td>Sharp contrast, futuristic</td></tr>
+ *   <tr><td>{@link #CRIMSON_VOW}</td><td>Deep-pink plasma swirl</td><td>(no starfield)</td><td>Warped sine-flow glow</td></tr>
  * </table>
  *
  * @see ICosmicLayer#cosmicStyle()
@@ -34,7 +35,18 @@ public enum CosmicStyle {
     NEBULA_RICH(4),
 
     /** Dark grey background with pink/blue dual-colour stars. */
-    PINK_BLUE_DUAL(16);
+    PINK_BLUE_DUAL(16),
+
+    /**
+     * Deep-pink plasma swirl — <b>no starfield</b>.
+     *
+     * <p>An entirely different fragment path: instead of sampling the 12 cosmic
+     * star sprites it iterates a shadertoy-style UV warp
+     * ({@code uv += 0.6/i * cos(i*k*uv.yx + time)}) and then divides a deep-pink
+     * base colour by {@code abs(sin(...))} to produce the flowing filament
+     * bands.  Used by {@code crimson_vow}.</p>
+     */
+    CRIMSON_VOW(17);
 
     /** The value sent to the shader {@code useType} uniform. */
     public final int shaderValue;

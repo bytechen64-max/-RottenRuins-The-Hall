@@ -6,7 +6,7 @@
 				"identifier": "geometry.monolith",
 				"texture_width": 256,
 				"texture_height": 256,
-				"visible_bounds_width": 5,
+				"visible_bounds_width": 6,
 				"visible_bounds_height": 4.5,
 				"visible_bounds_offset": [0, 1.75, 0]
 			},

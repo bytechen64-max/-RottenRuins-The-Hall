@@ -1,0 +1,17 @@
+{
+  "vertex": "hall:outline_ring",
+  "fragment": "hall:outline_ring",
+  "attributes": [
+    "Position",
+    "UV0"
+  ],
+  "samplers": [
+    { "name": "MaskSampler" }
+  ],
+  "uniforms": [
+    { "name": "ScreenSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "OutlineWidth", "type": "float", "count": 1, "values": [ 2.5 ] },
+    { "name": "Opacity", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "AlphaTest", "type": "float", "count": 1, "values": [ 0.5 ] }
+  ]
+}

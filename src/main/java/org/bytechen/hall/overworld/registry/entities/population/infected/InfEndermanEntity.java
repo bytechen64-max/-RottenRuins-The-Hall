@@ -69,6 +69,8 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         this.targetSelector.addGoal(1, new InfectedTargetGoal.Builder(this)
                 .range(40.0)          // 搜索范围
                 .mustSee(false)       // 无需视线
+                // 威胁点数过滤器：玩家威胁 < 5 不主动索敌；非玩家生物照常索敌
+                .filter(this)
                 .build());
 
         // === 行为选择器（goalSelector）===

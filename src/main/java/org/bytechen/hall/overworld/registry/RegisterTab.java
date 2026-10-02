@@ -29,13 +29,21 @@ public class RegisterTab {
                         // Add spawn eggs here
                         items.add(RegisterItem.INF_PLAYER_SPAWN_EGG.get());
                         items.add(RegisterItem.INF_ENDERMAN_SPAWN_EGG.get());
+                        items.add(RegisterItem.INF_SKELETON_SPAWN_EGG.get());
+                        items.add(RegisterItem.SCOUT_SPAWN_EGG.get());
+                        items.add(RegisterItem.PURSUER_SPAWN_EGG.get());
+                        items.add(RegisterItem.MONOLITH_SPAWN_EGG.get());
                         items.add(RegisterItem.BONECRUSHER_SPAWN_EGG.get());
+                        items.add(RegisterItem.HEAVY_BOMB_SPAWN_EGG.get());
+                        items.add(RegisterItem.COLLAPSAR_SPAWN_EGG.get());
                         items.add(RegisterItem.HALL_TENDON.get());
                         items.add(RegisterItem.HALL_BONE_FRAGMENTS.get());
+                        items.add(RegisterItem.BONECRUSHER_CORE.get());
                         items.add(RegisterItem.DOMITE_ORE.get());
                         items.add(RegisterItem.DOMITE_CRYSTAL.get());
                         items.add(RegisterItem.DOMERITE_ORE.get());
                         items.add(RegisterItem.DOMERITE_INGOT.get());
+                        items.add(RegisterItem.DOMERITE_STICK.get());
                         items.add(RegisterItem.HEAT_ANOMALY_EXTRACT.get());
                         items.add(RegisterItem.COLD_ANOMALY_EXTRACT.get());
                         items.add(RegisterItem.ACID_ANOMALY_EXTRACT.get());
@@ -44,6 +52,7 @@ public class RegisterTab {
                         items.add(RegisterItem.DOMERITE_PICKAXE.get());
                         items.add(RegisterItem.DOMERITE_SHOVEL.get());
                         items.add(RegisterItem.DOMERITE_HOE.get());
+                        items.add(RegisterItem.DOMERITE_LONGSWORD.get());
                         items.add(Item.byBlock(RegisterBlock.HALL_GRASS_BLOCK.get()));
                         items.add(Item.byBlock(RegisterBlock.HALL_DIRT.get()));
                         items.add(Item.byBlock(RegisterBlock.HALL_STONE.get()));
@@ -53,6 +62,14 @@ public class RegisterTab {
                         items.add(Item.byBlock(RegisterBlock.HALL_STONE_WALL.get()));
                         items.add(Item.byBlock(RegisterBlock.HALL_STONE_BUTTON.get()));
                         items.add(Item.byBlock(RegisterBlock.HALL_STONE_PRESSURE_PLATE.get()));
+                        // 王庭烬痕沙漠系列
+                        items.add(Item.byBlock(RegisterBlock.HALL_SANDSTONE.get()));
+                        items.add(Item.byBlock(RegisterBlock.HALL_ASH_SAND.get()));
+                        items.add(Item.byBlock(RegisterBlock.HALL_ASH_CUT_SANDSTONE.get()));
+                        items.add(Item.byBlock(RegisterBlock.HALL_ASH_SMOOTH_SANDSTONE.get()));
+                        items.add(Item.byBlock(RegisterBlock.HALL_ASH_COLLAPSED_CHISELED_SANDSTONE.get()));
+                        items.add(Item.byBlock(RegisterBlock.HALL_ASH_CACTUS.get()));
+                        items.add(Item.byBlock(RegisterBlock.HALL_ASH_DEAD_BUSH.get()));
                         items.add(Item.byBlock(RegisterBlock.HALL_LOG.get()));
                         items.add(Item.byBlock(RegisterBlock.HALL_LEAVES.get()));
                         items.add(Item.byBlock(RegisterBlock.HALL_PILLAR.get()));

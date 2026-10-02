@@ -12,6 +12,8 @@ import org.bytechen.hall.client.entity.render.impl.ShockwaveRenderer;
 import org.bytechen.hall.client.entity.render.impl.SwordAuraRenderer;
 import org.bytechen.hall.client.entity.render.impl.VerdictBeamRenderer;
 import org.bytechen.hall.client.entity.render.impl.VerdictFieldRenderer;
+import org.bytechen.hall.client.entity.render.impl.VerdictSwordDropRenderer;
+import org.bytechen.hall.client.particle.HeartLoseParticle;
 import org.bytechen.hall.client.particle.UlceratedMeatParticle;
 import org.bytechen.hall.overworld.registry.EntityTypeRegistry;
 import org.bytechen.hall.client.rend.glint.GlintEffectProfile;
@@ -68,6 +70,10 @@ public class ClientModEventHandler {
 
         // 自定义渲染器 —— 裁决领域（地面光纹圆盘 + 悬浮二十面体棱片）
         event.registerEntityRenderer(EntityTypeRegistry.VERDICT_FIELD.get(), VerdictFieldRenderer::new);
+
+        // 自定义渲染器 —— 裁决落剑（从天而降、落地插入地面的剑气）
+        event.registerEntityRenderer(EntityTypeRegistry.VERDICT_SWORD_DROP.get(),
+                VerdictSwordDropRenderer::new);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -96,6 +102,8 @@ public class ClientModEventHandler {
     public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
         // 溃烂肉屑
         event.registerSpriteSet(RegisterParticles.ULCERATED_MEAT.get(), UlceratedMeatParticle.Provider::new);
+        // 失心粒子 —— 序列帧，5 张（heart_lose0..4），按顺序播放
+        event.registerSpriteSet(RegisterParticles.HEART_LOSE.get(), HeartLoseParticle.Provider::new);
     }
 
     @SubscribeEvent

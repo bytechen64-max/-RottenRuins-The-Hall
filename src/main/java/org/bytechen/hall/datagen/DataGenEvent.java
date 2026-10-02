@@ -27,7 +27,14 @@ public class DataGenEvent {
         event.getGenerator().addProvider(event.includeClient(), new BlockSpreadDataProvider(out));
 
         event.getGenerator().addProvider(event.includeServer(), new HallWorldGenData(out, lp));
-        event.getGenerator().addProvider(event.includeServer(), new BlockTagData(out, lp, efh));
+
+        // 方块标签与物品标签是两张独立的表 —— 物品标签必须由 BlockTagsProvider
+        // 的 contentsGetter() 喂给 ItemTagsProvider，否则王庭木/石在原版配方里认不出来。
+        BlockTagData blockTags = new BlockTagData(out, lp, efh);
+        event.getGenerator().addProvider(event.includeServer(), blockTags);
+        event.getGenerator().addProvider(event.includeServer(),
+                new ItemTagData(out, blockTags.contentsGetter(), lp, efh));
+
         event.getGenerator().addProvider(event.includeServer(), new RecipeProviderData(out));
         event.getGenerator().addProvider(event.includeServer(), new LootTableData(out));
     }

@@ -250,9 +250,12 @@ public class SplendidingShaders {
      *       所以混合用 {@code ONE / ONE}，颜色叠到近白即自然泛光。
      *       这也让它<b>不需要</b>冲击波那套场景拷贝（把主帧缓冲 blit 到 copyTex），
      *       因为它不采样屏幕，只采样自己的几何。</li>
-     *   <li><b>不写深度。</b>44 格高的柱体写深度会把后面的实体/粒子全剪掉，
-     *       留下一个"墙角一样的硬遮挡"。开 LEQUAL 深度测试（被地形正确遮挡）
-     *       但关写深度，是这类体积特效的标准取舍。</li>
+     *   <li><b>写深度。</b>渲染器侧设 {@code depthMask(true)}，RenderType 侧的
+     *       {@code writeMaskState} 与之对应 —— <b>两处必须同时是"写"</b>。
+     *       曾经两处都是 false，症状就是"光柱穿透实体和方块"，读起来像一张
+     *       贴在所有物体前面的发光贴纸而不像一根立起来的柱子。
+     *       反过来，代价是光柱边缘与它挡住的物体之间是一条硬边（要柔和过渡
+     *       得采样深度纹理做 soft-particle，那是另一条管线）。</li>
      *   <li><b>不剔除背面。</b>玩家常常站在光柱内部，关剔除之后内壁也会被画出来，
      *       于是它会读成"一根玻璃管"而不是"一个亮色补丁"。</li>
      * </ul>
@@ -274,7 +277,9 @@ public class SplendidingShaders {
                             .setTransparencyState(AccessorRenderStateShard.splendiding$getTranslucentTransparency())
                             .setDepthTestState(AccessorRenderStateShard.splendiding$getLequalDepthTest())
                             .setCullState(AccessorRenderStateShard.splendiding$getNoCull())
-                            .setWriteMaskState(AccessorRenderStateShard.splendiding$getColorWrite())
+                            // 写深度：与 VerdictBeamRenderer 里的 depthMask(true) 成对。
+                            // 两处都必须是"写"，只改一处不会生效、症状还一样。
+                            .setWriteMaskState(AccessorRenderStateShard.splendiding$getColorDepthWrite())
                             .createCompositeState(false));
         }
         return verdictBeamRenderType;

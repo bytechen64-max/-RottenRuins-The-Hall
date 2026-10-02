@@ -1,20 +1,26 @@
 package org.bytechen.hall.event;
 
 import org.bytechen.hall.HallMod;
+import org.bytechen.hall.event.impl.HeavyBombDeathEffect;
 import org.bytechen.hall.network.NetworkHelper;
 import org.bytechen.hall.network.s2c.AnomalySyncPacket;
 import org.bytechen.hall.overworld.registry.CapabilityRegistry;
 import org.bytechen.hall.overworld.registry.capability.anomaly.AnomalyCapability;
 import org.bytechen.hall.overworld.registry.capability.base.CapabilityProvider;
+import org.bytechen.hall.overworld.registry.capability.threat.ThreatCapability;
+import org.bytechen.hall.overworld.registry.capability.threat.ThreatHelper;
+import org.bytechen.hall.overworld.registry.entities.population.ecological.HeavyBombEntity;
 import org.bytechen.hall.overworld.registry.items.DomeriteAxe;
 import org.bytechen.hall.overworld.registry.items.DomeriteHoe;
 import org.bytechen.hall.overworld.registry.items.DomeritePickaxe;
 import org.bytechen.hall.overworld.registry.items.DomeriteShovel;
 import org.bytechen.hall.overworld.registry.items.DomeriteSword;
 import org.bytechen.hall.utils.DomeriteStatsHelper;
+import org.bytechen.infcore.api.IInfectedEntity;
 import com.google.common.collect.Multimap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -34,6 +40,9 @@ public class ForgeEventHelpers {
     private static final ResourceLocation ANOMALY_KEY =
             ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "anomaly");
 
+    private static final ResourceLocation THREAT_KEY =
+            ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "threat");
+
     private static final int SYNC_INTERVAL = 20; // 每秒同步一次（20 tick）
 
     // ==================== 能力附加 ====================
@@ -44,6 +53,10 @@ public class ForgeEventHelpers {
             event.addCapability(ANOMALY_KEY,
                     new CapabilityProvider<>(CapabilityRegistry.ANOMALY_CAP, cap));
         }
+
+        // 威胁点数：所有生物（含玩家）都挂，初始 0
+        event.addCapability(THREAT_KEY,
+                new CapabilityProvider<>(CapabilityRegistry.THREAT_CAP, new ThreatCapability()));
     }
 
     // ==================== Tick 逻辑 ====================
@@ -124,10 +137,52 @@ public class ForgeEventHelpers {
     // ==================== 伤害 / 死亡 ====================
 
     public static void handleLivingHurt(LivingHurtEvent event) {
-        // Modify damage here
+        // hall 感染生物之间无友伤
+        if (!isHallInfected(event.getEntity())) return;
+        DamageSource source = event.getSource();
+        if (isHallInfected(source.getDirectEntity()) || isHallInfected(source.getEntity())) {
+            event.setCanceled(true);
+        }
+    }
+
+    private static boolean isHallInfected(Entity entity) {
+        if (entity instanceof IInfectedEntity infected) {
+            ResourceLocation type = infected.getInfectionType();
+            return type != null
+                    && HallMod.MODID.equals(type.getNamespace())
+                    && "hall".equals(type.getPath());
+        }
+        return false;
     }
 
     public static void handleLivingDeath(LivingDeathEvent event) {
-        // Death handling here
+        if ((event.getEntity() instanceof HeavyBombEntity bomb)) HeavyBombDeathEffect.trigger(bomb);
+        handleThreatOnDeath(event);
+    }
+
+    // ==================== 威胁点数 ====================
+
+    /**
+     * 死亡事件里的威胁点数结算。
+     * <ul>
+     *   <li><b>拾取</b>：击杀者为非王庭生物、被击杀者是王庭生物时，
+     *       击杀者增加「被击杀者最大生命值 / 5」点威胁；</li>
+     *   <li><b>清零</b>：死亡的是玩家 → 威胁点数重置为 0。</li>
+     * </ul>
+     * 两者互不冲突：玩家（非王庭生物）不可能击杀出王庭生物这一侧的分支。
+     */
+    private static void handleThreatOnDeath(LivingDeathEvent event) {
+        LivingEntity victim = event.getEntity();
+        Entity killer = event.getSource().getEntity();
+
+        if (killer != null
+                && !ThreatHelper.isHallCreature(killer)
+                && ThreatHelper.isHallCreature(victim)) {
+            ThreatHelper.addThreat(killer, ThreatHelper.threatFromKill(victim));
+        }
+
+        if (victim instanceof Player) {
+            ThreatHelper.resetThreat(victim);
+        }
     }
 }

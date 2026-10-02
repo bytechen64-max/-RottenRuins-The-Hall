@@ -17,4 +17,7 @@ public class SoundEventRegistry {
 
     // Your sounds here
     // public static final RegistryObject<SoundEvent> EXAMPLE_SOUND = registerSound("example_sound");
+
+    /** 群系背景音乐 */
+    public static final RegistryObject<SoundEvent> BIOME_MUSIC = registerSound("biome_music");
 }

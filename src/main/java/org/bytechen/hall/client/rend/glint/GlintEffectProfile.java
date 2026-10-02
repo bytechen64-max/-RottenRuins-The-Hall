@@ -48,7 +48,13 @@ public class GlintEffectProfile {
 
     // World-space outline (third-person / ground)
     boolean worldOutlineEnabled = true;
+    /** @deprecated 旧的模型空间缩放系数，新管线不再使用。见 {@link #worldOutlinePixelWidth}。 */
+    @Deprecated
     float worldOutlineWidth = 0.06f;
+    /** 描边宽度，单位屏幕像素。等宽靠它，与距离无关。 */
+    float worldOutlinePixelWidth = 2.5f;
+    /** 描边整体不透明度。 */
+    float worldOutlineOpacity = 1.0f;
     String outlineShaderKey = null; // null = default
 
     // Gradient shader palette (for "gradient" outlineShaderKey)
@@ -115,7 +121,11 @@ public class GlintEffectProfile {
         public Builder showInWorld(boolean v) { profile.showInWorld = v; return this; }
 
         public Builder worldOutline(boolean v) { profile.worldOutlineEnabled = v; return this; }
+        /** @deprecated 改用 {@link #worldOutlinePixelWidth(float)}。 */
+        @Deprecated
         public Builder worldOutlineWidth(float w) { profile.worldOutlineWidth = w; return this; }
+        public Builder worldOutlinePixelWidth(float px) { profile.worldOutlinePixelWidth = px; return this; }
+        public Builder worldOutlineOpacity(float o) { profile.worldOutlineOpacity = o; return this; }
         public Builder outlineShaderKey(String k) { profile.outlineShaderKey = k; return this; }
 
         /** Set gradient shader palette. 2-colour by default. */
@@ -344,7 +354,11 @@ public class GlintEffectProfile {
     public float getBloomStrength() { return bloomStrength; }
     public float getBloomRadius() { return bloomRadius; }
     public boolean isWorldOutlineEnabled() { return worldOutlineEnabled; }
+    /** @deprecated 新管线不使用模型空间缩放系数。 */
+    @Deprecated
     public float getWorldOutlineWidth() { return worldOutlineWidth; }
+    public float getWorldOutlinePixelWidth() { return worldOutlinePixelWidth; }
+    public float getWorldOutlineOpacity() { return worldOutlineOpacity; }
     public String getOutlineShaderKey() { return outlineShaderKey; }
     public int getGradientColorCount() { return gradientColorCount; }
     public int getGradientColor(int i) { return i < gradientColors.length ? gradientColors[i] : 0; }

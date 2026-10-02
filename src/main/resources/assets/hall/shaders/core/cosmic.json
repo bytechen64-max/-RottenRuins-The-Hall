@@ -31,6 +31,11 @@
     {"name": "externalScale", "type": "float", "count": 1, "values": [0.0]},
     {"name": "opacity", "type": "float", "count": 1, "values": [0.0]},
     {"name": "useType", "type": "int", "count": 1, "values": [0]},
-    {"name": "cosmicuvs", "type": "matrix2x2", "count": 48, "values": [0.0]}
+    {"name": "cosmicuvs", "type": "matrix2x2", "count": 48, "values": [0.0]},
+    {"name": "blockPatternScale", "type": "float", "count": 1, "values": [120.0]},
+    {"name": "blockTimeScale", "type": "float", "count": 1, "values": [0.35]},
+    {"name": "blockTimeOffset", "type": "float", "count": 1, "values": [0.0]},
+    {"name": "flowMixStrength", "type": "float", "count": 1, "values": [0.65]},
+    {"name": "irisSpeed", "type": "float", "count": 1, "values": [1.0]}
   ]
 }

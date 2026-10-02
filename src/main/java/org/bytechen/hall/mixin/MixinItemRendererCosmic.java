@@ -2,6 +2,7 @@ package org.bytechen.hall.mixin;
 
 import org.bytechen.hall.api.CosmicStyle;
 import org.bytechen.hall.api.ICosmicLayer;
+import org.bytechen.hall.api.mask.MaskLayerSpec;
 import org.bytechen.hall.client.cosmic.BakedModelCosmic;
 import org.bytechen.hall.client.cosmic.CosmicLayerRegistry;
 import org.bytechen.hall.client.cosmic.compat.CosmicItemLateRenderQueue;
@@ -9,6 +10,12 @@ import org.bytechen.hall.client.cosmic.compat.CosmicItemShaderCompat;
 import org.bytechen.hall.client.cosmic.render.CosmicRenderType;
 import org.bytechen.hall.client.cosmic.render.CosmicRenderUtils;
 import org.bytechen.hall.client.cosmic.render.CosmicShaders;
+import org.bytechen.hall.client.mask.IMaskLayerCarrier;
+import org.bytechen.hall.client.mask.MaskLayerRenderer;
+import org.bytechen.hall.client.mask.MaskLayerResolver;
+import org.bytechen.hall.client.mask.compat.MaskLayerLateRenderQueue;
+import org.bytechen.hall.client.mask.render.MaskLayerRenderUtils;
+import org.bytechen.hall.client.rend.glint.HeldItemOutlineCompat;
 import org.bytechen.hall.client.rend.twitch.ITwitchItem;
 import org.bytechen.hall.client.rend.twitch.ItemTwitchHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -28,6 +35,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.List;
 
 /**
  * Renders cosmic starfield and/or corruption (RGB split + scanlines)
@@ -88,8 +97,18 @@ public abstract class MixinItemRendererCosmic {
         boolean hasCorruption = false;
 
         if (model instanceof BakedModelCosmic bc) {
-            corruptionMask = bc.getCorruptionMask();
-            hasCorruption = true;
+            // 关键：BakedModelCosmic 不一定想要崩坏层。
+            // 之前这里无条件 hasCorruption = true，于是：
+            //   • 立即路径（下方直接 getBuffer(CORRUPTION) 那段）会照画不误，
+            //     因为它根本不经过 renderCorruptionLayer，那道 corruptionEnabled 门够不着；
+            //   • 延迟路径入队时 wrapper.setCorruptionMask() 又会把开关重新打开。
+            // 所以崩坏层的总闸必须在这里——所有路径的共同上游。
+            boolean corruptionAllowed = bc.isCorruptionEnabled()
+                    && !(stack.getItem() instanceof ITwitchItem ti && ti.twitchDisabled());
+            if (corruptionAllowed) {
+                corruptionMask = bc.getCorruptionMask();
+                hasCorruption = true;
+            }
         } else if (stack.getItem() instanceof ITwitchItem ti) {
             if (ti.twitchShouldRender(context)) {
                 corruptionMask = twitchCorruptionMask(stack);
@@ -97,11 +116,21 @@ public abstract class MixinItemRendererCosmic {
             }
         }
 
-        // ── Neither cosmic nor corruption → nothing to do ──
-        if (cosmicMask == null && !hasCorruption) return;
-        // Cosmic shader must be loaded for cosmic; corruption shader must be loaded for corruption
-        if (cosmicMask != null && CosmicShaders.cosmicShader == null) return;
-        if (hasCorruption && CosmicShaders.corruptionShader == null) return;
+        // ── Resolve mask effect layers（叠加在星空之上的独立效果层）──
+        // 两个来源：模型 JSON 声明的层（由 BakedModel 携带）+ 物品接口/注册表。
+        List<MaskLayerSpec> jsonLayers = model instanceof IMaskLayerCarrier carrier
+                ? carrier.maskLayers()
+                : List.of();
+        List<MaskLayerResolver.Resolved> maskLayers =
+                MaskLayerResolver.resolve(stack, context, jsonLayers);
+
+        // ── Neither cosmic nor corruption nor mask layers → nothing to do ──
+        // 这里刻意用「降级」而不是「整段 return」：原来 cosmic 着色器一加载失败就会
+        // 直接返回，把跟它毫无关系的崩坏层和效果层一起吞掉 —— 症状是「改了个泛光
+        // 层，星空和崩坏一起不见了」，因果完全对不上。
+        if (cosmicMask != null && CosmicShaders.cosmicShader == null) cosmicMask = null;
+        if (hasCorruption && CosmicShaders.corruptionShader == null) hasCorruption = false;
+        if (cosmicMask == null && !hasCorruption && maskLayers.isEmpty()) return;
 
         // ── Flush base item so depth is in the GPU depth buffer ──
         if (buffer instanceof MultiBufferSource.BufferSource bs) {
@@ -112,29 +141,48 @@ public abstract class MixinItemRendererCosmic {
         if (!CosmicShaders.cosmicInventoryRender
                 && CosmicItemShaderCompat.shouldDeferItemShaderLayer(context)) {
 
-            BakedModelCosmic wrapper;
-            if (model instanceof BakedModelCosmic bc) {
-                wrapper = bc;
-            } else {
-                // Create a wrapper for the queue.  Only enable cosmic
-                // if we actually resolved a cosmic mask — otherwise this is
-                // a corruption-only item (ITwitchItem) and cosmic must stay off.
-                ResourceLocation primaryMask = cosmicMask != null ? cosmicMask : corruptionMask;
-                wrapper = new BakedModelCosmic(model, primaryMask);
-                wrapper.setCosmicEnabled(cosmicMask != null);
-                if (cosmicMask != null) {
-                    wrapper.setOpacity(opacity);
-                    wrapper.setStyle(CosmicStyle.fromShaderValue(styleVal));
+            // 光影的**阴影 pass** 里一律不入队。
+            // 用项目既有的 HeldItemOutlineCompat.isOculusShadowPass()（内部反射
+            // IrisApi.isRenderingShadowPass）—— BlackHole / Shockwave / CollapsarHalo /
+            // ApostleSlashWarp 四个延迟渲染器都是这个写法，见 docs/shader-pack-compat.md 第 361 行。
+            // 阴影那一遍是从光源方向看的（看到的是物品的"背面"），我们的层却是帧末按
+            // 入队时的矩阵回放的，让它入队就会把发光按光源视角盖回画面。
+            if (HeldItemOutlineCompat.isOculusShadowPass()) return;
+
+            // cosmic / 崩坏层的入队逻辑保持原样，只是被套进「确实有东西要画」的判断里
+            // —— 一件只有 mask 效果层的物品不该被塞一个空 wrapper 进队列。
+            if (cosmicMask != null || hasCorruption) {
+                BakedModelCosmic wrapper;
+                if (model instanceof BakedModelCosmic bc) {
+                    wrapper = bc;
+                } else {
+                    // Create a wrapper for the queue.  Only enable cosmic
+                    // if we actually resolved a cosmic mask — otherwise this is
+                    // a corruption-only item (ITwitchItem) and cosmic must stay off.
+                    ResourceLocation primaryMask = cosmicMask != null ? cosmicMask : corruptionMask;
+                    wrapper = new BakedModelCosmic(model, primaryMask);
+                    wrapper.setCosmicEnabled(cosmicMask != null);
+                    if (cosmicMask != null) {
+                        wrapper.setOpacity(opacity);
+                        wrapper.setStyle(CosmicStyle.fromShaderValue(styleVal));
+                    }
                 }
+                // Enable corruption layer if applicable
+                if (hasCorruption) {
+                    wrapper.setCorruptionMask(corruptionMask);
+                } else {
+                    wrapper.setCorruptionEnabled(false);
+                }
+                CosmicItemLateRenderQueue.enqueue(wrapper, stack, context, poseStack,
+                        light, overlay, model);
             }
-            // Enable corruption layer if applicable
-            if (hasCorruption) {
-                wrapper.setCorruptionMask(corruptionMask);
-            } else {
-                wrapper.setCorruptionEnabled(false);
+
+            // 效果层同样延迟回放。它们各自的 RenderType 带 MAIN_TARGET 输出，
+            // 所以在这一相位写的是主帧缓冲，绕开了光影包的 GBuffer。
+            if (!maskLayers.isEmpty()) {
+                MaskLayerLateRenderQueue.enqueue(stack, context, poseStack, light, overlay, maskLayers,
+                        MaskLayerRenderUtils.baseSpriteOf(model));
             }
-            CosmicItemLateRenderQueue.enqueue(wrapper, stack, context, poseStack,
-                    light, overlay, model);
             return;
         }
 
@@ -172,6 +220,13 @@ public abstract class MixinItemRendererCosmic {
                 bs.endBatch(CosmicRenderType.COSMIC);
             }
         }
+
+        // ── Mask effect layers ──
+        // 层序：本体 → 星空 → 效果层 → 崩坏。效果层排在崩坏之前，是为了保住
+        // 「崩坏是故障爆发时整片覆盖」的既有观感（它一直是最上面那层）。
+        // 层与层之间再按各自的 order 升序。
+        MaskLayerRenderer.render(stack, context, poseStack, buffer, light, overlay,
+                maskLayers, false, MaskLayerRenderUtils.baseSpriteOf(model));
 
         // ── Corruption layer (only during twitch burst) ──
         if (hasCorruption) {

@@ -24,6 +24,10 @@ public class NetworkHelper {
             ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "main"), () -> "1.0", s -> true, s -> true);
 
     public static void register() {
+        // ── C2S 处理器（服务端侧的业务逻辑，包序号不变）──
+        // UniversalPacket 只需要一个 action 处理器注册，不用新增 registerMessage
+        org.bytechen.hall.network.c2s.VoidSwordStrikePacket.register();
+
         NETWORK.registerMessage(packetId++, UniversalPacket.class,
                 UniversalPacket::encode, UniversalPacket::decode, UniversalPacket::handle);
         NETWORK.registerMessage(packetId++, PacketSyncKeyframe.class,

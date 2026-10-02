@@ -2,8 +2,13 @@ package org.bytechen.hall.mixin;
 
 import org.bytechen.hall.client.cosmic.compat.CosmicItemLateRenderQueue;
 import org.bytechen.hall.client.cosmic.compat.CosmicItemShaderCompat;
+import org.bytechen.hall.client.mask.compat.MaskLayerLateRenderQueue;
+import org.bytechen.hall.client.entity.render.impl.ApostleSlashWarpQueue;
 import org.bytechen.hall.client.entity.render.impl.BlackHoleLateRenderQueue;
+import org.bytechen.hall.client.entity.render.impl.CollapsarHaloLateRenderQueue;
 import org.bytechen.hall.client.entity.render.impl.ShockwaveLateRenderQueue;
+import org.bytechen.hall.client.entity.render.impl.VerdictBeamLateRenderQueue;
+import org.bytechen.hall.client.entity.render.impl.VerdictFieldLateRenderQueue;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.GameRenderer;
 import org.spongepowered.asm.mixin.Mixin;
@@ -39,6 +44,8 @@ public abstract class CosmicAfterLevelMixin {
                                               PoseStack poseStack, CallbackInfo ci) {
         if (CosmicItemShaderCompat.isOculusShaderPackActive()) {
             CosmicItemLateRenderQueue.renderNonFirstPerson();
+            // mask 效果层与星空层共用这个相位：世界空间的层在手臂之前回放。
+            MaskLayerLateRenderQueue.renderNonFirstPerson();
         }
     }
 
@@ -54,8 +61,16 @@ public abstract class CosmicAfterLevelMixin {
                                              PoseStack poseStack, CallbackInfo ci) {
         if (CosmicItemShaderCompat.isOculusShaderPackActive()) {
             CosmicItemLateRenderQueue.renderAll();
+            MaskLayerLateRenderQueue.renderAll();
         }
         ShockwaveLateRenderQueue.renderAll();
         BlackHoleLateRenderQueue.renderAll();
+        ApostleSlashWarpQueue.renderAll();
+        CollapsarHaloLateRenderQueue.renderAll();
+        // 天穹裁决的两个自定义着色器特效（光柱 / 地面光纹）。
+        // 它们没有场景拷贝需求，但仍然必须延后到 MAIN_TARGET ——
+        // 否则在光影包下会被写进 GBuffer 而被 pack 当材质重新光照。
+        VerdictBeamLateRenderQueue.renderAll();
+        VerdictFieldLateRenderQueue.renderAll();
     }
 }

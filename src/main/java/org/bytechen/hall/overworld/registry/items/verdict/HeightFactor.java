@@ -112,12 +112,45 @@ public final class HeightFactor {
         return FIELD_RADIUS_BASE * fieldRadius(caster);
     }
 
-    /** 光柱最大长度（格），与抬头角 90° 对应。 */
-    public static final float BEAM_MAX_LENGTH = 44.0f;
+    /**
+     * 光柱<b>视觉</b>最大长度（格），与抬头角 90° 对应。
+     *
+     * <p>从 44 提到 {@value}，也就是 ×10 以上。视觉上它就是一根通天柱 ——
+     * 反馈是"44 格在有些场景里不够高，抬头看还是能看到顶端的切口"。</p>
+     *
+     * <p><b>它和判定高度是两回事</b>，别把它们绑在一起：
+     * 一根 440 格的柱子如果连判定也一起拉到 440 格，伤害就会打到几百格高的
+     * 空气里 —— 那里没有任何视觉信息可对照，玩家只会觉得"莫名其妙掉血"。
+     * 判定高度另有 {@link #BEAM_HIT_MAX_HEIGHT} 这个上限。</p>
+     */
+    public static final float BEAM_MAX_LENGTH = 440.0f;
+
+    /**
+     * 光柱<b>判定</b>用的高度上限（格）。
+     *
+     * <p>它刻意<b>不</b>跟着视觉长度一起放大：判定必须停在"玩家看得见"的范围里。
+     * 64 格大约是 4 个区块高、抬头 90° 时限高的 1/7 —— 足够涵盖"站在高处打地面"
+     * 的所有实际场景，又不会伸进看不见的天空。</p>
+     *
+     * <p>副作用是"抬头角只影响视觉，不再影响伤害高度"：以前抬头越高打得越高，
+     * 但那个设计在 44 格的时代就已经很弱（20 格高空的敌人本就不多），
+     * 换成"永远罩住脚下方圆 64 格"反而是更稳定的手感。</p>
+     */
+    public static final float BEAM_HIT_MAX_HEIGHT = 64.0f;
+
+    /** 判定高度 = min(视觉长度, 上限)。 */
+    public static float beamHitHeight(float visualLength) {
+        return Math.min(visualLength, BEAM_HIT_MAX_HEIGHT);
+    }
 
     /**
      * 抬头角 → 光柱长度。
      * <p>pitch 在 MC 里是"正数朝下、负数朝上"，所以这里取负号。</p>
+     *
+     * <p>⚠️ 现在这条曲线是<b>只用来看的</b>。判定走 {@link #beamHitHeight}，
+     * 所以低头不到 {@code BEAM_MIN_LENGTH} 依然会被判为"没瞄准"（那个判定
+     * 在 {@code DomeriteLongsword.castBeam} 里用的是这个方法），
+     * 而抬头超过约 13° 之后判定就已经顶到上限了。</p>
      */
     public static float beamLengthFromPitch(float pitchDegrees) {
         float up = Mth.clamp(-pitchDegrees, 0f, 90f);

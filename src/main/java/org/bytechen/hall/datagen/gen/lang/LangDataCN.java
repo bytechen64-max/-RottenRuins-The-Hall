@@ -32,6 +32,7 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.DOMERITE_SHOVEL.get(), "云顶之锹");
         add(RegisterItem.DOMERITE_HOE.get(), "云顶之锄");
         add(RegisterItem.DOMERITE_LONGSWORD.get(), "天穹裁决");
+        add(RegisterItem.CRIMSON_VOW.get(), "绯红誓约");
         add(RegisterItem.ACID_ANOMALY_EXTRACT.get(), "酸异常提取物");
         add(RegisterItem.COLD_ANOMALY_EXTRACT.get(), "冷异常提取物");
         add(RegisterItem.HEAT_ANOMALY_EXTRACT.get(), "热异常提取物");
@@ -89,12 +90,18 @@ public class LangDataCN extends LanguageProvider {
         add(EntityTypeRegistry.MONOLITH.get(), "溃烂巨岩");
         add(EntityTypeRegistry.SHOCKWAVE.get(), "冲击波");
         add(EntityTypeRegistry.METEORITE.get(), "陨石");
+        // 天穹裁决 · 裁决领域的落剑（纯视觉技能实体，但仍给一个可读名字便于调试）
+        add(EntityTypeRegistry.VERDICT_SWORD_DROP.get(), "裁决落剑");
         add(RegisterEffect.ACID_ANOMALY_ADAPTATION.get(), "酸异常适应");
         add(RegisterEffect.COLD_ANOMALY_ADAPTATION.get(), "冷异常适应");
         add(RegisterEffect.HEAT_ANOMALY_ADAPTATION.get(), "热异常适应");
         add(RegisterEffect.VERDICT.get(), "裁决");
         // 天穹裁决：冷却中右键时的动作栏提示
         add("item.hall.domerite_longsword.cooldown", "裁决尚未就绪（%s 秒）");
+        // 天穹裁决：抬头不足，光柱无法立起（原本这一下是完全静默的）
+        add("item.hall.domerite_longsword.no_aim", "未瞄准 · 抬头才能落下裁决");
+        // 天穹裁决：这一招完全落空（空放只记很短的一笔冷却）
+        add("item.hall.domerite_longsword.missed", "落空 · 冷却已返还");
         add(TranslateUtils.DIFFICULTY_EASY, "简单");
         add(TranslateUtils.DIFFICULTY_NORMAL, "普通");
         add(TranslateUtils.DIFFICULTY_HARD, "困难");

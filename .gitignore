@@ -27,6 +27,7 @@ Thumbs.db
 # Minecraft
 run/
 run-data/
+logs/
 *.log
 
 # Generated
@@ -38,3 +39,4 @@ src/generated/
 # Misc
 *.zip
 *.rar
+*.bak
