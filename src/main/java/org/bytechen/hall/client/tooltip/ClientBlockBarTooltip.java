@@ -7,18 +7,21 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.bytechen.hall.overworld.registry.items.CrimsonVowTooltip;
-import org.bytechen.hall.utils.TranslateUtils;
+import org.bytechen.hall.overworld.registry.items.BlockBarTooltip;
 
 /**
- * 绯红誓约 tooltip 里那条「誓约条」的<b>绘制端</b>。
+ * 「格挡减伤条」的<b>绘制端</b> —— 绯红誓约与寂寒白日共用（原本叫
+ * {@code ClientCrimsonVowTooltip}，第二个消费者出现时抽成了通用组件）。
+ *
+ * <p>图案与布局完全由这里决定，<b>文案与配色全部随数据过来</b>
+ * （{@link BlockBarTooltip}），所以本类不认识任何具体物品。</p>
  *
  * <h3>它出现在哪一行</h3>
  * <p>Forge 在 {@code ForgeHooksClient.gatherTooltipComponents} 里做的是
  * {@code elements.add(1, Either.right(itemComponent))} —— 图像组件被插在
  * <b>index 1</b>，也就是紧跟物品名字、压在所有文本行之上。所以本模组的
- * tooltip 最终是「绯红誓约（流动彩字）→ 誓约条 → lore → 格挡/誓约说明 →
- * 原版属性块」。想改这个位置只能去动文本行的顺序，图像自己是插不了队的。</p>
+ * tooltip 最终是「名字（流动彩字）→ 减伤条 → lore → 说明行 → 原版属性块」。
+ * 想改这个位置只能去动文本行的顺序，图像自己是插不了队的。</p>
  *
  * <h3>坐标系（这条最容易踩）</h3>
  * <p>{@code renderImage} 拿到的 {@code x, y} 是<b>屏幕绝对坐标</b>下的 tooltip
@@ -34,14 +37,14 @@ import org.bytechen.hall.utils.TranslateUtils;
  * 而不是报错。</p>
  *
  * <h3>为什么只有这么几次绘制调用</h3>
- * <p>tooltip 是在 {@code drawManaged} 块<b>之外</b>渲染的（原版只把背景包进了
- * 批处理），因此每次 {@code fill} 都会立刻 flush 一次。所以这里刻意压到
+ * <p>tooltip 的<b>图像</b>阶段在 {@code drawManaged} 块之外渲染（原版只把背景
+ * 包进了批处理），因此每次 {@code fill} 都会立刻 flush 一次。所以这里刻意压到
  * 7 次 fill + 2 次 drawString，而不是用逐列画法去拼一条横向渐变 ——
  * 横向渐变要 100+ 次 flush，代价不成比例。{@code fillGradient} 的渐变方向是
- * <b>纵向</b>（{@code GuiGraphics:239} 的顶点色分配），所以誓约条用的是纵向渐变。</p>
+ * <b>纵向</b>（{@code GuiGraphics:239} 的顶点色分配），所以条子用的是纵向渐变。</p>
  */
 @OnlyIn(Dist.CLIENT)
-public final class ClientCrimsonVowTooltip implements ClientTooltipComponent {
+public final class ClientBlockBarTooltip implements ClientTooltipComponent {
 
     // ──────────────────────────────────────────────────────────────
     //  布局常量（HEIGHT 必须与 renderImage 里的走位严格一致）
@@ -56,16 +59,16 @@ public final class ClientCrimsonVowTooltip implements ClientTooltipComponent {
     /** 边框内侧留白。 */
     private static final int INNER_PAD = 2;
 
-    /** 左右内容（标题、数值、誓约条）相对面板内沿的缩进。 */
+    /** 左右内容（标题、数值、条子）相对面板内沿的缩进。 */
     private static final int TEXT_INSET = 4;
 
     /** 标题行占位高度：与原版一行文字（{@code ClientTextTooltip.getHeight() == 10}）对齐。 */
     private static final int LABEL_H = 10;
 
-    /** 标题行与誓约条之间的间隙。 */
+    /** 标题行与条子之间的间隙。 */
     private static final int LABEL_GAP = 2;
 
-    /** 誓约条的厚度。 */
+    /** 条子的厚度。 */
     private static final int BAR_H = 5;
 
     /** 标题与数值之间至少留出的空白，避免窄面板上两者贴到一起。 */
@@ -77,9 +80,9 @@ public final class ClientCrimsonVowTooltip implements ClientTooltipComponent {
     /**
      * 面板自己那圈 1px 边框的透明度。
      *
-     * <p>底板（{@code ITooltipStyle}）现在已经是粉紫描边的了，这里再用实色画一圈
+     * <p>底板（{@code ITooltipStyle}）已经有一圈彩色边框了，这里再用实色画一圈
      * 就成了"框里套框"，两条同样亮的线互相抢眼。压到 {@code 0x78} 之后它退成一道
-     * 内侧压边，视觉重心留给外面的底板边框和中间的誓约条。</p>
+     * 内侧压边，视觉重心留给外面的底板边框和中间的条子。</p>
      */
     private static final int INNER_FRAME_ALPHA = 0x78;
 
@@ -90,7 +93,7 @@ public final class ClientCrimsonVowTooltip implements ClientTooltipComponent {
     private final Component label;
     private final Component value;
 
-    /** 誓约条的填充比例 = 1 - 伤害倍率（0.25 → 填 75%）。 */
+    /** 条子的填充比例 = 1 - 伤害倍率（0.25 → 填 75%）。 */
     private final float fill;
 
     private final int accentFrom;
@@ -103,12 +106,11 @@ public final class ClientCrimsonVowTooltip implements ClientTooltipComponent {
      * （{@code ClientTooltipComponent.create} → 工厂 → 这里）。
      * 实例是短命的，所以这里直接把文案和百分比算好即可，不需要任何缓存。
      */
-    public ClientCrimsonVowTooltip(CrimsonVowTooltip data) {
+    public ClientBlockBarTooltip(BlockBarTooltip data) {
         float reduction = Mth.clamp(1.0F - data.blockMultiplier(), 0.0F, 1.0F);
         this.fill = reduction;
-        this.label = Component.translatable(TranslateUtils.CRIMSON_VOW_TOOLTIP_BAR_LABEL);
-        this.value = Component.translatable(TranslateUtils.CRIMSON_VOW_TOOLTIP_BAR_VALUE,
-                Math.round(reduction * 100.0F));
+        this.label = Component.translatable(data.labelKey());
+        this.value = Component.translatable(data.valueKey(), Math.round(reduction * 100.0F));
         this.accentFrom = data.accentFrom();
         this.accentTo = data.accentTo();
         this.highlight = data.highlight();
@@ -135,7 +137,7 @@ public final class ClientCrimsonVowTooltip implements ClientTooltipComponent {
         final int frameRight = x + width - 1;
         final int frameBottom = y + HEIGHT - MARGIN;
 
-        // 1px 边框：上边用亮粉、其余用紫，给一个"上亮下暗"的金属压边感。
+        // 1px 边框：上边用亮端、其余用暗端，给一个"上亮下暗"的金属压边感。
         // alpha 压低（见 INNER_FRAME_ALPHA）—— 外面那圈底板边框才是主角。
         final int frameFrom = withAlpha(this.accentFrom, INNER_FRAME_ALPHA);
         final int frameTo = withAlpha(this.accentTo, INNER_FRAME_ALPHA);
@@ -144,8 +146,8 @@ public final class ClientCrimsonVowTooltip implements ClientTooltipComponent {
         gui.fill(frameLeft, frameTop + 1, frameLeft + 1, frameBottom - 1, frameTo);
         gui.fill(frameRight - 1, frameTop + 1, frameRight, frameBottom - 1, frameTo);
 
-        // 标题行：左侧写"格挡减伤"，右侧右对齐写百分比。用 drawString(..., false)
-        // 关掉阴影 —— tooltip 里的原版文字本身就没有阴影，带阴影会显得比正文更亮。
+        // 标题行：左侧标题、右侧右对齐数值。用 drawString(..., false) 关掉阴影 ——
+        // tooltip 里的原版文字本身就没有阴影，带阴影会显得比正文更亮。
         final int contentTop = frameTop + 1 + INNER_PAD;
         final int contentLeft = frameLeft + 1 + TEXT_INSET;
         final int contentRight = frameRight - 1 - TEXT_INSET;
@@ -153,9 +155,9 @@ public final class ClientCrimsonVowTooltip implements ClientTooltipComponent {
         gui.drawString(font, this.value, contentRight - font.width(this.value), contentTop,
                 this.accentFrom, false);
 
-        // 誓约条本体：先铺轨道，再把减伤那一截用粉→紫的纵向渐变盖上。
-        // 轨道用<b>不透明</b>的暗部色：底板现在是一块深紫红渐变，半透明轨道会被
-        // 底色吃进去，"空着的那 25%"就看不出来了。
+        // 条子本体：先铺轨道，再把减伤那一截用"亮端 → 暗端"的纵向渐变盖上。
+        // 轨道用<b>不透明</b>的暗部色：底板是一块渐变色，半透明轨道会被底色吃进去，
+        // "空着的那 25%"就看不出来了。
         final int barTop = contentTop + LABEL_H + LABEL_GAP;
         final int barBottom = barTop + BAR_H;
         gui.fill(contentLeft, barTop, contentRight, barBottom, this.shadow);
@@ -170,7 +172,7 @@ public final class ClientCrimsonVowTooltip implements ClientTooltipComponent {
                 this.highlight);
     }
 
-    /** 只换 alpha、保留 RGB —— 面板色板全是 ARGB 的 FF 前缀，直接用会把轨道画成实心。 */
+    /** 只换 alpha、保留 RGB —— 色板全是 ARGB 的 FF 前缀，直接用会把轨道画成实心。 */
     private static int withAlpha(int argb, int alpha) {
         return (alpha << 24) | (argb & 0x00FFFFFF);
     }

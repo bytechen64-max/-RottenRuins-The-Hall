@@ -81,6 +81,14 @@ public class RegisterItem {
     public static final RegistryObject<Item> CRIMSON_VOW = ITEMS.register("crimson_vow",
             CrimsonVow::new);
 
+    /**
+     * SilentDaylight（静默白昼）— 同一个 {@code hall:cosmic} loader，
+     * 但走的是<b>水面湍流</b>那条片元路径（{@code style: 18}）。
+     * 遮罩 {@code silent_daylight_mask} 把水灌进剑刃，剑柄留在水外。
+     */
+    public static final RegistryObject<Item> SILENT_DAYLIGHT = ITEMS.register("silent_daylight",
+            SilentDaylight::new);
+
     /** Infested ender pearl — teleportation item with glitch twitch visual effect. */
     public static final RegistryObject<Item> INF_ENDER_PEAR = ITEMS.register("inf_ender_pear",
             () -> new InfEnderPearItem(new Item.Properties().stacksTo(16)));

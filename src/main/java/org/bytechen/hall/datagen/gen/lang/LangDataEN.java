@@ -20,6 +20,7 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterItem.EXAMPLE_ITEM.get(), "Example Item");
         add(RegisterItem.VOID_SWORD.get(), "Void Sword");
         add(RegisterItem.CRIMSON_VOW.get(), "Crimson Vow");
+        add(RegisterItem.SILENT_DAYLIGHT.get(), "Silent Daylight");
         add(RegisterItem.HALL_BONE_FRAGMENTS.get(), "Hall Bone Fragments");
         add(RegisterItem.HALL_TENDON.get(), "Hall Tendon");
         // 补充缺失条目：畸骸末影珍珠
@@ -129,19 +130,29 @@ public class LangDataEN extends LanguageProvider {
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_TITLE, "Select Difficulty");
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_HINT, "Choose the world difficulty (can be changed later via commands)");
 
-        // Crimson Vow tooltip (placeholder copy, pending final wording)
-        // The %s lines are "label + description": the label is tinted pink-purple
-        // on the Java side, the description stays gray. %% is vanilla
-        // TranslatableContents' escape (see its FORMAT_PATTERN block).
+        // Tooltip copy (placeholder, pending final wording)
+        // Shared mechanic lines live once (several blocking weapons share them);
+        // each item only owns its own flavour. A "label + body" line is split into
+        // two keys because the per-character gradient flattens a line via getString()
+        // (see client.rend.text.TooltipLines).
+        // %% is vanilla TranslatableContents' escape (see its FORMAT_PATTERN block).
+        add(TranslateUtils.TOOLTIP_LABEL_BLOCK, "Block");
+        add(TranslateUtils.TOOLTIP_BLOCK, "Hold right-click to raise the blade · frontal attacks only");
+        add(TranslateUtils.TOOLTIP_TRAIT, "Unbreakable · Fireproof · Returned after crafting");
+        add(TranslateUtils.TOOLTIP_BAR_LABEL, "Block mitigation");
+        add(TranslateUtils.TOOLTIP_BAR_VALUE, "%s%%");
+
         add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LORE, "\"By blood I vow: this blade shall not break.\"");
-        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_BLOCK, "Block");
-        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_VOW, "Vow");
-        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_BLOCK, "%s  Hold right-click to raise the blade · frontal attacks only");
-        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_VOW, "%s  Unbreakable · Fireproof · Returned after crafting");
-        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_BAR_LABEL, "Block mitigation");
-        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_BAR_VALUE, "%s%%");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_TRAIT, "Vow");
         add(TranslateUtils.CRIMSON_VOW_TOOLTIP_DEBUG,
                 "Debug · block resolves x%s%% · frontal only %s · use duration %s ticks · entity reach +%s");
+
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LORE, "\"Noon is silent; only cold water remains.\"");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TIDE, "Tide");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_TIDE, "The blade lies under a layer of flowing water");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TRAIT, "Daylight");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_DEBUG,
+                "Debug · block resolves x%s%% · frontal only %s · use duration %s ticks");
 
         // 血肉庭园维度 (hall:heall)
         // 地形复用现有王庭方块，因此这里只有通道方块的译名

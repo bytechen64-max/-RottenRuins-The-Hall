@@ -213,6 +213,9 @@ public abstract class MixinItemRendererCosmic {
             if (CosmicShaders.cosmicuvsUniform != null)   CosmicShaders.cosmicuvsUniform.set(CosmicShaders.COSMIC_UVS);
 
             TextureAtlasSprite cosmicSprite = blockAtlas.getSprite(cosmicMask);
+            // 遮罩 sprite 在图集里的 UV 矩形（水面湍流那道 style 用它把图集 UV 折回 0..1）。
+            // 延迟回放那条路在 BakedModelCosmic#renderShaderLayer 里另设一次，两处缺一不可。
+            CosmicShaders.setMaskSlice(cosmicSprite);
             VertexConsumer cv = buffer.getBuffer(CosmicRenderType.COSMIC);
             mc.getItemRenderer().renderQuadList(poseStack, cv,
                     CosmicRenderUtils.bakeItem(cosmicSprite), stack, light, overlay);

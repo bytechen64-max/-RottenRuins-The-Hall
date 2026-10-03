@@ -35,7 +35,8 @@ import java.util.function.Function;
  * <ul>
  *   <li>{@code "style"} — a {@link CosmicStyle} shader value; picks the fragment
  *       path in {@code cosmic.fsh}. Omitted / unknown → {@link CosmicStyle#DEEP_SPACE}.
- *       {@code crimson_vow} uses {@code 17} ({@link CosmicStyle#CRIMSON_VOW}).</li>
+ *       {@code crimson_vow} uses {@code 17} ({@link CosmicStyle#CRIMSON_VOW}),
+ *       {@code silent_daylight} uses {@code 18} ({@link CosmicStyle#SILENT_DAYLIGHT}).</li>
  *   <li>{@code "corruption"} — whether the RGB-split burst layer is enabled.
  *       Defaults to {@code true} to match historical behaviour.</li>
  * </ul>

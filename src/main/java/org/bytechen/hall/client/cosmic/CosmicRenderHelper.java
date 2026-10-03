@@ -132,6 +132,10 @@ public final class CosmicRenderHelper {
             CosmicShaders.useTypeUniform.set(config.cosmicStyle().shaderValue);
 
         TextureAtlasSprite maskSprite = blockAtlas.getSprite(maskLoc);
+        // 遮罩 sprite 在图集里的 UV 矩形（水面湍流那道 style 用它把图集 UV 折回 0..1）。
+        // 这条路径目前没有调用方，但它是 ICosmicLayer 的公开入口 —— 少这一行的话，
+        // 以后谁走它谁就会拿到"图案糊成一片"的 18 号样式，且症状极难反查。
+        CosmicShaders.setMaskSlice(maskSprite);
         VertexConsumer vertexConsumer = bufferSource.getBuffer(CosmicRenderType.COSMIC);
         itemRenderer.renderQuadList(poseStack, vertexConsumer,
                 CosmicRenderUtils.bakeItem(maskSprite), ItemStack.EMPTY, 0, 0);

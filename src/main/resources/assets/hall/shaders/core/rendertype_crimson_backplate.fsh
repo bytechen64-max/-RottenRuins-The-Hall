@@ -44,15 +44,32 @@ const float FILL_BLOCK_FREQ     = 3.1;
 /** 方块纹的流动速度：很慢，只求"活着"，不求被注意到。 */
 const float FILL_BLOCK_SPIN     = 0.004;
 
-/** 外发光的强度与厚度（E）。半径范围 1.0 → FILL_GLOW_OUTER。 */
+/** 外发光的强度与厚度（E）。半径范围 1.0 → GLOW_OUTER。 */
 const float GLOW_STRENGTH       = 0.30;
 const float GLOW_OUTER          = 1.16;
 const float GLOW_INNER          = 0.94;
 /** 外发光的呼吸速度。 */
 const float GLOW_PULSE_SPEED    = 0.030;
 
-/** 六芒星内描边强度（替代掉会糊住整圈的旧填充）。 */
-const float HEX_INNER_STROKE    = 0.16;
+/**
+ * 中圈那两道环的半径（乘 RingRadius.y）。
+ *
+ * <p>之前中圈只有一圈"12 段白色刻度"，看起来像警告标；而且刻度是**等距切块**，
+ * 与外圈、内圈都没有任何连接 —— 整块读起来是"三个各自独立的零件"，也就是"碎"。
+ * 现在中圈改成<b>双环 + 六根辐条</b>（辐条落在六芒星的六个星尖方向上），
+ * 六芒星的星尖又正好顶在中环内侧：三层被串成一张连续的图。</p> */
+const float MID_RING_INNER_MUL  = 1.010;
+const float MID_RING_OUTER_MUL  = 1.155;
+
+/** 辐条条数 = 6（与六芒星尖数一致，于是"星尖 → 辐条 → 外环"是一条连续的线）。 */
+const float SPOKE_COUNT         = 6.0;
+/** 辐条的角向半宽（弧度）。太大就糊成一整圈，太小会读成刻度。 */
+const float SPOKE_HALF_WIDTH    = 0.055;
+/** 辐条在半径方向的延伸量（相对中环内侧），让它从环上一直连到外环附近。 */
+const float SPOKE_SPAN          = 0.100;
+
+/** 六芒星内部填充强度 —— 不填的话星形只是个空壳，中心那圈会读成"空的"。 */
+const float HEX_FILL_STRENGTH   = 0.13;
 
 // ══════════════════════════════════════════════════════════════════════════
 
@@ -65,6 +82,17 @@ float polygonSdf(float theta, float r, float n, float rotation, float apothemR) 
     float seg = 2.0 * PI / n;
     float a = mod(theta + rotation, seg) - seg * 0.5;   // 折到一个扇区内、以中线为 0
     return r * cos(a) - apothemR;
+}
+
+/**
+ * 正多边形的<b>顶点半径</b> → 内切半径。
+ *
+ * <p>想要"星尖刚好落在半径 R 上"，传的就是这个函数。
+ * 之前直接用 {@code (midR*2)*0.5*0.62} 拍脑袋取 apothem，
+ * 结果星尖只到 0.43、缩在内圈里，读不出六芒星。</p>
+ */
+float apothemForVertexRadius(float vertexRadius, float n) {
+    return vertexRadius * cos(PI / n);
 }
 
 /** 抗锯齿线宽：fwidth 归一化 + 像素托底。 */
@@ -110,8 +138,11 @@ vec3 palette(float r, float outerRadius) {
 //  第 1 层：正五边形 + Voronoi 方块纹（D）
 // ══════════════════════════════════════════════════════════════════════════
 vec4 layerPentagon(float theta, float r, float motion, float outerRadius) {
+    // 五边形"外接"半径取 0.42 → 顶点刚好与六芒星尖（0.43）相邻，
+    // 两层不是各缩各的、而是相接的。
+    float vertR = 0.42;
     float rot = -PI * 0.5 + Time * Spin.x * 0.012 * motion;
-    float sdf = polygonSdf(theta, r, 5.0, rot, 0.34);
+    float sdf = polygonSdf(theta, r, 5.0, rot, apothemForVertexRadius(vertR, 5.0));
 
     float lw = lineAA(sdf);
     float outline = 1.0 - smoothstep(0.0, lw, abs(sdf));
@@ -123,10 +154,7 @@ vec4 layerPentagon(float theta, float r, float motion, float outerRadius) {
     vec3 tint = palette(r, outerRadius);
 
     // ── D：内饼填充 Voronoi 方块纹 ──
-    //    拖动前先把这一层从"大面积实底"降为"暗底 + 纹路"：
-    //    旧的 fill 用 max(triUp,triDown)<0 铺了半径 0.62 的实心六边形，
-    //    把整个内圈糊成一块灰白膜。这里只在内饼里加很淡的方块变化，
-    //    alpha 上限压到 0.30，保证它只是"底色质感"而不是"一块板"。
+    //    alpha 上限压在 0.30，保证它是"底色质感"而不是"一块板"。
     float blockSpin = Time * FILL_BLOCK_SPIN * motion;
     float cs = cos(blockSpin);
     float sn = sin(blockSpin);
@@ -138,9 +166,18 @@ vec4 layerPentagon(float theta, float r, float motion, float outerRadius) {
     float cellTone = 0.35 + 0.65 * hash21(cell * 1.37);
     float blockFill = inside2 * (0.35 + 0.65 * cd) * cellTone;
 
+    // ── 中心不再空 ──
+    //    之前内饼只有一层极淡的方块纹（0.055 底色 + 0.30 alpha 的纹路），
+    //    在夜里的亮外圈衬托下就是"一个空框"。补两样：
+    //    · 一圈核心光环（把"中心"这个位置明确下来）
+    //    · 抬高的底色，让内饼整体有实处
+    float core = 1.0 - smoothstep(0.0, 0.018 + PixelWidth * 200.0, abs(r - 0.115));
+    core *= 1.0 - 0.55 * smoothstep(vertR * 0.80, vertR, r);
+
     vec3 col = AccentColor * outline * 1.10
-             + tint * (inside2 * 0.055)
-             + VowColor * blockFill * FILL_BLOCK_STRENGTH;
+             + tint * (inside2 * 0.16)
+             + VowColor * blockFill * FILL_BLOCK_STRENGTH
+             + AccentColor * core * (0.65 + 0.35 * Block);
 
     // 五个顶点上各点一颗亮点
     float seg = 2.0 * PI / 5.0;
@@ -148,36 +185,67 @@ vec4 layerPentagon(float theta, float r, float motion, float outerRadius) {
     float vertexGlow = exp(-abs(va) * 16.0) * smoothstep(0.36, 0.10, abs(sdf));
     col += AccentColor * vertexGlow * (0.40 + 0.45 * Block);
 
-    // 内饼的 alpha 由方块纹主导（0 ~ 0.30），不会再盖住后面的层
-    float a = max(outline * 0.95, blockFill * 0.30);
+    float a = max(max(outline * 0.95, blockFill * 0.32), core * 0.80);
     return vec4(col, a);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-//  第 2 层：六芒星
+//  第 2 层：六芒星 + 中圈双环 + 六根辐条
 // ══════════════════════════════════════════════════════════════════════════
+//
+//  <b>这一层是"碎"的主要修复点。</b>原来中圈只有一圈 12 段等距白色刻度，
+//  与外圈、内圈都没有连接，读起来像"警告标"；而且六芒星被算小了
+//  （apothem 拍脑袋取 0.62×midR，星尖只到 0.43），缩在内圈里读不出星形。
+//
+//  现在：星尖半径直接钉在"中环内侧"上 → 星形撑满它那一环、六个尖顶到环上；
+//  六根辐条落在**同样的六个角度**上，把中环与外环串起来。
+//  于是"中心 → 五边形 → 星形六尖 → 辐条 → 中环 → 外环"是一条连续的路。
 vec4 layerHexagram(float theta, float r, float midR, float motion, float outerRadius) {
     float rot = Time * Spin.y * 0.03 * motion;
-    float apothem = (midR * 2.0) * 0.5 * 0.62;
-    float starR = apothem / cos(PI / 6.0);   // 星尖所在半径
 
+    float ringInner = midR * MID_RING_INNER_MUL;
+    float ringOuter = midR * MID_RING_OUTER_MUL;
+
+    // 星尖落在中环内侧稍微往里一点，视觉上"顶住"环
+    float starR   = ringInner * 0.995;
+    float apothem = apothemForVertexRadius(starR, 3.0);
+
+    // 星形的自转要把"外环 + 辐条"一起带上，否则星尖会与辐条错开、又变回零碎
     float triUp   = polygonSdf(theta, r, 3.0, rot - PI * 0.5, apothem);
     float triDown = polygonSdf(theta, r, 3.0, rot + PI * 0.5, apothem);
 
     float sdf = min(abs(triUp), abs(triDown));
     float lw = lineAA(sdf);
-    float stroke = 1.0 - smoothstep(0.0, lw, sdf);
+    float stroke = 1.0 - smoothstep(0.0, lw * 1.45, sdf);
 
-    // ── 修 bug：旧代码这里是 (1 - inside) * 0.10，inside = smoothstep(max(triUp,triDown))
-    //    max 的负值区 = 两个三角形的**交集** = 半径 0.62 的实心六边形，
-    //    比外圈过渡带还大，于是被 mix 铺满整圈 —— 那就是画面里那块灰白奶膜。
-    //    现在只有最外缘一点点极淡的内描边，面积上完全跟随星形轮廓。
-    float inside = smoothstep(-lw * 2.5, 0.0, max(triUp, triDown)) * step(r, starR);
-    float innerStroke = inside * (1.0 - smoothstep(0.0, lw * 2.0, sdf));
+    // 星形内部填充：不填的话中心那圈是空的（"中心空"的另一半原因）
+    float bothInside = 1.0 - smoothstep(-lw * 3.0, lw * 3.0, max(triUp, triDown));
+    float fill = bothInside * HEX_FILL_STRENGTH;
 
-    vec3 col = AccentColor * stroke * (0.95 + 0.35 * Block)
-             + palette(r, outerRadius) * innerStroke * HEX_INNER_STROKE;
-    return vec4(col, stroke * 0.90 + innerStroke * HEX_INNER_STROKE);
+    // ── 中圈双环：给这一层一个明确的边界，而不是靠散落的刻度去暗示 ──
+    float bandIn  = 1.0 - smoothstep(0.0, lineAA(r - ringInner), abs(r - ringInner));
+    float bandOut = 1.0 - smoothstep(0.0, lineAA(r - ringOuter), abs(r - ringOuter));
+
+    // ── 六根辐条：把星尖、中环与外环串成一条线 ──
+    //    角度与星尖一致（星尖在 θ + rot ≡ ±π/2 + k·2π/3，即每 π/3 一根），
+    //    半径方向从 midR 一直伸到 midR + SPOKE_SPAN —— 起点正好压在星尖上，
+    //    终点搭到外环内缘。于是"星尖 → 辐条 → 外环"是连续的，不再是三段散件。
+    float seg6 = PI / 3.0;
+    float ra = mod(theta + rot, seg6) - seg6 * 0.5;
+    float angDist = abs(ra) * max(midR, 0.001);                   // 角向距离换算成弧长
+    float spokeShape = 1.0 - smoothstep(SPOKE_HALF_WIDTH * 0.45, SPOKE_HALF_WIDTH, angDist);
+    float spokeRadial = smoothstep(midR - 0.012, midR + 0.004, r)
+                      * (1.0 - smoothstep(midR + SPOKE_SPAN,
+                                          midR + SPOKE_SPAN + 0.014, r));
+    float spoke = spokeShape * spokeRadial;
+
+    vec3 col = AccentColor * (stroke * (1.05 + 0.35 * Block) + (bandIn + bandOut) * 0.85)
+             + AccentColor * spoke * (0.75 + 0.35 * Block)
+             + palette(r, outerRadius) * fill;
+
+    float a = max(max(stroke * 0.92, (bandIn + bandOut) * 0.85),
+                  max(spoke * 0.80, fill));
+    return vec4(col, a);
 }
 
 // ══════════════════════════════════════════════════════════════════════════

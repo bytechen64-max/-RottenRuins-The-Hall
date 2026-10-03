@@ -16,7 +16,7 @@ import org.bytechen.hall.client.entity.render.impl.VerdictSwordDropRenderer;
 import org.bytechen.hall.client.particle.HeartLoseParticle;
 import org.bytechen.hall.client.particle.UlceratedMeatParticle;
 import org.bytechen.hall.client.rend.backplate.CrimsonVowBackplateLayer;
-import org.bytechen.hall.client.tooltip.ClientCrimsonVowTooltip;
+import org.bytechen.hall.client.tooltip.ClientBlockBarTooltip;
 import org.bytechen.hall.overworld.registry.EntityTypeRegistry;
 import org.bytechen.hall.client.rend.glint.GlintEffectProfile;
 import org.bytechen.hall.client.rend.glint.GlintRenderManager;
@@ -27,7 +27,7 @@ import org.bytechen.hall.overworld.registry.RegisterParticles;
 import org.bytechen.hall.overworld.registry.entities.base.EntityManager;
 import org.bytechen.hall.overworld.registry.entities.base.HallEntityManager;
 import org.bytechen.hall.overworld.registry.entities.base.HallProjectileManager;
-import org.bytechen.hall.overworld.registry.items.CrimsonVowTooltip;
+import org.bytechen.hall.overworld.registry.items.BlockBarTooltip;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.resources.ResourceLocation;
@@ -134,14 +134,14 @@ public class ClientModEventHandler {
     }
 
     /**
-     * 绯红誓约 tooltip 里的自绘「誓约条」。
+     * 格挡武器 tooltip 里的自绘减伤条（绯红誓约 / 寂寒白日共用）。
      *
      * <h3>为什么必须按类型注册，而不是让物品自己去画</h3>
      * <p>Forge 的工厂表是按 {@code TooltipComponent.getClass()} <b>精确匹配</b>的
      * （见 {@code ClientTooltipComponentManager}），而物品侧只能给出数据
      * （{@code Item#getTooltipImage} 是公共代码，不能碰 {@code ClientTooltipComponent}）。
-     * 两边的对接点就是这里：数据类 {@link CrimsonVowTooltip}
-     * → 绘制类 {@link ClientCrimsonVowTooltip}。</p>
+     * 两边的对接点就是这里：数据类 {@link BlockBarTooltip}
+     * → 绘制类 {@link ClientBlockBarTooltip}。</p>
      *
      * <p>本事件挂在 <b>mod 总线</b>上（不是 Forge 总线），所以它和旁边的渲染器注册
      * 一样写在本类里；漏注册的症状是打开背包就崩，异常信息里那句
@@ -149,7 +149,7 @@ public class ClientModEventHandler {
      */
     @SubscribeEvent
     public static void onRegisterClientTooltipComponents(RegisterClientTooltipComponentFactoriesEvent event) {
-        event.register(CrimsonVowTooltip.class, ClientCrimsonVowTooltip::new);
+        event.register(BlockBarTooltip.class, ClientBlockBarTooltip::new);
     }
 
     @SubscribeEvent

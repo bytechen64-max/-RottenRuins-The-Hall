@@ -5,7 +5,6 @@ import com.google.common.collect.Multimap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.damagesource.DamageSource;
@@ -30,6 +29,7 @@ import org.bytechen.hall.api.IFlowingName;
 import org.bytechen.hall.api.ITooltipStyle;
 import org.bytechen.hall.api.TooltipShaderSpec;
 import org.bytechen.hall.client.rend.text.FlowingNameColors;
+import org.bytechen.hall.client.rend.text.TooltipLines;
 import org.bytechen.hall.client.rend.twitch.ITwitchItem;
 import org.bytechen.hall.utils.ModUtils;
 import org.bytechen.hall.utils.TranslateUtils;
@@ -42,6 +42,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
+ * BoBao
  * CrimsonVow — 深粉方块图案 + 雾粉紫流动描边 + <b>低版本（1.8 式）右键格挡</b>。
  *
  * <h3>Visual layers</h3>
@@ -98,6 +99,24 @@ public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem
 
     /** 深紫黑 —— 描边暗部，也是誓约条未填充那一段的轨道色。 */
     private static final int ACCENT_SHADOW = 0xFF2A1B3D;
+
+    // ── tooltip 各行自己的渐变（三行三色，否则一列文字会糊成一片） ──
+    //
+    // 取色原则：都在本剑的粉紫色族里，但**色相彼此拉开**、亮度按"信息层级"排 ——
+    // 誓词最亮最柔（它是修辞），格挡行偏暖（它是主动技），誓约行偏冷
+    // （"不可损坏 / 火焰免疫"读起来是静态属性，也正好和底板的粉色热流对位）。
+
+    /** 誓词（斜体）：浅紫 → 亮粉。 */
+    private static final int LORE_FROM = 0xFFC9A7FF;
+    private static final int LORE_TO = 0xFFFF4FB8;
+
+    /** 「格挡」正文：灰紫 → 雾粉紫 —— 比标签暗一档，读起来才像正文而不是第二个标题。 */
+    private static final int BLOCK_TEXT_FROM = 0xFF9A86C8;
+    private static final int BLOCK_TEXT_TO = 0xFFE8A6FF;
+
+    /** 「誓约」正文：冰蓝紫 → 雾紫（有意偏冷）。 */
+    private static final int VOW_TEXT_FROM = 0xFF8FD6FF;
+    private static final int VOW_TEXT_TO = 0xFFB388FF;
 
     // ── tooltip 底板（原来那块接近纯黑的 0xF0100010 太出戏，见 ITooltipStyle） ──
 
@@ -242,7 +261,7 @@ public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem
     // 两层分工：
     //   · appendHoverText  —— 纯 Component，文案全部来自 datagen 语言文件；
     //   · getTooltipImage  —— 只声明数据，画的事交给
-    //                          client.tooltip.ClientCrimsonVowTooltip。
+    //                          client.tooltip.ClientBlockBarTooltip（绯红誓约与寂寒白日共用）。
     //
     // 名字那一行不在这里：由 client 侧的 FlowingNameTooltipHook 在
     // ItemTooltipEvent 里替换 index 0，这里只从 index 1 往后追加，两边不打架。
@@ -251,16 +270,25 @@ public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem
     // 否则以后调格挡强度，tooltip 会继续报旧数字。
 
     /**
-     * tooltip 的文本层。
+     * tooltip 的文本层 —— <b>每一行都有自己的渐变</b>。
      *
-     * <h3>为什么标签用 {@code gradient} 而不是 {@code flowing}</h3>
-     * <p>本类在<b>公共代码</b>里（服务端也会加载），而
-     * {@code FlowingNameColors.flowing} 内部会取 {@code Minecraft.getInstance()}
-     * —— 那是纯客户端类。所以只有"确实在客户端"时才走流动版本：
-     * 判据是 {@code level.isClientSide}（tooltip 真正渲染时 level 非空且是
-     * {@code ClientLevel}）。服务端 / level 为 null 的那几条路径退回静态渐变，
-     * 反正那些路径也没人看得见。这与 {@link #getName} 只敢用 {@code gradient}
-     * 是同一条约束，只是这里多了一个"确定在客户端"的判据。</p>
+     * <h3>名字行与其余行的分工</h3>
+     * <ul>
+     *   <li><b>名字行</b>：不在这里。由 client 侧的 {@code FlowingNameTooltipHook}
+     *       在 {@code ItemTooltipEvent} 里替换 index 0。</li>
+     *   <li><b>自定义说明行</b>：在这里构造，逐行给不同的渐变 ——
+     *       誓词一行、格挡一行、誓约一行，三行的色相刻意不同（见下面三个
+     *       {@code *_FROM/_TO} 常量），这样它们读起来是三条信息而不是一片糊。</li>
+     *   <li>标签（「格挡」「誓约」）保持强调色板，正文比标签暗一档：
+     *       一行之内"标签亮、正文暗"，各行之间"色相不同"。</li>
+     * </ul>
+     *
+     * <h3>为什么用 {@code FlowingNameColors.line}</h3>
+     * <p>本类在<b>公共代码</b>里（服务端也会加载），而流动版本内部要取
+     * {@code Minecraft.getInstance()} —— 纯客户端类。所以"确实在客户端才流动"
+     * 这个判断收在了 {@code FlowingNameColors.line} 里（判据是 {@code level.isClientSide}），
+     * 物品类不再各写一遍。服务端 / level 为 null 的路径退回静态渐变，
+     * 反正那些路径也没人看得见；这与 {@link #getName} 只敢用静态渐变是同一条约束。</p>
      *
      * <p>空行不再需要：誓约条（图像组件）被 Forge 插在 index 1，本身就充当了
      * 名字与说明之间的分隔。</p>
@@ -268,19 +296,26 @@ public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip,
                                TooltipFlag flag) {
-        tooltip.add(Component.translatable(TranslateUtils.CRIMSON_VOW_TOOLTIP_LORE)
-                .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+        // 誓词：斜体保留，颜色换成它自己那对（浅紫 → 亮粉）
+        tooltip.add(FlowingNameColors.line(
+                Component.translatable(TranslateUtils.CRIMSON_VOW_TOOLTIP_LORE)
+                        .withStyle(ChatFormatting.ITALIC),
+                LORE_FROM, LORE_TO, level));
 
-        tooltip.add(Component.translatable(TranslateUtils.CRIMSON_VOW_TOOLTIP_BLOCK,
-                        accentLabel(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_BLOCK, level))
-                .withStyle(ChatFormatting.GRAY));
+        // 格挡行：标签与正文用的是<共用键>（机制说明几把剑是同一件事），
+        // 颜色仍然是本剑自己的 —— 文案共享不会把配色也共享掉。
+        tooltip.add(TooltipLines.feature(TranslateUtils.TOOLTIP_LABEL_BLOCK,
+                TranslateUtils.TOOLTIP_BLOCK, level,
+                ACCENT_FROM, ACCENT_TO, BLOCK_TEXT_FROM, BLOCK_TEXT_TO));
 
-        tooltip.add(Component.translatable(TranslateUtils.CRIMSON_VOW_TOOLTIP_VOW,
-                        accentLabel(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_VOW, level))
-                .withStyle(ChatFormatting.GRAY));
+        // 特性行：标签是本剑的身份（「誓约」），正文共用
+        tooltip.add(TooltipLines.feature(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_TRAIT,
+                TranslateUtils.TOOLTIP_TRAIT, level,
+                ACCENT_FROM, ACCENT_TO, VOW_TEXT_FROM, VOW_TEXT_TO));
 
         if (flag.isAdvanced()) {
-            // F3+H：把格挡机制的实现参数摊开，排查"挡住了多少"时不用去翻代码
+            // F3+H：把格挡机制的实现参数摊开，排查"挡住了多少"时不用去翻代码。
+            // 这一行<b>故意不上渐变</b>：它是调试信息，越朴素越好读。
             int percent = Math.round(blockDamageMultiplier() * 100.0F);
             tooltip.add(Component.translatable(TranslateUtils.CRIMSON_VOW_TOOLTIP_DEBUG,
                             percent, blockOnlyFrontal(), BLOCK_USE_DURATION,
@@ -290,30 +325,18 @@ public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem
     }
 
     /**
-     * tooltip 里那条自绘誓约条。
+     * tooltip 里那条自绘的格挡减伤条。
      *
-     * <p>只传数据不传渲染类型 —— 原因见 {@link CrimsonVowTooltip} 的类注释。
+     * <p>只传数据不传渲染类型 —— 原因见 {@link BlockBarTooltip} 的类注释。
      * 返回 {@code Optional.of} 之后，Forge 会把它插到 tooltip 的 index 1
      * （紧跟名字行），所以它总是压在 lore 之上。</p>
      */
     @Override
     public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
-        return Optional.of(new CrimsonVowTooltip(
-                blockDamageMultiplier(), ACCENT_FROM, ACCENT_TO, ACCENT_HIGHLIGHT, ACCENT_SHADOW));
-    }
-
-    /**
-     * 生成一枚粉紫标签：在客户端让它跟着名字一起流动，否则给静态渐变。
-     *
-     * <p>{@code level} 为 null 也要兜住 —— 原版有几条构造 tooltip 的路径不给
-     * level（例如 {@code ItemStack.getTooltipLines(Player, TooltipFlag)} 的
-     * 部分调用点），那条路上再判一次反而更容易出错。</p>
-     */
-    private static MutableComponent accentLabel(String key, @Nullable Level level) {
-        MutableComponent label = Component.translatable(key);
-        return level != null && level.isClientSide
-                ? FlowingNameColors.flowing(label, ACCENT_FROM, ACCENT_TO)
-                : FlowingNameColors.gradient(label, ACCENT_FROM, ACCENT_TO);
+        return Optional.of(new BlockBarTooltip(
+                blockDamageMultiplier(),
+                TranslateUtils.TOOLTIP_BAR_LABEL, TranslateUtils.TOOLTIP_BAR_VALUE,
+                ACCENT_FROM, ACCENT_TO, ACCENT_HIGHLIGHT, ACCENT_SHADOW));
     }
 
     // ──────────────────────────────────────────────────────────────

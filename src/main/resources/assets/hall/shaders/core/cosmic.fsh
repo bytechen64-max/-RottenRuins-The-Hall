@@ -28,6 +28,16 @@ uniform float blockPatternScale;   // 每 1.0 UV 放多少个 blocks 单元
 uniform float blockTimeScale;      // 动画速度
 uniform float blockTimeOffset;     // 额外时间偏移（相位微调）
 
+// ── 水面湍流（SILENT_DAYLIGHT / useType == 18）专用 ──
+uniform float waveTimeScale;       // 动画速度（乘在游戏 tick 上，见 waterTurbulence 注释）
+uniform float wavePatternScale;    // 1.0 UV 上重复几格图案（越大水纹越密）
+
+// ── 遮罩 sprite 在图集里的 UV 矩形（每条 cosmic 绘制都会写一遍，见 CosmicShaders#setMaskSlice）──
+// texCoord0 是图集坐标而不是 sprite 内的 0..1，凡是按"物品自身坐标"排图案的 style
+// 都得先用这两个 uniform 折回去，否则图案会随 sprite 在图集里的位置漂移。
+uniform vec2 maskUvMin;
+uniform vec2 maskUvSize;
+
 // ── DEEP_SPACE(0) 专用 ──
 uniform float flowMixStrength;     // 流动混色的强度（0 = 关掉，退回原来的纯紫虚空）
 uniform float irisSpeed;           // 七彩琉璃星的色相流转速度
@@ -169,6 +179,71 @@ vec3 blockShade(vec2 p, float t, float maskVal) {
     return col * mix(0.20, 1.0, clamp(maskVal, 0.0, 1.0));
 }
 
+// ── 水面湍流（useType == 18 / SILENT_DAYLIGHT）──────────────────
+//
+// 移植 shadertoy「water turbulence」：
+//
+//   // Found this on GLSL sandbox. I really liked it, changed a few things and made it tileable.
+//   // :)  by David Hoskins.  Original water turbulence effect by joltz0r
+//
+// 原作者的结构与常数**一个都没动**（MAX_ITER、inten、1.17/pow(c,1.4)/pow(abs(c),8.0)、
+// 最后叠的 vec3(0.0,0.35,0.5) 冷色偏移都照抄），只改了三处"输入接口"：
+//
+//   原作                                → 这里
+//   iTime                               → time（游戏 tick）× waveTimeScale
+//   fragCoord.xy / iResolution.xy       → 遮罩 sprite 内的 0..1 UV（maskUvMin/maskUvSize）
+//   fragColor = vec4(colour, 1.0)       → 乘遮罩与 opacity 后交给 cosmic 的合成末尾
+//
+// ★ 为什么 UV 必须自己折回 sprite（这是移植里唯一容易搞错的地方）：
+//   quad 的 texCoord0 是**图集坐标**。48px 的遮罩在方块图集里只占 0.047 UV ——
+//   直接拿它当 uv 用，整把剑落在同一格图案里（只会看到一块几乎均匀的渐变），
+//   而且相位会随 sprite 在图集里的排布变化（换资源包 / 加贴图就变样）。
+//   折回 0..1 之后，"一格图案 = 整个物品平面"才是原作里"一格 = 一屏"的对应关系。
+//
+// ★ 为什么 time 要乘 waveTimeScale：
+//   cosmic 的 time uniform 是**游戏 tick**（20 tick = 1 秒），而原作 iTime 是秒。
+//   默认 0.025 正好把原作的 0.5 倍速换算过来（0.5 / 20），流速接近原作观感；
+//   直接喂 tick 会快 20 倍 —— 那不是水，是电风扇。
+//
+// ★ 原作里的 #ifdef SHOW_TILING 调试分支没有移植（它会在屏幕边缘画黄线标出平铺边界，
+//   是给"看平铺对不对"用的，物品上只会变成一道脏边）。
+//
+// 迭代三角反馈：p 只跨 2π（一格），细节全靠 i 在层与层之间自反馈放大出来。
+// MAX_ITER 保持 5：再少结构糊、再多在 48px 的剑身上已经看不出来，只白烧 GPU。
+#define WATER_MAX_ITER 5
+
+const float WATER_TAU = 6.28318530718;
+
+vec3 waterTurbulence(vec2 uv, float wt) {
+    // 原作: float time = iTime * .5 + 23.0;
+    // 0.5 折进了 waveTimeScale，23.0 是原作的相位偏置（去掉它图案会停在一个
+    // 结构不明显的区域），照留。
+    float wtm = wt + 23.0;
+
+    // 原作: vec2 p = mod(uv*TAU, TAU) - 250.0;
+    // 250.0 把坐标推到三角函数的大参数区，[-250, -243.72] 恰好跨一个整周期 ——
+    // "一格 = 一屏"就是这么来的；mod 保证平铺处接得上（原作者补的 tileable 改动）。
+    vec2 p = mod(uv * WATER_TAU, WATER_TAU) - 250.0;
+    vec2 i = vec2(p);
+
+    float c = 1.0;
+    const float inten = 0.005;   // 原作 inten，别动：它同时是 c 的量纲
+
+    for (int n = 0; n < WATER_MAX_ITER; n++) {
+        float tn = wtm * (1.0 - (3.5 / float(n + 1)));
+        i = p + vec2(cos(tn - i.x) + sin(tn + i.y), sin(tn - i.y) + cos(tn + i.x));
+        c += 1.0 / length(vec2(p.x / (sin(i.x + tn) / inten), p.y / (cos(i.y + tn) / inten)));
+    }
+
+    c /= float(WATER_MAX_ITER);
+    c = 1.17 - pow(c, 1.4);
+
+    // 8 次幂把 c 压成"暗底 + 极窄亮丝"，再整体抬向青蓝（0.35 绿 / 0.5 蓝）——
+    // 于是水纹读起来是冷光而不是灰阶噪声，这也是原作那一行 vec3(0.0,0.35,0.5) 的作用。
+    vec3 colour = vec3(pow(abs(c), 8.0));
+    return clamp(colour + vec3(0.0, 0.35, 0.5), 0.0, 1.0);
+}
+
 // ── 背景函数 ──────────────────────────────────────────────────
 
 vec3 getFbmNebula(vec3 pos, float t) {
@@ -292,6 +367,18 @@ void main(void) {
         vec2 bp = centered * blockPatternScale;
         float bt = time * blockTimeScale + blockTimeOffset;
         col = vec4(blockShade(bp, bt, mask.r), 1.0);
+        col.a *= mask.r * opacity;
+        fragColor = clamp(col * ColorModulator, 0.0, 1.0);
+        return;
+    }
+
+    // ── 水面湍流：同样是一条独立片元路径，不出星星 ──
+    // 与 17 的区别只在 UV：这里不用"图集坐标直接乘系数"那种近似，而是先折回
+    // 遮罩 sprite 自己的 0..1（原因见 waterTurbulence 上面的注释）。
+    if (useType == 18) {
+        vec2 uv = (texCoord0 - maskUvMin) / max(maskUvSize, vec2(1.0e-6));
+        col = vec4(waterTurbulence(uv * wavePatternScale, time * waveTimeScale), 1.0);
+        // 遮罩就是这道水的"水位线"：剑刃（白）在水下，剑柄（黑）在外面。
         col.a *= mask.r * opacity;
         fragColor = clamp(col * ColorModulator, 0.0, 1.0);
         return;

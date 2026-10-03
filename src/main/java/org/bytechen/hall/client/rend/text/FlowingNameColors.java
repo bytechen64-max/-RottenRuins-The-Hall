@@ -101,6 +101,34 @@ public final class FlowingNameColors {
         return out;
     }
 
+    /**
+     * 给 tooltip 的<b>任意一行</b>上渐变 —— 名字以外的自定义说明行都用它。
+     *
+     * <p>它把"要不要流动"这个判断收在一处：</p>
+     * <ul>
+     *   <li>{@code level} 非空且是客户端（tooltip 真正渲染时的情形）→ {@link #flowing}
+     *       （每次构建 tooltip 时按当前时间重算，会动）；</li>
+     *   <li>否则 → {@link #gradient}（静态渐变）。
+     *       服务端也会走到 {@code appendHoverText}，而 {@code flowing} 内部要取
+     *       {@code Minecraft.getInstance()} —— 那是纯客户端类，只能在确定客户端时调。</li>
+     * </ul>
+     *
+     * <p>为什么这个判断不放在物品类里各写一遍：{@code CrimsonVow} 已经因为这条
+     * 踩过一次（见它 {@code appendHoverText} 的注释）—— 同一处安全判断散在多个
+     * 物品类里，迟早有人漏写那一半。</p>
+     *
+     * @param text  原始文本（保留它的样式，例如斜体；颜色会被渐变覆盖）
+     * @param from  渐变起色（ARGB，alpha 被忽略）
+     * @param to    渐变止色
+     * @param level tooltip 构建时拿到的 level，可为 null
+     */
+    public static MutableComponent line(Component text, int from, int to,
+                                       net.minecraft.world.level.Level level) {
+        return level != null && level.isClientSide
+                ? flowing(text, from, to)
+                : gradient(text, from, to);
+    }
+
     /** 秒级时间：游戏 tick + 帧插值，保证逐帧连续推进（而不是每 tick 跳一格）。 */
     private static float timeSeconds() {
         Minecraft mc = Minecraft.getInstance();
