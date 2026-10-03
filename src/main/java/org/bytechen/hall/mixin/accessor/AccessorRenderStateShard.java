@@ -21,6 +21,15 @@ public interface AccessorRenderStateShard {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * 原版的 {@code CULL}（背面剔除）。RenderType 的默认值就是它，
+     * 但自定义 RenderType 里要显式写出来才读得出意图 —— 见背板的 RenderType。
+     */
+    @Accessor("CULL")
+    static RenderStateShard.CullStateShard splendiding$getCull() {
+        throw new UnsupportedOperationException();
+    }
+
     @Accessor("COLOR_DEPTH_WRITE")
     static RenderStateShard.WriteMaskStateShard splendiding$getColorDepthWrite() {
         throw new UnsupportedOperationException();

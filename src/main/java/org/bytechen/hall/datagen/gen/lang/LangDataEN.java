@@ -129,6 +129,20 @@ public class LangDataEN extends LanguageProvider {
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_TITLE, "Select Difficulty");
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_HINT, "Choose the world difficulty (can be changed later via commands)");
 
+        // Crimson Vow tooltip (placeholder copy, pending final wording)
+        // The %s lines are "label + description": the label is tinted pink-purple
+        // on the Java side, the description stays gray. %% is vanilla
+        // TranslatableContents' escape (see its FORMAT_PATTERN block).
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LORE, "\"By blood I vow: this blade shall not break.\"");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_BLOCK, "Block");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_VOW, "Vow");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_BLOCK, "%s  Hold right-click to raise the blade · frontal attacks only");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_VOW, "%s  Unbreakable · Fireproof · Returned after crafting");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_BAR_LABEL, "Block mitigation");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_BAR_VALUE, "%s%%");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_DEBUG,
+                "Debug · block resolves x%s%% · frontal only %s · use duration %s ticks · entity reach +%s");
+
         // 血肉庭园维度 (hall:heall)
         // 地形复用现有王庭方块，因此这里只有通道方块的译名
         add(RegisterBlock.FLESH_RIFT.get(), "Flesh Rift");

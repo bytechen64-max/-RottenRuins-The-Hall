@@ -1,23 +1,45 @@
 package org.bytechen.hall.overworld.registry.items;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.common.ForgeMod;
 import org.bytechen.hall.api.IBlockingWeapon;
 import org.bytechen.hall.api.ICustomOutline;
+import org.bytechen.hall.api.IFlowingName;
+import org.bytechen.hall.api.ITooltipStyle;
+import org.bytechen.hall.api.TooltipShaderSpec;
+import org.bytechen.hall.client.rend.text.FlowingNameColors;
 import org.bytechen.hall.client.rend.twitch.ITwitchItem;
 import org.bytechen.hall.utils.ModUtils;
+import org.bytechen.hall.utils.TranslateUtils;
+import org.jetbrains.annotations.Nullable;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * CrimsonVow — 深粉方块图案 + 雾粉紫流动描边 + <b>低版本（1.8 式）右键格挡</b>。
@@ -51,11 +73,99 @@ import org.bytechen.hall.utils.ModUtils;
  * </ul>
  */
 public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem, IBlockingWeapon,
-        org.bytechen.hall.api.IFlowingName {
+        IFlowingName, ITooltipStyle {
 
     public CrimsonVow() {
         super(Tiers.NETHERITE, 8, -2.4f, new Item.Properties().fireResistant());
     }
+
+    // ──────────────────────────────────────────────────────────────
+    //  色板：一把剑只有一套颜色
+    // ──────────────────────────────────────────────────────────────
+    //
+    // 这四处消费方全部指向同一组常量：名字的粉紫渐变、描边的暗部/亮部、
+    // 以及 tooltip 里的标签与誓约条（见 appendHoverText / getTooltipImage）。
+    // 之前描边色和名字色是各自写死的字面量，改一次要翻四个方法，还会漏。
+
+    /** 亮粉 —— 名字渐变起色，也是 tooltip 数值与面板上边框的颜色。 */
+    private static final int ACCENT_FROM = 0xFFFF4FB8;
+
+    /** 紫 —— 名字渐变止色，也是面板下/侧边框的颜色。 */
+    private static final int ACCENT_TO = 0xFF9B4DFF;
+
+    /** 雾粉紫高光 —— 描边亮部，也是 tooltip 标签与刻度线的颜色。 */
+    private static final int ACCENT_HIGHLIGHT = 0xFFE8A6FF;
+
+    /** 深紫黑 —— 描边暗部，也是誓约条未填充那一段的轨道色。 */
+    private static final int ACCENT_SHADOW = 0xFF2A1B3D;
+
+    // ── tooltip 底板（原来那块接近纯黑的 0xF0100010 太出戏，见 ITooltipStyle） ──
+
+    /** 底板渐变上端：深紫红。 */
+    private static final int TOOLTIP_BG_TOP = 0xF01E0D28;
+
+    /** 底板渐变下端：更深的紫黑 —— 和上端形成纵深，而不是原版那种一整块死黑。 */
+    private static final int TOOLTIP_BG_BOTTOM = 0xF00E0716;
+
+    /**
+     * 底板边框（1px 内框）上端：亮粉 {@code 0x80} 透明度。
+     *
+     * <p>用 {@link #accent} 从 {@link #ACCENT_FROM} 派生而不是另写一个字面量 ——
+     * 否则换了色板这里就会悄悄留一个旧颜色。原版边框 alpha 只有 {@code 0x50}，
+     * 抬到 {@code 0x80} 是因为我们要的是"这条 tooltip 有主人"，不是一条若有若无的线。</p>
+     */
+    private static final int TOOLTIP_BORDER_TOP = accent(ACCENT_FROM, 0x80);
+
+    /** 底板边框下端：紫，同样 {@code 0x80} 透明度。 */
+    private static final int TOOLTIP_BORDER_BOTTOM = accent(ACCENT_TO, 0x80);
+
+    /** 取色板里的 RGB、换上新的 alpha（底板与边框都要半透明版本）。 */
+    private static int accent(int argb, int alpha) {
+        return (alpha << 24) | (argb & 0x00FFFFFF);
+    }
+
+
+    /**
+     * 攻击距离加成（格）。
+     *
+     * <p>{@code forge:entity_reach} 默认 3.0、上限 1024，所以 100 是一个合法的普通值，
+     * 不需要任何越界兜底。</p>
+     */
+    public static final double ATTACK_REACH_BONUS = 7;
+
+    /**
+     * 攻击距离修饰符的 UUID。
+     *
+     * <p>用固定的字面量而不是随机生成：同一个物品的同一个属性修饰符在不同存档、
+     * 不同端之间必须同名同 id，否则会被原版当成两个修饰符叠加（来回切换会越加越多）。</p>
+     */
+    private static final UUID REACH_MODIFIER_UUID =
+            UUID.nameUUIDFromBytes(
+                    (CrimsonVow.class.getName() + ":reach")
+                            .getBytes(StandardCharsets.UTF_8));
+
+    /**
+     * 主手拿在手里时，把玩家攻击距离抬到 {@link #ATTACK_REACH_BONUS} 格。
+     *
+     * <p>只改主手（{@code MAINHAND}）：这把剑是主手武器，放副手不该给玩家 100 格攻击距离。
+     * 其它槽位原样返回 {@code super} 的结果，不插手。</p>
+     */
+    @Override
+    public Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot, ItemStack stack) {
+        Multimap<Attribute, AttributeModifier> original = super.getDefaultAttributeModifiers(slot);
+        if (slot != EquipmentSlot.MAINHAND) return original;
+
+        HashMultimap<Attribute, AttributeModifier> dynamic = HashMultimap.create();
+        for (Map.Entry<Attribute, AttributeModifier> entry : original.entries()) {
+            dynamic.put(entry.getKey(), entry.getValue());
+        }
+        dynamic.put(ForgeMod.ENTITY_REACH.get(), new AttributeModifier(
+                REACH_MODIFIER_UUID, "reached", ATTACK_REACH_BONUS,
+                AttributeModifier.Operation.ADDITION));
+        return dynamic;
+    }
+
+
 
     // ──────────────────────────────────────────────────────────────
     //  右键：进入格挡（举起）
@@ -111,6 +221,152 @@ public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem
         if (!flowingNameEnabled()) return plain;
         return org.bytechen.hall.client.rend.text.FlowingNameColors.gradient(
                 plain, flowingNameColorFrom(), flowingNameColorTo());
+    }
+
+    /** 渐变起色跟着 {@link #ACCENT_FROM} 走，不再依赖接口默认值。 */
+    @Override
+    public int flowingNameColorFrom() {
+        return ACCENT_FROM;
+    }
+
+    /** 渐变止色跟着 {@link #ACCENT_TO} 走。 */
+    @Override
+    public int flowingNameColorTo() {
+        return ACCENT_TO;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  tooltip：文本层（appendHoverText）+ 自绘誓约条（getTooltipImage）
+    // ──────────────────────────────────────────────────────────────
+    //
+    // 两层分工：
+    //   · appendHoverText  —— 纯 Component，文案全部来自 datagen 语言文件；
+    //   · getTooltipImage  —— 只声明数据，画的事交给
+    //                          client.tooltip.ClientCrimsonVowTooltip。
+    //
+    // 名字那一行不在这里：由 client 侧的 FlowingNameTooltipHook 在
+    // ItemTooltipEvent 里替换 index 0，这里只从 index 1 往后追加，两边不打架。
+    //
+    // 数值一律从 IBlockingWeapon 现取（blockDamageMultiplier），不写字面量 ——
+    // 否则以后调格挡强度，tooltip 会继续报旧数字。
+
+    /**
+     * tooltip 的文本层。
+     *
+     * <h3>为什么标签用 {@code gradient} 而不是 {@code flowing}</h3>
+     * <p>本类在<b>公共代码</b>里（服务端也会加载），而
+     * {@code FlowingNameColors.flowing} 内部会取 {@code Minecraft.getInstance()}
+     * —— 那是纯客户端类。所以只有"确实在客户端"时才走流动版本：
+     * 判据是 {@code level.isClientSide}（tooltip 真正渲染时 level 非空且是
+     * {@code ClientLevel}）。服务端 / level 为 null 的那几条路径退回静态渐变，
+     * 反正那些路径也没人看得见。这与 {@link #getName} 只敢用 {@code gradient}
+     * 是同一条约束，只是这里多了一个"确定在客户端"的判据。</p>
+     *
+     * <p>空行不再需要：誓约条（图像组件）被 Forge 插在 index 1，本身就充当了
+     * 名字与说明之间的分隔。</p>
+     */
+    @Override
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip,
+                               TooltipFlag flag) {
+        tooltip.add(Component.translatable(TranslateUtils.CRIMSON_VOW_TOOLTIP_LORE)
+                .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+
+        tooltip.add(Component.translatable(TranslateUtils.CRIMSON_VOW_TOOLTIP_BLOCK,
+                        accentLabel(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_BLOCK, level))
+                .withStyle(ChatFormatting.GRAY));
+
+        tooltip.add(Component.translatable(TranslateUtils.CRIMSON_VOW_TOOLTIP_VOW,
+                        accentLabel(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_VOW, level))
+                .withStyle(ChatFormatting.GRAY));
+
+        if (flag.isAdvanced()) {
+            // F3+H：把格挡机制的实现参数摊开，排查"挡住了多少"时不用去翻代码
+            int percent = Math.round(blockDamageMultiplier() * 100.0F);
+            tooltip.add(Component.translatable(TranslateUtils.CRIMSON_VOW_TOOLTIP_DEBUG,
+                            percent, blockOnlyFrontal(), BLOCK_USE_DURATION,
+                            (int) ATTACK_REACH_BONUS)
+                    .withStyle(ChatFormatting.DARK_GRAY));
+        }
+    }
+
+    /**
+     * tooltip 里那条自绘誓约条。
+     *
+     * <p>只传数据不传渲染类型 —— 原因见 {@link CrimsonVowTooltip} 的类注释。
+     * 返回 {@code Optional.of} 之后，Forge 会把它插到 tooltip 的 index 1
+     * （紧跟名字行），所以它总是压在 lore 之上。</p>
+     */
+    @Override
+    public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
+        return Optional.of(new CrimsonVowTooltip(
+                blockDamageMultiplier(), ACCENT_FROM, ACCENT_TO, ACCENT_HIGHLIGHT, ACCENT_SHADOW));
+    }
+
+    /**
+     * 生成一枚粉紫标签：在客户端让它跟着名字一起流动，否则给静态渐变。
+     *
+     * <p>{@code level} 为 null 也要兜住 —— 原版有几条构造 tooltip 的路径不给
+     * level（例如 {@code ItemStack.getTooltipLines(Player, TooltipFlag)} 的
+     * 部分调用点），那条路上再判一次反而更容易出错。</p>
+     */
+    private static MutableComponent accentLabel(String key, @Nullable Level level) {
+        MutableComponent label = Component.translatable(key);
+        return level != null && level.isClientSide
+                ? FlowingNameColors.flowing(label, ACCENT_FROM, ACCENT_TO)
+                : FlowingNameColors.gradient(label, ACCENT_FROM, ACCENT_TO);
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  tooltip 底板（原版那块深灰底 + 淡蓝紫边）
+    // ──────────────────────────────────────────────────────────────
+    //
+    // 底板不是我们画的 —— 原版 TooltipRenderUtil 画，颜色由 Forge 的
+    // RenderTooltipEvent.Color 提供。所以这里只声明四个颜色，
+    // 由 client.tooltip.TooltipStyleHook 在画之前写进去。
+    //
+    // 观感上的取法：底板换成"深紫红 → 紫黑"的纵向渐变（原来是一整块死黑），
+    // 边框从淡蓝紫改成这把剑自己的粉→紫（alpha 0x80）。
+    // 誓约条因此是"同色系里的一块构件"，而不是贴在黑盒子上的异物。
+
+    @Override
+    public int tooltipBackgroundTop() {
+        return TOOLTIP_BG_TOP;
+    }
+
+    @Override
+    public int tooltipBackgroundBottom() {
+        return TOOLTIP_BG_BOTTOM;
+    }
+
+    @Override
+    public int tooltipBorderTop() {
+        return TOOLTIP_BORDER_TOP;
+    }
+
+    @Override
+    public int tooltipBorderBottom() {
+        return TOOLTIP_BORDER_BOTTOM;
+    }
+
+    /**
+     * 底板上的<b>粉色热力学流动</b>：一块被从下方加热的板，热羽在粉紫之间翻滚。
+     *
+     * <p>图案由 {@code rendertype_tooltip_thermal.fsh} 现场算（三层噪声 + 域扭曲，
+     * 无贴图），这里只声明"要哪个图案 + 用哪三个颜色"：</p>
+     *
+     * <ul>
+     *   <li><b>冷底</b>取 {@link #TOOLTIP_BG_TOP} —— 也就是纯色底板那个深紫红，
+     *       所以着色器没加载成功、退回纯色底板时，观感是同一个色系；</li>
+     *   <li><b>热流</b>取 {@link #ACCENT_FROM}（亮粉）、<b>热核</b>取
+     *       {@link #ACCENT_HIGHLIGHT}（雾粉紫）—— 与名字渐变、描边同一套色板。</li>
+     * </ul>
+     *
+     * <p>强度 {@code 0.9}：再高文字对比度就开始掉了（面板最烫的地方接近亮粉）。
+     * 想要更含蓄就往 0.6~0.7 走，想关掉就返回 {@code null} 或把强度设成 0。</p>
+     */
+    @Override
+    public TooltipShaderSpec tooltipShader() {
+        return TooltipShaderSpec.thermal(TOOLTIP_BG_TOP, ACCENT_FROM, ACCENT_HIGHLIGHT);
     }
 
     /**
@@ -230,13 +486,13 @@ public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem
     /** （描边暗部）。 */
     @Override
     public int outlineColor() {
-        return 0xFF2A1B3D; // 深紫黑，粉紫阴影
+        return ACCENT_SHADOW; // 深紫黑，粉紫阴影
     }
 
     /** （描边亮部）。 */
     @Override
     public int outlineSecondaryColor() {
-        return 0xFFE8A6FF; // 雾粉紫高光
+        return ACCENT_HIGHLIGHT; // 雾粉紫高光
     }
 
     @Override

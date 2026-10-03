@@ -11,6 +11,7 @@ import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.level.Level;
 import org.bytechen.hall.HallMod;
+import org.bytechen.hall.overworld.difficulty.HallDifficultyAttributes;
 import org.bytechen.hall.overworld.registry.entities.ai.FaceTargetGoal;
 import org.bytechen.hall.overworld.registry.entities.base.AbstractHallEntity;
 import org.bytechen.hall.overworld.registry.entities.population.infected.BaseInfectedEntity;
@@ -90,7 +91,8 @@ public class MonolithEntity extends BaseUlceratedEntity {
     // ---------- 普通攻击 ----------
     @Override
     protected boolean getAttack(LivingEntity target) {
-        float baseDamage = (float) getAttributeBaseValue(Attributes.ATTACK_DAMAGE);
+        // 必须走 effectiveAttackDamage（含属性修饰符），不能用 getAttributeBaseValue
+        float baseDamage = HallDifficultyAttributes.effectiveAttackDamage(this, 20.0F);
         target.hurt(this.damageSources().mobAttack(this), baseDamage);
         return true;
     }

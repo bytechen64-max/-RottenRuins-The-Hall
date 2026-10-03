@@ -113,6 +113,19 @@ public class LangDataCN extends LanguageProvider {
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_TITLE, "选择难度");
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_HINT, "请选择世界难度");
 
+        // ---- 绯红誓约 tooltip（占位文案，待定稿） ----
+        // 带 %s 的是"标签 + 说明"结构：标签由 Java 侧染成粉紫流动色，说明保持灰色。
+        // %% 是原版 TranslatableContents 的转义（见其 FORMAT_PATTERN 那一段）。
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LORE, "「以血为誓，此刃不折。」");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_BLOCK, "格挡");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_VOW, "誓约");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_BLOCK, "%s  按住右键举剑迎击 · 只挡正面来敌");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_VOW, "%s  不可损坏 · 火焰免疫 · 合成后归还");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_BAR_LABEL, "格挡减伤");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_BAR_VALUE, "%s%%");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_DEBUG,
+                "调试 · 格挡结算 ×%s%% · 仅正面 %s · 使用时长 %s tick · 实体范围 +%s");
+
         // ---- 血肉庭园维度（hall:heall） ----
         // 该维度的地形完全复用现有王庭方块，因此这里只有通道方块的译名
         add(RegisterBlock.FLESH_RIFT.get(), "血肉裂隙");

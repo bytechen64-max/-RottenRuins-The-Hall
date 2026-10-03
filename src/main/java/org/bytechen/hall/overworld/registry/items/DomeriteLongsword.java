@@ -23,6 +23,7 @@ import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.common.ToolAction;
 import net.minecraftforge.common.ToolActions;
 import org.jetbrains.annotations.Nullable;
@@ -42,8 +43,10 @@ import org.bytechen.hall.overworld.registry.items.verdict.VerdictFeedback;
 import org.bytechen.hall.overworld.registry.items.verdict.VerdictTuning;
 import org.bytechen.hall.utils.DomeriteStatsHelper;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * 天穹裁决（{@code domerite_longsword}）—— 单支线次毕业级长剑。
@@ -90,6 +93,29 @@ import java.util.Map;
  * </ul>
  */
 public class DomeriteLongsword extends SwordItem implements ICustomOutline {
+
+
+
+    /**
+     * 攻击距离加成（格）。
+     *
+     * <p>{@code forge:entity_reach} 默认 3.0、上限 1024，所以 100 是一个合法的普通值，
+     * 不需要任何越界兜底。</p>
+     */
+    public static final double ATTACK_REACH_BONUS = 5;
+
+    /**
+     * 攻击距离修饰符的 UUID。
+     *
+     * <p>用固定的字面量而不是随机生成：同一个物品的同一个属性修饰符在不同存档、
+     * 不同端之间必须同名同 id，否则会被原版当成两个修饰符叠加（来回切换会越加越多）。</p>
+     */
+    private static final UUID REACH_MODIFIER_UUID =
+            UUID.nameUUIDFromBytes(
+                    (CrimsonVow.class.getName() + ":reach")
+                            .getBytes(StandardCharsets.UTF_8));
+
+
 
     // ══════════════════════════════════════════════════════════════
     //  三态参数
@@ -248,10 +274,14 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
         float scaledBonus = DomeriteStatsHelper.getScaledAttackBonus(stack);
         float total = BASE_DAMAGE + scaledBonus;
 
+
         HashMultimap<Attribute, AttributeModifier> dynamic = HashMultimap.create();
         for (Map.Entry<Attribute, AttributeModifier> entry : original.entries()) {
             Attribute attr = entry.getKey();
             AttributeModifier mod = entry.getValue();
+            dynamic.put(ForgeMod.ENTITY_REACH.get(), new AttributeModifier(
+                    REACH_MODIFIER_UUID, "reached", ATTACK_REACH_BONUS,
+                    AttributeModifier.Operation.ADDITION));
             if (attr == Attributes.ATTACK_DAMAGE) {
                 dynamic.put(attr, new AttributeModifier(
                         Item.BASE_ATTACK_DAMAGE_UUID, "Domerite damage", total,
