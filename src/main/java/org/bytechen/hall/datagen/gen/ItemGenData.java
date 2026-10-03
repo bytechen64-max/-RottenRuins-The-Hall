@@ -15,7 +15,7 @@ public class ItemGenData extends ItemModelProvider {
     public ItemGenData(PackOutput output, ExistingFileHelper efh) { super(output, HallMod.MODID, efh); }
 
     private static final Set<String> MANUAL_WHITELIST = Set.of(
-            "domerite_sword", "domerite_pickaxe", "domerite_axe", "domerite_shovel", "domerite_hoe","domerite_longsword","crimson_vow"
+            "domerite_sword", "domerite_pickaxe", "domerite_axe", "domerite_shovel", "domerite_hoe","domerite_longsword","crimson_vow","silent_daylight"
     );
 
     @Override

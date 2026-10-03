@@ -17,6 +17,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
+import org.bytechen.hall.overworld.difficulty.HallDifficultyAttributes;
 import org.bytechen.hall.overworld.registry.EntityTypeRegistry;
 import org.bytechen.hall.overworld.registry.entities.ai.FaceTargetGoal;
 import org.bytechen.hall.overworld.registry.entities.base.AbstractHallEntity;
@@ -520,7 +521,9 @@ public class ScoutEntity extends BaseUlceratedEntity {
     // ---------- 普通攻击 ----------
     @Override
     protected boolean getAttack(LivingEntity target) {
-        float baseDamage = (float) getAttributeBaseValue(Attributes.ATTACK_DAMAGE);
+        // 必须走 effectiveAttackDamage（含属性修饰符），
+        // 不能用 getAttributeBaseValue —— 那样会绕开难度倍率，详见该方法注释
+        float baseDamage = HallDifficultyAttributes.effectiveAttackDamage(this, 5.0F);
         target.hurt(this.damageSources().mobAttack(this), baseDamage);
         return true;
     }

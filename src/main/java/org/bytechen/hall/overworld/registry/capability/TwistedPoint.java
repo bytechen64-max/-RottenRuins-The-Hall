@@ -39,7 +39,7 @@ public class TwistedPoint implements ByteNumberAbility, ICapabilityProvider , IN
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction direction) {
-        if (capability == CapabilityRegistry.TWIST){
+        if (capability == CapabilityRegistry.TWIST_CAP) {
             return optional.cast();
         }
         return LazyOptional.empty();

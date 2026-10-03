@@ -130,6 +130,9 @@ public class BakedModelCosmic extends BakedModelRendererBase implements IMaskLay
 
         RenderType rt = lateRender ? lateRenderType(ctx) : CosmicRenderType.COSMIC;
         TextureAtlasSprite sprite = atlas.getSprite(maskTexture);
+        // 遮罩 sprite 在图集里的 UV 矩形（水面湍流那道 style 用它把图集 UV 折回 0..1）。
+        // 必须在 getBuffer/endBatch 之前设 —— Uniform.set 只是记在对象上，真正上传在 flush 时。
+        CosmicShaders.setMaskSlice(sprite);
         VertexConsumer vc = buf.getBuffer(rt);
         mc.getItemRenderer().renderQuadList(ps, vc,
                 CosmicRenderUtils.bakeItem(sprite), stack, light, overlay);

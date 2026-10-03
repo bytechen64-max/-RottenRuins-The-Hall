@@ -34,6 +34,11 @@ public final class ClientPacketHandlers {
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
                 org.bytechen.hall.client.rend.text.FlowingNameTooltipHook::onItemTooltip);
 
+        // tooltip 底板配色：在画底板之前改那四个颜色值（ITooltipStyle 的物品才生效）。
+        // 同样是游戏事件、同样挂 Forge 总线 —— 见 TooltipStyleHook 的类注释。
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
+                org.bytechen.hall.client.tooltip.TooltipStyleHook::onTooltipColor);
+
         // 虚空剑「蹲下左键」的客户端选中：射线选中后发 C2S 包给服务端结算。
         // 挂在同一个 Forge 总线上，所以和上面的 tooltip 钩子一样走 addListener。
         org.bytechen.hall.client.VoidSwordClientHandler.register();

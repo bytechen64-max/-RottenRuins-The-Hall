@@ -13,6 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.ForgeMod;
+import org.bytechen.hall.api.IBlockingWeapon;
 import org.bytechen.hall.api.ICustomOutline;
 import org.bytechen.hall.compat.BCCoreCompat;
 import org.bytechen.hall.overworld.registry.entities.population.skills.SwordAuraEntity;
@@ -56,7 +57,19 @@ import java.util.Map;
  * <p>注意它同时抬高了"与实体交互"（右键点生物）的距离 —— 这是同一个属性，
  * 原版没有把它们分开。方块交互走的是 {@code forge:block_reach}，<b>不受影响</b>。</p>
  */
-public class VoidSword extends SwordItem implements ICustomOutline {
+public class VoidSword extends SwordItem implements ICustomOutline, IBlockingWeapon {
+
+
+
+
+
+
+
+    public VoidSword() {
+        super(Tiers.NETHERITE, 8, -2.4f, new Item.Properties().fireResistant());
+    }
+
+
 
     /**
      * 攻击距离加成（格）。
@@ -74,11 +87,6 @@ public class VoidSword extends SwordItem implements ICustomOutline {
      */
     private static final java.util.UUID REACH_MODIFIER_UUID =
             java.util.UUID.fromString("8f1c4b2a-7d63-4e59-9a0f-3c6b51d2e7a4");
-
-    public VoidSword() {
-        super(Tiers.NETHERITE, 8, -2.4f, new Item.Properties().fireResistant());
-    }
-
     /**
      * 主手拿在手里时，把玩家攻击距离抬到 {@link #ATTACK_REACH_BONUS} 格。
      *
@@ -170,13 +178,15 @@ public class VoidSword extends SwordItem implements ICustomOutline {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+
         if (BCCoreCompat.isAvailable()) {
             if (!level.isClientSide()) {
                 BCCoreCompat.triggerVoidSword(player, stack);
             }
             return InteractionResultHolder.success(stack);
         }
-        return super.use(level, player, hand);
+
+        return IBlockingWeapon.beginBlock(level, player, hand);
     }
 
     /**

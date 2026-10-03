@@ -49,7 +49,13 @@ uniform mat4  ProjMat;
 
 uniform float uIntensity;      // Java 侧已含淡入淡出（0 → 无效果）
 uniform float uLifeProgress;   // 0..1
-uniform float uRingPosition;   // 波前位置（信息性）
+// 注意：这里原本还有一个 uRingPosition。它<b>只声明、从未被使用</b>，
+// 于是被 GLSL 链接器剔除，而 Forge 仍按 .json 的声明注册它 ——
+// 结果是 getUniform("uRingPosition") 返回非 null 但内部缓冲无效，
+// Java 侧一旦调 set() 就 NPE 崩客户端（Uniform.java:46-52 只给 int 类型留 intValues，
+// float 类型才分配 floatValues，而 set(float) 无条件访问 floatValues）。
+// 现在已经把 .json 与这里的声明一并删掉：少了声明，getUniform 返回 null，
+// Java 侧的判空就能正常挡住。
 uniform float uRingWidth;      // 波前厚度系数（0.05..2）
 uniform float uWarp;           // 折射强度（像素级缩放）
 uniform float uShimmer;        // 尾流热扰动强度

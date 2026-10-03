@@ -33,6 +33,7 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.DOMERITE_HOE.get(), "云顶之锄");
         add(RegisterItem.DOMERITE_LONGSWORD.get(), "天穹裁决");
         add(RegisterItem.CRIMSON_VOW.get(), "绯红誓约");
+        add(RegisterItem.SILENT_DAYLIGHT.get(), "寂寒白日");
         add(RegisterItem.ACID_ANOMALY_EXTRACT.get(), "酸异常提取物");
         add(RegisterItem.COLD_ANOMALY_EXTRACT.get(), "冷异常提取物");
         add(RegisterItem.HEAT_ANOMALY_EXTRACT.get(), "热异常提取物");
@@ -112,6 +113,29 @@ public class LangDataCN extends LanguageProvider {
         add(TranslateUtils.DIFFICULTY_INCOMPREHENSIBLE_TOOLTIP, "你确定你要这么做吗？");
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_TITLE, "选择难度");
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_HINT, "请选择世界难度");
+
+        // ---- tooltip 文案（占位文案，待定稿） ----
+        // 机制说明共用一份（几把格挡武器是同一件事）；各物品只拥有自己的风味。
+        // "标签 + 正文"拆成两个键：渐变的逐字上色会把整行拍平，合成一条
+        // "%s …" 模板就分不出两种颜色（见 client.rend.text.TooltipLines）。
+        // %% 是原版 TranslatableContents 的转义（见其 FORMAT_PATTERN 那一段）。
+        add(TranslateUtils.TOOLTIP_LABEL_BLOCK, "格挡");
+        add(TranslateUtils.TOOLTIP_BLOCK, "按住右键举剑迎击 · 只挡正面来敌");
+        add(TranslateUtils.TOOLTIP_TRAIT, "不可损坏 · 火焰免疫 · 合成后归还");
+        add(TranslateUtils.TOOLTIP_BAR_LABEL, "格挡减伤");
+        add(TranslateUtils.TOOLTIP_BAR_VALUE, "%s%%");
+
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LORE, "「以血为誓，此刃不折。」");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_TRAIT, "誓约");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_DEBUG,
+                "调试 · 格挡结算 ×%s%% · 仅正面 %s · 使用时长 %s tick · 实体范围 +%s");
+
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LORE, "「白昼无声，唯余一刃寒水。」");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TIDE, "湍流");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_TIDE, "剑刃浸在一层流动的水光里");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TRAIT, "白日");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_DEBUG,
+                "调试 · 格挡结算 ×%s%% · 仅正面 %s · 使用时长 %s tick");
 
         // ---- 血肉庭园维度（hall:heall） ----
         // 该维度的地形完全复用现有王庭方块，因此这里只有通道方块的译名

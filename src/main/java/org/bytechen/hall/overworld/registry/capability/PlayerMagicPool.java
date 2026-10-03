@@ -21,14 +21,27 @@ public class PlayerMagicPool implements ByteItemHandle {
     public void plusAddition(int i){
         addition = i;
     }
+
+    /**
+     * 每 tick 推进一次槽内魔法物品的冷却。
+     *
+     * <p><b>从 main 摘入时修掉的两处</b>：</p>
+     * <ol>
+     *   <li>原来是无条件 {@code (CMagicBaseItem) stack.getItem()} —— 只要槽里放了
+     *       任何非魔法物品就是 {@code ClassCastException}。改成先判类型。</li>
+     *   <li>原来的条件是 {@code if (item.cooldown < 0) item.cooldown--;} ——
+     *       冷却本来就是负的才递减，只会越走越负、永远回不到可用。
+     *       按 {@code canUse()} 的语义（{@code cooldown <= 0} 即可用），
+     *       正确做法是<b>正数才递减</b>。</li>
+     * </ol>
+     */
     public void upDate(){
-        for (int i = 0; i < handler.getSlots();i ++){
+        for (int i = 0; i < handler.getSlots(); i++) {
             ItemStack stack = handler.getStackInSlot(i);
-            if (stack.isEmpty()){
+            if (stack.isEmpty() || !(stack.getItem() instanceof CMagicBaseItem item)) {
                 continue;
             }
-            CMagicBaseItem item = (CMagicBaseItem) stack.getItem();
-            if (item.cooldown<0){
+            if (item.cooldown > 0) {
                 item.cooldown--;
             }
         }

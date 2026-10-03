@@ -10,6 +10,7 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraftforge.client.event.RegisterShadersEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import com.mojang.blaze3d.shaders.Uniform;
+import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Method;
 
@@ -26,6 +27,9 @@ import java.lang.reflect.Method;
  *   <tr><td>{@code externalScale}</td><td>float</td><td>100.0 in GUI, 1.0 in world</td></tr>
  *   <tr><td>{@code opacity}</td><td>float</td><td>Always 1.0</td></tr>
  *   <tr><td>{@code cosmicuvs}</td><td>mat2x2[12]</td><td>UV rects of 12 cosmic sprites</td></tr>
+ *   <tr><td>{@code maskUvMin} / {@code maskUvSize}</td><td>vec2</td>
+ *       <td>遮罩 sprite 在图集里的 UV 矩形（{@link #setMaskSlice}），
+ *           供"按物品自身坐标排图案"的 style（水面湍流）把图集 UV 折回 0..1</td></tr>
  * </table>
  *
  * <h3>Embeddium/Sodium compatibility</h3>
@@ -46,6 +50,16 @@ public class CosmicShaders {
     public static Uniform opacityUniform;
     public static Uniform useTypeUniform;
     public static Uniform cosmicuvsUniform;
+
+    /**
+     * 遮罩 sprite 在图集里的 UV 矩形（vec2 × 2），由 {@link #setMaskSlice} 写入。
+     *
+     * <p>cosmic 的 quad 用的是图集 UV，所以"按物品自身坐标排图案"的 style
+     * （目前是 {@code SILENT_DAYLIGHT} 的水面湍流）必须先折回 sprite 内的 0..1。
+     * 之所以在 Java 侧取，是因为着色器里拿不到 sprite 在图集里的位置。</p>
+     */
+    public static Uniform maskUvMinUniform;
+    public static Uniform maskUvSizeUniform;
 
     /** Corruption shader — RGB split + colour shift + scanlines + glitch. */
     public static ShaderInstance corruptionShader;
@@ -76,6 +90,8 @@ public class CosmicShaders {
                         opacityUniform = shader.getUniform("opacity");
                         useTypeUniform = shader.getUniform("useType");
                         cosmicuvsUniform = shader.getUniform("cosmicuvs");
+                        maskUvMinUniform = shader.getUniform("maskUvMin");
+                        maskUvSizeUniform = shader.getUniform("maskUvSize");
                     }
             );
             event.registerShader(
@@ -108,8 +124,25 @@ public class CosmicShaders {
         }
     }
 
-    // ── Embeddium / Sodium animation compatibility ──────────────────
+    /**
+     * 把遮罩 sprite 在图集里的 UV 矩形写进 {@code maskUvMin} / {@code maskUvSize}。
+     *
+     * <p>两个调用点：{@code MixinItemRendererCosmic} 的即时路径与
+     * {@link org.bytechen.hall.client.cosmic.BakedModelCosmic#renderShaderLayer}
+     * 的延迟回放路径 —— 光影包下走的是后者，漏掉任何一处都会让那条路径上的
+     * 湍流图案退回"图集坐标直接当 uv"的错误换算。</p>
+     *
+     * <p>单位说明：{@code getU0/V0} 是 sprite 左上角、{@code getU1/V1} 是右下角，
+     * 所以 size 是二者之差 —— 与 {@code MaskUniforms.setSlice} 同一个取法。</p>
+     */
+    public static void setMaskSlice(@Nullable TextureAtlasSprite sprite) {
+        if (sprite == null) return;
+        if (maskUvMinUniform != null)  maskUvMinUniform.set(sprite.getU0(), sprite.getV0());
+        if (maskUvSizeUniform != null) maskUvSizeUniform.set(
+                sprite.getU1() - sprite.getU0(), sprite.getV1() - sprite.getV0());
+    }
 
+    // ── Embeddium / Sodium animation compatibility ──────────────────
     // Embeddium's SpriteContentsAnimatorImplMixin.postTick resets the
     // "active" flag on every sprite at the end of each tick.  Cosmic
     // sprites are never seen by the standard vertex consumer path, so
