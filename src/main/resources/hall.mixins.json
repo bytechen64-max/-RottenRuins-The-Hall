@@ -6,13 +6,10 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "hall.refmap.json",
   "mixins": [
-    "MixinAnimationController",
-    "accessor.AccessorDisplay",
-    "accessor.ItemDisplayAccessor"
+    "MixinAnimationController"
   ],
   "client": [
     "CosmicAfterLevelMixin",
-    "CrimsonVowBlockMixin",
     "GameRendererAccessor",
     "GameRendererMixin",
     "GameRendererOculusMixin",
@@ -21,9 +18,8 @@
     "ItemRendererMixin",
     "MixinItemRendererCosmic",
     "MixinItemRendererTwitch",
-    "OutlineReplayMixin",
-    "accessor.AccessorRenderStateShard",
-    "accessor.InvokerHandTransforms"
+    "OutlineReplayMixin"
+
   ],
   "injectors": {
     "defaultRequire": 1

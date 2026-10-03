@@ -8,6 +8,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
+import org.bytechen.hall.overworld.registry.capability.interfaces.ByteItemHandle;
+import org.bytechen.hall.overworld.registry.capability.interfaces.ByteNumberAbility;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +18,10 @@ import java.util.Map;
 public class CapabilityRegistry {
 
     public static final Capability<AnomalyCapability> ANOMALY_CAP =
+            CapabilityManager.get(new CapabilityToken<>(){});
+    public static final Capability<ByteNumberAbility> TWIST =
+            CapabilityManager.get(new CapabilityToken<>() {});
+    public static final Capability<ByteItemHandle> ITEM_HANDLE =
             CapabilityManager.get(new CapabilityToken<>(){});
 
     /** 威胁点数：所有生物 / 玩家通用 */
