@@ -7,8 +7,6 @@
   "refmap": "hall.refmap.json",
   "mixins": [
     "MixinAnimationController",
-    "accessor.AccessorDisplay",
-    "accessor.ItemDisplayAccessor"
   ],
   "client": [
     "CosmicAfterLevelMixin",
@@ -20,8 +18,7 @@
     "ItemRendererMixin",
     "MixinItemRendererCosmic",
     "MixinItemRendererTwitch",
-    "OutlineReplayMixin",
-    "accessor.AccessorRenderStateShard"
+    "OutlineReplayMixin"
   ],
   "injectors": {
     "defaultRequire": 1

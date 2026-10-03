@@ -5,7 +5,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.ItemStackHandler;
 import org.bytechen.hall.overworld.registry.capability.interfaces.ByteItemHandle;
-import org.bytechen.hall.overworld.registry.items.MagicBaseItem;
+import org.bytechen.hall.overworld.registry.items.magic.bases.CMagicBaseItem;
+import org.bytechen.hall.overworld.registry.items.magic.bases.IMagicBaseItem;
 import org.jetbrains.annotations.NotNull;
 
 public class PlayerMagicPool implements ByteItemHandle {
@@ -20,11 +21,22 @@ public class PlayerMagicPool implements ByteItemHandle {
     public void plusAddition(int i){
         addition = i;
     }
+    public void upDate(){
+        for (int i = 0; i < handler.getSlots();i ++){
+            ItemStack stack = handler.getStackInSlot(i);
+            if (stack.isEmpty()){
+                continue;
+            }
+            CMagicBaseItem item = (CMagicBaseItem) stack.getItem();
+            if (item.cooldown<0){
+                item.cooldown--;
+            }
+        }
+    }
     @Override
     public boolean canAdd(Item item) {
-        return item instanceof MagicBaseItem;
+        return item instanceof IMagicBaseItem;
     }
-
     @Override
     public Player getOwner() {
         return player;
@@ -42,21 +54,21 @@ public class PlayerMagicPool implements ByteItemHandle {
 
     @Override
     public @NotNull ItemStack insertItem(int i, @NotNull ItemStack itemStack, boolean b) {
-        return null;
+            return handler.insertItem(i,itemStack,b);
     }
 
     @Override
     public @NotNull ItemStack extractItem(int i, int i1, boolean b) {
-        return null;
+        return handler.extractItem(i,i1,b);
     }
 
     @Override
     public int getSlotLimit(int i) {
-        return 0;
+        return 1;
     }
 
     @Override
     public boolean isItemValid(int i, @NotNull ItemStack itemStack) {
-        return false;
+        return canAdd(itemStack.getItem());
     }
 }
