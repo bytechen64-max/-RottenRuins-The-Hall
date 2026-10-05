@@ -46,3 +46,10 @@ mandatory = true
 versionRange = "*"
 ordering = "NONE"
 side = "BOTH"
+
+[[dependencies."${mod_id}"]]
+modId = "curios"
+mandatory = true
+versionRange = "[5.4.0,)"
+ordering = "NONE"
+side = "BOTH"

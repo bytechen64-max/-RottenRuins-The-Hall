@@ -9,6 +9,8 @@ import org.bytechen.hall.overworld.registry.capability.anomaly.AnomalyCapability
 import org.bytechen.hall.overworld.registry.capability.base.CapabilityProvider;
 import org.bytechen.hall.overworld.registry.capability.threat.ThreatCapability;
 import org.bytechen.hall.overworld.registry.capability.threat.ThreatHelper;
+import org.bytechen.hall.overworld.registry.capability.PlayerMagicPool;
+import org.bytechen.hall.overworld.registry.capability.TwistedPoint;
 import org.bytechen.hall.overworld.registry.entities.population.ecological.HeavyBombEntity;
 import org.bytechen.hall.overworld.registry.items.DomeriteAxe;
 import org.bytechen.hall.overworld.registry.items.DomeriteHoe;
@@ -43,15 +45,31 @@ public class ForgeEventHelpers {
     private static final ResourceLocation THREAT_KEY =
             ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "threat");
 
+    /** 魔法池（10 格法术槽 + 同名共享冷却）。 */
+    private static final ResourceLocation MAGIC_POOL_KEY =
+            ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "magic_pool");
+
+    /** 法力池（初始 1000，每秒 +1）。 */
+    private static final ResourceLocation MANA_KEY =
+            ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "mana");
+
     private static final int SYNC_INTERVAL = 20; // 每秒同步一次（20 tick）
 
     // ==================== 能力附加 ====================
 
     public static void handleAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
-        if (event.getObject() instanceof Player) {
+        if (event.getObject() instanceof Player player) {
             AnomalyCapability cap = new AnomalyCapability();
             event.addCapability(ANOMALY_KEY,
                     new CapabilityProvider<>(CapabilityRegistry.ANOMALY_CAP, cap));
+
+            // 魔法池：法术槽（默认 10 格）+ 同名共享冷却 + 当前选中格。
+            // 它自己实现了 ICapabilitySerializable，所以直接作为 provider 挂上去，
+            // 不需要再包一层 CapabilityProvider —— 这样 Forge 才会帮我们持久化。
+            event.addCapability(MAGIC_POOL_KEY, new PlayerMagicPool(player));
+
+            // 法力池：初始值直接取上限（默认 1000），所以新建角色见面就是满蓝。
+            event.addCapability(MANA_KEY, new TwistedPoint(player));
         }
 
         // 威胁点数：所有生物（含玩家）都挂，初始 0

@@ -160,5 +160,13 @@ public class LangDataEN extends LanguageProvider {
         add("dimension." + HallMod.MODID + ".heall", "Carrion Marrow");
         add("biome." + HallMod.MODID + ".flesh_marrow", "Carrion Marrow");
         add("block." + HallMod.MODID + ".flesh_rift.no_dimension", "The other end of the rift has not yet formed...");
+
+        // ---- Magic attributes (see RegisterAttributes) ----
+        // Keys must match the strings hard-coded in the RangedAttribute constructors exactly.
+        add("attribute.name." + HallMod.MODID + ".max_mana", "Max Mana");
+        add("attribute.name." + HallMod.MODID + ".mana_regeneration", "Mana Regeneration");
+        add("attribute.name." + HallMod.MODID + ".mana_restore", "Mana Restored");
+        add("attribute.name." + HallMod.MODID + ".spell_power", "Spell Power");
+        add("attribute.name." + HallMod.MODID + ".magic_slots", "Magic Slots");
     }
 }

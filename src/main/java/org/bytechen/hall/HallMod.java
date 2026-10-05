@@ -4,6 +4,8 @@ import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import net.minecraft.resources.ResourceLocation;
 import org.bytechen.hall.config.ConfigHelper;
+import org.bytechen.hall.api.magic.MagicAttributeProvider;
+import org.bytechen.hall.api.magic.MagicStatRegistry;
 import org.bytechen.hall.overworld.difficulty.HallDifficulty;
 import org.bytechen.hall.network.NetworkHelper;
 import org.bytechen.hall.overworld.registry.*;
@@ -54,6 +56,11 @@ public class HallMod {
         RegisterBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         RegisterFeature.FEATURES.register(modEventBus);
 
+        // 魔法属性（法力上限 / 回速 / 回复倍率 / 法术强度 / 槽位数）。
+        // 注册后由 RegisterAttributes 里的 EntityAttributeModificationEvent 处理器
+        // 把这些属性挂到玩家身上 —— 少了那一步 player.getAttribute(...) 会一直是 null。
+        RegisterAttributes.ATTRIBUTES.register(modEventBus);
+
         // 群系修改器序列化器
         BIOME_MODIFIER_SERIALIZERS.register(modEventBus);
 
@@ -80,6 +87,11 @@ public class HallMod {
         // 感染兜底转化规则（溃烂）：没有专属感染形态的生物按碰撞体积分档
         // 转化为斥候 / 巨碑（判断与转化在 infcore 的感染流程里执行）
         UlceratedConversionRules.register();
+
+        // 魔法数值的属性来源：把 hall:max_mana / mana_regeneration / magic_slots
+        // 接进 MagicStats 求值链。必须早于任何 MagicStats 求值 —— 放这里安全，
+        // 因为玩家要等世界加载才存在。
+        MagicStatRegistry.register(new MagicAttributeProvider());
 
         LOGGER.info("Hall common setup complete");
     }

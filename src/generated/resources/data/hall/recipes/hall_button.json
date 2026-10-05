@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "redstone",
+  "ingredients": [
+    {
+      "item": "hall:hall_planks"
+    }
+  ],
+  "result": {
+    "item": "hall:hall_button"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "C": {
+      "item": "hall:domite_crystal"
+    },
+    "I": {
+      "item": "hall:domerite_ingot"
+    }
+  },
+  "pattern": [
+    " I ",
+    " I ",
+    " C "
+  ],
+  "result": {
+    "item": "hall:domerite_sword"
+  },
+  "show_notification": true
+}

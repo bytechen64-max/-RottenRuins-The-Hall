@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "hall:domite_crystal"
+    },
+    "I": {
+      "item": "hall:domerite_ingot"
+    }
+  },
+  "pattern": [
+    "CIC",
+    "CIC",
+    "CIC"
+  ],
+  "result": {
+    "item": "hall:domerite_stick"
+  },
+  "show_notification": true
+}

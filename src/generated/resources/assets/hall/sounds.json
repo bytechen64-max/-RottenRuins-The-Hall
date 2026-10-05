@@ -1,0 +1,10 @@
+{
+  "biome_music": {
+    "sounds": [
+      {
+        "name": "hall:biome_music",
+        "stream": true
+      }
+    ]
+  }
+}

@@ -143,5 +143,14 @@ public class LangDataCN extends LanguageProvider {
         add("dimension." + HallMod.MODID + ".heall", "血肉庭园");
         add("biome." + HallMod.MODID + ".flesh_marrow", "血肉庭园");
         add("block." + HallMod.MODID + ".flesh_rift.no_dimension", "裂隙的另一端尚未形成……");
+
+        // ---- 魔法属性（见 RegisterAttributes） ----
+        // 键名必须与 RangedAttribute 构造器里写死的那个字符串**完全一致**，
+        // 对不上就会在属性界面里显示原始键名。
+        add("attribute.name." + HallMod.MODID + ".max_mana", "法力上限");
+        add("attribute.name." + HallMod.MODID + ".mana_regeneration", "法力回复速度");
+        add("attribute.name." + HallMod.MODID + ".mana_restore", "法力回复量");
+        add("attribute.name." + HallMod.MODID + ".spell_power", "法术强度");
+        add("attribute.name." + HallMod.MODID + ".magic_slots", "魔法槽位");
     }
 }

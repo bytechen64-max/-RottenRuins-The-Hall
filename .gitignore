@@ -31,7 +31,10 @@ logs/
 *.log
 
 # Generated
-src/generated/
+# datagen 产物 src/generated/resources **要提交**：不提交的话，别人克隆下来只能编译、
+# 编不出可用 jar（没有配方 / 掉落 / 语言 / blockstate / 方块模型 / 维度）。
+# 但 datagen 自己的缓存目录不提交 —— 它记录的是本机的输入哈希。
+src/generated/resources/.cache/
 
 # Cache
 *.cache

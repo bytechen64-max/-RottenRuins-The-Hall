@@ -18,8 +18,9 @@
     "ItemRendererMixin",
     "MixinItemRendererCosmic",
     "MixinItemRendererTwitch",
-    "OutlineReplayMixin"
-
+    "OutlineReplayMixin",
+    "CrimsonVowBlockMixin",
+    "accessor.AccessorRenderStateShard"
   ],
   "injectors": {
     "defaultRequire": 1

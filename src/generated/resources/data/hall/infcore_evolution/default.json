@@ -1,0 +1,53 @@
+{
+  "entries": [
+    {
+      "type": "hall:inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "hall:inf_player",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:player"
+    },
+    {
+      "type": "hall:inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "hall:inf_skeleton",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:skeleton"
+    },
+    {
+      "type": "hall:evo",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "hall:bonecrusher",
+          "weight": 50
+        }
+      ],
+      "source": "hall:monolith"
+    },
+    {
+      "type": "hall:evo",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "hall:heavy_bomb",
+          "weight": 50
+        }
+      ],
+      "source": "hall:monolith"
+    }
+  ],
+  "replace": false
+}

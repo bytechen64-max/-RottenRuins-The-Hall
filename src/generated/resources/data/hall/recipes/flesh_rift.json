@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "hall:hall_bone_fragments"
+    },
+    "C": {
+      "item": "hall:domite_crystal"
+    }
+  },
+  "pattern": [
+    "B B",
+    " C ",
+    "B B"
+  ],
+  "result": {
+    "item": "hall:flesh_rift"
+  },
+  "show_notification": true
+}
