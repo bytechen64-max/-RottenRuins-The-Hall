@@ -3,6 +3,8 @@ package org.bytechen.hall.overworld.registry;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeMap;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.minecraftforge.event.entity.EntityAttributeModificationEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -121,15 +123,43 @@ public class RegisterAttributes {
     /**
      * 取某个实体上该属性的当前值（含所有修饰器）。
      *
-     * @return 属性值；实体没有这个属性（例如生物没挂）时返回 {@code fallback}
+     * <p><b>本方法可能在"实体还没构造完"的时候被调用</b>，所以必须自己扛住这种情况：</p>
+     * <pre>
+     *   Entity.&lt;init&gt;                     ← 属性表还没建
+     *     → CapabilityProvider.gatherCapabilities
+     *       → ForgeEventFactory.gatherCapabilities
+     *         → AttachCapabilitiesEvent        ← 本模组在这里 new TwistedPoint(player)
+     *           → MagicStats.maxMana           ← 记一次"上限 1000"
+     *             → MagicAttributeProvider
+     *               → valueOf                  ← 就是这里
+     * </pre>
+     * <p>{@code LivingEntity} 的 {@code AttributeMap} 是 {@code super(...)}（也就是
+     * {@code Entity} 的构造函数）<b>返回之后</b>才赋值的，而 {@code AttachCapabilitiesEvent}
+     * 正是在 {@code Entity} 的构造函数里派发的 —— 那一刻 {@code getAttributes()} 返回
+     * {@code null}。原版 {@code LivingEntity#getAttribute} 直接拿它调
+     * {@code AttributeMap.getInstance}，于是抛 {@code NullPointerException}；
+     * 这个异常从能力附加的监听器里冒出去，Forge 会把整次 {@code AttachCapabilitiesEvent}
+     * 判为失败，玩家的魔法池/法力池全都挂不上，最后表现为"无法把玩家放进世界"被踢回登录界面。</p>
+     *
+     * <p>所以属性表还没建好时返回 {@code fallback}。这不是"吞掉错误"：
+     * 那个时刻本来就不存在任何修饰器（玩家刚 new 出来，装备/药水都还没上），
+     * 三个加成属性的 {@code fallback}（0）与两个倍率属性的 {@code fallback}（1.0）
+     * 正是它们此刻的真实值；真正的数值会在读的时候由 {@code MagicStats} 现算，
+     * 或者由存档 NBT 覆盖回来。</p>
+     *
+     * @return 属性值；实体没有这个属性（例如生物没挂）或属性表尚未初始化时返回 {@code fallback}
      */
     public static double valueOf(LivingEntity entity, RegistryObject<Attribute> attribute,
                                  double fallback) {
         if (entity == null || attribute == null || !attribute.isPresent()) {
             return fallback;
         }
-        net.minecraft.world.entity.ai.attributes.AttributeInstance instance =
-                entity.getAttribute(attribute.get());
+        // 实体还在构造中（AttachCapabilitiesEvent 期间）时属性表是 null，见方法注释。
+        AttributeMap attributes = entity.getAttributes();
+        if (attributes == null) {
+            return fallback;
+        }
+        AttributeInstance instance = attributes.getInstance(attribute.get());
         return instance == null ? fallback : instance.getValue();
     }
 }

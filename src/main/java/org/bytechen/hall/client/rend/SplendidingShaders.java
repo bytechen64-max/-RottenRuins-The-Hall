@@ -38,6 +38,15 @@ public class SplendidingShaders {
     // ── GUI overlay shaders ──
     public static ShaderInstance guiHorrorVoronoiShader;
     public static ShaderInstance guiGlowShader;
+    /**
+     * 创造物品栏「分区隔断行」的流动色带（GUI：一条 160×18 的极光缎带）。
+     *
+     * <p>它没有对应的 RenderType —— 和 tooltip 底板那条路一样走
+     * {@code BufferUploader.drawWithShader} 立即绘制，GL 状态写在
+     * {@code client/gui/creative/CreativeTabDividerRenderer} 里。
+     * 为 null 时隔断行退回一条纯色细线（分区功能本身不受影响）。</p>
+     */
+    public static ShaderInstance guiTabDividerShader;
     /** 难度选择界面的四档「印记」（程序化多边形几何 + 逐 profile 图案）。 */
     public static ShaderInstance difficultySigilShader;
     /** 坍缩使徒 boss 血条的「血量内容」着色器（纯黑底 + 彩色星尘，mask 红通道定形状）。 */
@@ -186,6 +195,19 @@ public class SplendidingShaders {
             // 于是"着色器没加载成功"会在日志里彻底消失（光环消失那次就是这么查了半天的）。
             // 异常消息里带着色器名，堆栈里带 GLSL 编译器的原始报错。
             HallMod.LOGGER.error("[Shaders] 着色器加载失败", t);
+        }
+
+        // 创造物品栏分区隔断行的流动色带（GUI：程序化极光缎带，无贴图）
+        try {
+            event.registerShader(
+                    new ShaderInstance(event.getResourceProvider(),
+                            new ResourceLocation(HallMod.MODID, "gui_tab_divider"),
+                            DefaultVertexFormat.POSITION_TEX),
+                    shader -> guiTabDividerShader = shader);
+        } catch (Throwable t) {
+            // 加载失败不会让分区功能失效：CreativeTabDividerRenderer 会退回一条纯色细线。
+            HallMod.LOGGER.error("[Shaders] 加载 gui_tab_divider 失败，"
+                    + "创造物品栏的分区隔断行将退回纯色细线", t);
         }
 
         // 难度选择界面的四档印记（程序化顶点几何 + 逐 profile 角度图案）

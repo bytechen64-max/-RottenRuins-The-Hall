@@ -17,6 +17,12 @@ public class LangDataEN extends LanguageProvider {
     @Override
     protected void addTranslations() {
         add("itemGroup." + HallMod.MODID + ".main", "Rotten Ruins: Splendiding");
+        // Section header rows inside the creative tab (see SectionedCreativeModeTab / RegisterTab)
+        add("itemGroup." + HallMod.MODID + ".main.section.creatures", "Infected & Hall Creatures");
+        add("itemGroup." + HallMod.MODID + ".main.section.materials", "Hall Materials");
+        add("itemGroup." + HallMod.MODID + ".main.section.gear", "Weapons & Tools");
+        add("itemGroup." + HallMod.MODID + ".main.section.blocks", "Hall Building Blocks");
+        add("itemGroup." + HallMod.MODID + ".main.section.misc", "Miscellaneous");
         add(RegisterItem.EXAMPLE_ITEM.get(), "Example Item");
         add(RegisterItem.VOID_SWORD.get(), "Void Sword");
         add(RegisterItem.CRIMSON_VOW.get(), "Crimson Vow");
@@ -168,5 +174,19 @@ public class LangDataEN extends LanguageProvider {
         add("attribute.name." + HallMod.MODID + ".mana_restore", "Mana Restored");
         add("attribute.name." + HallMod.MODID + ".spell_power", "Spell Power");
         add("attribute.name." + HallMod.MODID + ".magic_slots", "Magic Slots");
+
+        // ---- Magic system · items ----
+        // Mana plates: one per school, plain materials for now (see RegisterItem —
+        // the texture is "water" while MagicType has ACE in that slot; no mapping yet).
+        add(RegisterItem.DEATH_MANA_PLATE.get(), "Death Mana Plate");
+        add(RegisterItem.FIRE_MANA_PLATE.get(), "Fire Mana Plate");
+        add(RegisterItem.LIGHT_MANA_PLATE.get(), "Light Mana Plate");
+        add(RegisterItem.NATURE_MANA_PLATE.get(), "Nature Mana Plate");
+        add(RegisterItem.VOID_MANA_PLATE.get(), "Void Mana Plate");
+        add(RegisterItem.WATER_MANA_PLATE.get(), "Water Mana Plate");
+        add(RegisterItem.MAGIC_CATA.get(), "Magic Catalyst");
+        add(RegisterItem.VOID_RUNE.get(), "Void Rune");
+        add(RegisterItem.WAND.get(), "Wand");
+        add(RegisterItem.WAND_NATURE.get(), "Nature Wand");
     }
 }

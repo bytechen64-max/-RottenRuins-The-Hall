@@ -73,3 +73,52 @@
 - Kill attribution for both the beam and the field blades (field kills now count as the
   player's, so drops and advancements work).
 
+## [Unreleased] — Fix: crash on login caused by an uninitialized attribute map
+
+### Fixed
+- **Players could not enter the world (kicked back to the login screen).**
+  `AttachCapabilitiesEvent` is fired from inside `Entity`'s constructor, before
+  `LivingEntity` assigns its attribute map. Our own handler runs in that same event and does
+  `new TwistedPoint(player)` → `MagicStats.maxMana` → `RegisterAttributes.valueOf`, which read
+  the attribute map and threw a `NullPointerException`. Escaping the listener aborted the whole
+  `AttachCapabilitiesEvent` (no magic pool, no mana pool), which surfaced in the log as
+  `Couldn't place player in world`.
+  `RegisterAttributes.valueOf` now returns the fallback while the attribute map is `null` —
+  at that moment no attribute modifier can exist yet, so the fallback *is* the real value.
+
+## [Unreleased] — Creative inventory: section divider rows
+
+### Added
+- **Sectioned creative tab (`SectionedCreativeModeTab`).** One tab whose items are cut into
+  sections, each introduced by a divider row: a flowing colour ribbon plus a centred,
+  colour-cycling title. Sections are padded to whole rows automatically.
+  - Declared from the registry side with
+    `SectionedCreativeModeTab.builder().section(title, generator)...`.
+    The inherited `displayItems()` is disabled — it would be overwritten in `build()`,
+    so it throws instead of silently doing nothing.
+  - Items are de-duplicated across sections (first section wins), which is why the trailing
+    "Miscellaneous" section can simply sweep the whole namespace: newly added items can never
+    be lost by forgetting to register them.
+- **Divider shader `hall:gui_tab_divider`.** An aurora ribbon in GUI space (horizontally
+  flowing multi-colour noise, a bright core filament, soft vertical falloff), submitted
+  immediately via `BufferUploader.drawWithShader`. If the shader fails to load, the divider
+  falls back to a plain solid line — sectioning itself keeps working.
+- **`CreativeModeInventoryScreenMixin`.** Inserts nine empty slots as a divider row into the
+  vanilla "flat item list + 5×9 viewport" grid, then draws the ribbon and the title on
+  `ContainerScreenEvent.Render.Foreground`. While the search box has a query, the vanilla flat
+  result list is kept and no sectioning happens.
+
+### Changed
+- **`RegisterTab` now declares its items as sections:** Infected & Hall Creatures /
+  Hall Materials / Weapons & Tools / Hall Building Blocks / Miscellaneous.
+  The item set is unchanged; it just gained a visible structure.
+- Five new section titles in `LangDataCN` / `LangDataEN` (`itemGroup.hall.main.section.*`).
+
+### Notes
+- Divider rows are **client-side only**: the creative tab's item list is built on the client
+  anyway (`CreativeModeTabs.tryRebuildTabContents()` has exactly one caller,
+  `CreativeModeInventoryScreen`), so there is no networking, save data or server involvement.
+- `getDisplayItems()` still returns the same clean flat list, so JEI and other mods see no
+  change; the mixin only applies while a sectioned tab is selected, leaving all other tabs
+  untouched.
+

@@ -37,7 +37,7 @@ public record MaskLayerSpec(
         float intensity,
         /** 效果的作用宽度（像素，效果自己解释；泛光里是光晕外扩半径）。 */
         float width,
-        /** 动画速度倍率，0 = 静止。 */
+        /** 动画速度倍率。0 表示"静止"，具体静止在什么值由效果自己决定（glow 是满亮度）。 */
         float speed,
         /** 整体不透明度（0–1）。 */
         float opacity,

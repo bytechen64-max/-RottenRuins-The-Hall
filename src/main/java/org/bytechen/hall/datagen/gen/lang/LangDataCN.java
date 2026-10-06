@@ -15,6 +15,12 @@ public class LangDataCN extends LanguageProvider {
     @Override
     protected void addTranslations() {
         add("itemGroup." + HallMod.MODID + ".main", "腐朽之疫:王庭");
+        // 创造物品栏的分区隔断行标题（见 SectionedCreativeModeTab / RegisterTab）
+        add("itemGroup." + HallMod.MODID + ".main.section.creatures", "刷怪蛋");
+        add("itemGroup." + HallMod.MODID + ".main.section.materials", "材料");
+        add("itemGroup." + HallMod.MODID + ".main.section.gear", "武器与工具");
+        add("itemGroup." + HallMod.MODID + ".main.section.blocks", "方块");
+        add("itemGroup." + HallMod.MODID + ".main.section.misc", "其它");
         add(RegisterItem.EXAMPLE_ITEM.get(), "测试物品");
         add(RegisterItem.VOID_SWORD.get(), "伪-虚无之刃");
         add(RegisterItem.HALL_BONE_FRAGMENTS.get(),  "王庭骨");
@@ -152,5 +158,19 @@ public class LangDataCN extends LanguageProvider {
         add("attribute.name." + HallMod.MODID + ".mana_restore", "法力回复量");
         add("attribute.name." + HallMod.MODID + ".spell_power", "法术强度");
         add("attribute.name." + HallMod.MODID + ".magic_slots", "魔法槽位");
+
+        // ---- 魔法体系 · 物品 ----
+        // 法力板：六个流派各一块，目前都是纯材料（见 RegisterItem 里的说明，
+        // 贴图是 water 而 MagicType 对应位置是 ACE，两边尚未建立映射）。
+        add(RegisterItem.DEATH_MANA_PLATE.get(), "死亡魔法版材");
+        add(RegisterItem.FIRE_MANA_PLATE.get(), "火焰魔法版材");
+        add(RegisterItem.LIGHT_MANA_PLATE.get(), "光明魔法版材");
+        add(RegisterItem.NATURE_MANA_PLATE.get(), "自然魔法版材");
+        add(RegisterItem.VOID_MANA_PLATE.get(), "虚空魔法版材");
+        add(RegisterItem.WATER_MANA_PLATE.get(), "水魔法版材");
+        add(RegisterItem.MAGIC_CATA.get(), "魔法催化剂");
+        add(RegisterItem.VOID_RUNE.get(), "虚空符文");
+        add(RegisterItem.WAND.get(), "法杖");
+        add(RegisterItem.WAND_NATURE.get(), "自然法杖");
     }
 }

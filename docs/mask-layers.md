@@ -151,7 +151,7 @@ MaskLayerRegistry.register(
 | `color` | int / string | 白 | 主色。推荐写 `"#AARRGGBB"`；也接受 `"0xAARRGGBB"` 或十进制数 |
 | `intensity` | number | 1.0 | 亮度倍率 |
 | `width` | number | 2.0 | 作用宽度。泛光里是**光晕外扩半径，单位是遮罩纹理像素** |
-| `speed` | number | 1.0 | 动画速度倍率，0 = 静止 |
+| `speed` | number | 1.0 | 动画速度倍率。**0 = 静止在满亮度**（`glow` 里 `pulse` 恒为 1.0）；> 0 时在 0.80~1.00 之间脉动 |
 | `opacity` | number | 1.0 | 整体强度（0–1） |
 | `order` | number | 100.0 | 同物品内多层的绘制顺序，**升序 = 越晚画 = 越在上层** |
 | `phase` | number | 0.0 | 相位偏移（弧度），用来错开同物品上多个同效果层 |

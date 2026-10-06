@@ -52,7 +52,7 @@ uniform vec2 MaskPixels;
 uniform vec4 GlowColor;    // 着色（默认白 = 完全用本体贴图自己的颜色）
 uniform float Intensity;   // 强度倍率
 uniform float GlowWidth;   // 光晕外扩半径，单位是遮罩纹理像素
-uniform float GlowSpeed;   // 呼吸速度（0 = 静止）
+uniform float GlowSpeed;   // 呼吸速度；0 = 静止在满亮度（见下面 pulse 那一段）
 uniform float Opacity;     // 整体强度
 uniform float Phase;       // 相位偏移
 uniform float time;        // 游戏 tick，与 cosmic 同一个时间源
@@ -116,7 +116,17 @@ void main() {
     // 外圈同样乘 coverage：贴图透明的地方没有图形，不该被点亮。
     float spill = max(halo - gate, 0.0) * coverage;
 
-    float pulse = 0.80 + 0.20 * sin(time * 0.05 * GlowSpeed + Phase);
+    // 呼吸：GlowSpeed > 0 → 在 0.80~1.00 之间脉动（周期 2π/(0.05*speed) tick）。
+    //
+    // GlowSpeed == 0 表示"静止"，此时取**满值 1.0**，而不是让 sin 去算 0。
+    // 这一条踩过：原来无条件写 0.80 + 0.20*sin(...)，于是 GlowSpeed=0 时
+    // sin(0)=0 → pulse 恒为 0.80，"静止"反而白掉 20% 亮度；更要命的是
+    // pulse 的峰值只到 1.0 且只在波峰一瞬间成立，于是"想要始终最亮"
+    // 在参数层面**根本没有办法表达** —— 只能靠把 Intensity 乘 1.25 去抵消，
+    // 那是个没人猜得到的隐式耦合。现在 0 就是明确的"常亮满值"。
+    float pulse = GlowSpeed > 0.0
+            ? 0.80 + 0.20 * sin(time * 0.05 * GlowSpeed + Phase)
+            : 1.0;
 
     // 加法混合下 alpha 不参与配色（blendFunc 就是 ONE/ONE），所以强度必须自己乘进 rgb。
     float strength = GlowColor.a * Opacity;

@@ -174,3 +174,45 @@
   现在先判定再决定是否出剑。
 - 领域落剑与光柱伤害的归因链路补全（领域击杀计入玩家，掉落与成就照常）。
 
+## [未发布] — 修复：登录时因属性表未初始化而崩溃
+
+### 修复 (Fixed)
+- **玩家无法进入世界（被踢回登录界面）**：`AttachCapabilitiesEvent` 是在
+  `Entity` 的构造函数里派发的，那一刻 `LivingEntity` 的属性表还没被赋值，
+  而 `ForgeEventHelpers` 在同一个事件里 `new TwistedPoint(player)` →
+  `MagicStats.maxMana` → `RegisterAttributes.valueOf` 会去读属性表，
+  于是抛 `NullPointerException`。异常从能力附加的监听器里冒出去之后，
+  整次 `AttachCapabilitiesEvent` 被判失败（魔法池/法力池都没挂上），
+  日志里表现为 `Couldn't place player in world`。
+  现在 `RegisterAttributes.valueOf` 在属性表为 `null` 时直接返回 fallback ——
+  那个时刻本来也不存在任何属性修饰器，所以返回的正是真实值。
+
+## [未发布] — 创造物品栏：分区隔断行
+
+### 新增 (Added)
+- **带分区的创造标签 `SectionedCreativeModeTab`**：一个标签里用「隔断行」把物品切成
+  若干分区，每段以一行流动色带 + 居中彩色标题开头，段尾自动补空到整行。
+  - 注册侧用 `SectionedCreativeModeTab.builder().section(标题, 生成器)...` 声明，
+    父类 `displayItems()` 被禁用（设了也会被覆盖，不如直接抛）。
+  - 跨分区按物品去重，先声明的分区赢 —— 所以最后一个「其它」分区可以直接
+    遍历整个命名空间兜底，新加的物品不会因为忘了登记而消失。
+- **隔断行着色器 `hall:gui_tab_divider`**：GUI 空间里的一条极光缎带
+  （横向流动的多色噪声 + 中央亮芯丝 + 上下淡出），Java 侧走
+  `BufferUploader.drawWithShader` 立即绘制。着色器没加载成功时退回一条纯色细线，
+  分区功能本身不受影响。
+- **`CreativeModeInventoryScreenMixin`**：在原版「扁平物品表 + 5×9 取景窗」的网格里
+  插入 9 个空槽当隔断行，并在 `ContainerScreenEvent.Render.Foreground` 上绘制色带与标题。
+  搜索框有关键字时保持原版的扁平结果，不做分区。
+
+### 变更 (Changed)
+- **`RegisterTab` 的物品表改为分区声明**：畸骸与王庭生物 / 王庭材料 / 武器与工具 /
+  王庭建材 / 其它。物品集合本身不变，只是多了一层可见的结构。
+- `LangDataCN` / `LangDataEN` 新增 5 条分区标题（`itemGroup.hall.main.section.*`）。
+
+### 说明 (Notes)
+- 隔断行**只存在于客户端**：创造标签的物品表本来就只在客户端构建
+  （`CreativeModeTabs.tryRebuildTabContents()` 唯一调用方是 `CreativeModeInventoryScreen`），
+  所以不涉及网络同步、存档与服务端。
+- `getDisplayItems()` 对外仍是那份干净的扁平物品表，JEI / 其它 mod 读到的没有变化；
+  混入也只在选中分区标签时生效，其它标签零影响。
+

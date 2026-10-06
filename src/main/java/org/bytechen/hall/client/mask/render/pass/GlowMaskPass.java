@@ -35,7 +35,8 @@ import org.jetbrains.annotations.Nullable;
  *       填别的颜色等于给泛光上色）</li>
  *   <li>{@code width} —— 光晕外扩半径，单位是<b>遮罩纹理像素</b></li>
  *   <li>{@code intensity} —— 亮度倍率</li>
- *   <li>{@code speed} —— 呼吸速度，0 让它静止</li>
+ *   <li>{@code speed} —— 呼吸速度。0 = <b>静止在满亮度</b>（想做"始终最亮"就填 0）；
+ *       正数时亮度在 0.80~1.00 之间脉动</li>
  *   <li>{@code opacity} / {@code phase} —— 整体强度与相位偏移</li>
  * </ul>
  */

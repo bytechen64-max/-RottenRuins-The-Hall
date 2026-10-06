@@ -20,6 +20,8 @@
     "MixinItemRendererTwitch",
     "OutlineReplayMixin",
     "CrimsonVowBlockMixin",
+    "CreativeModeInventoryScreenMixin",
+    "accessor.AccessorAbstractContainerScreen",
     "accessor.AccessorRenderStateShard"
   ],
   "injectors": {

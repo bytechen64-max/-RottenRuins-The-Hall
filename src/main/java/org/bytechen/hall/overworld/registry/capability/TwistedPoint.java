@@ -78,6 +78,16 @@ public class TwistedPoint implements ByteNumberAbility, ICapabilitySerializable<
     private final LazyOptional<TwistedPoint> self = LazyOptional.of(() -> this);
     private boolean dirty;
 
+    /**
+     * 建池：初始法力 = 当前上限（新角色见面就是满蓝）。
+     *
+     * <p><b>这个构造函数是在 {@code AttachCapabilitiesEvent} 里被调用的</b>，
+     * 也就是 {@code Entity} 的构造函数内部 —— 那一刻 {@code LivingEntity} 的属性表
+     * 还没建出来，所以 {@link MagicStats#maxMana(Player)} 折到属性 provider 时
+     * 只能拿到基值 1000（细节见 {@code RegisterAttributes#valueOf} 的注释）。
+     * 这里不影响正确性：此刻玩家身上不可能有任何属性修饰器，而旧存档的
+     * {@link #deserializeNBT} 随后会把真实法力覆盖回来。</p>
+     */
     public TwistedPoint(@NotNull Player owner) {
         this.owner = owner;
         this.mana = MagicStats.maxMana(owner);

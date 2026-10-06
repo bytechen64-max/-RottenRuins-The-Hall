@@ -14,6 +14,9 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.bytechen.hall.overworld.registry.items.*;
+import org.bytechen.hall.overworld.registry.items.magic.ManaPlateItem;
+import org.bytechen.hall.overworld.registry.items.magic.WandItem;
+import org.bytechen.hall.overworld.registry.items.magic.bases.MagicType;
 
 import java.util.function.Supplier;
 
@@ -132,8 +135,52 @@ public class RegisterItem {
     public static final RegistryObject<Item> DOMERITE_LONGSWORD = ITEMS.register("domerite_longsword",
             () -> new DomeriteLongsword(new Item.Properties()));
 
+    // ══════════════════════════════════════════════════════════════
+    // 魔法体系 · 物品
+    // ══════════════════════════════════════════════════════════════
+    // 本轮<b>只做注册与表现</b>（模型 + 译名 + 泛光），数值与法术效果一律留白。
+    // 唯一的"行为"是光明法力板的 mask 泛光层，见下面 ManaPlateItem 那一段。
+    //
+    // 模型与译名都走 datagen（见 datagen/gen/ItemGenData 与 gen/lang/），
+    // 不要手写 json —— 模型是按注册表自动遍历生成的，手写的文件会被覆盖。
 
+    // ---- 法力板：各流派的基础板材 ----
+    // 目前都是纯材料，唯一的例外是光明法力板 —— 它挂了 mask 泛光层（自发光）。
+    // 想让别的板也发光：放一张同画布的 <流派>_mana_plate_mask_glow.png，
+    // 再把对应那行从 registerSimpleItem 换成
+    // ITEMS.register(name, () -> new ManaPlateItem(props, <MaskLayerSpec>))。
+    //
+    // 注意：贴图里是 water（水），而 bases/MagicType 里对应位置是 ACE。
+    // 这两者目前<b>没有建立任何映射</b>（板子还没有接进法术系统），
+    // 等做流派数值时再决定 ACE 与水的关系。
+    public static final RegistryObject<Item> DEATH_MANA_PLATE = registerSimpleItem("death_mana_plate");
+    public static final RegistryObject<Item> FIRE_MANA_PLATE = registerSimpleItem("fire_mana_plate");
 
+    /**
+     * 光明法力板 —— 唯一带泛光的板材。
+     * 泛光走 {@code MaskLayerProvider}（物品自描述），所以模型仍是 datagen 生成的
+     * {@code minecraft:item/generated}，没有手写 JSON。
+     */
+    public static final RegistryObject<Item> LIGHT_MANA_PLATE = ITEMS.register("light_mana_plate",
+            () -> new ManaPlateItem(new Item.Properties().stacksTo(64), ManaPlateItem.LIGHT_GLOW));
+
+    public static final RegistryObject<Item> NATURE_MANA_PLATE = registerSimpleItem("nature_mana_plate");
+    public static final RegistryObject<Item> VOID_MANA_PLATE = registerSimpleItem("void_mana_plate");
+    public static final RegistryObject<Item> WATER_MANA_PLATE = registerSimpleItem("water_mana_plate");
+
+    // ---- 催化剂 / 符文：目前是纯材料 ----
+    public static final RegistryObject<Item> MAGIC_CATA = registerSimpleItem("magic_cata");
+    public static final RegistryObject<Item> VOID_RUNE = registerSimpleItem("void_rune");
+
+    // ---- 法杖 ----
+    // 走 StaffBase（纯转发层），所以它们已经"能被魔法系统识别"：
+    // 右键会走进 MagicHandle。但魔法槽里目前一件法术都没有，
+    // 于是每次右键都只会拿到 CastResult.NO_SPELL —— 表现为"什么都没发生"。
+    // 模型用 minecraft:item/handheld，由 ItemGenData 的 isHandheld 判定。
+    public static final RegistryObject<Item> WAND = ITEMS.register("wand",
+            () -> new WandItem(new Item.Properties().stacksTo(1), MagicType.MAGIC));
+    public static final RegistryObject<Item> WAND_NATURE = ITEMS.register("wand_nature",
+            () -> new WandItem(new Item.Properties().stacksTo(1), MagicType.NATURE));
 
     public static final RegistryObject<Item> INF_PLAYER_SPAWN_EGG = registerSpawnEgg("inf_player",EntityTypeRegistry.INF_PLAYER);
     public static final RegistryObject<Item> INF_ENDERMAN_SPAWN_EGG = registerSpawnEgg("inf_enderman",EntityTypeRegistry.INF_ENDERMAN);
