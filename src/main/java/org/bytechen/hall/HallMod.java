@@ -2,10 +2,14 @@ package org.bytechen.hall;
 
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
+import net.minecraft.resources.ResourceLocation;
 import org.bytechen.hall.config.ConfigHelper;
+import org.bytechen.hall.api.magic.MagicAttributeProvider;
+import org.bytechen.hall.api.magic.MagicStatRegistry;
 import org.bytechen.hall.overworld.difficulty.HallDifficulty;
 import org.bytechen.hall.network.NetworkHelper;
 import org.bytechen.hall.overworld.registry.*;
+import org.bytechen.hall.overworld.registry.entities.population.ulcerated.UlceratedConversionRules;
 import org.bytechen.hall.overworld.registry.spawning.SplendidingSpawnPlacements;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.world.BiomeModifier;
@@ -23,6 +27,12 @@ public class HallMod {
 
     public static final String MODID = "hall";
     public static final Logger LOGGER = LogUtils.getLogger();
+
+    /**
+     * 感染类型 —— 进化表（{@code data/hall/infcore_evolution/*.json} 里的 {@code type}）
+     * 与兜底档位共用；被王庭感染生物击杀的生物按该类型被感染。
+     */
+    public static final ResourceLocation INFECTION_TYPE = new ResourceLocation(MODID, "inf");
 
     /** 群系修改器序列化器注册（数据包级别群系修改） */
     private static final DeferredRegister<Codec<? extends BiomeModifier>> BIOME_MODIFIER_SERIALIZERS =
@@ -44,6 +54,12 @@ public class HallMod {
         EntityTypeRegistry.ENTITY_TYPES.register(modEventBus);
         RegisterParticles.PARTICLE_TYPES.register(modEventBus);
         RegisterBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+        RegisterFeature.FEATURES.register(modEventBus);
+
+        // 魔法属性（法力上限 / 回速 / 回复倍率 / 法术强度 / 槽位数）。
+        // 注册后由 RegisterAttributes 里的 EntityAttributeModificationEvent 处理器
+        // 把这些属性挂到玩家身上 —— 少了那一步 player.getAttribute(...) 会一直是 null。
+        RegisterAttributes.ATTRIBUTES.register(modEventBus);
 
         // 群系修改器序列化器
         BIOME_MODIFIER_SERIALIZERS.register(modEventBus);
@@ -51,6 +67,8 @@ public class HallMod {
         // Cosmic starfield rendering（参考 Live 模组）
         if (FMLEnvironment.dist.isClient()) {
             org.bytechen.hall.client.cosmic.CosmicClient.init(modEventBus);
+            // mask 效果层系统（可与星空层叠加：泛光、以及以后新增的其他效果）
+            org.bytechen.hall.client.mask.MaskLayerClient.init(modEventBus);
         }
 
         modEventBus.addListener(this::commonSetup);
@@ -65,6 +83,15 @@ public class HallMod {
 
         // 注册 Hall 自定义难度
         HallDifficulty.registerAll();
+
+        // 感染兜底转化规则（溃烂）：没有专属感染形态的生物按碰撞体积分档
+        // 转化为斥候 / 巨碑（判断与转化在 infcore 的感染流程里执行）
+        UlceratedConversionRules.register();
+
+        // 魔法数值的属性来源：把 hall:max_mana / mana_regeneration / magic_slots
+        // 接进 MagicStats 求值链。必须早于任何 MagicStats 求值 —— 放这里安全，
+        // 因为玩家要等世界加载才存在。
+        MagicStatRegistry.register(new MagicAttributeProvider());
 
         LOGGER.info("Hall common setup complete");
     }

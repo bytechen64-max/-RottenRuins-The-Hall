@@ -47,12 +47,13 @@ public final class ShockwaveLateRenderQueue {
      * Must be called on the render thread.
      */
     public static void enqueue(Matrix4f pose, Matrix3f normal,
+                                float cx, float cy, float cz,
                                 float radius, float maxRadius,
                                 float alpha, float lifeProgress,
                                 float ringPosition, float ringWidth) {
         ENTRIES.add(new Entry(
                 new Matrix4f(pose), new Matrix3f(normal),
-                radius, maxRadius, alpha, lifeProgress, ringPosition, ringWidth));
+                cx, cy, cz, radius, maxRadius, alpha, lifeProgress, ringPosition, ringWidth));
     }
 
     /**
@@ -75,7 +76,7 @@ public final class ShockwaveLateRenderQueue {
         try {
             for (Entry e : ENTRIES) {
                 ShockwaveRenderer.renderOneDeferred(
-                        e.pose, e.normal, e.radius, e.maxRadius,
+                        e.pose, e.normal, e.cx, e.cy, e.cz, e.radius, e.maxRadius,
                         e.alpha, e.lifeProgress, e.ringPosition, e.ringWidth);
             }
         } finally {
@@ -87,6 +88,7 @@ public final class ShockwaveLateRenderQueue {
     // ── internal ──────────────────────────────────────────────
 
     private record Entry(Matrix4f pose, Matrix3f normal,
+                         float cx, float cy, float cz,
                          float radius, float maxRadius,
                          float alpha, float lifeProgress,
                          float ringPosition, float ringWidth) {}

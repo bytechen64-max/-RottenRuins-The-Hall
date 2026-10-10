@@ -144,4 +144,28 @@ public final class VerdictTuning {
     public static float stackScale() {
         return scale(c -> c.verdictStackScale, DEFAULT_STACK_SCALE, 0f, MAX_SCALE);
     }
+
+    /** 领域每次出剑同时锁定的目标数上界（1 ~ 6）。 */
+    public static final int DEFAULT_FIELD_TARGETS = 3;
+    public static final int MIN_FIELD_TARGETS = 1;
+    public static final int MAX_FIELD_TARGETS = 6;
+
+    /**
+     * 领域每次出剑锁定几个目标。
+     *
+     * <p>读的是 int 而不是 float 倍率，所以不能复用 {@link #scale}：
+     * 它带了 {@code Float} 装箱与范围钳制那套逻辑。这里单独写一遍，
+     * 同样保证"配置没就绪 / 解析抛异常 / 值非法"三种情况下都回落到默认值 ——
+     * 这个类存在的理由就是把那三种情况挡在调用方之外。</p>
+     */
+    public static int fieldMaxTargets() {
+        SplendidingConfig c = cfg();
+        if (c == null) return DEFAULT_FIELD_TARGETS;
+        try {
+            int v = c.verdictFieldMaxTargets;
+            return Math.max(MIN_FIELD_TARGETS, Math.min(MAX_FIELD_TARGETS, v));
+        } catch (Throwable t) {
+            return DEFAULT_FIELD_TARGETS;
+        }
+    }
 }

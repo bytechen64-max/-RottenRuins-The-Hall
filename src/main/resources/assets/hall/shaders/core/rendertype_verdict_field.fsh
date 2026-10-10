@@ -37,6 +37,7 @@ uniform float uMeshRadius;     // 网格半径（格）—— 比 uRadius 大，
 uniform float uHalo;           // halo 外沿 / 逻辑半径，建议 1.28
 uniform float uPulse;          // 0..1 当前脉冲进度
 uniform float uProgress;       // 0..1 领域生命周期
+uniform float uOwnerPresent;   // 1 = 施法者在场；0 = 已离场（阵法熄火）
 uniform vec3  uFieldColor;     // 天蓝
 uniform vec3  uCoreColor;      // 近白
 
@@ -87,6 +88,34 @@ void main() {
 
     float shape = spoke * 0.55 + bars * 0.30 + boundary * 1.15
                 + pulseRing * 0.90 + halo * 0.16;
+
+    // ── ⑥ 整片呼吸：出剑的那一下，整块场子跟着一起亮 ──
+    //  原本只有一道向外扩散的脉冲环 —— 它标出了"出剑了"，但场子本身纹丝不动，
+    //  于是读起来像"地上有个动画在循环"而不是"这片地是活的"。
+    //  叠一层全局呼吸之后，阵法才有"在运转"的感觉，而且它几乎不花钱。
+    //
+    //  ⚠️ 用 <b>三角波尖峰</b>而不是 {@code exp(-uPulse * k)}：
+    //  uPulse 是"已经过了一个出剑间隔的百分之几"，出剑的瞬间它刚好是 <b>0</b>。
+    //  指数的最大值就在 0 处，于是每两次出剑之间它都从 1 开始——整片场子
+    //  会长期停在最亮档，呼吸变成"永远亮着"。用三角波才能得到一个
+    //  真正收得回去的尖峰（峰在 pulse=0，到 pulse=0.35 归零）。
+    float beat = max(0.0, 1.0 - uPulse / 0.35);
+    float idle = 0.5 + 0.5 * sin(uTime * 1.4);             // 静止时的低频起伏
+    float breath = 0.09 * idle + 0.30 * beat * beat;       // 平方让尖峰更"脆"
+
+    // ── ⑦ 施法者离场：阵法熄火 ──
+    //  Java 侧已经在离场时<b>停止出剑</b>了（见 VerdictFieldEntity.tick），
+    //  这里必须同步降下来，否则画面还在"运转"、伤害却已经没了 ——
+    //  那正是玩家最难判断的一类不一致。
+    //
+    //  分两档压低：整体先降到 34%，其中"辐条 + 流动条"再降到 25% ——
+    //  留下边界环（玩家判断范围的唯一依据）和一点底光，
+    //  熄灭的是"运转"的部件，而不是整个阵法。
+    float alive = mix(0.34, 1.0, uOwnerPresent);
+    float structure = mix(0.25, 1.0, uOwnerPresent);
+    shape = shape * alive + (spoke * 0.55 + bars * 0.30) * (structure - alive);
+
+    shape += breath * (uOwnerPresent * 0.9 + 0.1);
 
     // 收尾：让领域在整个生命周期末尾整体收束，而不是"啪"地消失
     float life = 1.0 - smoothstep(0.86, 1.0, uProgress);

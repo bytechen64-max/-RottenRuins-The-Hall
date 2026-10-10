@@ -51,10 +51,21 @@ public class HallVineBlock extends Block {
     /** 每次 randomTick 的生长概率 */
     private static final double GROWTH_CHANCE = 1.0D;
 
-    /** 向上生长的最大高度 */
+    /**
+     * 向上生长的最大高度（单位为「节」）。
+     * <p>
+     * 这里限制的是<b>生长上限</b>，与「世界生成时一次放几格」是两回事：
+     * 地物（{@code HallVineFeature}）只放置<b>一格</b>作为种子，
+     * 之后由 {@link #randomTick} 逐节往上长到这个上限。
+     * <p>
+     * 曾经为了绕开「多段连接态贴图不对」的问题把此值压成 1，
+     * 那是误解了需求 —— 需求是「生成只有一格」，不是「不能生长」。
+     * 现在恢复生长，多段状态的刷新由 {@code randomTick} 末尾的
+     * {@code refreshNeighbourSection} 负责。
+     */
     private static final int MAX_UP_HEIGHT = 4;
 
-    /** 向下生长的最大长度 */
+    /** 向下生长的最大长度（单位为「节」）。含义同 {@link #MAX_UP_HEIGHT}。 */
     private static final int MAX_DOWN_HEIGHT = 10;
 
     public HallVineBlock() {
@@ -173,14 +184,44 @@ public class HallVineBlock extends Block {
         }
 
         // 生长：
-        // 1. 当前位置变为成熟茎段（AGE=25），updateShapeLogic 会自动计算正确的 SECTION
+        // 1. 当前位置变为成熟茎段（AGE=25）
         level.setBlock(pos, this.updateShapeLogic(state.setValue(AGE, 25), level, pos), Block.UPDATE_ALL);
 
-        // 2. 上方/下方生成新的生长端
+        // 2. 前方生成新的生长端
         int newAge = Math.min(state.getValue(AGE) + 1, 24);
         level.setBlockAndUpdate(forwardPos, this.defaultBlockState()
                 .setValue(GROWTH_DIR, state.getValue(GROWTH_DIR))
                 .setValue(AGE, newAge));
+
+        // 3. 【关键】显式重算相邻两段的形态。
+        //
+        // 为什么必须手动做：新段是用 setBlockAndUpdate 放置的，它虽然带
+        // UPDATE_NEIGHBORS，但只保证「紧邻方块的邻居通知」，并不保证通知会
+        // 沿藤蔓继续往回传播。结果是先长出来的那几段永远停在初始状态
+        // （向下长的停在 BOTTOM、向上长的停在 TOP），整条藤蔓只有一两段
+        // 用对了贴图 —— 这正是「连着都是同一个状态」的原因。
+        //
+        // 正反两段都刷新，保证无论谁先更新都能得到正确的中间态。
+        BlockPos backwardPos = isUp ? pos.below() : pos.above();
+        refreshNeighbourSection(level, backwardPos);
+        refreshNeighbourSection(level, forwardPos);
+    }
+
+    /**
+     * 重算某一格的 SECTION（若该格是王庭藤蔓）。
+     * <p>
+     * 由于邻居变化不会沿链条自动回传，生长后需要显式刷新相邻段，
+     * 否则整条藤蔓的贴图状态会滞留在初始值。
+     */
+    private void refreshNeighbourSection(ServerLevel level, BlockPos pos) {
+        BlockState s = level.getBlockState(pos);
+        if (!s.is(this)) {
+            return;
+        }
+        BlockState updated = this.updateShapeLogic(s, level, pos);
+        if (!updated.equals(s)) {
+            level.setBlock(pos, updated, Block.UPDATE_ALL);
+        }
     }
 
     // ==================== 形态更新 ====================
@@ -248,6 +289,25 @@ public class HallVineBlock extends Block {
     @Override
     public int getLightBlock(BlockState state, BlockGetter level, BlockPos pos) {
         return 0;
+    }
+
+    // ==================== 燃烧特性 ====================
+
+    /**
+     * 王庭藤蔓的燃烧特性 —— 对齐原版 {@code minecraft:vine}（引燃 15 / 可燃 100）。
+     * <p>
+     * 原版把数值写死在 {@code FireBlock} 的私有表里，模组方块必须自行重写；
+     * 详见 {@link HallWoodBlocks}。
+     */
+    @Override
+    public int getFlammability(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
+        return HallWoodBlocks.VINE_FLAMMABILITY;
+    }
+
+    /** 王庭藤蔓的火焰蔓延速度 —— 对齐原版 {@code minecraft:vine} */
+    @Override
+    public int getFireSpreadSpeed(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
+        return HallWoodBlocks.VINE_ENCOURAGEMENT;
     }
 
     // ==================== 状态定义 ====================

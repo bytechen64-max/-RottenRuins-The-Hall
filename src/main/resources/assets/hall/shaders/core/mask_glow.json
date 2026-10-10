@@ -1,0 +1,37 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "one",
+    "dstrgb": "one"
+  },
+  "vertex": "hall:mask_glow",
+  "fragment": "hall:mask_glow",
+  "attributes": [
+    "Position",
+    "Color",
+    "UV0"
+  ],
+  "samplers": [
+    { "name": "Sampler0" }
+  ],
+  "uniforms": [
+    { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0] },
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0] },
+    { "name": "ColorModulator", "type": "float", "count": 4, "values": [1.0,1.0,1.0,1.0] },
+    { "name": "FogStart", "type": "float", "count": 1, "values": [0.0] },
+    { "name": "FogEnd", "type": "float", "count": 1, "values": [1.0] },
+    { "name": "FogShape", "type": "int", "count": 1, "values": [0] },
+    { "name": "MaskMin", "type": "float", "count": 2, "values": [0.0,0.0] },
+    { "name": "MaskSize", "type": "float", "count": 2, "values": [1.0,1.0] },
+    { "name": "MaskPixels", "type": "float", "count": 2, "values": [32.0,32.0] },
+    { "name": "BaseMin", "type": "float", "count": 2, "values": [0.0,0.0] },
+    { "name": "BaseSize", "type": "float", "count": 2, "values": [1.0,1.0] },
+    { "name": "GlowColor", "type": "float", "count": 4, "values": [1.0,1.0,1.0,1.0] },
+    { "name": "Intensity", "type": "float", "count": 1, "values": [1.0] },
+    { "name": "GlowWidth", "type": "float", "count": 1, "values": [2.0] },
+    { "name": "GlowSpeed", "type": "float", "count": 1, "values": [1.0] },
+    { "name": "Opacity", "type": "float", "count": 1, "values": [1.0] },
+    { "name": "Phase", "type": "float", "count": 1, "values": [0.0] },
+    { "name": "time", "type": "float", "count": 1, "values": [0.0] }
+  ]
+}

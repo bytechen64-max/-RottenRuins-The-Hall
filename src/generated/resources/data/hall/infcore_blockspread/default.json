@@ -1,0 +1,478 @@
+{
+  "entries": [
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_grass_block",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:grass_block"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_dirt",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:dirt"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:oak_log"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:spruce_log"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:birch_log"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:jungle_log"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:acacia_log"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:dark_oak_log"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:mangrove_log"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:cherry_log"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:oak_leaves"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:spruce_leaves"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:birch_leaves"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:jungle_leaves"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:acacia_leaves"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:dark_oak_leaves"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:mangrove_leaves"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:cherry_leaves"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:azalea_leaves"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:flowering_azalea_leaves"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:dandelion"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:poppy"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:blue_orchid"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:allium"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:azure_bluet"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:red_tulip"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:orange_tulip"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:white_tulip"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:pink_tulip"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:oxeye_daisy"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:cornflower"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:lily_of_the_valley"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_grass",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:grass"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_grass",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:tall_grass"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:oak_planks"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:spruce_planks"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:birch_planks"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:jungle_planks"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:acacia_planks"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:dark_oak_planks"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:mangrove_planks"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:cherry_planks"
+    },
+    {
+      "type": "hall:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "hall:hall_stone",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:stone"
+    }
+  ],
+  "replace": false
+}

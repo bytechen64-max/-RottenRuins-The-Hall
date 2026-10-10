@@ -11,6 +11,7 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.bytechen.hall.overworld.difficulty.HallDifficultyAttributes;
 import org.bytechen.hall.overworld.registry.entities.ai.FaceTargetGoal;
 import org.bytechen.hall.overworld.registry.entities.base.AbstractHallEntity;
 import org.bytechen.infcore.api.goal.InfectedTargetGoal;
@@ -69,6 +70,8 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         this.targetSelector.addGoal(1, new InfectedTargetGoal.Builder(this)
                 .range(40.0)          // 搜索范围
                 .mustSee(false)       // 无需视线
+                // 威胁点数过滤器：玩家威胁 < 5 不主动索敌；非玩家生物照常索敌
+                .filter(this)
                 .build());
 
         // === 行为选择器（goalSelector）===
@@ -210,7 +213,8 @@ public class InfEndermanEntity extends BaseInfectedEntity {
     // 实际伤害方法
     @Override
     protected boolean getAttack(LivingEntity target) {
-        float baseDamage = (float) getAttributeBaseValue(Attributes.ATTACK_DAMAGE);
+        // 必须走 effectiveAttackDamage（含属性修饰符），不能用 getAttributeBaseValue
+        float baseDamage = HallDifficultyAttributes.effectiveAttackDamage(this, 25.0F);
         target.hurt(this.damageSources().mobAttack(this), baseDamage);
         return true;
     }

@@ -3,6 +3,7 @@ package org.bytechen.hall.overworld.registry.items;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -22,6 +23,7 @@ import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.common.ToolAction;
 import net.minecraftforge.common.ToolActions;
 import org.jetbrains.annotations.Nullable;
@@ -31,34 +33,44 @@ import org.bytechen.hall.overworld.registry.entities.population.skills.Shockwave
 import org.bytechen.hall.overworld.registry.entities.population.skills.SwordAuraEntity;
 import org.bytechen.hall.overworld.registry.entities.population.skills.VerdictBeamEntity;
 import org.bytechen.hall.overworld.registry.entities.population.skills.VerdictFieldEntity;
+import org.bytechen.hall.overworld.registry.entities.population.skills.VerdictSwordDropEntity;
 import org.bytechen.hall.overworld.registry.items.verdict.HeightFactor;
 import org.bytechen.hall.overworld.registry.items.verdict.VerdictCooldown;
 import org.bytechen.hall.overworld.registry.items.verdict.VerdictDamage;
 import org.bytechen.hall.overworld.registry.items.verdict.VerdictDash;
 import org.bytechen.hall.overworld.registry.items.verdict.VerdictDebug;
+import org.bytechen.hall.overworld.registry.items.verdict.VerdictFeedback;
 import org.bytechen.hall.overworld.registry.items.verdict.VerdictTuning;
 import org.bytechen.hall.utils.DomeriteStatsHelper;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * 天穹裁决（{@code domerite_longsword}）—— 单支线次毕业级长剑。
  *
  * <h3>伤害构成</h3>
- * <p>所有伤害（普攻与三个技能）统一走 {@link VerdictDamage} 的
- * 「25 原版 hurt + 5 原版 setHealth」两道，合计 30 有效伤害。
- * 本类的属性面板只负责<b>显示</b>与其它系统（如模组兼容读取攻击力）的兜底 ——
- * 实际结算不走属性，因为原版 {@code hurt} 那半程就是固定 25。</p>
+ * <p>所有伤害统一走 {@link VerdictDamage} 的「原版 hurt + 原版 setHealth」两道。
+ * 平砍与突进是 25 + 5 = 30；光柱是<b>两波</b>（24+5 与 12+4 ≈ 45，随扫描球下落分两次结算）；
+ * 领域剑气是 18 + 5。本类的属性面板只负责<b>显示</b>与其它系统（如模组兼容读取攻击力）的兜底 ——
+ * 实际结算不走属性，因为原版 {@code hurt} 那半程是固定值。</p>
+ *
+ * <h3>反馈</h3>
+ * <p>三个技能共用 {@link VerdictFeedback} 这一个反馈入口：命中顿帧、命中音调随命中数升高、
+ * 粒子爆发、相机抖动与 FOV 冲击。共同入口是"这套技能有统一识别度"的前提 ——
+ * 各写各的 playSound 只会在画面上留下三套互不相干的特效。</p>
  *
  * <h3>右键：单键三态</h3>
  * <p>三个技能共用<b>同一个</b> {@link VerdictCooldown} 冷却池，
  * 所以用掉一招就等于用掉整个裁决。三态靠原版物品使用机制区分，<b>不需要任何自定义网络包</b>：</p>
  * <pre>
- *   右键短按 (&lt; 0.25s)        → ② 截空·凌空斩     朝视线突进
- *   右键蓄力 (≥ 0.25s) 后松开   → ① 天穹裁决        垂直光柱
- *   潜行 + 按住右键 0.6s        → ③ 裁决领域        空中剑阵
+ *   右键短按 (&lt; 0.4s = 8 tick)   → ② 截空·凌空斩     朝视线突进
+ *   右键蓄力 (≥ 0.4s) 后松开       → ① 天穹裁决        垂直光柱（两波伤害）
+ *   潜行 + 按住右键 0.7s (=14 tick) → ③ 裁决领域        空中剑阵
  * </pre>
+ * <p>时间轴上是一条干净的阶梯，阈值处各有一声提示音 —— 玩家<b>听</b>得出来自己在哪一档。</p>
  *
  * <h3>为什么重写 {@code useOnRelease()}</h3>
  * <p>原版 {@code LivingEntity.updateUsingItem()} 的收尾是这样的：</p>
@@ -82,6 +94,29 @@ import java.util.Map;
  */
 public class DomeriteLongsword extends SwordItem implements ICustomOutline {
 
+
+
+    /**
+     * 攻击距离加成（格）。
+     *
+     * <p>{@code forge:entity_reach} 默认 3.0、上限 1024，所以 100 是一个合法的普通值，
+     * 不需要任何越界兜底。</p>
+     */
+    public static final double ATTACK_REACH_BONUS = 5;
+
+    /**
+     * 攻击距离修饰符的 UUID。
+     *
+     * <p>用固定的字面量而不是随机生成：同一个物品的同一个属性修饰符在不同存档、
+     * 不同端之间必须同名同 id，否则会被原版当成两个修饰符叠加（来回切换会越加越多）。</p>
+     */
+    private static final UUID REACH_MODIFIER_UUID =
+            UUID.nameUUIDFromBytes(
+                    (CrimsonVow.class.getName() + ":reach")
+                            .getBytes(StandardCharsets.UTF_8));
+
+
+
     // ══════════════════════════════════════════════════════════════
     //  三态参数
     // ══════════════════════════════════════════════════════════════
@@ -97,23 +132,39 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
      * </ul>
      *
      * <p>取 {@value #USE_DURATION} tick = 1.5 秒，于是短按窗口是
-     * {@value #SHORT_PRESS_TICKS} tick = 0.3 秒。
-     * 早期版本用 25/5（0.25s 窗口），实测<b>太窄</b>：正常的一次鼠标点击
-     * 加上客户端/服务端 tick 相位差，很容易就超过 5 tick 而被判成蓄力，
-     * 于是"短按突进"变得几乎放不出来。加宽到 0.3 秒之后，
-     * 蓄力仍然只需要多按 0.3 秒 —— 对刻意蓄力的操作几乎没有成本。</p>
+     * {@value #SHORT_PRESS_TICKS} tick = 0.4 秒。</p>
      *
-     * <p>上限放宽到 1.5 秒的另一个好处：{@code remaining} 在按下当帧就等于总时长，
-     * 而释放包的往返延迟约 1~3 tick，所以窗口如果只有 0.25 秒，
-     * "面板上显示按住了一会儿"和"服务端判定为短按"就会经常对不上。</p>
+     * <p>窗口的历史：25/5（0.25s）→ 30/6（0.3s）→ 现在的 30/8（0.4s）。
+     * 每一次都在放宽，理由是同一个：正常的一次鼠标点击落在服务端时，
+     * {@code held} 会叠加"按住时长 + 客户端/服务端 tick 相位差 + 释放包的往返延迟"，
+     * 而这个和是<b>有抖动</b>的。窗口越窄，被判成蓄力的比例就越高，
+     * 于是"点一下突进"时灵时不灵 —— 那是最伤手感的一类 bug，
+     * 因为它让玩家觉得"这个技能看我脸色"。</p>
+     *
+     * <p>放宽到 0.4 秒的代价几乎为零：蓄力本来就需要按住，
+     * 从 0.3 秒开始蓄还是从 0.4 秒开始蓄，对刻意的操作没有区别。</p>
      */
     public static final int USE_DURATION = 30;
 
-    /** 短按 / 蓄力的分界：按住不足 {@value #SHORT_PRESS_TICKS} tick（0.3 秒）算短按。 */
-    public static final int SHORT_PRESS_TICKS = 6;
+    /**
+     * 短按 / 蓄力的分界：按住不足 {@value #SHORT_PRESS_TICKS} tick（0.4 秒）算短按。
+     * <p>必须<b>严格小于</b> {@link #FIELD_HOLD_TICKS}，否则第三态（领域）永远不可达。</p>
+     */
+    public static final int SHORT_PRESS_TICKS = 8;
 
-    /** 潜行按住多久放出领域（tick）。 */
-    public static final int FIELD_HOLD_TICKS = 12;
+    /**
+     * 潜行按住多久放出领域（tick）= 0.7 秒。
+     *
+     * <p>它同时是"蓄光柱"这一段的上界：按住到 {@value} tick 还没松手（且潜行中）
+     * 就会自动放出领域。于是三态在时间轴上是一条干净的阶梯：</p>
+     * <pre>
+     *   0 ~ 8 tick   松手 → ② 突进
+     *   8 ~ 14 tick  松手 → ① 光柱
+     *   ≥ 14 tick    自动 → ③ 领域（需潜行）
+     * </pre>
+     * <p>配合 {@code onUseTick} 里的阈值提示音，玩家<b>听</b>就能数出自己在哪一档。</p>
+     */
+    public static final int FIELD_HOLD_TICKS = 14;
 
     /** 光柱最短长度（格）。抬头不足这个角度时视为没瞄准，本次出招作废。 */
     public static final float BEAM_MIN_LENGTH = 3.0f;
@@ -223,10 +274,14 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
         float scaledBonus = DomeriteStatsHelper.getScaledAttackBonus(stack);
         float total = BASE_DAMAGE + scaledBonus;
 
+
         HashMultimap<Attribute, AttributeModifier> dynamic = HashMultimap.create();
         for (Map.Entry<Attribute, AttributeModifier> entry : original.entries()) {
             Attribute attr = entry.getKey();
             AttributeModifier mod = entry.getValue();
+            dynamic.put(ForgeMod.ENTITY_REACH.get(), new AttributeModifier(
+                    REACH_MODIFIER_UUID, "reached", ATTACK_REACH_BONUS,
+                    AttributeModifier.Operation.ADDITION));
             if (attr == Attributes.ATTACK_DAMAGE) {
                 dynamic.put(attr, new AttributeModifier(
                         Item.BASE_ATTACK_DAMAGE_UUID, "Domerite damage", total,
@@ -365,9 +420,22 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
         return UseAnim.SPEAR;
     }
 
-    /** 蓄力时的剑身提示音节奏：让玩家"听得到"自己蓄了多久。 */
+    /**
+     * 每 tick 的蓄力表现：<b>声音 + 粒子 + 三态阈值提示</b>。
+     *
+     * <h3>为什么要给客户端粒子</h3>
+     * <p>在这之前，蓄力期<b>唯一的反馈是每 5 tick 一声</b>，画面完全不动。
+     * 于是"按住右键"这个动作在视觉上就是——什么都没发生，然后突然一条光柱。
+     * 玩家读不出自己蓄到哪了，也读不出松手会放哪一招。</p>
+     *
+     * <h3>为什么粒子走 {@code level.addParticle} 而不是 {@code sendParticles}</h3>
+     * <p>蓄力粒子是<b>纯观感</b>：只有本人看得见就够，别人看不到也不影响任何判定。
+     * 走客户端本地生成就等于零网络开销 —— 而它每 tick 都在跑，
+     * 一旦走服务端广播，一个玩家按住右键 1.5 秒就是几十个包。</p>
+     */
     @Override
-    public void onUseTick(Level level, LivingEntity living, ItemStack stack, int remaining) {        if (!(living instanceof Player player)) return;
+    public void onUseTick(Level level, LivingEntity living, ItemStack stack, int remaining) {
+        if (!(living instanceof Player player)) return;
 
         int held = USE_DURATION - remaining;
 
@@ -396,12 +464,65 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
             return;
         }
 
-        // ── 蓄力进度音（每 5 tick 一声，音调随蓄力升高）──
-        if (!level.isClientSide() && held > 0 && held % 5 == 0) {
+        // ── 蓄力表现 ──
+        if (level.isClientSide()) {
+            chargeClientParticles(player, held);
+            // 阈值提示音放在客户端：这里知道 held 的确切值，
+            // 服务端版本会被网络相位差搞成偶尔漏发/重复。
+            if (held == SHORT_PRESS_TICKS || held == FIELD_HOLD_TICKS) {
+                float pitch = held == SHORT_PRESS_TICKS ? 1.05f : 0.85f;
+                level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        SoundEvents.NOTE_BLOCK_PLING.value(), SoundSource.PLAYERS,
+                        0.45f, pitch);
+            }
+        }
+
+        // ── 蓄力进度音（每 4 tick 一声，音调随蓄力升高）──
+        //  从每 5 tick 收紧到 4 tick：配合粒子环之后，节奏必须是可数的，
+        //  否则"还有多久到顶"依然只能靠感觉。
+        if (!level.isClientSide() && held > 1 && held % 4 == 0) {
             float pitch = 0.85f + 0.35f * (held / (float) USE_DURATION);
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.PLAYERS,
                     0.35f, pitch);
+        }
+    }
+
+    /**
+     * 蓄力期的粒子：脚下先出现一圈缓慢旋转并<b>向内收拢</b>的光点，
+     * 过阈值之后再叠一层往下汇聚的直落光尘。
+     *
+     * <p>形状刻意做成"收拢"而不是"扩散"：蓄力的语义是力量在聚集。
+     * 扩散的粒子会读成招式已经出手了，与"还在蓄"矛盾。</p>
+     *
+     * @param held 已经按住的 tick 数
+     */
+    private static void chargeClientParticles(Player player, int held) {
+        if (held <= 0 || held > USE_DURATION) return;
+        float t = Mth.clamp(held / (float) USE_DURATION, 0f, 1f);
+
+        // ── ① 收拢环：半径随蓄力缩小，同时整体亮度提升（用粒子数量表达）──
+        double radius = Mth.lerp(t, 1.45, 0.55);
+        int points = held % 2 == 0 ? 3 : 2;              // 奇数 tick 少一半，省开销
+        double base = player.getY() + 0.15;
+        for (int i = 0; i < points; i++) {
+            double a = (held * 0.35 + i * (Math.PI * 2.0 / points));
+            // 加点径向抖动，避免读成一台机器在转
+            double r = radius * (0.85 + 0.3 * Math.sin(held * 1.7 + i * 2.1));
+            player.level().addParticle(ParticleTypes.END_ROD,
+                    player.getX() + Math.cos(a) * r, base, player.getZ() + Math.sin(a) * r,
+                    -Math.cos(a) * 0.02, 0.004, -Math.sin(a) * 0.02);
+        }
+
+        // ── ② 越过短按阈值之后，加一层从上方落下的光尘（"越来越近的顶"）──
+        if (held >= SHORT_PRESS_TICKS && held % 2 == 0) {
+            double a = held * 0.9;
+            double r = 0.9 - 0.5 * t;
+            player.level().addParticle(ParticleTypes.ELECTRIC_SPARK,
+                    player.getX() + Math.cos(a) * r,
+                    player.getY() + 2.1 - 1.4 * t,
+                    player.getZ() + Math.sin(a) * r,
+                    0.0, -0.05 - 0.06 * t, 0.0);
         }
     }
 
@@ -414,13 +535,15 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
      * 已经按服务端自己的 tick 递减过。</p>
      *
      * <p>分流：{@code held = USE_DURATION - remaining}，
-     * {@code held < }{@link #SHORT_PRESS_TICKS}（即按住不足 0.3 秒）走突进，否则走光柱。</p>
+     * {@code held < }{@link #SHORT_PRESS_TICKS}（即按住不足 0.4 秒）走突进，否则走光柱。
+     * 第三态（领域）不在这里 —— 它在 {@code onUseTick} 里按住够时长就自动触发。</p>
      */
     @Override
     public void releaseUsing(ItemStack stack, Level level, LivingEntity living, int remaining) {
         if (level.isClientSide() || !(living instanceof Player player)) return;
 
         int held = USE_DURATION - remaining;
+        boolean dash = held < SHORT_PRESS_TICKS;
 
         // 诊断：把分流判定依赖的每一个量都落盘。
         // "右键没反应"有四种可能原因（分流条件 / 配置开关 / 冷却锁 / 服务端根本没收到释放包），
@@ -428,11 +551,11 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
         VerdictDebug.log("releaseUsing remaining=%d held=%d/%d branch=%s "
                         + "dashEnabled=%b beamEnabled=%b onCooldown=%b cdRemain=%d",
                 remaining, held, SHORT_PRESS_TICKS,
-                held < SHORT_PRESS_TICKS ? "DASH" : "BEAM",
+                dash ? "DASH" : "BEAM",
                 VerdictTuning.dashEnabled(), VerdictTuning.beamEnabled(),
                 VerdictCooldown.onCooldown(player), VerdictCooldown.remaining(player));
 
-        if (held < SHORT_PRESS_TICKS) {
+        if (dash) {
             if (VerdictTuning.dashEnabled()) castDash(level, player, stack);
         } else {
             if (VerdictTuning.beamEnabled()) castBeam(level, player, stack);
@@ -446,45 +569,57 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
     /**
      * 在玩家脚下生成一根竖直光柱。
      *
-     * <p><b>阶段 1 待办</b>：光柱的视觉与判定接 {@code VerdictBeamEntity}。
-     * 本轮先用一条纯几何的竖直 AABB 把伤害管线验通 ——
-     * 判定范围与将来实体的圆柱体保持一致（半径 × 长度），
-     * 所以接上实体之后数值不需要重调。</p>
+     * <p><b>伤害已经搬进 {@link VerdictBeamEntity}</b>：这一招现在是"两波"的
+     * （落柱那一瞬 + 扫描球下落到 45% 高度时），而延迟结算需要一个每 tick 被处理、
+     * 有生命周期的东西 —— 光柱实体本身就是。这样做的额外好处是
+     * 「视觉扫到哪」与「伤害打到哪」在时间上是同一件事。</p>
+     *
+     * <p>本方法只负责：校验瞄准、结算冷却、立起实体、给一次起手反馈。</p>
      *
      * <p>长度由抬头角决定：抬头 90° 给满 {@link HeightFactor#BEAM_MAX_LENGTH}，
      * 低头不到 {@link #BEAM_MIN_LENGTH} 视为没瞄准，本次出招<b>作废且不进冷却</b>。</p>
      */
     private static void castBeam(Level level, Player player, ItemStack stack) {
+        // 视觉长度：抬头角决定。它现在只影响"看得见多高"，判定另有上限 ——
+        // 见 HeightFactor.BEAM_HIT_MAX_HEIGHT 的说明。
         float length = HeightFactor.beamLengthFromPitch(player.getXRot());
         if (length < BEAM_MIN_LENGTH) {
-            level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                    SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.4f, 0.7f);
+            if (!level.isClientSide()) {
+                level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.4f, 0.7f);
+                // 原本这里是<b>完全静默</b>的：玩家蓄满力松手，什么都没发生，
+                // 只有一声放气。整个动作看起来就是"没反应"。
+                // 明确告诉他为什么没打出去，比让他自己猜强得多。
+                player.displayClientMessage(Component
+                        .translatable("item.hall.domerite_longsword.no_aim")
+                        .withStyle(ChatFormatting.GRAY), true);
+            }
             return;                                      // 没瞄准：不消耗冷却
         }
 
         if (!VerdictCooldown.begin(player)) return;
 
-        // 覆盖 = 高度系数（你在哪）× 裁决层数（你打得多顺）
+        // 起始覆盖 = 高度系数（你在哪）× 裁决层数（你打得多顺）
         float radius = HeightFactor.beamRadiusBlocks(player)
                 * VerdictEffect.beamRadiusScale(player);
         double cx = player.getX();
         double cy = player.getY();                       // 脚底
         double cz = player.getZ();
 
-        // ── 判定：从脚底向上的一条竖直柱体 ──
-        //  几何契约与 VerdictBeamEntity / VerdictBeamRenderer 完全一致：
-        //  「底面中心 + 半径 radius + 长度 length」。改范围必须三处一起改。
-        AABB box = new AABB(
-                cx - radius, cy, cz - radius,
-                cx + radius, cy + length, cz + radius);
-        strikeAllIn(level, player, box, VerdictDamage.BEAM_HURT);
-
         // ── 视觉：先让上一根光柱收束，再立新的 ──
         //  收束而不是立刻 discard，是因为"旧的那根一闪而没"比"两根重叠"更 affordable：
         //  重叠在加法混合下会叠成刺眼的白，而快速淡出读起来像"裁决被重新执行"。
         fadePreviousBeam(level, player);
+
+        // ── 扩散终点也吃"裁决层数"，但不吃高度系数 ──
+        //  层数给的是"打得多顺" → 扩散得更狠，与它给光柱半径加成的定位一致。
+        //  高度系数不参与：它已经通过起始半径生效了，再乘一次就变成二次放大，
+        //  高空的柱子会直冲 32 格以上，那是失控而不是"更强"。
+        float targetRadius = VerdictBeamEntity.DEFAULT_TARGET_RADIUS
+                * VerdictEffect.beamRadiusScale(player);
         VerdictBeamEntity beam = VerdictBeamEntity.spawn(
-                level, new Vec3(cx, cy, cz), radius, length);
+                level, new Vec3(cx, cy, cz), radius, targetRadius, length,
+                VerdictBeamEntity.DEFAULT_GROW_TICKS, VerdictBeamEntity.DEFAULT_MAX_AGE, player);
         rememberBeam(player, beam);
 
         grantVictory(player);
@@ -599,13 +734,28 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
 
         // 去重：同一个生物可能同时落在两个相邻采样点的盒子里，那只该吃一次伤害。
         java.util.Set<java.util.UUID> alreadyHit = new java.util.HashSet<>();
+        java.util.Set<java.util.UUID> firstHit = new java.util.HashSet<>();
+        int hits = 0;
         for (int i = 0; i <= samples; i++) {
             double t = i / (double) samples;
             Vec3 center = player.position().add(look.scale(distance * t));
             AABB sweep = box.move(center.x - player.getX(), center.y - player.getY(),
                     center.z - player.getZ()).inflate(DASH_HIT_RADIUS, 0.6, DASH_HIT_RADIUS);
-            strikeAllIn(level, player, sweep, VerdictDamage.DASH_HURT, alreadyHit);
+
+            // 先把这一段的合法目标记下来，好在打完之后在它们身上补"被斩中"的表现 ——
+            // 原本命中与未命中的画面完全一样，只有一声 PLAYER_ATTACK_SWEEP。
+            var inSlice = new java.util.ArrayList<>(
+                    level.getEntities(player, sweep, DomeriteLongsword::isVerdictTarget));
+            hits += strikeEach(player, inSlice, VerdictDamage.DASH_HURT, alreadyHit);
+            for (Entity e : inSlice) {
+                if (e instanceof LivingEntity living && living.isAlive()
+                        && alreadyHit.contains(living.getUUID())) {
+                    firstHit.add(living.getUUID());
+                }
+            }
         }
+        // 只对"第一次吃到这一记突进"的目标补表现，避免沿途采样把它刷成一片白
+        spawnDashImpacts(level, player, look, firstHit);
 
         grantVictory(player);
 
@@ -615,10 +765,24 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
                 e -> e.broadcastBreakEvent(EquipmentSlot.MAINHAND));
 
         // ── 表现：用现有资产，零新着色器 ──
-        //  拖尾 = 几个已有的白色发光剑气（STYLE_DEFAULT），沿视线方向拉开距离、逐级缩小。
-        //  刻意不给它做新着色器：突进是高频动作（5 秒冷却、命中还能返还），
-        //  每一发都跑一套新特效管线是纯浪费；而这个资产本来就是这个模组的"剑气"语言。
-        spawnDashTrail(level, player, look, distance);
+        //  拖尾 = 一串已有的白色发光剑气，沿突进路径铺开、逐级缩小。
+        //  刻意不给它做新着色器：突进是高频动作，每一发都跑一套新特效管线是纯浪费；
+        //  而这个资产本来就是这个模组的"剑气"语言。
+        spawnDashTrail(level, player, look, distance, hits);
+
+        // 命中音调随命中数升高：玩家不用看屏幕就知道这一冲扫到了几个人
+        if (hits > 0) {
+            VerdictFeedback.playSound(level, player.position(),
+                    SoundEvents.PLAYER_ATTACK_CRIT, 0.6f, VerdictFeedback.hitPitch(hits));
+        }
+
+        // ── 相机：突进是"速度"动作，这一招的轻重全在镜头上 ──
+        //  匀速平移之所以廉价，一半原因是镜头在整个过程中纹丝不动。
+        //  FOV 撑开 + 一次轻抖，位移立刻变成"被甩出去"。
+        float w = VerdictFeedback.weightOf(Math.max(1, hits));
+        VerdictFeedback.fovKick(player, 3.4f + 2.0f * w);
+        VerdictFeedback.shakeNear(player, player.position().add(look.scale(distance * 0.5)),
+                0.35f + 0.35f * w);
 
         // 高空突进落点补一圈冲击波涟漪：既是速度感的收尾，
         // 也顺手把"你在很高的地方"这件事反馈给玩家（高度是这把剑的资源）。
@@ -630,27 +794,88 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
                     24, 0.75f);
         }
 
-        VerdictCooldown.finish(player);
+        // ── 空放便宜、命中昂贵 ──
+        //  突进同时承担"起手"和"移动"两种用途（贴地连按能升空），而走位、跨沟、
+        //  抢先手的场合本来就没有敌人可打。空放照付全额冷却会让位移变成扣血，
+        //  于是"越打越高"这条循环的发动机就熄火了。详见 VerdictCooldown.finishMissed。
+        if (hits > 0) {
+            VerdictCooldown.finish(player);
+        } else {
+            VerdictCooldown.finishMissed(player);
+            // 空放便宜是设计，但玩家必须<b>知道</b>它是空的 ——
+            // 否则"这一冲没打到人却也没怎么进冷却"会被误读成冷却坏了。
+            if (!level.isClientSide()) {
+                player.displayClientMessage(Component
+                        .translatable("item.hall.domerite_longsword.missed")
+                        .withStyle(ChatFormatting.DARK_AQUA), true);
+            }
+        }
+    }
+
+    /**
+     * 在每个被这一记突进斩中的目标身上补一次命中表现。
+     *
+     * <p>内容刻意压得很省：一点粒子 + 一道短暂的空间涟漪。
+     * 突进可以一次扫到十几个目标，这里每多一个目标就是实打实的渲染开销，
+     * 所以<b>不给每个目标生成剑气实体</b>（那是每目标一到两个实体）。</p>
+     *
+     * <p>落点用"玩家 → 目标"连线上靠近目标的一点，而不是目标正中心：
+     * 斩击看起来应该是从自己身上递出去的，而不是在敌人身体里炸开。</p>
+     */
+    private static void spawnDashImpacts(Level level, Player player, Vec3 look,
+                                         java.util.Set<java.util.UUID> targets) {
+        if (targets.isEmpty()) return;
+        var area = player.getBoundingBox().inflate(
+                HeightFactor.dashDistanceBlocks(player) + 8.0);
+        int shown = 0;
+        for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
+                e -> targets.contains(e.getUUID()))) {
+            if (shown++ >= 6) break;                     // 上限：群怪场景不做 N 份表现
+            Vec3 at = target.position().add(0, target.getBbHeight() * 0.55, 0);
+            Vec3 fromTarget = at.subtract(player.position()).normalize();
+            Vec3 p = at.subtract(fromTarget.scale(0.9));
+
+            VerdictFeedback.burst(level, p, ParticleTypes.CRIT, 6, 0.18);
+            VerdictFeedback.burst(level, p, ParticleTypes.END_ROD, 4, 0.10);
+            // 一道小而短的空间涟漪：它本来就是这个项目的"斩击"视觉语言
+            ShockwaveEntity.spawn(level, p, 2.2f, 1.9f, 14, 0.55f);
+        }
     }
 
     /**
      * 沿突进方向铺一串剑气作为拖尾。
      *
-     * <p>用随机 Y 旋转（{@link SwordAuraEntity} 内部按 entity id 派生）让每一道朝向都不同，
-     * 于是串起来读作"一道被撕开的轨迹"而不是"三个整齐的箭头"。</p>
+     * <h3>密度是这条拖尾成不成立的关键</h3>
+     * <p>原本固定 <b>3 道</b>：12 格的距离上只放 3 个点，间距 3 格，
+     * 而突进持续 0.6 秒 —— 肉眼读到的就是"三个孤立的箭头飞过去了"，
+     * 完全连不成一条轨迹。<b>拖尾的第一要义是连续</b>，密度不够时
+     * 加多少特效都救不回来。</p>
+     *
+     * <p>现在按距离算道数（每 {@value #TRAIL_SPACING} 格一道），
+     * 并且让相邻两道略微交叠（后续道比前一道更长），于是它们读作
+     * "一道被撕开的轨迹"而不是一串整齐的箭头。</p>
+     *
+     * @param hits 本次命中数；命中时拖尾整体放大一档，作为"打穿了"的区别
      */
-    private static void spawnDashTrail(Level level, Player player, Vec3 look, float distance) {
-        final int steps = 3;
+    private static void spawnDashTrail(Level level, Player player, Vec3 look,
+                                       float distance, int hits) {
+        int steps = Math.max(4, (int) Math.ceil(distance / TRAIL_SPACING));
+        float boost = hits > 0 ? 1.18f : 1.0f;
         for (int i = 1; i <= steps; i++) {
             float t = i / (float) (steps + 1);
             Vec3 p = player.position().add(look.scale(distance * t)).add(0, 1.0, 0);
             // 越靠后的越大、活越久：形成"从自己身上甩出去"的方向感
-            float scale = 0.45f + 0.35f * t;
+            float scale = (0.40f + 0.32f * t) * boost;
+            // 存活时间给足（12~22 tick）：拖尾要在突进<b>结束之后</b>还留一会儿，
+            // 否则一次 12 tick 的位移配 10 tick 的剑光，最后两格是空的。
             SwordAuraEntity.spawn(level, p, scale, 0.85f,
-                    SwordAuraEntity.APOSTLE_HEIGHT * 0.55f, 0.22f,
-                    10 + i * 2, 1.8f);
+                    SwordAuraEntity.APOSTLE_HEIGHT * (0.50f + 0.12f * t), 0.22f,
+                    12 + Math.round(10 * t), 1.8f);
         }
     }
+
+    /** 拖尾剑气的间距（格）。2.2 格在 12 格突进上给出 6 道，肉眼刚好连成一条线。 */
+    private static final float TRAIL_SPACING = 2.2f;
 
     /**
      * 把一个目标水平距离反解成"本 tick 该给多少初速"。
@@ -698,10 +923,39 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
         ItemStack stack = player.getMainHandItem();
         float radius = HeightFactor.fieldRadiusBlocks(player) * VerdictTuning.fieldRadiusScale();
 
-        VerdictFieldEntity.spawn(level, player, radius, VerdictFieldEntity.DEFAULT_MAX_AGE);
+        VerdictFieldEntity field = VerdictFieldEntity.spawn(
+                level, player, radius, VerdictFieldEntity.DEFAULT_MAX_AGE);
+
+        // ── 展开表现：只留"这片地从此归裁决管"这一件事 ──
+        //
+        //  这里原本沿边界落下 7 道立柱剑。撤掉了，因为它读起来是"程序生成的
+        //  一圈装饰"：等角度分布 + 同一半径 + 同一高度 + 落地时间只差 1 tick；
+        //  而地面光纹本身已经有一圈边界环和六分辐条 —— 再加一圈等距立柱，
+        //  信息重复，还把地面光纹盖住了。
+        //
+        //  它原本要解决的问题（"领域就是一个突然出现的圆盘"）现在由别的东西接手：
+        //   · 光纹自己的淡入（FADE_IN_TICKS = 6）与整片呼吸（shader 的 ⑥ 段）；
+        //   · 每次真正出剑时的落剑 —— 那才是"剑阵"该出现的地方，而且它每次
+        //     都对应一次真实伤害，不是布景。
+        //
+        //  展开因此只留一次从中心向外扩开的冲击环：把"范围被划出来了"说清楚，
+        //  然后把画面交给光纹。
+        Vec3 center = field != null
+                ? new Vec3(field.getX(), field.getY() + 0.05, field.getZ())
+                : player.position().add(0, 0.05, 0);
+        VerdictFeedback.impactRing(level, center,
+                Math.max(3.0f, radius * 1.1f), 5.5f, 0.85f);
+
+        // 领域是三个技能里最"仪式性"的一招：展开的那一瞬给一次下沉式的镜头回应，
+        // 与随后 10 秒的持续脉冲区分开（持续期间不再抖，否则会一直晃）。
+        VerdictFeedback.shakeNear(player, player.position(), 0.45f);
+        VerdictFeedback.fovKick(player, -1.6f);
+        VerdictFeedback.burst(level, player.position().add(0, 0.2, 0),
+                ParticleTypes.END_ROD, 20, 0.12);
 
         grantVictory(player);
         stack.hurtAndBreak(4, player, e -> e.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+
         VerdictCooldown.finish(player);
         return true;
     }
@@ -742,17 +996,18 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
      * @param alreadyHit 本次技能已经打过的目标。突进的沿途判定会沿路径取样多次，
      *                   相邻采样盒的重叠区会让同一个生物被取到两遍 ——
      *                   不靠它去重就会打出双倍伤害。传 null 表示不需要去重。
+     * @return 本次真正造成伤害的目标数（用于反馈强度：命中越多，音越高、抖得越重）
      */
-    private static void strikeAllIn(Level level, Player player, AABB box, float hurt,
-                                    @Nullable java.util.Set<java.util.UUID> alreadyHit) {
+    private static int strikeAllIn(Level level, Player player, AABB box, float hurt,
+                                   @Nullable java.util.Set<java.util.UUID> alreadyHit) {
         List<Entity> hits = new java.util.ArrayList<>(
                 level.getEntities(player, box, DomeriteLongsword::isVerdictTarget));
-        strikeEach(player, hits, hurt, alreadyHit);
+        return strikeEach(player, hits, hurt, alreadyHit);
     }
 
     /** 单次判定（不需要去重的场景）。 */
-    private static void strikeAllIn(Level level, Player player, AABB box, float hurt) {
-        strikeAllIn(level, player, box, hurt, null);
+    private static int strikeAllIn(Level level, Player player, AABB box, float hurt) {
+        return strikeAllIn(level, player, box, hurt, null);
     }
 
     /**
@@ -761,15 +1016,24 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
      * <p>{@code strikeEach} 内部会<b>拷一份再遍历</b>：伤害可能把目标打死，
      * 死亡会让实体从 level 的 tick 列表里移除，直接在原列表上遍历 +
      * 死亡移除是 {@code ConcurrentModificationException} 的经典来源。</p>
+     *
+     * <p>每个真正吃到伤害的目标都会走一次 {@link VerdictFeedback#landed}：
+     * 那是"打实了"的视觉重量来源（目标闪红 + 动作被压一帧），
+     * 也是三个技能唯一的共同反馈通道。</p>
      */
-    private static void strikeEach(Player player, List<Entity> hits, float hurt,
-                                   @Nullable java.util.Set<java.util.UUID> alreadyHit) {
+    private static int strikeEach(Player player, List<Entity> hits, float hurt,
+                                  @Nullable java.util.Set<java.util.UUID> alreadyHit) {
         List<Entity> safe = new java.util.ArrayList<>(hits);
         var source = player.damageSources().playerAttack(player);
+        int landed = 0;
         for (Entity e : safe) {
             if (!(e instanceof LivingEntity living) || !living.isAlive()) continue;
             if (alreadyHit != null && !alreadyHit.add(living.getUUID())) continue;   // 已打过
-            VerdictDamage.strike(living, source, hurt, VerdictDamage.BYPASS_PART, player);
+            if (VerdictDamage.strike(living, source, hurt, VerdictDamage.BYPASS_PART, player)) {
+                VerdictFeedback.landed(living, VerdictFeedback.weightOf(safe.size()));
+                landed++;
+            }
         }
+        return landed;
     }
 }

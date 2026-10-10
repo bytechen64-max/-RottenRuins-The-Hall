@@ -15,10 +15,17 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.bytechen.hall.overworld.registry.capability.threat.ThreatHelper;
 import org.bytechen.infcore.api.IInfectedEntity;
+import org.bytechen.infcore.api.IKillCounter;
+import org.bytechen.infcore.api.goal.ITargetFilter;
+import org.bytechen.infcore.core.capability.CapabilityRegistry;
+import org.bytechen.infcore.core.capability.KillCountCapability;
+import org.bytechen.infcore.core.evolution.EvolutionManager;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
@@ -29,7 +36,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
-public abstract class AbstractHallEntity extends Monster implements IAutoRenderableEntity, IKeyframeHandler, IInfectedEntity {
+public abstract class AbstractHallEntity extends Monster implements IAutoRenderableEntity, IKeyframeHandler, IInfectedEntity, IKillCounter, ITargetFilter {
 
     public ResourceLocation model, texture, animation;
     protected float idleAnimSpeed = 1.0f;
@@ -78,9 +85,139 @@ public abstract class AbstractHallEntity extends Monster implements IAutoRendera
     public int doHurtCooldown = 0;
     protected float doHurtDistance = 3.0f;
 
+    // ==================== 威胁点数 / 索敌与还手 ====================
+
+    /**
+     * 被玩家攻击后的"还手窗口"（tick）。窗口内这名玩家会被无视威胁点数直接锁为攻击者。
+     * <p>
+     * 需求：玩家威胁点数低于 {@link ThreatHelper#TARGET_THREAT_THRESHOLD} 时王庭生物
+     * <b>不会主动索敌</b>玩家，但玩家打过来时必须<b>会还手</b>。
+     * 主动索敌由 {@link #canTarget} 拦截，还手则靠这个窗口放行。
+     */
+    private static final int RETALIATION_WINDOW_TICKS = 100;
+
+    /** 最近攻击本实体的玩家（只用于还手窗口判定） */
+    @Nullable
+    private Player lastAttacker;
+
+    /** 还手窗口剩余 tick */
+    private int retaliationTicks;
+
+    /**
+     * 王庭生物是否"完全不该理会"这名玩家。
+     * <p>
+     * 创造 / 旁观模式玩家一律不索敌、也不还手 —— 与原版
+     * {@code NearestAttackableTargetGoal} 排除创造、旁观玩家的行为一致。
+     * 构造器里的 {@code canAttackType} 挡不住这种情况（玩家与生物同类），
+     * 所以必须自己判。
+     */
+    public static boolean isIgnoredPlayer(Player player) {
+        return player.isCreative() || player.isSpectator();
+    }
+
+    /**
+     * 威胁点数索敌过滤器 —— 直接作为 {@code InfectedTargetGoal} 的 filter 传入。
+     * <p>
+     * {@link net.minecraft.world.entity.player.Player 玩家}：创造 / 旁观模式直接排除；
+     * 其余玩家要威胁点数 ≥ {@link ThreatHelper#TARGET_THREAT_THRESHOLD} 才会被主动索敌；<br>
+     * 非玩家生物：<b>不论威胁点数一律照常索敌</b>。
+     */
+    @Override
+    public boolean canTarget(LivingEntity owner, LivingEntity target) {
+        if (!(target instanceof Player player)) return true;
+        if (isIgnoredPlayer(player)) return false;
+        return ThreatHelper.getThreat(player) >= ThreatHelper.TARGET_THREAT_THRESHOLD;
+    }
+
+    /**
+     * 锁死"威胁点数不足的玩家不会被盯上"这条规则。
+     * <p>
+     * {@link #canTarget} 只挡得住 {@code InfectedTargetGoal} 这条索敌路径；
+     * 原版其它写 {@code target} 的地方（其它 goal、别的 mod 的 AI、指令等）不受它约束。
+     * 这里做最后一道闸：创造 / 旁观玩家，以及威胁点数不足又不在还手窗口内的玩家，
+     * 直接改成 {@code null}。
+     */
+    @Override
+    public void setTarget(@Nullable LivingEntity target) {
+        if (target instanceof Player player
+                && !level().isClientSide
+                && (isIgnoredPlayer(player) || !canAttackPlayer(player))) {
+            // 放弃这个目标，同时清掉怒气计时，避免原版反复重试
+            this.setLastHurtByMob(null);
+            super.setTarget(null);
+            return;
+        }
+        super.setTarget(target);
+    }
+
+    /** 还手窗口是否仍然有效。 */
+    protected boolean isRetaliating() {
+        return this.retaliationTicks > 0;
+    }
+
+    /** 指定的玩家是否就是最近打我的那个人（还手目标）。 */
+    protected boolean isRetaliationTarget(Player player) {
+        return this.retaliationTicks > 0 && this.lastAttacker == player;
+    }
+
+    /**
+     * 王庭生物是否可以攻击这名玩家。
+     * <p>
+     * 威胁点数达到阈值 → 可以（正常索敌）；
+     * 否则只有在"还手窗口"内、且正是这名玩家打的 → 可以（还手）。
+     */
+    protected boolean canAttackPlayer(Player player) {
+        return ThreatHelper.getThreat(player) >= ThreatHelper.TARGET_THREAT_THRESHOLD
+                || isRetaliationTarget(player);
+    }
+
     @Override
     public ResourceLocation getInfectionType() {
         return new ResourceLocation(HallMod.MODID,"hall");
+    }
+
+    // ==================== 击杀 → 感染 ====================
+
+    /**
+     * 击杀事件：被王庭感染生物<b>击杀</b>的生物会被同化成感染形态。
+     * <p>
+     * 由 infcore 在 {@code LivingDeathEvent} 中通过 {@link IKillCounter#onKilledEntity(Entity)}
+     * 调用；具体转化规则交给 infcore 的 {@link EvolutionManager} 判定：
+     * 有专属感染形态的走进化表（玩家 → 畸骸玩家、骷髅 → 畸骸骷髅……），
+     * 没有专属形态的按碰撞体积（宽 × 高）走进
+     * {@code UlceratedConversionRules} 注册的兜底档位（斥候 / 巨碑）。
+     *
+     * @param killed 被本实体击杀的实体
+     */
+    @Override
+    public void onKilledEntity(Entity killed) {
+        IKillCounter.super.onKilledEntity(killed); // 击杀计数 +1
+
+        if (!(killed instanceof LivingEntity victim)) return;
+        if (!(victim.level() instanceof ServerLevel serverLevel)) return;
+
+        EvolutionManager.applyEvolution(serverLevel, victim, HallMod.INFECTION_TYPE);
+    }
+
+    // ---------- IKillCounter：计数读写全部交给 infcore 附加的能力 ----------
+
+    @Override
+    public int getKillCount() {
+        return this.getCapability(CapabilityRegistry.KILL_COUNT)
+                .map(KillCountCapability::getKillCount)
+                .orElse(0);
+    }
+
+    @Override
+    public void setKillCount(int count) {
+        this.getCapability(CapabilityRegistry.KILL_COUNT)
+                .ifPresent(kc -> kc.setKillCount(count));
+    }
+
+    @Override
+    public void addKillCount(int amount) {
+        this.getCapability(CapabilityRegistry.KILL_COUNT)
+                .ifPresent(kc -> kc.addKillCount(amount));
     }
 
     public enum BurstRenderMode { ANIMATION_ONLY, SCALE_ONLY, ANIMATION_AND_SCALE, NONE }
@@ -89,6 +226,8 @@ public abstract class AbstractHallEntity extends Monster implements IAutoRendera
     public boolean isActuallyMoving = false;
     private int movingCooldown = 0;
     private long clientBurstStartTime = -1;
+
+
 
     protected static final RawAnimation ANIM_IDLE = RawAnimation.begin().thenLoop("idle");
     protected static final RawAnimation ANIM_WALK = RawAnimation.begin().thenLoop("walk");
@@ -148,7 +287,23 @@ public abstract class AbstractHallEntity extends Monster implements IAutoRendera
         if (!level().isClientSide && fakeDeathEnabled) {
             if (this.getHealth() - amount <= 0.0f && tryFakeDeath()) return false;
         }
-        return super.hurt(source, amount);
+
+        boolean result = super.hurt(source, amount);
+
+        // 被玩家打 → 开还手窗口 + 立刻反锁攻击者
+        if (!level().isClientSide) {
+            Entity attacker = source.getEntity();
+            // 创造 / 旁观玩家不参与还手，否则打一下就会永久被锁为目标
+            if (attacker instanceof Player player && !isIgnoredPlayer(player)) {
+                this.lastAttacker = player;
+                this.retaliationTicks = RETALIATION_WINDOW_TICKS;
+                // 原版只有 HurtByTargetGoal 才会读 lastHurtByMob，而王庭生物都没注册这个 goal ——
+                // 也就是说"被打了自动还手"在 1.20.1 里不是免费送的，必须在这里显式锁目标。
+                // 放在 super.hurt 之后：伤害已结算，且 setTarget 的威胁闸门读到的是最新状态。
+                this.setTarget(player);
+            }
+        }
+        return result;
     }
 
     @Override
@@ -182,6 +337,7 @@ public abstract class AbstractHallEntity extends Monster implements IAutoRendera
 
         if (!this.level().isClientSide()) {
             if (doHurtCooldown > 0) doHurtCooldown--;
+            if (retaliationTicks > 0) retaliationTicks--;
             LivingEntity target = this.getTarget();
             if (target != null && target.isAlive()) {
                 double distSq = getBoundingBoxDistanceSqrExact(target);

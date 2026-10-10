@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.UUID;
-
 /**
  * 裁决领域 —— 地面的空中剑阵。
  *
@@ -155,19 +154,26 @@ public class VerdictFieldEntity extends Entity {
             return;
         }
 
-        // 出剑节奏：前 swordInterval() 个 tick 用来淡入，所以第一道剑气不会立刻出去
-        if (age % swordInterval() == 0 && age > 0) {
-            emitSword();
-        }
-
-        // 施法者离场 → 领域变暗（视觉反馈），但不立即消失：
-        // 已经放下的东西应当把它的 10 秒走完，否则"放完就走"会变成一种规避冷却的玩法。
+        // 施法者在不在场先判定 —— 它决定这一 tick 到底出不出剑
         Player owner = getOwner();
         boolean present = owner != null
                 && owner.isAlive()
                 && owner.distanceToSqr(this) < (getRadius() + 6.0) * (getRadius() + 6.0);
         if (present != isOwnerPresent()) {
             entityData.set(DATA_OWNER_PRESENT, present);
+        }
+
+        // ── 出剑节奏：前 swordInterval() 个 tick 用来淡入，所以第一道剑气不会立刻出去 ──
+        //
+        //  离场之后<b>停止出剑</b>，而不只是把光纹调暗。
+        //  原本的做法是"照常打，只是视觉暗一点" —— 玩家读不出因果关系，
+        //  只会觉得"这个技能有时候没伤害"。让阵法在主人离开后熄火，
+        //  "你走太远了"这件事就由<b>行为</b>说清楚了。
+        //  领域本身仍然把它的 10 秒走完（见类注释：不该变成规避冷却的玩法）。
+        if (!present) return;
+
+        if (age % swordInterval() == 0 && age > 0) {
+            emitSword();
         }
     }
 
@@ -192,52 +198,63 @@ public class VerdictFieldEntity extends Entity {
     }
 
     /**
-     * 发一道剑气：找领域内最近的目标，在中心与目标之间生成一道朝目标飞去的剑气。
+     * 发一轮剑气：锁定领域内最近的 {@value #MAX_TARGETS_PER_PULSE} 个目标，
+     * 在每个目标头顶生成一道<b>从天而降的落剑</b>。
      *
-     * <p>剑气本体是已有的 {@link SwordAuraEntity}，所以这一发不需要任何新资产。</p>
+     * <h3>为什么从"3 道平行剑气"改成"落剑"</h3>
+     * <p>原本的做法是在"领域中心 → 目标"的连线上铺 3 道 {@code SwordAuraEntity}，
+     * 位置固定在连线的 35%/65%/95% 处。<b>那三把剑是水平排开的</b>，
+     * 而且伤害在生成的那一瞬就结算了 —— 于是画面上永远是"几道平行的白光
+     * 飘向目标"，而怪已经在掉血。既读不出方向（谁打谁），也读不出因果
+     * （剑还没到、血已经掉了）。</p>
+     *
+     * <p>改成落剑之后三件事同时解决：</p>
+     * <ul>
+     *   <li><b>方向</b>：剑是竖着从目标头顶钉下来的，谁被锁了一眼就能看出来；</li>
+     *   <li><b>因果</b>：伤害在<b>落地那一帧</b>结算（见
+     *       {@code VerdictSwordDropEntity.onLand}），"剑落下 → 怪掉血"完全同步；</li>
+     *   <li><b>阵法感</b>：多把剑以错开的时间落下，加上展开时那 7 道立柱，
+     *       整片区域读作"天上一直在往下落剑"。</li>
+     * </ul>
+     *
+     * <p>代价是伤害比原本晚约 0.45 秒。这是有意的取舍：领域是 10 秒的持续技能，
+     * 半秒的延迟换来可读性，很划算；而"必定生效但看不见"才是更难接受的。</p>
      */
     private void emitSword() {
         Player owner = getOwner();
-        LivingEntity target = findNearestTarget(owner);
-        if (target == null) return;                      // 没人可打：不出剑（动画仍靠 pulse 推进）
+        List<LivingEntity> targets = findTargets(owner);
+        if (targets.isEmpty()) return;                   // 没人可打：不出剑（动画仍靠 pulse 推进）
 
         entityData.set(DATA_PULSE, getPulse() + 1);
 
-        float hurt = VerdictDamage.FIELD_HURT;
-
-        // 剑气从领域中心朝目标方向铺出去
-        Vec3 from = new Vec3(getX(), getY() + 1.2, getZ());
-        Vec3 to = target.position().add(0, target.getBbHeight() * 0.5, 0);
-        Vec3 dir = to.subtract(from);
-        float reach = (float) dir.length();
-        if (reach > 0.05f) {
-            Vec3 unit = dir.scale(1.0 / reach);
-            // 用"中心 → 目标"之间的一段区间做剑气路径，最后一段压在目标身上
-            for (int i = 0; i < 3; i++) {
-                float t = 0.35f + 0.3f * i;
-                Vec3 p = from.add(unit.scale(reach * t));
-                SwordAuraEntity.spawn(level(), p, 0.5f + 0.15f * i, 0.9f,
-                        SwordAuraEntity.APOSTLE_HEIGHT * 0.6f, 0.24f,
-                        12, 1.6f);
-            }
+        // 一次脉冲最多几把剑同时落下。可配置（见 verdictFieldMaxTargets），
+        // 因为"每把剑是一个实体"—— 调大它的代价是线性的实体数增长。
+        int maxTargets = VerdictTuning.fieldMaxTargets();
+        for (int i = 0; i < Math.min(targets.size(), maxTargets); i++) {
+            LivingEntity target = targets.get(i);
+            Vec3 at = target.position();
+            // 落点取目标脚下（而不是半身高），于是剑身会穿过它
+            VerdictSwordDropEntity drop = VerdictSwordDropEntity.spawn(
+                    level(), at,
+                    VerdictSwordDropEntity.DEFAULT_FALL_FROM, FALL_TICKS + i * 2,
+                    1.0f, 6.0f);
+            drop.setTarget(target);
+            drop.setFieldEntity(this);        // 伤害归因：把施法者追回来（见该字段的注释）
+            drop.setHurt(VerdictDamage.FIELD_HURT);
+            // 每次脉冲只给第一把剑打地面涟漪：三把剑各自打一圈会叠成一堆同心环，
+            // 而"这次脉冲的冲击点"本来就只有一个。
+            drop.setRingOnLand(i == 0);
+            drop.setLandParticle(net.minecraft.core.particles.ParticleTypes.CRIT);
         }
-
-        // 伤害在出剑的那一瞬结算一次 —— 剑气是"表现"，不是需要命中判定的抛射物。
-        // 这样做的代价是没有飞行时间带来的闪避空间，收益是"领域内必定生效"的可预期性，
-        // 而后者才是这个技能存在的理由。
-        VerdictDamage.strike(target,
-                level().damageSources().playerAttack(owner), hurt,
-                VerdictDamage.BYPASS_PART, owner);
     }
 
     /**
-     * 领域内最近的合法目标。
+     * 领域内最近的若干个合法目标，按距离升序。
      *
      * <p>排除施法者自己 —— {@code getEntitiesOfClass} 会把自己也算进去，
      * 不排除的话这个技能会持续打自己血（走 setHealth 那条，护甲挡不住）。</p>
      */
-    @Nullable
-    private LivingEntity findNearestTarget(@Nullable Player owner) {
+    private List<LivingEntity> findTargets(@Nullable Player owner) {
         double r = getRadius();
         AABB box = new AABB(getX() - r, getY() - 4.0, getZ() - r,
                             getX() + r, getY() + 8.0, getZ() + r);
@@ -246,17 +263,18 @@ public class VerdictFieldEntity extends Entity {
                         && (owner == null || !e.getUUID().equals(owner.getUUID()))
                         && e.distanceToSqr(this) <= r * r);
 
-        LivingEntity best = null;
-        double bestDist = Double.MAX_VALUE;
-        for (LivingEntity e : candidates) {
-            double d = e.distanceToSqr(this);
-            if (d < bestDist) {
-                bestDist = d;
-                best = e;
-            }
-        }
-        return best;
+        candidates.sort(java.util.Comparator.comparingDouble(this::distanceToSqr));
+        return candidates;
     }
+
+    /**
+     * 每次脉冲最多锁定的目标数<b>默认值</b>。
+     * <p>真正的取值走 {@link VerdictTuning#fieldMaxTargets()}（可在配置里改，1~6）。</p>
+     */
+    public static final int MAX_TARGETS_PER_PULSE = 3;
+
+    /** 落剑的下落耗时（tick）。0.45 秒 —— 再慢就不像剑雨了。 */
+    public static final int FALL_TICKS = 9;
 
     @Override public boolean shouldRenderAtSqrDistance(double d) { return true; }
     @Override public boolean isPickable()   { return false; }

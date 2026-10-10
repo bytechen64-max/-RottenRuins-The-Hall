@@ -35,4 +35,21 @@ public interface ITwitchItem {
     default boolean twitchShouldRender(ItemDisplayContext ctx) {
         return ctx != ItemDisplayContext.GUI;
     }
+
+    /**
+     * 物品层面的明确关闭声明。
+     *
+     * <p>默认 {@code false}（不声明任何意见），所以这是一个纯增量开关，
+     * 现有实现（如 {@code InfEnderPearItem}）行为完全不变。</p>
+     *
+     * <p><b>为什么需要它，而不是只靠模型的 {@code "twitch": false}</b>：
+     * {@code MixinItemRendererCosmic} 在延迟渲染路径入队时会调用
+     * {@code BakedModelCosmic.setCorruptionMask()}，而那个方法内部会把
+     * {@code corruptionEnabled} 重新置为 true；同理崩坏层与抽动层的开关
+     * 都可能被包装器覆盖。物品自身的声明是唯一不会被覆盖的那一层，
+     * 所以崩坏层与抽动层都以它为准。</p>
+     */
+    default boolean twitchDisabled() {
+        return false;
+    }
 }

@@ -1,0 +1,31 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "depthtest": {
+    "function": "always"
+  },
+  "depthwrite": false,
+  "vertex": "hall:rendertype_gui_collapsar_bar",
+  "fragment": "hall:rendertype_gui_collapsar_bar",
+  "attributes": ["Position", "UV0"],
+  "samplers": [
+    { "name": "MaskTexture" }
+  ],
+  "uniforms": [
+    { "name": "ProjMat",       "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "ModelViewMat",  "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "uTime",         "type": "float",     "count": 1,  "values": [ 0.0 ] },
+    { "name": "uFill",         "type": "float",     "count": 1,  "values": [ 1.0 ] },
+    { "name": "uAlpha",        "type": "float",     "count": 1,  "values": [ 1.0 ] },
+    { "name": "uStarStrength", "type": "float",     "count": 1,  "values": [ 1.0 ] },
+    { "name": "uStarDensity",  "type": "float",     "count": 1,  "values": [ 1.0 ] },
+    { "name": "uShake",        "type": "float",     "count": 1,  "values": [ 0.0 ] },
+    { "name": "uBarAspect",    "type": "float",     "count": 1,  "values": [ 5.6875 ] },
+    { "name": "uBandMin",      "type": "float",     "count": 1,  "values": [ 0.5625 ] },
+    { "name": "uBandMax",      "type": "float",     "count": 1,  "values": [ 0.75 ] },
+    { "name": "uUseGeomBand",  "type": "float",     "count": 1,  "values": [ 0.0 ] }
+  ]
+}

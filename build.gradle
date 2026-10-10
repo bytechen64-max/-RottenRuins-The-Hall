@@ -105,6 +105,13 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 repositories {
     flatDir { dir 'libs' }
 
+    // ── infcore 前置的「工程内 Maven 镜像」 ──
+    // 放在最前面、优先于 mavenLocal：新克隆的仓库**不跑任何前置步骤、也不联网**
+    // 就能解析到 org.bytechen:infcore。
+    // 目录布局是标准 Maven 仓库：libs/org/bytechen/infcore/0.1.2/{jar,pom}
+    // 由 syncInfcore 任务维护（只有升级框架时才需要重跑）。
+    maven { url = uri('libs') }
+
     maven { url = 'https://maven.shedaniel.me/' }
 
     maven {
@@ -114,7 +121,14 @@ repositories {
 
     maven { url = "https://modmaven.dev/" }
 
-    // 本地 maven — infcore 前置
+    // Curios（饰品栏）—— 硬前置。官方 maven。
+    maven {
+        name = "Curios"
+        url = "https://maven.theillusivec4.top/"
+    }
+
+    // 兜底：如果你更习惯用 publishToMavenLocal 维护前置，这条仍然有效。
+    // 正常路径不会走到这里（libs/ 镜像先生效）。
     mavenLocal()
 }
 
@@ -137,8 +151,18 @@ dependencies {
     compileOnly fg.deobf("mezz.jei:jei-1.20.1-forge:15.2.0.27")
     runtimeOnly fg.deobf("mezz.jei:jei-1.20.1-forge:15.2.0.27")
 
-    // InfectionCoreFramework 前置 — 提供进化系统、击杀计数、方块扩散和全局难度框架
-    implementation fg.deobf("org.bytechen:infcore:0.1.1")
+    // Curios（饰品栏）—— **硬前置**（mods.toml 里 mandatory = true）。
+    //   compileOnly：只给我们的集成代码用，不打进产物 —— Curios 是独立模组，
+    //                不能 jarJar（那是给自己依赖的库用的）。
+    //   runtimeOnly：dev 环境**必须**能加载到它。因为声明是 mandatory，
+    //                少了它 runClient / runData 会直接以"缺少必需依赖"拒绝启动。
+    compileOnly fg.deobf("top.theillusivec4.curios:curios-forge:${curios_version}")
+    runtimeOnly fg.deobf("top.theillusivec4.curios:curios-forge:${curios_version}")
+
+    // InfectionCoreFramework 前置 — 提供进化系统、击杀计数、方块扩散和全局难度框架。
+    // 产物来自工程内镜像 libs/（见上面 repositories 的说明与下面的 syncInfcore 任务），
+    // 所以这里不需要先手工 publishToMavenLocal。
+    implementation fg.deobf("org.bytechen:infcore:0.1.2")
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
@@ -273,6 +297,42 @@ publishing {
     }
     repositories {
         mavenLocal()
+    }
+}
+
+// ── infcore 前置：工程内镜像的刷新 ───────────────────────────────────
+// 平时**不需要**碰这个任务：libs/ 里已经有构建好的 infcore 0.1.2，
+// 新克隆直接 `gradlew build` 即可。
+//
+// 只有一种情况要跑它：InfectionCoreFramework/ 的源码更新了（你升级了框架版本）。
+// 这时先在工程根目录执行
+//     gradlew syncInfcore
+// 它会：①在 InfectionCoreFramework/ 里跑 publishToMavenLocal；
+//       ②把产物同步进 libs/ 镜像；③后续构建自动用新版本。
+//
+// 注意：如果框架版本号变了（不再叫 0.1.2），要同步改这里的 infcoreVersion
+// 和 build.gradle 依赖声明里的版本号、以及 devJar/sourcesJar 之外的两处
+// （dependencies 里的 fg.deobf 坐标）。
+def infcoreVersion = '0.1.2'
+def infcoreMirrorDir = file("libs/org/bytechen/infcore/${infcoreVersion}")
+def infcoreM2Dir = new File(System.getProperty('user.home'),
+        ".m2/repository/org/bytechen/infcore/${infcoreVersion}")
+
+tasks.register('syncInfcore', Exec) {
+    group = 'hall'
+    description = '重新构建 InfectionCoreFramework 并把产物同步进工程内 libs/ 镜像（升级前置时才需要）'
+    workingDir = file('InfectionCoreFramework')
+    commandLine 'cmd', '/c', 'gradlew.bat', 'publishToMavenLocal'
+    doLast {
+        if (!infcoreM2Dir.exists()) {
+            throw new GradleException(
+                    "没在 ${infcoreM2Dir} 找到产物，publishToMavenLocal 可能失败了。")
+        }
+        copy {
+            from infcoreM2Dir
+            into infcoreMirrorDir
+        }
+        logger.lifecycle("[hall] infcore ${infcoreVersion} 已同步到 ${infcoreMirrorDir}")
     }
 }
 

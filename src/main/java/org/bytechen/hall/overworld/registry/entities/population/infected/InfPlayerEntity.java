@@ -13,12 +13,14 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.hall.network.NetworkHelper;
 import org.bytechen.hall.client.rend.gui.GuiShaderManager;
+import org.bytechen.hall.overworld.difficulty.HallDifficultyAttributes;
 import org.bytechen.hall.overworld.registry.entities.ai.FaceTargetGoal;
 import org.bytechen.hall.overworld.registry.entities.base.AbstractHallEntity;
 import org.bytechen.hall.overworld.registry.entities.population.skills.SwordAuraEntity;
@@ -78,9 +80,12 @@ public class InfPlayerEntity extends BaseInfectedEntity {
 
     @Override
     protected void registerGoals() {
+        this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 1, true));
+
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .range(40.0)
                 .mustSee(false)
+                .filter(this)
                 .build());
         this.goalSelector.addGoal(5, new RandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
@@ -107,7 +112,8 @@ public class InfPlayerEntity extends BaseInfectedEntity {
 
     @Override
     protected boolean getAttack(LivingEntity target) {
-        float baseDamage = (float) getAttributeBaseValue(Attributes.ATTACK_DAMAGE);
+        // 必须走 effectiveAttackDamage（含属性修饰符），不能用 getAttributeBaseValue
+        float baseDamage = HallDifficultyAttributes.effectiveAttackDamage(this, 15.0F);
 
         if (this.getRandom().nextInt(100) < SWORD_AURA_CHANCE) {
             // 5% 概率：在目标碰撞箱中心生成剑气，1.5 倍大小，5 倍伤害

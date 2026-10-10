@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
  * </pre>
  * 两者相加就是这把剑对外的「30 有效伤害」。
  *
- * <h3>为什么不调用 BCCore</h3>
+ * <h3>为什么不调用 VitalProbe</h3>
  * <p>本类<b>刻意</b>只走原版 {@link LivingEntity#setHealth(float)}，不走
  * {@code org.bytechen.hall.compat.BCCoreCompat#damage}。原因：</p>
  * <ul>
@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
  *   <li>对<b>覆写</b> {@code getHealth()} / {@code setHealth()} 的模组生物，
  *       原版 {@code setHealth} 会正常调到它的覆写，所以这一类照样打得动；</li>
  *   <li>真正的能力边界落在"血量存自定义存储、{@code setHealth} 被完全架空"的生物上
- *       —— 那种目标是<b>虚空剑 + BCCore</b> 的活。这条分层是有意留的。</li>
+ *       —— 那种目标是<b>虚空剑 + VitalProbe</b> 的活。这条分层是有意留的。</li>
  * </ul>
  *
  * <h3>三个必须小心的点（都是踩过的坑）</h3>
@@ -55,14 +55,42 @@ public final class VerdictDamage {
     //
     //  刻意都<b>不</b>乘高度系数：伤害轴已由普攻定义，高度只给覆盖。
 
-    /** ① 天穹裁决 · 光柱：单点略弱于平砍，靠"一条竖线上所有敌人同时各吃一下"换收益。 */
-    public static final float BEAM_HURT = 20.0f;
-
-    /** ② 截空 · 凌空斩：突进途中命中，风险最高（打进怪堆里），所以伤害最高。 */
+    /**
+     * ② 截空 · 凌空斩：突进途中命中，风险最高（打进怪堆里），所以伤害最高。
+     * <p>它也是唯一<b>空放不会付全额冷却</b>的一招（见 {@code VerdictCooldown.finishMissed}）。</p>
+     */
     public static final float DASH_HURT = 25.0f;
 
     /** ③ 裁决领域 · 剑气：单次最低，但一个领域能打十秒、多目标，总量最高。 */
     public static final float FIELD_HURT = 18.0f;
+
+    // ── ① 天穹裁决 · 光柱：三波 + 随时间扩散 ───────────────────────
+    //
+    //  改动前是**一次性** 20 hurt，单目标有效伤害 25，比平砍的 30 还低 ——
+    //  而它偏偏是全套技能里视觉最强的一招。视觉与收益倒挂的直接后果
+    //  是玩家本能地少用它，于是"最帅的那一招"反而最没人放。
+    //
+    //  现在这一招的形状是"一根从脚下一路铺开到 20 格的裁决柱"，
+    //  伤害分三波打在扩散的三个阶段上（起始 / 中段 / 完成）：
+    //
+    //    单目标吃满三波：24+5, 12+4, 12+4 ≈ 61（要站着不动挨 1.5 秒）
+    //    边缘目标：只吃到某一波，通常 16~29
+    //    多目标：范围越大捞到的越多，收益只单调增加 —— 这正是光柱的定位
+    //
+    //  为什么不是"打中 N 人则每人伤害递减"：递减会让玩家在群怪里
+    //  **故意少打人**，与"越宽越好"的直觉相反。三波结构下深度由
+    //  "站得离柱心多近、站了多久"自然决定，不需要额外惩罚。
+    //
+    //  为什么后两波同一个弱档：它们是"柱子又推宽一圈、顺手再判一次"的追加，
+    //  不是三次重击。波动感靠**扩散带来的范围变化**，不靠伤害曲线。
+
+    /** 光柱第一波（落柱那一瞬）。 */
+    public static final float BEAM_HURT_WAVE1 = 24.0f;
+    /** 光柱第一波的直写部分。 */
+    public static final float BEAM_BYPASS_WAVE1 = 5.0f;
+    /** 光柱第二波（扩散中段）与第三波（扩散完成）共用的较弱档。 */
+    public static final float BEAM_HURT_WAVE2 = 12.0f;
+    public static final float BEAM_BYPASS_WAVE2 = 4.0f;
 
     private VerdictDamage() {}
 

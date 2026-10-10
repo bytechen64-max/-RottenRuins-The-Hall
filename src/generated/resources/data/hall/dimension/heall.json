@@ -1,0 +1,11 @@
+{
+  "type": "hall:heall",
+  "generator": {
+    "type": "minecraft:noise",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "hall:flesh_marrow"
+    },
+    "settings": "hall:flesh_marrow"
+  }
+}

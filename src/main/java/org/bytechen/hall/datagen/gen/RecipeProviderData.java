@@ -7,6 +7,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import org.bytechen.hall.overworld.registry.RegisterBlock;
 import org.bytechen.hall.overworld.registry.RegisterItem;
 
@@ -49,6 +50,117 @@ public class RecipeProviderData extends RecipeProvider {
 
         // ── domerite 工具合成（domerite_ingot 为刃材，domite_crystal 为柄材）──
         addDomeriteToolRecipes(consumer);
+
+        // ── 王庭烬痕砂岩系列合成 ──
+        addSandstoneVariantRecipes(consumer);
+
+        // ── 血肉裂隙：通往血肉庭园的门 ──
+        addFleshRiftRecipe(consumer);
+    }
+
+    /**
+     * 血肉裂隙配方。
+     * <p>
+     * 用「穹顶胚晶 + 王庭骨」拼成 —— 两种材料都来自现有的战斗循环
+     * （穹顶矿 + 碎骨掉落），因此不需要为开门额外新增资源链。
+     * 阵型参考原版末地传送门的「虚空感」：中心放胚晶，四角放骨。
+     */
+    private void addFleshRiftRecipe(Consumer<FinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, RegisterBlock.FLESH_RIFT.get().asItem())
+                .define('B', RegisterItem.HALL_BONE_FRAGMENTS.get())
+                .define('C', RegisterItem.DOMITE_CRYSTAL.get())
+                .pattern("B B")
+                .pattern(" C ")
+                .pattern("B B")
+                .unlockedBy("has_domite_crystal", has(RegisterItem.DOMITE_CRYSTAL.get()))
+                .unlockedBy("has_bone_fragments", has(RegisterItem.HALL_BONE_FRAGMENTS.get()))
+                .save(consumer);
+    }
+
+    /**
+     * 为「王庭烬痕沙漠系列」的砂岩变体补齐配方。
+     * <p>
+     * 对照原版砂岩全家桶（{@code data/minecraft/recipes/}）逐条对齐：
+     * <ul>
+     *   <li>{@code sandstone}        ← 4 × sand（2×2）</li>
+     *   <li>{@code cut_sandstone}    ← 4 × sandstone（2×2）</li>
+     *   <li>{@code chiseled_sandstone} ← 2 × sandstone_slab（竖向 1×2）</li>
+     *   <li>{@code smooth_sandstone} ← 烧炼 {@code sandstone}（0.1 exp / 200 tick）</li>
+     *   <li>切石机：{@code sandstone} → {@code cut / chiseled / smooth}（各 1 个，方便批量出料）</li>
+     * </ul>
+     * 与「王庭烬痕沙子 / 王庭砂岩」互为主副材料，玩家不必先去找原版沙漠。
+     * <p>
+     * 注意：模组里没有自定义砂岩台阶，{@code chiseled} 因此沿用原版
+     * {@code minecraft:sandstone_slab} 作为材料（与原版配方一致）。
+     */
+    private void addSandstoneVariantRecipes(Consumer<FinishedRecipe> consumer) {
+        Block sand = RegisterBlock.HALL_ASH_SAND.get();
+        Block sandstone = RegisterBlock.HALL_SANDSTONE.get();
+        Block cutSandstone = RegisterBlock.HALL_ASH_CUT_SANDSTONE.get();
+        Block smoothSandstone = RegisterBlock.HALL_ASH_SMOOTH_SANDSTONE.get();
+        Block chiseledSandstone = RegisterBlock.HALL_ASH_COLLAPSED_CHISELED_SANDSTONE.get();
+
+        // 王庭烬痕沙子 ×4 → 王庭砂岩
+        // 配方 ID 与输出物品同名（hall:hall_sandstone），所以不传自定义 ID
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, sandstone)
+                .pattern("##")
+                .pattern("##")
+                .define('#', sand)
+                .unlockedBy("has_hall_ash_sand", has(sand))
+                .save(consumer);
+
+        // 王庭砂岩 ×4 → 王庭切制砂岩
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, cutSandstone, 4)
+                .pattern("##")
+                .pattern("##")
+                .define('#', sandstone)
+                .unlockedBy("has_hall_sandstone", has(sandstone))
+                .save(consumer);
+
+        // 原版砂岩 ×4 → 王庭切制砂岩（废墟里捡到原版砂岩也能用）
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, cutSandstone, 4)
+                .pattern("##")
+                .pattern("##")
+                .define('#', Blocks.SANDSTONE)
+                .unlockedBy("has_sandstone", has(Blocks.SANDSTONE))
+                .save(consumer, "hall:hall_ash_cut_sandstone_from_sandstone");
+
+        // 砂岩台阶 ×2 → 王庭塌陷雕纹砂岩（竖向摆放，与原版雕纹砂岩配方一致）
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, chiseledSandstone)
+                .pattern("#")
+                .pattern("#")
+                .define('#', Blocks.SANDSTONE_SLAB)
+                .unlockedBy("has_hall_ash_cut_sandstone", has(cutSandstone))
+                .save(consumer);
+
+        // 烧炼王庭砂岩 → 王庭平滑砂岩
+        // 与原版 smooth_sandstone.json 同名（默认 ID：hall:hall_ash_smooth_sandstone）
+        SimpleCookingRecipeBuilder.smelting(Ingredient.of(sandstone), RecipeCategory.BUILDING_BLOCKS,
+                        smoothSandstone, 0.1F, 200)
+                .unlockedBy("has_hall_sandstone", has(sandstone))
+                .save(consumer);
+
+        // 烧炼原版砂岩 → 王庭平滑砂岩（与原版 smooth_sandstone 同源，走自定义 ID 区分）
+        SimpleCookingRecipeBuilder.smelting(Ingredient.of(Blocks.SANDSTONE), RecipeCategory.BUILDING_BLOCKS,
+                        smoothSandstone, 0.1F, 200)
+                .unlockedBy("has_sandstone", has(Blocks.SANDSTONE))
+                .save(consumer, "hall:hall_ash_smooth_sandstone_from_sandstone_smelting");
+
+        // 切石机：王庭砂岩 → 切制 / 雕纹 / 平滑（各 1 个）
+        SingleItemRecipeBuilder.stonecutting(Ingredient.of(sandstone), RecipeCategory.BUILDING_BLOCKS,
+                        cutSandstone, 1)
+                .unlockedBy("has_hall_sandstone", has(sandstone))
+                .save(consumer, "hall:hall_ash_cut_sandstone_from_stonecutting");
+
+        SingleItemRecipeBuilder.stonecutting(Ingredient.of(sandstone), RecipeCategory.BUILDING_BLOCKS,
+                        chiseledSandstone, 1)
+                .unlockedBy("has_hall_sandstone", has(sandstone))
+                .save(consumer, "hall:hall_ash_collapsed_chiseled_sandstone_from_stonecutting");
+
+        SingleItemRecipeBuilder.stonecutting(Ingredient.of(sandstone), RecipeCategory.BUILDING_BLOCKS,
+                        smoothSandstone, 1)
+                .unlockedBy("has_hall_sandstone", has(sandstone))
+                .save(consumer, "hall:hall_ash_smooth_sandstone_from_stonecutting");
     }
 
     /**
@@ -130,6 +242,21 @@ public class RecipeProviderData extends RecipeProvider {
         Block stone = RegisterBlock.HALL_STONE.get();
         String unlock = "has_hall_stone";
 
+        // 石柱：4 石块 → 4 石柱（2×2）
+        // 对应原版「4 石块 → 4 石砖」这一步，让王庭石也有「基础石 → 细加工石」的合成层级
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, RegisterBlock.HALL_PILLAR.get().asItem(), 4)
+                .pattern("SS")
+                .pattern("SS")
+                .define('S', stone)
+                .unlockedBy(unlock, has(stone))
+                .save(consumer);
+
+        // 石柱切石机：1 石块 → 1 石柱
+        SingleItemRecipeBuilder.stonecutting(Ingredient.of(stone), RecipeCategory.BUILDING_BLOCKS,
+                        RegisterBlock.HALL_PILLAR.get().asItem(), 1)
+                .unlockedBy(unlock, has(stone))
+                .save(consumer, "hall:hall_pillar_from_stonecutting");
+
         // 楼梯：6 石块 → 4 楼梯
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, RegisterBlock.HALL_STONE_STAIRS.get().asItem(), 4)
                 .pattern("S  ")
@@ -186,6 +313,16 @@ public class RecipeProviderData extends RecipeProvider {
     private void addDomeriteToolRecipes(Consumer<FinishedRecipe> consumer) {
         Item ingot = RegisterItem.DOMERITE_INGOT.get();
         Item crystal = RegisterItem.DOMITE_CRYSTAL.get();
+        Item stick = RegisterItem.DOMERITE_STICK.get();
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, RegisterItem.DOMERITE_STICK.get())
+                .pattern("CIC")
+                .pattern("CIC")
+                .pattern("CIC")
+                .define('I', ingot)
+                .define('C', crystal)
+                .unlockedBy("has_domerite_ingot", has(ingot))
+                .save(consumer);
 
         // 剑
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, RegisterItem.DOMERITE_SWORD.get())
@@ -256,6 +393,17 @@ public class RecipeProviderData extends RecipeProvider {
                 .define('C', crystal)
                 .unlockedBy("has_domerite_ingot", has(ingot))
                 .save(consumer, "hall:domerite_hoe_left");
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, RegisterItem.DOMERITE_LONGSWORD.get())
+                .pattern("III")
+                .pattern("CSI")
+                .pattern("CS ")
+                .define('I', ingot)
+                .define('C', crystal)
+                .define('S', stick)
+
+                .unlockedBy("has_domerite_ingot", has(ingot))
+                .save(consumer);
     }
 
     /**

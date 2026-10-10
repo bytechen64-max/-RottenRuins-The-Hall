@@ -15,6 +15,12 @@ public class LangDataCN extends LanguageProvider {
     @Override
     protected void addTranslations() {
         add("itemGroup." + HallMod.MODID + ".main", "腐朽之疫:王庭");
+        // 创造物品栏的分区隔断行标题（见 SectionedCreativeModeTab / RegisterTab）
+        add("itemGroup." + HallMod.MODID + ".main.section.creatures", "刷怪蛋");
+        add("itemGroup." + HallMod.MODID + ".main.section.materials", "材料");
+        add("itemGroup." + HallMod.MODID + ".main.section.gear", "武器与工具");
+        add("itemGroup." + HallMod.MODID + ".main.section.blocks", "方块");
+        add("itemGroup." + HallMod.MODID + ".main.section.misc", "其它");
         add(RegisterItem.EXAMPLE_ITEM.get(), "测试物品");
         add(RegisterItem.VOID_SWORD.get(), "伪-虚无之刃");
         add(RegisterItem.HALL_BONE_FRAGMENTS.get(),  "王庭骨");
@@ -32,6 +38,8 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.DOMERITE_SHOVEL.get(), "云顶之锹");
         add(RegisterItem.DOMERITE_HOE.get(), "云顶之锄");
         add(RegisterItem.DOMERITE_LONGSWORD.get(), "天穹裁决");
+        add(RegisterItem.CRIMSON_VOW.get(), "绯红誓约");
+        add(RegisterItem.SILENT_DAYLIGHT.get(), "寂寒白日");
         add(RegisterItem.ACID_ANOMALY_EXTRACT.get(), "酸异常提取物");
         add(RegisterItem.COLD_ANOMALY_EXTRACT.get(), "冷异常提取物");
         add(RegisterItem.HEAT_ANOMALY_EXTRACT.get(), "热异常提取物");
@@ -89,12 +97,18 @@ public class LangDataCN extends LanguageProvider {
         add(EntityTypeRegistry.MONOLITH.get(), "溃烂巨岩");
         add(EntityTypeRegistry.SHOCKWAVE.get(), "冲击波");
         add(EntityTypeRegistry.METEORITE.get(), "陨石");
+        // 天穹裁决 · 裁决领域的落剑（纯视觉技能实体，但仍给一个可读名字便于调试）
+        add(EntityTypeRegistry.VERDICT_SWORD_DROP.get(), "裁决落剑");
         add(RegisterEffect.ACID_ANOMALY_ADAPTATION.get(), "酸异常适应");
         add(RegisterEffect.COLD_ANOMALY_ADAPTATION.get(), "冷异常适应");
         add(RegisterEffect.HEAT_ANOMALY_ADAPTATION.get(), "热异常适应");
         add(RegisterEffect.VERDICT.get(), "裁决");
         // 天穹裁决：冷却中右键时的动作栏提示
         add("item.hall.domerite_longsword.cooldown", "裁决尚未就绪（%s 秒）");
+        // 天穹裁决：抬头不足，光柱无法立起（原本这一下是完全静默的）
+        add("item.hall.domerite_longsword.no_aim", "未瞄准 · 抬头才能落下裁决");
+        // 天穹裁决：这一招完全落空（空放只记很短的一笔冷却）
+        add("item.hall.domerite_longsword.missed", "落空 · 冷却已返还");
         add(TranslateUtils.DIFFICULTY_EASY, "简单");
         add(TranslateUtils.DIFFICULTY_NORMAL, "普通");
         add(TranslateUtils.DIFFICULTY_HARD, "困难");
@@ -106,11 +120,57 @@ public class LangDataCN extends LanguageProvider {
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_TITLE, "选择难度");
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_HINT, "请选择世界难度");
 
+        // ---- tooltip 文案（占位文案，待定稿） ----
+        // 机制说明共用一份（几把格挡武器是同一件事）；各物品只拥有自己的风味。
+        // "标签 + 正文"拆成两个键：渐变的逐字上色会把整行拍平，合成一条
+        // "%s …" 模板就分不出两种颜色（见 client.rend.text.TooltipLines）。
+        // %% 是原版 TranslatableContents 的转义（见其 FORMAT_PATTERN 那一段）。
+        add(TranslateUtils.TOOLTIP_LABEL_BLOCK, "格挡");
+        add(TranslateUtils.TOOLTIP_BLOCK, "按住右键举剑迎击 · 只挡正面来敌");
+        add(TranslateUtils.TOOLTIP_TRAIT, "不可损坏 · 火焰免疫 · 合成后归还");
+        add(TranslateUtils.TOOLTIP_BAR_LABEL, "格挡减伤");
+        add(TranslateUtils.TOOLTIP_BAR_VALUE, "%s%%");
+
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LORE, "「以血为誓，此刃不折。」");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_TRAIT, "誓约");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_DEBUG,
+                "调试 · 格挡结算 ×%s%% · 仅正面 %s · 使用时长 %s tick · 实体范围 +%s");
+
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LORE, "「白昼无声，唯余一刃寒水。」");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TIDE, "湍流");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_TIDE, "剑刃浸在一层流动的水光里");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TRAIT, "白日");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_DEBUG,
+                "调试 · 格挡结算 ×%s%% · 仅正面 %s · 使用时长 %s tick");
+
         // ---- 血肉庭园维度（hall:heall） ----
         // 该维度的地形完全复用现有王庭方块，因此这里只有通道方块的译名
         add(RegisterBlock.FLESH_RIFT.get(), "血肉裂隙");
         add("dimension." + HallMod.MODID + ".heall", "血肉庭园");
         add("biome." + HallMod.MODID + ".flesh_marrow", "血肉庭园");
         add("block." + HallMod.MODID + ".flesh_rift.no_dimension", "裂隙的另一端尚未形成……");
+
+        // ---- 魔法属性（见 RegisterAttributes） ----
+        // 键名必须与 RangedAttribute 构造器里写死的那个字符串**完全一致**，
+        // 对不上就会在属性界面里显示原始键名。
+        add("attribute.name." + HallMod.MODID + ".max_mana", "法力上限");
+        add("attribute.name." + HallMod.MODID + ".mana_regeneration", "法力回复速度");
+        add("attribute.name." + HallMod.MODID + ".mana_restore", "法力回复量");
+        add("attribute.name." + HallMod.MODID + ".spell_power", "法术强度");
+        add("attribute.name." + HallMod.MODID + ".magic_slots", "魔法槽位");
+
+        // ---- 魔法体系 · 物品 ----
+        // 法力板：六个流派各一块，目前都是纯材料（见 RegisterItem 里的说明，
+        // 贴图是 water 而 MagicType 对应位置是 ACE，两边尚未建立映射）。
+        add(RegisterItem.DEATH_MANA_PLATE.get(), "死亡魔法版材");
+        add(RegisterItem.FIRE_MANA_PLATE.get(), "火焰魔法版材");
+        add(RegisterItem.LIGHT_MANA_PLATE.get(), "光明魔法版材");
+        add(RegisterItem.NATURE_MANA_PLATE.get(), "自然魔法版材");
+        add(RegisterItem.VOID_MANA_PLATE.get(), "虚空魔法版材");
+        add(RegisterItem.WATER_MANA_PLATE.get(), "水魔法版材");
+        add(RegisterItem.MAGIC_CATA.get(), "魔法催化剂");
+        add(RegisterItem.VOID_RUNE.get(), "虚空符文");
+        add(RegisterItem.WAND.get(), "法杖");
+        add(RegisterItem.WAND_NATURE.get(), "自然法杖");
     }
 }

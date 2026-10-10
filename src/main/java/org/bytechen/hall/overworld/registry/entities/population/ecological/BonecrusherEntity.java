@@ -10,6 +10,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.level.Level;
+import org.bytechen.hall.overworld.difficulty.HallDifficultyAttributes;
 import org.bytechen.hall.overworld.registry.entities.base.AbstractHallEntity;
 import org.bytechen.hall.overworld.registry.entities.population.skills.SwordAuraEntity;
 import org.bytechen.hall.utils.TickUtils;
@@ -114,6 +115,8 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
     protected void registerGoals() {
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .range(40.0)
+                // 威胁点数过滤器：玩家威胁 < 5 不主动索敌；非玩家生物照常索敌
+                .filter(this)
                 .build());
         this.goalSelector.addGoal(5, new RandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
@@ -129,7 +132,8 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
     @Override
     protected boolean getAttack(LivingEntity target) {
         this.lastCombatTick = this.tickCount;   // 更新战斗时间
-        float baseDamage = (float) getAttributeBaseValue(Attributes.ATTACK_DAMAGE);
+        // 必须走 effectiveAttackDamage（含属性修饰符），不能用 getAttributeBaseValue
+        float baseDamage = HallDifficultyAttributes.effectiveAttackDamage(this, 25.0F);
 
         if (this.getRandom().nextInt(100) < SWORD_AURA_CHANCE) {
             target.hurt(this.damageSources().mobAttack(this), baseDamage * SWORD_AURA_DAMAGE_MULT);

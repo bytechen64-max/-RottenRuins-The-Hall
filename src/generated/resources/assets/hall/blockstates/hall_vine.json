@@ -1,0 +1,472 @@
+{
+  "variants": {
+    "age=0,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=0,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=0,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=0,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=0,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=0,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=1,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=1,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=1,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=1,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=1,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=1,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=10,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=10,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=10,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=10,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=10,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=10,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=11,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=11,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=11,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=11,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=11,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=11,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=12,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=12,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=12,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=12,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=12,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=12,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=13,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=13,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=13,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=13,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=13,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=13,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=14,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=14,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=14,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=14,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=14,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=14,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=15,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=15,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=15,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=15,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=15,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=15,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=16,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=16,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=16,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=16,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=16,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=16,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=17,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=17,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=17,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=17,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=17,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=17,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=18,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=18,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=18,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=18,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=18,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=18,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=19,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=19,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=19,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=19,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=19,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=19,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=2,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=2,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=2,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=2,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=2,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=2,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=20,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=20,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=20,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=20,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=20,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=20,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=21,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=21,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=21,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=21,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=21,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=21,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=22,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=22,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=22,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=22,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=22,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=22,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=23,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=23,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=23,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=23,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=23,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=23,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=24,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=24,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=24,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=24,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=24,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=24,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=25,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=25,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=25,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=25,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=25,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=25,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=3,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=3,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=3,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=3,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=3,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=3,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=4,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=4,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=4,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=4,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=4,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=4,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=5,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=5,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=5,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=5,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=5,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=5,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=6,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=6,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=6,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=6,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=6,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=6,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=7,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=7,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=7,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=7,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=7,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=7,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=8,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=8,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=8,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=8,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=8,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=8,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    },
+    "age=9,growth_dir=down,section=bottom": {
+      "model": "hall:block/hall_vine_down_middle"
+    },
+    "age=9,growth_dir=down,section=middle": {
+      "model": "hall:block/hall_vine_down_bottom"
+    },
+    "age=9,growth_dir=down,section=top": {
+      "model": "hall:block/hall_vine_down_top"
+    },
+    "age=9,growth_dir=up,section=bottom": {
+      "model": "hall:block/hall_vine_up_bottom"
+    },
+    "age=9,growth_dir=up,section=middle": {
+      "model": "hall:block/hall_vine_up_middle"
+    },
+    "age=9,growth_dir=up,section=top": {
+      "model": "hall:block/hall_vine_up_top"
+    }
+  }
+}

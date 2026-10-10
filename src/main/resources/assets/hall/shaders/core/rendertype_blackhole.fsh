@@ -19,13 +19,17 @@
 // 在 4.5→5.5·Rs 淡出到零，球面边缘处输出与场景完全一致 → 无缝。
 // ─────────────────────────────────────────────────────────────
 
-#define STEPS 80
+// 步数。透镜球体半径是 10·Rs，但每步长度由 dt 钳制在 [0.06, 1.4]·Rs，
+// 所以步长随靠近黑洞自动变细（外侧粗、内侧细），80 步足够覆盖
+// 半径 20·Rs 的积分区间；这里再留一点余量给收缩动画时的小半径。
+#define STEPS 96
 
 uniform sampler2D ScreenTexture;
 uniform mat4 ProjMat;
 uniform vec3 uBlackHolePos;
-uniform float uRadius;   // 史瓦西半径 Rs（方块）
-uniform float uGrav;     // 弯曲强度（bend * Rs * Rs）
+uniform float uRadius;        // 史瓦西半径 Rs（方块）
+uniform float uGrav;          // 弯曲强度（bend * Rs * Rs）
+uniform float uSphereRadius;  // 渲染球体半径（方块）= SPHERE_RADIUS * Rs * 动画缩放
 
 in vec4 vertexColor;
 in vec3 vNormal;
@@ -53,12 +57,22 @@ void main() {
     vec3 closest = rd * along;
     float impact = length(toBH - closest);   // 视线到黑洞中心的垂距
 
-    // 透镜强度包络：球面几何保证 impact ≤ 球半径(6·Rs)，
-    // 在 4.5→5.5·Rs 平滑淡出，球面边缘处衰减到零 → 无矩形边界
-    float falloff = 1.0 - smoothstep(4.5 * Rs, 5.5 * Rs, impact);
+    // 透镜强度包络。
+    // 渲染器画的是一个半径 uSphereRadius 的球，光线在球面处与黑洞
+    // 相切 —— 这决定了透镜的**最大可见范围**。要让折射铺满整个球面，
+    // 淡出必须一直延伸到球面半径，而不是提前收掉。
+    // 旧写法把淡出收在 5.5·Rs（球半径只有 6·Rs），于是球面外侧那一圈
+    // impact ∈ [5.5Rs, 6Rs] 完全没有透镜，观感上就只剩边缘一点点。
+    // 现在淡出落在 [0.62, 1.0]·球半径，既铺满整个球面，
+    // 又在球面边缘严格归零 → 不会出现矩形/硬边。
+    float sphereR = max(uSphereRadius, 0.05);
+    float falloff = 1.0 - smoothstep(0.62 * sphereR, 1.0 * sphereR, impact);
 
-    float startDist = max(0.0, along - 12.0 * Rs);
-    float stopDist  = along + 12.0 * Rs;
+    // 光线步进的积分区间。必须覆盖到球面之外：偏折最明显的部分是
+    // 大碰撞参数的引力偏折，若只在 ±12·Rs 内积分，球面外围那圈
+    // 就既没有透镜、也没有偏折。取 ±20·Rs 与渲染球体半径(20·Rs)对齐。
+    float startDist = max(0.0, along - 20.0 * Rs);
+    float stopDist  = along + 20.0 * Rs;
     vec3 pos = ro + rd * startDist;
     vec3 dir = rd;
     float traveled = startDist;

@@ -2,6 +2,8 @@ package org.bytechen.hall.client.rend;
 
 import org.bytechen.hall.HallMod;
 import org.bytechen.hall.mixin.accessor.AccessorRenderStateShard;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.RenderStateShard;
@@ -36,6 +38,17 @@ public class SplendidingShaders {
     // ── GUI overlay shaders ──
     public static ShaderInstance guiHorrorVoronoiShader;
     public static ShaderInstance guiGlowShader;
+    /**
+     * 创造物品栏「分区隔断行」的流动色带（GUI：一条 160×18 的极光缎带）。
+     *
+     * <p>它没有对应的 RenderType —— 和 tooltip 底板那条路一样走
+     * {@code BufferUploader.drawWithShader} 立即绘制，GL 状态写在
+     * {@code client/gui/creative/CreativeTabDividerRenderer} 里。
+     * 为 null 时隔断行退回一条纯色细线（分区功能本身不受影响）。</p>
+     */
+    public static ShaderInstance guiTabDividerShader;
+    /** 难度选择界面的四档「印记」（程序化多边形几何 + 逐 profile 图案）。 */
+    public static ShaderInstance difficultySigilShader;
     /** 坍缩使徒 boss 血条的「血量内容」着色器（纯黑底 + 彩色星尘，mask 红通道定形状）。 */
     public static ShaderInstance collapsarBarShader;
     /** 坍缩使徒的背部六芒星光环（参考 glorb/field 彩虹噪声 + 六芒星 SDF）。 */
@@ -45,6 +58,16 @@ public class SplendidingShaders {
     public static ShaderInstance verdictBeamShader;
     /** 裁决领域的地面光纹（水平圆盘，极坐标六分对称）。 */
     public static ShaderInstance verdictFieldShader;
+    /** 绯红誓约背板（程序化几何 + 自发光纹路，挂在玩家背后）。 */
+    public static ShaderInstance crimsonBackplateShader;
+    /**
+     * tooltip 底板的热力学流动（GUI：一块被从下方加热的板）。
+     *
+     * <p>它没有对应的 RenderType —— 和血条那条路一样走
+     * {@code BufferUploader.drawWithShader} 立即绘制，GL 状态写在
+     * {@code client/tooltip/TooltipShaders} 里。为 null 时 tooltip 退回纯色底板。</p>
+     */
+    public static ShaderInstance tooltipThermalShader;
 
     // ── render types (lazy) ──
     private static RenderType lightningOutlineRenderType;
@@ -52,6 +75,10 @@ public class SplendidingShaders {
     private static RenderType shockwaveRenderType;
     private static RenderType shockwaveLateRenderType;
     private static RenderType verdictBeamRenderType;
+    /** 背板的"板体"通道：普通透明混合，画背面与正面底。 */
+    private static RenderType crimsonBackplateRenderType;
+    /** 背板的"发光"通道：加法混合，只画绯红纹路。 */
+    private static RenderType crimsonBackplateGlowRenderType;
 
     /** 描边颜色模式 key（旧名保留：现在只决定颜色怎么算，不再对应独立着色器）。 */
     public static final String KEY_DEFAULT = "default";
@@ -170,6 +197,32 @@ public class SplendidingShaders {
             HallMod.LOGGER.error("[Shaders] 着色器加载失败", t);
         }
 
+        // 创造物品栏分区隔断行的流动色带（GUI：程序化极光缎带，无贴图）
+        try {
+            event.registerShader(
+                    new ShaderInstance(event.getResourceProvider(),
+                            new ResourceLocation(HallMod.MODID, "gui_tab_divider"),
+                            DefaultVertexFormat.POSITION_TEX),
+                    shader -> guiTabDividerShader = shader);
+        } catch (Throwable t) {
+            // 加载失败不会让分区功能失效：CreativeTabDividerRenderer 会退回一条纯色细线。
+            HallMod.LOGGER.error("[Shaders] 加载 gui_tab_divider 失败，"
+                    + "创造物品栏的分区隔断行将退回纯色细线", t);
+        }
+
+        // 难度选择界面的四档印记（程序化顶点几何 + 逐 profile 角度图案）
+        // 用 POSITION_TEX_COLOR：Position 是屏幕坐标，UV0 传 (归一化半径, 角度)，
+        // Color.rgb 传环带边缘靠近程度、Color.a 传环权重 —— 详见 DifficultySigilMesh。
+        try {
+            event.registerShader(
+                    new ShaderInstance(event.getResourceProvider(),
+                            new ResourceLocation(HallMod.MODID, "rendertype_difficulty_sigil"),
+                            DefaultVertexFormat.POSITION_TEX_COLOR),
+                    shader -> difficultySigilShader = shader);
+        } catch (Throwable t) {
+            HallMod.LOGGER.error("[Shaders] 加载 rendertype_difficulty_sigil 失败，难度印记将退化为旧的发光效果", t);
+        }
+
         // black hole (raymarched gravitational lensing, view-space billboard)
         try {
             event.registerShader(
@@ -196,6 +249,19 @@ public class SplendidingShaders {
             // 于是"着色器没加载成功"会在日志里彻底消失（光环消失那次就是这么查了半天的）。
             // 异常消息里带着色器名，堆栈里带 GLSL 编译器的原始报错。
             HallMod.LOGGER.error("[Shaders] 着色器加载失败", t);
+        }
+
+        // tooltip 底板的热力学流动（GUI：一块被从下方加热的板，无贴图）
+        // 加载失败不会让 tooltip 变丑太多：TooltipStyleHook 会退回纯色底板。
+        try {
+            event.registerShader(
+                    new ShaderInstance(event.getResourceProvider(),
+                            new ResourceLocation(HallMod.MODID, "rendertype_tooltip_thermal"),
+                            DefaultVertexFormat.POSITION_TEX),
+                    shader -> tooltipThermalShader = shader);
+        } catch (Throwable t) {
+            HallMod.LOGGER.error("[Shaders] 加载 rendertype_tooltip_thermal 失败，"
+                    + "tooltip 底板将退回纯色（见 TooltipStyleHook）", t);
         }
 
         // 坍缩使徒背部六芒星光环（世界空间 billboard，程序化生成、无贴图）
@@ -237,6 +303,17 @@ public class SplendidingShaders {
             HallMod.LOGGER.error("[Shaders] 加载 rendertype_verdict_field 失败，裁决领域的地面光纹将不可见", t);
         }
 
+        // 绯红誓约背板 —— 程序化几何 + 自发光纹路（POSITION_TEX，逐顶点参数编在 UV0 里）
+        try {
+            event.registerShader(
+                    new ShaderInstance(event.getResourceProvider(),
+                            new ResourceLocation(HallMod.MODID, "rendertype_crimson_backplate"),
+                            DefaultVertexFormat.POSITION_TEX),
+                    shader -> crimsonBackplateShader = shader);
+        } catch (Throwable t) {
+            HallMod.LOGGER.error("[Shaders] 加载 rendertype_crimson_backplate 失败，绯红誓约背板将不可见", t);
+        }
+
     }
 
     // ── built-in render types ──
@@ -250,9 +327,12 @@ public class SplendidingShaders {
      *       所以混合用 {@code ONE / ONE}，颜色叠到近白即自然泛光。
      *       这也让它<b>不需要</b>冲击波那套场景拷贝（把主帧缓冲 blit 到 copyTex），
      *       因为它不采样屏幕，只采样自己的几何。</li>
-     *   <li><b>不写深度。</b>44 格高的柱体写深度会把后面的实体/粒子全剪掉，
-     *       留下一个"墙角一样的硬遮挡"。开 LEQUAL 深度测试（被地形正确遮挡）
-     *       但关写深度，是这类体积特效的标准取舍。</li>
+     *   <li><b>写深度。</b>渲染器侧设 {@code depthMask(true)}，RenderType 侧的
+     *       {@code writeMaskState} 与之对应 —— <b>两处必须同时是"写"</b>。
+     *       曾经两处都是 false，症状就是"光柱穿透实体和方块"，读起来像一张
+     *       贴在所有物体前面的发光贴纸而不像一根立起来的柱子。
+     *       反过来，代价是光柱边缘与它挡住的物体之间是一条硬边（要柔和过渡
+     *       得采样深度纹理做 soft-particle，那是另一条管线）。</li>
      *   <li><b>不剔除背面。</b>玩家常常站在光柱内部，关剔除之后内壁也会被画出来，
      *       于是它会读成"一根玻璃管"而不是"一个亮色补丁"。</li>
      * </ul>
@@ -274,10 +354,133 @@ public class SplendidingShaders {
                             .setTransparencyState(AccessorRenderStateShard.splendiding$getTranslucentTransparency())
                             .setDepthTestState(AccessorRenderStateShard.splendiding$getLequalDepthTest())
                             .setCullState(AccessorRenderStateShard.splendiding$getNoCull())
-                            .setWriteMaskState(AccessorRenderStateShard.splendiding$getColorWrite())
+                            // 写深度：与 VerdictBeamRenderer 里的 depthMask(true) 成对。
+                            // 两处都必须是"写"，只改一处不会生效、症状还一样。
+                            .setWriteMaskState(AccessorRenderStateShard.splendiding$getColorDepthWrite())
                             .createCompositeState(false));
         }
         return verdictBeamRenderType;
+    }
+
+    // ── 绯红誓约背板 ────────────────────────────────────────────
+
+    /**
+     * 背板的"底"通道：<b>普通 alpha 混合</b> + 写深度 + <b>剔除背面</b>。
+     *
+     * <h3>为什么写深度</h3>
+     * <p>它是一块会遮挡的实体装饰：站在墙后该消失，挡在别的实体前面也该挡住。
+     * 不写深度的话它会像贴在所有物体前面的一张发光贴纸。</p>
+     *
+     * <h3>为什么这次可以剔除背面（上一版不行）</h3>
+     * <p>背饰的板面朝人体背面（{@code +Z}），从这个方向看过去是正面 —— 玩家自己
+     * 在第三人称、别人在你背后，看到的都是这一面。几何的绕序就是按这个朝向烘的
+     * （扇形逆时针 ⇒ 法线朝 {@code +Z}），所以直接开剔除是安全的。</p>
+     * <p>上一版是对着相机的 billboard，那时"板面朝哪"每帧都在变，只能关剔除
+     * 并在几何里补一份反绕序。</p>
+     *
+     * <h3>缓冲大小：这个数字是字节数，不是顶点数</h3>
+     * <p>{@code POSITION_TEX} 每条顶点 = 3×4(Pos) + 2×4(UV) = 20 字节。
+     * 本几何 = 48 段 × 3 顶点 = 144 条 = 2.9KB，给 65536（≈ 3276 顶点）
+     * 有 20 倍余量。多人同屏时每个玩家一次性写完整份再 flush，
+     * 所以余量按"单个玩家的顶点数"算就够。</p>
+     */
+    public static RenderType getCrimsonBackplateRenderType() {
+        if (crimsonBackplateShader == null) return null;
+        if (crimsonBackplateRenderType == null) {
+            crimsonBackplateRenderType = RenderType.create(HallMod.MODID + ":crimson_backplate",
+                    DefaultVertexFormat.POSITION_TEX, VertexFormat.Mode.TRIANGLES, 65536,
+                    false, false,
+                    RenderType.CompositeState.builder()
+                            .setShaderState(new RenderStateShard.ShaderStateShard(() -> crimsonBackplateShader))
+                            .setTransparencyState(AccessorRenderStateShard.splendiding$getTranslucentTransparency())
+                            .setDepthTestState(AccessorRenderStateShard.splendiding$getLequalDepthTest())
+                            .setCullState(AccessorRenderStateShard.splendiding$getCull())
+                            .setWriteMaskState(AccessorRenderStateShard.splendiding$getColorDepthWrite())
+                            .createCompositeState(false));
+        }
+        return crimsonBackplateRenderType;
+    }
+
+    /**
+     * 背板的"亮"通道：<b>加法混合</b> + 不写深度。
+     *
+     * <p>加法让五边形顶点、六芒星角与条带是"往上加光"而不是"覆盖颜色"，
+     * 这是它看起来在发亮的原因；不写深度是因为它叠在同一块板面之上，
+     * 写深度只会把随后画的半透明几何挡掉。</p>
+     */
+    public static RenderType getCrimsonBackplateGlowRenderType() {
+        if (crimsonBackplateShader == null) return null;
+        if (crimsonBackplateGlowRenderType == null) {
+            crimsonBackplateGlowRenderType = RenderType.create(HallMod.MODID + ":crimson_backplate_glow",
+                    DefaultVertexFormat.POSITION_TEX, VertexFormat.Mode.TRIANGLES, 65536,
+                    false, false,
+                    RenderType.CompositeState.builder()
+                            .setShaderState(new RenderStateShard.ShaderStateShard(() -> crimsonBackplateShader))
+                            .setTransparencyState(new RenderStateShard.TransparencyStateShard(
+                                    "hall_backplate_additive", () -> {
+                                        RenderSystem.enableBlend();
+                                        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
+                                                GlStateManager.DestFactor.ONE);
+                                    }, () -> {
+                                        RenderSystem.disableBlend();
+                                        RenderSystem.defaultBlendFunc();
+                                    }))
+                            .setDepthTestState(AccessorRenderStateShard.splendiding$getLequalDepthTest())
+                            .setCullState(AccessorRenderStateShard.splendiding$getNoCull())
+                            .setWriteMaskState(AccessorRenderStateShard.splendiding$getColorWrite())
+                            .createCompositeState(false));
+        }
+        return crimsonBackplateGlowRenderType;
+    }
+
+    /**
+     * 背板每一遍绘制前把 uniform 写好。
+     *
+     * <p>必须在<b>每一遍</b>之前调用：uniform 是全局状态，加法那一遍如果不重设，
+     * 就会沿用上一遍的值（表现为"发光层跟着底层一起变暗"）。</p>
+     *
+     * @param time   连续时间（tick + partialTick），驱动三层的自转与条带移动
+     * @param anim   本帧的展开 / 格挡进度
+     * @param glow   true = 这一遍是加法"亮"层。此时只输出高光部分，
+     *               板面的暗底留给"底"那一遍画，否则加法会把暗部也叠上去
+     */
+    public static void setBackplateUniforms(float time,
+                                            org.bytechen.hall.client.rend.backplate.CrimsonVowBackplateRig.Anim anim,
+                                            boolean glow) {
+        ShaderInstance sh = crimsonBackplateShader;
+        if (sh == null) return;
+
+        setUniform(sh, "Time", time);
+        setUniform(sh, "Reveal", anim.unfold());
+        setUniform(sh, "Block", anim.block());
+        // 常亮 0.55：不格挡时也要看得清三层结构，否则它就只是一团暗影
+        setUniform(sh, "Intensity", glow ? (0.55F + 1.05F * anim.block()) : 1.0F);
+        // 三层各自的自转方向与速度（内圈最慢、条带最快）
+        if (sh.getUniform("Spin") != null) sh.safeGetUniform("Spin").set(0.55F, 1.0F, 2.4F);
+        // 层半径：内圈 0.60、外圈 0.80
+        if (sh.getUniform("RingRadius") != null) sh.safeGetUniform("RingRadius").set(0.80F, 0.60F);
+
+        // 像素尺寸 → 片元用它把细线宽换算成屏幕空间恒定像素（与 fwidth 互为保险：
+        // fwidth 在极细线上会趋于 0，那时靠这个下限托底）。
+        // 用窗口的物理像素宽而不是 GUI 缩放宽：着色器写在片元坐标里，物理像素才对。
+        int winW = Math.max(1, net.minecraft.client.Minecraft.getInstance()
+                .getWindow().getWidth());
+        float px = 1.0F / (float) winW;
+        setUniform(sh, "PixelWidth", net.minecraft.util.Mth.clamp(px, 1.0E-5F, 4.0E-3F));
+
+        // 色板：内圈深绯红 → 外圈雾粉紫（F）。片元按归一化半径在两者之间插值。
+        setUniform(sh, "VowColor", 0.66F, 0.055F, 0.20F);
+        setUniform(sh, "AccentColor", 0.96F, 0.50F, 1.0F);
+    }
+
+    /** 写一个 float uniform（名字不存在时静默跳过 —— 着色器可能把没用到的 uniform 优化掉）。 */
+    private static void setUniform(ShaderInstance sh, String name, float value) {
+        if (sh.getUniform(name) != null) sh.safeGetUniform(name).set(value);
+    }
+
+    /** 写一个 vec3 uniform。 */
+    private static void setUniform(ShaderInstance sh, String name, float x, float y, float z) {
+        if (sh.getUniform(name) != null) sh.safeGetUniform(name).set(x, y, z);
     }
 
     public static RenderType getLightningOutlineRenderType() {

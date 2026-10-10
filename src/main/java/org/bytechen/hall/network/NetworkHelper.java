@@ -6,15 +6,19 @@ import org.bytechen.hall.network.c2s.C2SDifficultySelectPacket;
 import org.bytechen.hall.network.c2s.PacketSyncKeyframe;
 import org.bytechen.hall.network.s2c.AnomalySyncPacket;
 import org.bytechen.hall.network.s2c.EffectSyncPacket;
+import org.bytechen.hall.network.s2c.MagicPoolSyncPacket;
+import org.bytechen.hall.network.s2c.ManaSyncPacket;
 import org.bytechen.hall.network.s2c.S2COpenDifficultySelectPacket;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public class NetworkHelper {
@@ -24,6 +28,10 @@ public class NetworkHelper {
             ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "main"), () -> "1.0", s -> true, s -> true);
 
     public static void register() {
+        // ── C2S 处理器（服务端侧的业务逻辑，包序号不变）──
+        // UniversalPacket 只需要一个 action 处理器注册，不用新增 registerMessage
+        org.bytechen.hall.network.c2s.VoidSwordStrikePacket.register();
+
         NETWORK.registerMessage(packetId++, UniversalPacket.class,
                 UniversalPacket::encode, UniversalPacket::decode, UniversalPacket::handle);
         NETWORK.registerMessage(packetId++, PacketSyncKeyframe.class,
@@ -36,6 +44,17 @@ public class NetworkHelper {
                 S2COpenDifficultySelectPacket::encode, S2COpenDifficultySelectPacket::decode, S2COpenDifficultySelectPacket::handle);
         NETWORK.registerMessage(packetId++, C2SDifficultySelectPacket.class,
                 C2SDifficultySelectPacket::encode, C2SDifficultySelectPacket::decode, C2SDifficultySelectPacket::handle);
+
+        // ── 魔法同步：这两个是**显式声明方向**的，和上面那些不同 ──
+        // 上面几个用 5 参重载注册，没有 NetworkDirection，于是同一个包两端都能收。
+        // 魔法数据流是单向的（服务端算、客户端显示），所以这里用 6 参重载把它们钉成
+        // PLAY_TO_CLIENT —— 客户端<无法>伪造一个"我的法力满了"的包发上来。
+        NETWORK.registerMessage(packetId++, ManaSyncPacket.class,
+                ManaSyncPacket::encode, ManaSyncPacket::decode, ManaSyncPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        NETWORK.registerMessage(packetId++, MagicPoolSyncPacket.class,
+                MagicPoolSyncPacket::encode, MagicPoolSyncPacket::decode, MagicPoolSyncPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 
     public static <MSG> void sendToPlayer(ServerPlayer player, MSG msg) { NETWORK.send(PacketDistributor.PLAYER.with(() -> player), msg); }

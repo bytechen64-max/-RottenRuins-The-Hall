@@ -1,0 +1,16 @@
+{
+  "values": [
+    "hall:hall_planks",
+    "hall:hall_stairs",
+    "hall:hall_slab",
+    "hall:hall_fence",
+    "hall:hall_fence_gate",
+    "hall:hall_door",
+    "hall:hall_trapdoor",
+    "hall:hall_button",
+    "hall:hall_pressure_plate",
+    "hall:hall_log",
+    "hall:hall_leaves",
+    "hall:hall_vine"
+  ]
+}

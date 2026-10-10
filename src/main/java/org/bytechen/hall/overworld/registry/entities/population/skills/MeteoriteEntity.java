@@ -30,7 +30,6 @@ import org.bytechen.hall.overworld.manager.BlockSpreadManager;
 import org.bytechen.hall.overworld.registry.RegisterBlock;
 import org.bytechen.hall.utils.entity.EntityParticleUtils;
 import org.bytechen.infcore.api.IInfectedEntity;
-import org.bytechen.infcore.core.evolution.EvolutionManager;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
@@ -270,12 +269,9 @@ public class MeteoriteEntity extends Entity implements IAutoRenderableEntity {
                         target.heal(cfgAoeDamage);
                     } else {
                         // 清零无敌帧，确保每 tick 都能命中非 hall 生物
+                        // 注意：陨石本身不感染生物 —— 感染由「王庭感染生物击杀生物」触发
+                        // （见 AbstractHallEntity#onKilledEntity）
                         target.invulnerableTime = 0;
-                        CompoundTag persistentData = target.getPersistentData();
-                        if (!persistentData.getBoolean("evolved")) {
-                            EvolutionManager.applyEvolution((ServerLevel)target.level(), target,  new ResourceLocation(HallMod.MODID, "inf"));
-                            persistentData.putBoolean("evolved", true);
-                        }
                         target.hurt(level().damageSources().magic(), cfgAoeDamage);
                     }
                 }

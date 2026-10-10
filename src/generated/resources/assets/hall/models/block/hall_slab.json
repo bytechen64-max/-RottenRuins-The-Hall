@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "hall:block/hall_planks",
+    "side": "hall:block/hall_planks",
+    "top": "hall:block/hall_planks"
+  }
+}

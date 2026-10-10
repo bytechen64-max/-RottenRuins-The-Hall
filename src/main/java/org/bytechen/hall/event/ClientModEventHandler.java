@@ -12,7 +12,11 @@ import org.bytechen.hall.client.entity.render.impl.ShockwaveRenderer;
 import org.bytechen.hall.client.entity.render.impl.SwordAuraRenderer;
 import org.bytechen.hall.client.entity.render.impl.VerdictBeamRenderer;
 import org.bytechen.hall.client.entity.render.impl.VerdictFieldRenderer;
+import org.bytechen.hall.client.entity.render.impl.VerdictSwordDropRenderer;
+import org.bytechen.hall.client.particle.HeartLoseParticle;
 import org.bytechen.hall.client.particle.UlceratedMeatParticle;
+import org.bytechen.hall.client.rend.backplate.CrimsonVowBackplateLayer;
+import org.bytechen.hall.client.tooltip.ClientBlockBarTooltip;
 import org.bytechen.hall.overworld.registry.EntityTypeRegistry;
 import org.bytechen.hall.client.rend.glint.GlintEffectProfile;
 import org.bytechen.hall.client.rend.glint.GlintRenderManager;
@@ -23,12 +27,15 @@ import org.bytechen.hall.overworld.registry.RegisterParticles;
 import org.bytechen.hall.overworld.registry.entities.base.EntityManager;
 import org.bytechen.hall.overworld.registry.entities.base.HallEntityManager;
 import org.bytechen.hall.overworld.registry.entities.base.HallProjectileManager;
+import org.bytechen.hall.overworld.registry.items.BlockBarTooltip;
 import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -68,11 +75,37 @@ public class ClientModEventHandler {
 
         // 自定义渲染器 —— 裁决领域（地面光纹圆盘 + 悬浮二十面体棱片）
         event.registerEntityRenderer(EntityTypeRegistry.VERDICT_FIELD.get(), VerdictFieldRenderer::new);
+
+        // 自定义渲染器 —— 裁决落剑（从天而降、落地插入地面的剑气）
+        event.registerEntityRenderer(EntityTypeRegistry.VERDICT_SWORD_DROP.get(),
+                VerdictSwordDropRenderer::new);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static void registerGeoBaseRenderer(EntityRenderersEvent.RegisterRenderers event, EntityType<?> type) {
         event.registerEntityRenderer((EntityType) type, GeoBaseRender::new);
+    }
+
+    /**
+     * 玩家渲染层：绯红誓约的背板。
+     *
+     * <h3>为什么是 {@code AddLayers} 而不是 {@code RegisterRenderers}</h3>
+     * <p>玩家的渲染器不是我们注册的（原版自己注册），能插手的只有"往里加一层" ——
+     * 这正是 {@code AddLayers} 的用途。它同时给了皮肤表，而玩家渲染器在
+     * {@code "default"}（粗手臂）与 {@code "slim"}（细手臂）两个皮肤下是
+     * <b>两个不同的实例</b>，所以两个都得挂 —— 只挂 default 的症状是
+     * "细手臂皮肤背板不显示"，很容易被当成"没生效"。</p>
+     *
+     * <p>用 {@code getSkin} 而不是 {@code getPlayerSkin}：后者返回的是
+     * 泛化的 {@code EntityRenderer}，加层需要 {@code LivingEntityRenderer}。</p>
+     */
+    @SubscribeEvent
+    public static void onAddLayers(EntityRenderersEvent.AddLayers event) {
+        for (String skin : new String[]{"default", "slim"}) {
+            PlayerRenderer renderer = event.getSkin(skin);
+            if (renderer == null) continue;
+            CrimsonVowBackplateLayer.attachTo(renderer);
+        }
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -96,6 +129,27 @@ public class ClientModEventHandler {
     public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
         // 溃烂肉屑
         event.registerSpriteSet(RegisterParticles.ULCERATED_MEAT.get(), UlceratedMeatParticle.Provider::new);
+        // 失心粒子 —— 序列帧，5 张（heart_lose0..4），按顺序播放
+        event.registerSpriteSet(RegisterParticles.HEART_LOSE.get(), HeartLoseParticle.Provider::new);
+    }
+
+    /**
+     * 格挡武器 tooltip 里的自绘减伤条（绯红誓约 / 寂寒白日共用）。
+     *
+     * <h3>为什么必须按类型注册，而不是让物品自己去画</h3>
+     * <p>Forge 的工厂表是按 {@code TooltipComponent.getClass()} <b>精确匹配</b>的
+     * （见 {@code ClientTooltipComponentManager}），而物品侧只能给出数据
+     * （{@code Item#getTooltipImage} 是公共代码，不能碰 {@code ClientTooltipComponent}）。
+     * 两边的对接点就是这里：数据类 {@link BlockBarTooltip}
+     * → 绘制类 {@link ClientBlockBarTooltip}。</p>
+     *
+     * <p>本事件挂在 <b>mod 总线</b>上（不是 Forge 总线），所以它和旁边的渲染器注册
+     * 一样写在本类里；漏注册的症状是打开背包就崩，异常信息里那句
+     * "Unknown TooltipComponent" 就是它。</p>
+     */
+    @SubscribeEvent
+    public static void onRegisterClientTooltipComponents(RegisterClientTooltipComponentFactoriesEvent event) {
+        event.register(BlockBarTooltip.class, ClientBlockBarTooltip::new);
     }
 
     @SubscribeEvent

@@ -59,11 +59,19 @@ public class BlockTagData extends BlockTagsProvider {
         // 栅栏连接标签
         tag(BlockTags.FENCES).add(RegisterBlock.HALL_FENCE.get());
 
+        // 通用建筑方块标签 —— 原版把「所有」楼梯 / 台阶 / 门 / 活板门都登记在这里，
+        // 模组方块漏登记会让别的模组（以及部分原版逻辑）按标签找方块时找不到它。
+        tag(BlockTags.STAIRS).add(RegisterBlock.HALL_STAIRS.get());
+        tag(BlockTags.SLABS).add(RegisterBlock.HALL_SLAB.get());
+        tag(BlockTags.DOORS).add(RegisterBlock.HALL_DOOR.get());
+        tag(BlockTags.TRAPDOORS).add(RegisterBlock.HALL_TRAPDOOR.get());
+
         // ========== HALL_STONE 建筑方块 ==========
 
         // 工具类型：石质方块使用镐
         tag(BlockTags.MINEABLE_WITH_PICKAXE)
                 .add(RegisterBlock.HALL_STONE.get())
+                .add(RegisterBlock.HALL_PILLAR.get())
                 .add(RegisterBlock.HALL_STONE_STAIRS.get())
                 .add(RegisterBlock.HALL_STONE_SLAB.get())
                 .add(RegisterBlock.HALL_STONE_WALL.get())
@@ -77,5 +85,45 @@ public class BlockTagData extends BlockTagsProvider {
         tag(BlockTags.BUTTONS).add(RegisterBlock.HALL_STONE_BUTTON.get());
         tag(BlockTags.STONE_BUTTONS).add(RegisterBlock.HALL_STONE_BUTTON.get());
         tag(BlockTags.STONE_PRESSURE_PLATES).add(RegisterBlock.HALL_STONE_PRESSURE_PLATE.get());
+
+        // ========== 王庭遗迹自然方块 ==========
+
+        // 工具类型：草方块 / 泥土 / 沙子系用锹，原木 / 树叶 / 藤蔓用斧
+        tag(BlockTags.MINEABLE_WITH_SHOVEL)
+                .add(RegisterBlock.HALL_GRASS_BLOCK.get())
+                .add(RegisterBlock.HALL_DIRT.get())
+                .add(RegisterBlock.HALL_ASH_SAND.get());
+
+        tag(BlockTags.MINEABLE_WITH_AXE)
+                .add(RegisterBlock.HALL_LOG.get())
+                .add(RegisterBlock.HALL_LEAVES.get())
+                .add(RegisterBlock.HALL_VINE.get());
+
+        // 原木标签：影响原版营火 / 烟熏炉 / 烧木炭 / 燃料等一整票行为。
+        // 原版的 logs.json 里引用了 #minecraft:logs_that_burn，所以只登记后者其实也能进 logs；
+        // 这里两条都显式登记，避免以后原版改动引用关系时静默失效。
+        tag(BlockTags.LOGS).add(RegisterBlock.HALL_LOG.get());
+        tag(BlockTags.LOGS_THAT_BURN).add(RegisterBlock.HALL_LOG.get());
+
+        tag(BlockTags.MINEABLE_WITH_PICKAXE)
+                .add(RegisterBlock.HALL_SANDSTONE.get())
+                .add(RegisterBlock.HALL_ASH_CUT_SANDSTONE.get())
+                .add(RegisterBlock.HALL_ASH_SMOOTH_SANDSTONE.get())
+                .add(RegisterBlock.HALL_ASH_COLLAPSED_CHISELED_SANDSTONE.get());
+
+        // 沙子：让模组沙子被原版 / 其它模组按 #minecraft:sand 识别
+        // （这也是王庭烬痕仙人掌 / 枯灌木的土壤判定依据）
+        tag(BlockTags.SAND).add(RegisterBlock.HALL_ASH_SAND.get());
+
+        // 树叶 / 藤蔓标签，影响渲染与部分原版逻辑
+        tag(BlockTags.LEAVES).add(RegisterBlock.HALL_LEAVES.get());
+        tag(BlockTags.REPLACEABLE_BY_TREES)
+                .add(RegisterBlock.HALL_GRASS.get())
+                .add(RegisterBlock.HALL_FLOWER.get())
+                .add(RegisterBlock.HALL_ASH_DEAD_BUSH.get());
+        tag(BlockTags.SWORD_EFFICIENT)
+                .add(RegisterBlock.HALL_GRASS.get())
+                .add(RegisterBlock.HALL_FLOWER.get())
+                .add(RegisterBlock.HALL_ASH_DEAD_BUSH.get());
     }
 }

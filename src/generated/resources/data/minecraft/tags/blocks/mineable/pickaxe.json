@@ -1,0 +1,17 @@
+{
+  "values": [
+    "hall:domite_mineral",
+    "hall:domerite_mineral",
+    "hall:hall_stone",
+    "hall:hall_pillar",
+    "hall:hall_stone_stairs",
+    "hall:hall_stone_slab",
+    "hall:hall_stone_wall",
+    "hall:hall_stone_button",
+    "hall:hall_stone_pressure_plate",
+    "hall:hall_sandstone",
+    "hall:hall_ash_cut_sandstone",
+    "hall:hall_ash_smooth_sandstone",
+    "hall:hall_ash_collapsed_chiseled_sandstone"
+  ]
+}

@@ -22,9 +22,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.bytechen.hall.client.rend.SplendidingShaders;
+import org.bytechen.hall.client.rend.glint.HeldItemOutlineCompat;
 import org.bytechen.hall.overworld.registry.entities.population.skills.VerdictFieldEntity;
 import org.bytechen.hall.overworld.registry.items.verdict.VerdictDebug;
 import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL11;
 
 /**
  * 裁决领域渲染器 —— 贴地的地面光纹圆盘。
@@ -117,7 +119,9 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
         if (level == null) { noteOnce("level", "level=null"); return; }
 
         float life = entity.lifeProgress(partialTick);
-        float time = (entity.tickCount + partialTick) * 0.05f;
+        // 时间基准里带上 entity id 的低位：同时存在两个领域时，呼吸相位不会完全同步
+        // （同步的呼吸会读成"同一个特效复制了两份"）。
+        float time = (entity.tickCount + partialTick) * 0.05f + (entity.getId() % 17) * 0.37f;
         int interval = Math.max(1, entity.swordInterval());
         float pulsePhase = (entity.getAge() + partialTick) % interval / interval;
         float ownerDim = entity.isOwnerPresent() ? 1.0f : 0.45f;
@@ -137,8 +141,31 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
                 entity.getX() - meshRadius, entity.getX() + meshRadius,
                 entity.getZ() - meshRadius, entity.getZ() + meshRadius));
 
+        // ── 光影兼容：pack 激活时不在世界 pass 里画 ──
+        //
+        //  光影包激活时世界 pass 画的是 <b>GBuffer</b>，而地面光纹是自发光图案，
+        //  在 GBuffer 里会被 pack 当成"贴在地面的材质"重新参与光照与雾，
+        //  颜色与亮度全部失控。所以入队，等 pack 合成完最终场景后在 MAIN_TARGET 上回放。
+        //  见 VerdictFieldLateRenderQueue 的类注释。
+        if (HeldItemOutlineCompat.isOculusShaderPackActive()) {
+            float groundY = (float) (entity.getY() + yOff);
+            // 投影矩阵、相机矩阵、相机位置全部<b>此刻</b>快照 ——
+            // 回放发生在下一帧的更晚阶段，那时回读拿到的是下一帧的值。
+            VerdictFieldLateRenderQueue.enqueue(
+                    RenderSystem.getProjectionMatrix(),
+                    RenderSystem.getModelViewMatrix(),
+                    cam.x, cam.y, cam.z,
+                    (float) entity.getX(), groundY, (float) entity.getZ(),
+                    radius, meshRadius,
+                    time, intensity * ownerDim, pulsePhase, life,
+                    entity.isOwnerPresent() ? 1f : 0f);
+            return;
+        }
+
         RenderSystem.enableBlend();
         RenderSystem.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE);
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthFunc(GL11.GL_LEQUAL);
         RenderSystem.disableCull();
         RenderSystem.depthMask(false);
         RenderSystem.setShader(() -> shader);
@@ -168,6 +195,9 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
         setUniform(shader, "uHalo", HALO_RATIO);
         setUniform(shader, "uPulse", pulsePhase);
         setUniform(shader, "uProgress", life);
+        // 施法者在不在场：离场时阵法熄火（Java 侧同时停止出剑），
+        // 两边必须一致，否则会出现"画面还在转、伤害已经没有了"。
+        setUniform(shader, "uOwnerPresent", entity.isOwnerPresent() ? 1f : 0f);
         setUniform3(shader, "uFieldColor", FIELD_COLOR);
         setUniform3(shader, "uCoreColor", CORE_COLOR);
 
@@ -185,9 +215,44 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
         poseStack.popPose();
 
         RenderSystem.depthMask(true);
+        RenderSystem.enableDepthTest();
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
         RenderSystem.defaultBlendFunc();
+    }
+
+    /**
+     * 延后回放用的绘制入口（光影包激活时由
+     * {@link VerdictFieldLateRenderQueue#renderAll()} 调用）。
+     *
+     * <p>与立即绘制<b>共用同一份 uniform 设置与几何</b>，所以两条路径不可能分叉；
+     * 唯一的区别是目标 FBO 与顶点喂的世界坐标来源。</p>
+     *
+     * <p>几何依旧喂<b>世界坐标</b>（{@code worldX/Y/Z}），矩阵由调用方保证是
+     * "相机旋转 × translate(−camera)" —— 与 {@code renderOne} 里那条契约一致。</p>
+     */
+    static void drawDeferred(ShaderInstance shader, Matrix4f matrix,
+                             float worldX, float worldY, float worldZ,
+                             float radius, float meshRadius,
+                             float time, float intensity, float pulsePhase,
+                             float life, float ownerPresent) {
+        setUniform(shader, "uTime", time);
+        setUniform(shader, "uIntensity", intensity);
+        setUniform(shader, "uRadius", radius);
+        setUniform(shader, "uMeshRadius", meshRadius);
+        setUniform(shader, "uHalo", HALO_RATIO);
+        setUniform(shader, "uPulse", pulsePhase);
+        setUniform(shader, "uProgress", life);
+        setUniform(shader, "uOwnerPresent", ownerPresent);
+        setUniform3(shader, "uFieldColor", FIELD_COLOR);
+        setUniform3(shader, "uCoreColor", CORE_COLOR);
+
+        RenderSystem.setShader(() -> shader);
+        Tesselator tess = Tesselator.getInstance();
+        BufferBuilder buffer = tess.getBuilder();
+        buffer.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR_NORMAL);
+        emitDisc(buffer, matrix, worldX, worldY, worldZ, meshRadius);
+        BufferUploader.drawWithShader(buffer.end());
     }
 
     // ══════════════════════════════════════════════════════════════

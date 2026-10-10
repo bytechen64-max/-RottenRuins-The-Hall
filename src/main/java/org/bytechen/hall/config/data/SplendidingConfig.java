@@ -107,7 +107,9 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public boolean verdictSkillsEnabled = true;
 
-    @Comment("① 天穹裁决·垂直光柱：蓄力右键 ≥0.25s 后松开，在脚下竖起一根光柱。")
+    @Comment("① 天穹裁决·垂直光柱：蓄力右键 ≥0.4 秒后松开，在脚下立起一根通天光柱。"
+            + "落柱之后它一路扩散：半径从起始值涨到约 20 格（约 1.5 秒）、高度同时长高；"
+            + "伤害分三波打在扩散的起始 / 中段 / 完成上。")
     @ConfigEntry.Gui.Tooltip
     public boolean verdictBeamEnabled = true;
 
@@ -115,7 +117,8 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public float verdictBeamBrightness = 1.0f;
 
-    @Comment("② 截空·凌空斩：右键短按 (<0.25s) 朝视线突进，路径上的敌人各吃一次裁决伤害。")
+    @Comment("② 截空·凌空斩：右键短按 (<0.4 秒) 朝视线突进，路径上的敌人各吃一次裁决伤害。"
+            + "整招完全没命中时只记一笔很短的冷却，且不推进连打等级。")
     @ConfigEntry.Gui.Tooltip
     public boolean verdictDashEnabled = true;
 
@@ -124,7 +127,8 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public float verdictDashDistanceScale = 1.0f;
 
-    @Comment("③ 裁决领域·空中剑阵：潜行 + 按住右键 0.6s，在脚下展开持续 10 秒的领域。")
+    @Comment("③ 裁决领域·空中剑阵：潜行 + 按住右键 0.7 秒，在脚下展开持续 10 秒的领域。"
+            + "展开时边界会落下 7 道立柱剑，之后每次出剑都是从天而降的落剑。")
     @ConfigEntry.Gui.Tooltip
     public boolean verdictFieldEnabled = true;
 
@@ -147,4 +151,88 @@ public class SplendidingConfig implements ConfigData {
             + "层数只加覆盖（光柱半径 / 领域出剑速度），不加伤害。0 = 完全关掉层数机制。")
     @ConfigEntry.Gui.Tooltip
     public float verdictStackScale = 1.0f;
+
+    @Comment("裁决领域每次出剑<b>同时锁定几个目标</b>（1 ~ 6）。"
+            + "默认 3：领域半径最大能到 11 格，只锁一个会让它看起来完全没在打别人；"
+            + "调高会让群怪场景的落剑数量线性增加（每把剑是一个实体），"
+            + "觉得卡就调回 2。")
+    @ConfigEntry.Gui.Tooltip
+    public int verdictFieldMaxTargets = 3;
+
+    // ──────────────────────────────────────────────────────────────
+    //  难度系数：王庭生物的最大生命值 / 攻击伤害倍率
+    //
+    //  作用对象：实现 infcore IInfectedEntity 且命名空间为 hall 的生物
+    //  （畸骸玩家、畸骸骷髅、畸骸末影人、溃烂纠察/追蹤者/巨岩、
+    //   王庭碎骨、王庭重型轰炸、萨米使徒），玩家不受影响。
+    //
+    //  施加方式：实体加入世界（EntityJoinLevelEvent）时挂一个固定 UUID 的
+    //  AttributeModifier，而不是改 createAttributes —— 属性表在
+    //  EntityAttributeCreationEvent 里注册，全服只有一份，不能按难度烤死。
+    //  因此这四个值可以随时改，改完重进世界/重载配置即生效。
+    //
+    //  生命值倍率会按比例保留当前血量：一只满血生物改档后仍是满血，
+    //  半血生物改档后仍是半血。
+    //
+    //  注意：难度为「普通」时并不是 1.0 —— 本模组的基准平衡就按普通档写，
+    //  普通档的系数即全局基准；想完全关掉难度加成，把四项都设成 1.0。
+    // ──────────────────────────────────────────────────────────────
+
+    @Comment("【难度】简单档：王庭生物最大生命值倍率")
+    @ConfigEntry.Gui.Tooltip
+    public float difficultyEasyHealthScale = 1.0f;
+
+    @Comment("【难度】简单档：王庭生物攻击伤害倍率")
+    @ConfigEntry.Gui.Tooltip
+    public float difficultyEasyDamageScale = 1.0f;
+
+    @Comment("【难度】普通档：王庭生物最大生命值倍率（本模组的平衡基准）")
+    @ConfigEntry.Gui.Tooltip
+    public float difficultyNormalHealthScale = 1.5f;
+
+    @Comment("【难度】普通档：王庭生物攻击伤害倍率（本模组的平衡基准）")
+    @ConfigEntry.Gui.Tooltip
+    public float difficultyNormalDamageScale = 1.5f;
+
+    @Comment("【难度】困难档：王庭生物最大生命值倍率")
+    @ConfigEntry.Gui.Tooltip
+    public float difficultyHardHealthScale = 4.0f;
+
+    @Comment("【难度】困难档：王庭生物攻击伤害倍率")
+    @ConfigEntry.Gui.Tooltip
+    public float difficultyHardDamageScale = 4.0f;
+
+    @Comment("【难度】无法理解档：王庭生物最大生命值倍率")
+    @ConfigEntry.Gui.Tooltip
+    public float difficultyIncomprehensibleHealthScale = 12.0f;
+
+    @Comment("【难度】无法理解档：王庭生物攻击伤害倍率")
+    @ConfigEntry.Gui.Tooltip
+    public float difficultyIncomprehensibleDamageScale = 12.0f;
+
+    // ──────────────────────────────────────────────────────────────
+    //  绯红誓约背板（手持 crimson_vow 时出现在身后的三层光环）
+    //
+    //  这一组是给实机调参用的：改完存盘即生效，不需要重新编译。
+    //  光环永远正对镜头、永远落在"从镜头看过去的玩家身后"，
+    //  下面三个数就是全部的调节维度。
+    // ──────────────────────────────────────────────────────────────
+
+    @Comment("背板总开关。false = 完全不出现在身后。")
+    @ConfigEntry.Gui.Tooltip
+    public boolean crimsonBackplateEnabled = true;
+
+    @Comment("光环的可见半径（格）。1.3 = 直径 2.6 格，比 1.8 格高的玩家宽一圈；"
+            + "它是**看得见**的半径，不是矩阵里的缩放系数。")
+    @ConfigEntry.Gui.Tooltip
+    public float crimsonBackplateScale = 1.3f;
+
+    @Comment("光环中心离脚底的高度（格）。1.55 ≈ 头部后方；调低会落到背上。")
+    @ConfigEntry.Gui.Tooltip
+    public float crimsonBackplateHeight = 1.55f;
+
+    @Comment("沿**视线方向**远离镜头的距离（格）。它就是「在镜头看过去的玩家身后多远」："
+            + "调到 0 会与身体糊在一起，调大则更远更小。必须 > 0 才能保证光环永远在玩家身后。")
+    @ConfigEntry.Gui.Tooltip
+    public float crimsonBackplateHeadOffset = 0.65f;
 }

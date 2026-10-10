@@ -1,0 +1,25 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "one"
+  },
+  "depthtest": {
+    "function": "lequal"
+  },
+  "depthwrite": false,
+  "vertex": "hall:rendertype_collapsar_halo",
+  "fragment": "hall:rendertype_collapsar_halo",
+  "attributes": ["Position", "UV0"],
+  "samplers": [],
+  "uniforms": [
+    { "name": "ProjMat",     "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "uTime",       "type": "float",     "count": 1,  "values": [ 0.0 ] },
+    { "name": "uRot",        "type": "float",     "count": 1,  "values": [ 0.0 ] },
+    { "name": "uAlpha",      "type": "float",     "count": 1,  "values": [ 1.0 ] },
+    { "name": "uSize",       "type": "float",     "count": 1,  "values": [ 1.0 ] },
+    { "name": "uBorder",     "type": "float",     "count": 1,  "values": [ 0.085 ] },
+    { "name": "uContent",    "type": "float",     "count": 1,  "values": [ 0.9 ] },
+    { "name": "uAgitation",  "type": "float",     "count": 1,  "values": [ 0.0 ] }
+  ]
+}

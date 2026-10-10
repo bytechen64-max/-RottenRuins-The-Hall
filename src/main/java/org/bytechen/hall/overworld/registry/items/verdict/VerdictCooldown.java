@@ -49,7 +49,7 @@ public final class VerdictCooldown {
     public static final String ROOT = "HallVerdict";
 
     private static final String K_LEVEL = "Level";
-    /** 本次连打的起点（全局时间）。<b>只在链开始时写一次</b> —— 这是等级能回落的关键，见 {@link #nextCooldownTicks}。 */
+    /** 本次连打的起点（全局时间）。<b>只在链开始时写一次</b> —— 这是等级能回落的关键，见 {@link #peekCooldownTicks}。 */
     private static final String K_CHAIN = "Chain";
     private static final String K_UNTIL = "Until";    // 冷却结束的全局时间
 
@@ -101,6 +101,13 @@ public final class VerdictCooldown {
     public static final int DECAY_WINDOW_TICKS = 160;
 
     /**
+     * 空放时记的冷却占基准冷却的比例。
+     * <p>见 {@link #finishMissed}：既不能全额（走位会变成扣血），也不能为零
+     * （会退化成无限空中冲刺）。</p>
+     */
+    public static final float MISS_COOLDOWN_RATIO = 0.4f;
+
+    /**
      * 出招期间用的"锁死"冷却值。
      * <p>在装备具体冷却之前先写一个远超实战的值，把窗口堵死 ——
      * 这样即便某个技能实现里抛了异常没走到 {@link #finish}，
@@ -124,7 +131,7 @@ public final class VerdictCooldown {
 
     /**
      * 本次连打已经打了几招（<b>0 = 本次连打的第一招</b>）。
-     * <p>见 {@link #nextCooldownTicks} 里那段关于"为什么记链起点而不是记上次出招"的说明。</p>
+     * <p>见 {@link #peekCooldownTicks} 里那段关于"为什么记链起点而不是记上次出招"的说明。</p>
      */
     public static int level(Player player) {
         return tag(player).getInt(K_LEVEL);
@@ -160,18 +167,37 @@ public final class VerdictCooldown {
      *   ⇒ 出招本身不给链续命；一旦停手超过窗口，下一招就自动回到最短冷却。
      * </pre>
      *
-     * <p>于是这条曲线是：<b>干净出招永远只要基础冷却；只有真的连打才逐级加价。</b></p>
+     * <h3>它是<b>只读</b>的（{@link #peekCooldownTicks}）</h3>
+     * <p>等级只在招式真正落地时（{@link #finish}）才 +1，<b>不</b>在出招起手时推进。
+     * 理由见 {@link #finishMissed}：空放的一招不该让后续的冷却变贵。</p>
      *
-     * @return 本招的冷却 tick 数（同时已把等级 +1 写回）
+     * @return 若这一招成功落地，它应记的冷却 tick 数
      */
-    public static int nextCooldownTicks(Player player) {
+    public static int peekCooldownTicks(Player player) {
         CompoundTag t = tagOrCreate(player);
         long now = player.level().getGameTime();
-
         long chainStart = t.getLong(K_CHAIN);
-        int level;
 
-        // chainStart == 0 表示还没有过任何一次连打（也是首次出招）
+        int level;
+        if (chainStart <= 0L || now - chainStart > DECAY_WINDOW_TICKS) {
+            level = 0;                        // 新链：从 0 级起算
+        } else {
+            level = Math.min(t.getInt(K_LEVEL) + 1, MAX_LEVEL);
+        }
+        return baseTicks() + level * PER_LEVEL_TICKS;
+    }
+
+    /**
+     * 把这一招记进链里（落地成功后由 {@link #finish} 调用）。
+     *
+     * @return 这条链的新等级
+     */
+    private static int advanceChain(Player player) {
+        CompoundTag t = tagOrCreate(player);
+        long now = player.level().getGameTime();
+        long chainStart = t.getLong(K_CHAIN);
+
+        int level;
         if (chainStart <= 0L || now - chainStart > DECAY_WINDOW_TICKS) {
             chainStart = now;                 // 开一条新链，从 0 级起算
             level = 0;
@@ -179,11 +205,9 @@ public final class VerdictCooldown {
             level = Math.min(t.getInt(K_LEVEL) + 1, MAX_LEVEL);
         }
 
-        int ticks = baseTicks() + level * PER_LEVEL_TICKS;
-
         t.putInt(K_LEVEL, level);
         t.putLong(K_CHAIN, chainStart);
-        return ticks;
+        return level;
     }
 
     // ── 三态出招的生命周期 ───────────────────────────────────────────
@@ -201,7 +225,8 @@ public final class VerdictCooldown {
 
     /** 出招成功落地后调用：把锁死的冷却替换成按等级计价的真实冷却。 */
     public static void finish(Player player) {
-        int ticks = nextCooldownTicks(player);
+        int ticks = peekCooldownTicks(player);
+        advanceChain(player);
         CompoundTag t = tagOrCreate(player);
         t.putLong(K_UNTIL, player.level().getGameTime() + ticks);
         t.putInt(K_LAST_SET, ticks);          // 记下本次冷却总长度，供显示比例换算
@@ -212,6 +237,33 @@ public final class VerdictCooldown {
         VerdictDebug.log("  冷却已记 %.1fs（链内第 %d 招，等级=%d）",
                 ticks / 20.0, level(player) + 1, level(player));
     }
+
+    /**
+     * 出招<b>完全没命中</b>时调用：只记一笔很短的冷却，且<b>不推进连打等级</b>。
+     *
+     * <h3>为什么空放要便宜</h3>
+     * <p>裁决是<b>共享冷却</b>的：一次空挥的突进会把整套技能锁住。而突进本身
+     * 同时承担"起手"和"移动"两种用途（贴地连按能升空），玩家在走位、跨沟、
+     * 抢先手时都会用它 —— 那些场合<b>本来就没有敌人可以命中</b>。</p>
+     *
+     * <p>如果空放照付全额冷却：走位变成扣血，玩家会干脆不再用它的位移功能，
+     * 于是"越打越高、越高覆盖越大"这条循环的发动机就熄火了。</p>
+     *
+     * <p>但也不能完全不付代价，否则就退化成"无限空中冲刺"。
+     * 所以给 {@value #MISS_COOLDOWN_RATIO} 的基准冷却，并且不进链 ——
+     * 空放不会让<b>下一记真正命中</b>变贵。</p>
+     */
+    public static void finishMissed(Player player) {
+        int ticks = Math.max(1, Math.round(baseTicks() * MISS_COOLDOWN_RATIO));
+        CompoundTag t = tagOrCreate(player);
+        t.putLong(K_UNTIL, player.level().getGameTime() + ticks);
+        t.putInt(K_LAST_SET, ticks);
+        syncVanilla(player);
+        VerdictDebug.log("  空放：只记 %.1fs 冷却，连打等级不变（仍为 %d）",
+                ticks / 20.0, level(player));
+    }
+
+    /** 空放时记的冷却占基准冷却的比例。 */
 
     /** 放弃本次出招（比如参数不合法）：立刻解除锁死，不消耗等级也不进冷却。 */
     public static void abort(Player player) {

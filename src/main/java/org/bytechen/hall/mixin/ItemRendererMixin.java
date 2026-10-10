@@ -2,6 +2,7 @@ package org.bytechen.hall.mixin;
 
 import org.bytechen.hall.client.rend.AbstractItemRenderHelper;
 import org.bytechen.hall.client.rend.ItemRenderManager;
+import org.bytechen.hall.client.rend.glint.ItemOutlinePipeline;
 import org.bytechen.hall.client.rend.glint.OutlineGlintRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -40,7 +41,9 @@ public abstract class ItemRendererMixin {
                                  PoseStack poseStack, MultiBufferSource buffer, int combinedLight,
                                  int combinedOverlay, BakedModel model, CallbackInfo ci) {
         OutlineGlintRenderer.renderGlintPass(stack, context, poseStack, buffer, combinedLight, combinedOverlay, model);
-        OutlineGlintRenderer.renderWorldOutlinePass(stack, context, poseStack, buffer, combinedLight, combinedOverlay, model);
+        // 描边：屏幕空间"剪影遮罩 + 环形膨胀"，替代了旧的"放大壳"。
+        // 必须在这里调用 —— 物品自己的 pose 还在栈上，遮罩要重放这个变换。
+        ItemOutlinePipeline.submit(stack, context, poseStack, buffer, combinedLight, combinedOverlay, model);
     }
 
     @Inject(method = "render", at = @At("RETURN"))

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "C": {
+      "item": "hall:domite_crystal"
+    },
+    "I": {
+      "item": "hall:domerite_ingot"
+    },
+    "S": {
+      "item": "hall:domerite_stick"
+    }
+  },
+  "pattern": [
+    "III",
+    "CSI",
+    "CS "
+  ],
+  "result": {
+    "item": "hall:domerite_longsword"
+  },
+  "show_notification": true
+}

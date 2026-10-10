@@ -1,0 +1,26 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "depthtest": {
+    "function": "always"
+  },
+  "depthwrite": false,
+  "vertex": "hall:gui_tab_divider",
+  "fragment": "hall:gui_tab_divider",
+  "attributes": ["Position", "UV0"],
+  "samplers": [],
+  "uniforms": [
+    { "name": "ProjMat",      "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "uTime",        "type": "float",     "count": 1,  "values": [ 0.0 ] },
+    { "name": "uSize",        "type": "float",     "count": 2,  "values": [ 160.0, 18.0 ] },
+    { "name": "uColorA",      "type": "float",     "count": 4,  "values": [ 0.79, 0.63, 0.21, 1.0 ] },
+    { "name": "uColorB",      "type": "float",     "count": 4,  "values": [ 0.27, 0.78, 0.62, 0.85 ] },
+    { "name": "uColorC",      "type": "float",     "count": 4,  "values": [ 0.60, 0.16, 0.24, 0.7 ] },
+    { "name": "uIntensity",   "type": "float",     "count": 1,  "values": [ 1.0 ] },
+    { "name": "uGlow",        "type": "float",     "count": 1,  "values": [ 0.6 ] }
+  ]
+}

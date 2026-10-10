@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "hall:block/hall_slab"
+    },
+    "type=double": {
+      "model": "hall:block/hall_planks"
+    },
+    "type=top": {
+      "model": "hall:block/hall_slab_top"
+    }
+  }
+}

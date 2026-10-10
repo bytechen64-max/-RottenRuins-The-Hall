@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "S": {
+      "item": "hall:hall_stone"
+    }
+  },
+  "pattern": [
+    "SS"
+  ],
+  "result": {
+    "item": "hall:hall_stone_pressure_plate"
+  },
+  "show_notification": true
+}

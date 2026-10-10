@@ -4,13 +4,22 @@
   "vertex": "hall:rendertype_shockwave",
   "fragment": "hall:rendertype_shockwave",
   "attributes": ["Position", "Color", "Normal"],
-  "samplers": [{ "name": "ScreenTexture" }],
+  "samplers": [
+    { "name": "ScreenTexture" },
+    { "name": "DepthTexture" }
+  ],
   "uniforms": [
-    { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
     { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
+    { "name": "uCenterVS", "type": "float", "count": 3, "values": [ 0.0, 0.0, 0.0 ] },
+    { "name": "uWaveRadius", "type": "float", "count": 1, "values": [ 1.0 ] },
     { "name": "uIntensity", "type": "float", "count": 1, "values": [ 1.0 ] },
     { "name": "uLifeProgress", "type": "float", "count": 1, "values": [ 0.0 ] },
-    { "name": "uRingPosition", "type": "float", "count": 1, "values": [ 0.1 ] },
-    { "name": "uRingWidth", "type": "float", "count": 1, "values": [ 0.88 ] }
+    { "name": "uRingWidth", "type": "float", "count": 1, "values": [ 0.95 ] },
+    { "name": "uWarp", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "uShimmer", "type": "float", "count": 1, "values": [ 0.22 ] },
+    { "name": "uChroma", "type": "float", "count": 1, "values": [ 0.12 ] },
+    { "name": "uHasDepth", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "uPixelSize", "type": "float", "count": 2, "values": [ 0.00052, 0.00093 ] },
+    { "name": "uGlow", "type": "float", "count": 1, "values": [ 1.0 ] }
   ]
 }

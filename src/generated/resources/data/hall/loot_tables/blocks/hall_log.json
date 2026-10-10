@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "hall:hall_log"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "hall:blocks/hall_log"
+}

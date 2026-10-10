@@ -17,3 +17,24 @@ plugins {
 }
 
 rootProject.name = 'RottenRuinsSplendiding'
+
+// ══════════════════════════════════════════════════════════════════════
+//  关于 infcore 前置（InfectionCoreFramework）
+// ══════════════════════════════════════════════════════════════════════
+// 这里**刻意没有**用 includeBuild 把 InfectionCoreFramework 做成复合构建。
+// 实测这条路走不通，原因值得记下来，免得以后有人再试一遍：
+//
+//   InfectionCoreFramework/gradle.properties 里 forge_version = 47.4.21，
+//   而本工程是 47.4.20。ForgeGradle 的两个不同 MC/Forge 版本的构建**无法共存**
+//   于同一次复合构建 —— 它们共用 ~/.gradle/caches/forge_gradle 下的
+//   minecraft_user_repo / bundled_deobf_repo，会互相覆盖，最终报：
+//
+//       Could not find net.minecraftforge:forge:1.20.1-47.4.21_mapped_official_1.20.1
+//       Required by: project : > project :InfectionCoreFramework
+//
+//   （连带还会让本工程的 geckolib / cloth-config 在 bundled_deobf_repo 里找不到，
+//     因为 FG 的仓库被带进了不一致状态 —— 报错信息会指向 geckolib，很容易查错方向。）
+//
+// 所以 infcore 走「工程内 Maven 镜像」：产物放在 libs/ 下，
+// 由 build.gradle 的 repositories 与 syncInfcore 任务管理。
+// 新克隆的仓库直接 `gradlew build` 就能编，既不依赖 mavenLocal，也不依赖网络。

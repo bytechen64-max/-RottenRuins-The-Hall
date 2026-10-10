@@ -175,14 +175,33 @@ public class HallSpreadEventHandler {
 
     // ==================== 群系 ====================
 
+    /**
+     * 维度 → 扩散目标群系 的映射。
+     * <p>
+     * 未登记的维度回退到王庭群系。新增维度时只需在此登记一行，
+     * 扩散管线（方块扩散 / 群系变更 / 快照）本身已按维度隔离。
+     */
+    private static final Map<ResourceKey<Level>, ResourceKey<Biome>> DIMENSION_TARGET_BIOME = Map.of(
+            Level.OVERWORLD, ResourceKey.create(Registries.BIOME,
+                    new ResourceLocation(HallMod.MODID, "hall_wasteland"))
+    );
+
+    /** 未登记维度的兜底目标群系 */
+    private static final ResourceKey<Biome> DEFAULT_TARGET_BIOME = ResourceKey.create(
+            Registries.BIOME, new ResourceLocation(HallMod.MODID, "hall_wasteland"));
+
     @SuppressWarnings("deprecation")
     private static Holder<Biome> resolveHallBiome(ServerLevel level) {
         var registry = level.registryAccess().registryOrThrow(Registries.BIOME);
-        ResourceKey<Biome> biomeKey = ResourceKey.create(Registries.BIOME,
-                new ResourceLocation(HallMod.MODID, "hall_wasteland"));
+
+        ResourceKey<Biome> biomeKey = DIMENSION_TARGET_BIOME.getOrDefault(
+                level.dimension(), DEFAULT_TARGET_BIOME);
+
         var optional = registry.getHolder(biomeKey);
         if (optional.isPresent()) return optional.get();
-        HallMod.LOGGER.warn("[HallBiome] hall_wasteland 群系未注册，回退到 plains");
+
+        HallMod.LOGGER.warn("[HallBiome] 维度 {} 的目标群系 {} 未注册，回退到 plains",
+                level.dimension().location(), biomeKey.location());
         return registry.getHolderOrThrow(Biomes.PLAINS);
     }
 
@@ -251,21 +270,20 @@ public class HallSpreadEventHandler {
 
     @SubscribeEvent
     public static void onLevelLoad(LevelEvent.Load event) {
-        if (event.getLevel() instanceof ServerLevel serverLevel) {
+        if (event.getLevel() instanceof ServerLevel serverLevel && !serverLevel.isClientSide) {
+            // 快照数据与存储路径按维度隔离，每个维度都要初始化
             HallSpreadSaveData.get(serverLevel);
-
-            if (!serverLevel.isClientSide && serverLevel.dimension() == Level.OVERWORLD) {
-                HallBiomeProcessor.setServerLevel(serverLevel);
-            }
         }
     }
 
     @SubscribeEvent
     public static void onLevelUnload(LevelEvent.Unload event) {
         if (!event.getLevel().isClientSide()) {
-            HallInfectionTracker.clear(((ServerLevel) event.getLevel()).dimension());
-            HallBiomeProcessor.setServerLevel(null);
-            leafCascades.remove(((ServerLevel) event.getLevel()).dimension().location());
+            ServerLevel serverLevel = (ServerLevel) event.getLevel();
+            HallInfectionTracker.clear(serverLevel.dimension());
+            // 仅重置该维度的运行状态，不影响其它维度
+            HallBiomeProcessor.resetDimension(serverLevel);
+            leafCascades.remove(serverLevel.dimension().location());
         }
     }
 }

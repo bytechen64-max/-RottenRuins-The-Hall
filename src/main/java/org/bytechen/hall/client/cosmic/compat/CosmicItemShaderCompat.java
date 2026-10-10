@@ -33,6 +33,12 @@ public final class CosmicItemShaderCompat {
         }
     }
 
+    // 注：这里原本有一份「是否在阴影 pass」的反射实现，已删除。
+    // 项目里早就有 HeldItemOutlineCompat.isOculusShadowPass()（内部同样是反射
+    // IrisApi.isRenderingShadowPass），BlackHole / Shockwave / CollapsarHalo /
+    // ApostleSlashWarp 四个延迟渲染器都用它 —— 一件事只留一个实现，
+    // 需要这个判断请直接用那一个（见 docs/shader-pack-compat.md 第 361 行）。
+
     public static boolean isOculusEmbeddiumActive() {
         return OCULUS_LOADED && EMBEDDIUM_LOADED;
     }
