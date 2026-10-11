@@ -73,6 +73,39 @@ public interface MagicStatProvider {
         return base;
     }
 
+    /**
+     * {@code KEEP} 模式<b>每生效一次</b>的额外消耗。
+     *
+     * <p>和 {@link #modifyKeepCostPerSecond} 是<b>两条独立</b>的计费线，会同时生效：
+     * 前者按时间扣（跟触发快慢无关，适合"维持这个法术本身就要代价"），
+     * 后者按次数扣（触发越快扣得越密，适合"每次生效都要付钱"）。
+     * 只想要其中一条时，把另一条的基值留在 0 即可。</p>
+     */
+    default int modifyKeepCostPerTrigger(Player player, ItemStack spell, int base) {
+        return base;
+    }
+
+    /**
+     * 锁定目标的<b>最大距离</b>（格）。
+     *
+     * <p>想做法术射程附魔就在这里加减；返回值会被钳到
+     * {@code [0, }{@link MagicStats#MAX_TARGET_RANGE}{@code ]}。
+     * 调到 0 会让需要目标的法术永远锁不到东西（除非允许自我释放）。</p>
+     */
+    default double modifyTargetRange(Player player, ItemStack spell, double base) {
+        return base;
+    }
+
+    /**
+     * {@code KEEP} 模式的<b>触发速度</b>：效果每多少 tick 触发一次（{@code 1} = 每 tick）。
+     *
+     * <p>想做强化的附魔就把它调小（触发更密）—— 例如把"每 5 tick 触发"减到"每 2 tick"。
+     * 结果是整数 tick，所以 1 就是上限。返回值小于 1 会被 {@code MagicStats} 钳到 1。</p>
+     */
+    default int modifyKeepTriggerInterval(Player player, ItemStack spell, int base) {
+        return base;
+    }
+
     /** 释放后的冷却 tick；同名物品共享这个冷却。 */
     default int modifyCooldownTicks(Player player, ItemStack spell, int base) {
         return base;

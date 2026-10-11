@@ -2,11 +2,13 @@ package org.bytechen.hall.api.magic;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.Event;
 import org.bytechen.hall.overworld.registry.items.magic.bases.UsingType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * <b>释放法术</b>事件 —— 在法术真正生效<b>之前</b>抛出，可取消、可改耗蓝。
@@ -34,6 +36,8 @@ import org.jetbrains.annotations.NotNull;
  * <ul>
  *   <li>只在<b>服务端</b>抛出（施法以服务端为准）。</li>
  *   <li>抛出时<b>还没有</b>扣法力、<b>还没有</b>进冷却 —— 所以取消它不会白扣蓝、不会白进 CD。</li>
+ *   <li>需要目标的法术会<b>先</b>解析准星目标再抛本事件；没锁到目标（且不允许自我释放）
+ *       时根本不会抛，直接返回 {@link CastResult#NO_TARGET}。目标见 {@link #getTarget()}。</li>
  *   <li>改 {@link #setManaCost(int)} 只影响这一次的扣费，不会写回物品或修饰器。</li>
  *   <li>本事件通过 {@code setCanceled(true)} 取消后，{@code MagicHandle} 会直接返回
  *       {@link CastResult#CANCELLED}，法力与冷却都不动。</li>
@@ -49,18 +53,28 @@ public class MagicCastEvent extends Event {
     private final InteractionHand hand;
     private final int slot;
     private final float chargeRatio;
+    private final LivingEntity target;
     private int manaCost;
 
     public MagicCastEvent(@NotNull ServerPlayer caster, @NotNull ItemStack spell,
                           @NotNull UsingType castType, @NotNull InteractionHand hand,
-                          int slot, float chargeRatio, int manaCost) {
+                          int slot, float chargeRatio, @Nullable LivingEntity target,
+                          int manaCost) {
         this.caster = caster;
         this.spell = spell;
         this.castType = castType;
         this.hand = hand;
         this.slot = slot;
         this.chargeRatio = chargeRatio;
+        this.target = target;
         this.manaCost = manaCost;
+    }
+
+    /** 兼容旧调用点：不带目标的释放。 */
+    public MagicCastEvent(@NotNull ServerPlayer caster, @NotNull ItemStack spell,
+                          @NotNull UsingType castType, @NotNull InteractionHand hand,
+                          int slot, float chargeRatio, int manaCost) {
+        this(caster, spell, castType, hand, slot, chargeRatio, null, manaCost);
     }
 
     /** 施法者。 */
@@ -100,6 +114,26 @@ public class MagicCastEvent extends Event {
         return chargeRatio;
     }
 
+    /**
+     * 本次释放锁定的目标，没有则为 {@code null}。
+     *
+     * <p>只对声明了 {@code needsTarget()} 的法术有意义：框架在释放那一刻用准星
+     * 射线解析出目标再抛这个事件，所以监听者可以直接拿它做判定，
+     * 不需要自己再 raycast 一遍（那样还容易和框架选到不同的实体）。</p>
+     *
+     * <p>法术的 {@code allowSelfCast()} 为 {@code true} 时，准星什么也没指到会把
+     * 施法者自己当作目标，因此这里拿到的就是 {@code getCaster()}。</p>
+     */
+    @Nullable
+    public LivingEntity getTarget() {
+        return target;
+    }
+
+    /** 本次释放是否锁定了目标。 */
+    public boolean hasTarget() {
+        return target != null;
+    }
+
     /** 本次实际要扣的法力。 */
     public int getManaCost() {
         return manaCost;
@@ -130,17 +164,26 @@ public class MagicCastEvent extends Event {
         private final UsingType castType;
         private final int manaSpent;
         private final float chargeRatio;
+        private final LivingEntity target;
         private final CastResult result;
 
         public Post(@NotNull ServerPlayer caster, @NotNull ItemStack spell,
                     @NotNull UsingType castType, int manaSpent, float chargeRatio,
-                    @NotNull CastResult result) {
+                    @Nullable LivingEntity target, @NotNull CastResult result) {
             this.caster = caster;
             this.spell = spell;
             this.castType = castType;
             this.manaSpent = manaSpent;
             this.chargeRatio = chargeRatio;
+            this.target = target;
             this.result = result;
+        }
+
+        /** 兼容旧调用点：不带目标的释放。 */
+        public Post(@NotNull ServerPlayer caster, @NotNull ItemStack spell,
+                    @NotNull UsingType castType, int manaSpent, float chargeRatio,
+                    @NotNull CastResult result) {
+            this(caster, spell, castType, manaSpent, chargeRatio, null, result);
         }
 
         @NotNull
@@ -169,6 +212,21 @@ public class MagicCastEvent extends Event {
          */
         public float getChargeRatio() {
             return chargeRatio;
+        }
+
+        /**
+         * 本次释放锁定的目标，没有则为 {@code null}。
+         * <p>和 {@link MagicCastEvent#getTarget()} 是同一个对象，这里只是让"释放后"
+         * 的监听者（例如挂 debuff、记日志、做连携）也能拿到它。</p>
+         */
+        @Nullable
+        public LivingEntity getTarget() {
+            return target;
+        }
+
+        /** 本次释放是否锁定了目标。 */
+        public boolean hasTarget() {
+            return target != null;
         }
 
         /** 结果，恒为 {@link CastResult#SUCCESS}（失败不会抛 Post）。 */

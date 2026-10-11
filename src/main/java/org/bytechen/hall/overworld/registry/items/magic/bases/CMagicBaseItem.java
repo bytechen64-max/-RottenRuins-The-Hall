@@ -33,9 +33,11 @@ import org.jetbrains.annotations.Nullable;
  *         super(defaultProperties(), MagicType.ACE, UsingType.CHARGE, 120, 40, 20, 0, 12.0f);
  *     }
  *     @Override
- *     protected boolean cast(ServerPlayer caster, ItemStack stack, MagicCastContext ctx) { ... }
+ *     public boolean cast(ServerPlayer caster, ItemStack stack, MagicCastContext ctx) { ... }
  * }
  * }</pre>
+ *
+ * <p>注意 {@code cast} 必须是 {@code public} —— 它是接口方法，不能收窄可见性。</p>
  *
  * <p>如果基值需要动态计算（例如读 NBT、读时间），把这些 getter 覆写掉即可 ——
  * 它们不是 final。但<b>不要</b>在里面对玩家做副作用的操作，它们会被 HUD 频繁调用。</p>
@@ -45,10 +47,14 @@ public abstract class CMagicBaseItem extends Item implements IMagicBaseItem {
     /** 蓄力释放的默认最低蓄力比例：低于它作废，达到它就算"弱化版"也放出去。 */
     public static final float DEFAULT_MIN_CHARGE_RATIO = 0.25f;
 
+    /** {@code KEEP} 模式的默认触发速度：每 tick 触发一次。 */
+    public static final int DEFAULT_KEEP_TRIGGER_INTERVAL = 1;
+
     private final MagicType magicType;
     private final UsingType usingType;
     private final int manaCost;
     private final int keepCostPerSecond;
+    private final int keepTriggerInterval;
     private final int cooldownTicks;
     private final int chargeTicks;
     private final float damage;
@@ -93,14 +99,42 @@ public abstract class CMagicBaseItem extends Item implements IMagicBaseItem {
                              int keepCostPerSecond,
                              float damage,
                              float minChargeRatio) {
+        this(properties, magicType, usingType, manaCost, cooldownTicks, chargeTicks,
+                keepCostPerSecond, damage, minChargeRatio, DEFAULT_KEEP_TRIGGER_INTERVAL);
+    }
+
+    /**
+     * 完整构造器（可指定最低蓄力比例与 KEEP 触发速度）。
+     *
+     * @param minChargeRatio     {@code CHARGE} 的最低蓄力比例：
+     *                           {@code 0} = 点一下就放（只是威力小）、
+     *                           {@code 1} = 必须蓄满、中间值 = 低于它作废
+     * @param keepTriggerInterval {@code KEEP} 模式的触发速度：效果每多少 tick 触发一次。
+     *                           {@code 1} = 每 tick（默认）、{@code 2} = 每 2 tick、
+     *                           {@code 20} = 每秒。小于 1 会被钳到 1。
+     *                           非 KEEP 模式忽略。
+     */
+    protected CMagicBaseItem(@NotNull Properties properties,
+                             @NotNull MagicType magicType,
+                             @NotNull UsingType usingType,
+                             int manaCost,
+                             int cooldownTicks,
+                             int chargeTicks,
+                             int keepCostPerSecond,
+                             float damage,
+                             float minChargeRatio,
+                             int keepTriggerInterval) {
         super(properties);
         this.magicType = magicType;
         this.usingType = usingType;
         this.manaCost = Math.max(0, manaCost);
         this.cooldownTicks = Math.max(0, cooldownTicks);
-        // 只有对应模式才保留这两个数，其它模式一律归零 —— 免得子类填错导致行为诡异
+        // 只有对应模式才保留这几个数，其它模式一律归零/归一 —— 免得子类填错导致行为诡异
         this.chargeTicks = usingType == UsingType.CHARGE ? Math.max(0, chargeTicks) : 0;
         this.keepCostPerSecond = usingType == UsingType.KEEP ? Math.max(0, keepCostPerSecond) : 0;
+        this.keepTriggerInterval = usingType == UsingType.KEEP
+                ? Math.max(1, keepTriggerInterval)
+                : DEFAULT_KEEP_TRIGGER_INTERVAL;
         this.damage = Math.max(0f, damage);
         this.minChargeRatio = clampRatio(minChargeRatio);
     }
@@ -155,6 +189,11 @@ public abstract class CMagicBaseItem extends Item implements IMagicBaseItem {
     @Override
     public float baseMinChargeRatio() {
         return minChargeRatio;
+    }
+
+    @Override
+    public int baseKeepTriggerInterval() {
+        return keepTriggerInterval;
     }
 
     /** 把比例钳到 {@code [0,1]}；{@code NaN} 视为 0。 */

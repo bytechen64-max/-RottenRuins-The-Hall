@@ -29,6 +29,7 @@ import org.bytechen.hall.overworld.registry.entities.base.HallEntityManager;
 import org.bytechen.hall.overworld.registry.entities.base.HallProjectileManager;
 import org.bytechen.hall.overworld.registry.items.BlockBarTooltip;
 import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
@@ -79,6 +80,18 @@ public class ClientModEventHandler {
         // 自定义渲染器 —— 裁决落剑（从天而降、落地插入地面的剑气）
         event.registerEntityRenderer(EntityTypeRegistry.VERDICT_SWORD_DROP.get(),
                 VerdictSwordDropRenderer::new);
+
+        // 法术投射物 —— 火球。
+        // 用原版 ThrownItemRenderer：它把 Fireball#getItem() 的那张贴图billboard 出来，
+        // 也就是"火球的贴图 = 火球法术物品的贴图"（见 FireBallEntity#spawn 里的 setItem）。
+        // 参数依次是 context / 缩放 2.0（原版恶魂火球是 3.0）/ 全亮（火球自带发光感）。
+        event.registerEntityRenderer(EntityTypeRegistry.FIRE_BALL.get(),
+                ctx -> new ThrownItemRenderer<>(ctx, 2.0F, true));
+
+        // 法术投射物 —— 审判之矛。同样用 ThrownItemRenderer（billboard 画物品贴图），
+        // 和原版箭/雪球/火球是同一种做法；放大到 2.5 倍才有一根长矛的存在感。
+        event.registerEntityRenderer(EntityTypeRegistry.SPEAR_OF_JUDGMENT.get(),
+                ctx -> new ThrownItemRenderer<>(ctx, 2.5F, true));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

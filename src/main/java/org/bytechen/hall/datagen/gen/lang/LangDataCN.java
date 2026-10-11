@@ -172,5 +172,8 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.VOID_RUNE.get(), "虚空符文");
         add(RegisterItem.WAND.get(), "法杖");
         add(RegisterItem.WAND_NATURE.get(), "自然法杖");
+        add(RegisterItem.FIRE_BALL.get(), "火球术");
+        add(RegisterItem.SPEAR_OF_JUDGMENT.get(), "审判之矛");
+        add(RegisterItem.SUPPRESSION_FIELD.get(), "抑制场");
     }
 }

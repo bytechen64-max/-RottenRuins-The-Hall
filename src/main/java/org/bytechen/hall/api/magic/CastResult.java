@@ -27,6 +27,15 @@ public enum CastResult {
     /** {@code CHARGE} 模式蓄力不足就松手了。 */
     NOT_CHARGED,
 
+    /**
+     * 该法术需要目标，但准星没有指向任何有效目标。
+     *
+     * <p>不算失败到要惩罚的程度：不消耗法力、不进冷却，只是这次没打出去。
+     * 法术自己声明的 {@code allowSelfCast} 为 {@code true} 时，
+     * 没锁到目标会退化成对自己释放，不会走到这里。</p>
+     */
+    NO_TARGET,
+
     /** 被 {@link MagicCastEvent} 的监听者取消。 */
     CANCELLED,
 

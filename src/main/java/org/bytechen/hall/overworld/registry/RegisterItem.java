@@ -16,6 +16,9 @@ import net.minecraftforge.registries.RegistryObject;
 import org.bytechen.hall.overworld.registry.items.*;
 import org.bytechen.hall.overworld.registry.items.magic.ManaPlateItem;
 import org.bytechen.hall.overworld.registry.items.magic.WandItem;
+import org.bytechen.hall.overworld.registry.items.magic.its.FireBall;
+import org.bytechen.hall.overworld.registry.items.magic.its.SpearOfJudgment;
+import org.bytechen.hall.overworld.registry.items.magic.its.SuppressionField;
 import org.bytechen.hall.overworld.registry.items.magic.bases.MagicType;
 
 import java.util.function.Supplier;
@@ -181,6 +184,18 @@ public class RegisterItem {
             () -> new WandItem(new Item.Properties().stacksTo(1), MagicType.MAGIC));
     public static final RegistryObject<Item> WAND_NATURE = ITEMS.register("wand_nature",
             () -> new WandItem(new Item.Properties().stacksTo(1), MagicType.NATURE));
+
+    // ---- 法术 ----
+    // 法术物品只声明基值，效果写在 cast() 里，投射物在 entities/magic/ 下。
+    // 放进魔法槽（PlayerMagicPool）里、拿法杖右键才会释放 —— 直接拿在手上右键是没反应的。
+    public static final RegistryObject<Item> FIRE_BALL =
+            ITEMS.register("fire_ball", FireBall::new);
+
+    public static final RegistryObject<Item> SPEAR_OF_JUDGMENT =
+            ITEMS.register("spear_of_judgment", SpearOfJudgment::new);
+
+    public static final RegistryObject<Item> SUPPRESSION_FIELD =
+            ITEMS.register("suppression_field", SuppressionField::new);
 
     public static final RegistryObject<Item> INF_PLAYER_SPAWN_EGG = registerSpawnEgg("inf_player",EntityTypeRegistry.INF_PLAYER);
     public static final RegistryObject<Item> INF_ENDERMAN_SPAWN_EGG = registerSpawnEgg("inf_enderman",EntityTypeRegistry.INF_ENDERMAN);
