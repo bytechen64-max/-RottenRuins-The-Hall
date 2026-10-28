@@ -16,12 +16,13 @@ public class LangDataEN extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
-        add("itemGroup." + HallMod.MODID + ".main", "Rotten Ruins: Splendiding");
+        add("itemGroup." + HallMod.MODID + ".main", "Rotten Ruins");
         // Section header rows inside the creative tab (see SectionedCreativeModeTab / RegisterTab)
-        add("itemGroup." + HallMod.MODID + ".main.section.creatures", "Infected & Hall Creatures");
-        add("itemGroup." + HallMod.MODID + ".main.section.materials", "Hall Materials");
+        add("itemGroup." + HallMod.MODID + ".main.section.creatures", "Spawn Eggs");
+        add("itemGroup." + HallMod.MODID + ".main.section.materials", "Materials");
+        add("itemGroup." + HallMod.MODID + ".main.section.magic", "Magic");
         add("itemGroup." + HallMod.MODID + ".main.section.gear", "Weapons & Tools");
-        add("itemGroup." + HallMod.MODID + ".main.section.blocks", "Hall Building Blocks");
+        add("itemGroup." + HallMod.MODID + ".main.section.blocks", "Blocks");
         add("itemGroup." + HallMod.MODID + ".main.section.misc", "Miscellaneous");
         add(RegisterItem.EXAMPLE_ITEM.get(), "Example Item");
         add(RegisterItem.VOID_SWORD.get(), "Void Sword");

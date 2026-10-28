@@ -40,10 +40,27 @@
 | 资源 | 255 文件 | geo 23 / 动画 23 / 实体贴图 24 / 方块贴图 21 / 物品贴图 40 / blockstate 21 / 方块模型 21 / 物品模型 61 / 掉落表 21 |
 
 ### 1.4 数据生成与验证
-- [x] `runData` 成功（loot tables / lang / models / worldgen 重新生成；`hall_*` 实体掉落表、语言键已生成）。
-- [x] `runClient` 冒烟：mod 构造、mixin 加载、着色器/mask 层、难度系统均正常启动进游戏（旧 dev 存档因旧 `hall:*` 注册名报 137 条 missing → 符合弃档决策）。
-- [ ] `runServer` 新世界（进行/待记录）。
-- [ ] `gradlew build` 产物验证（待跑）。
+- [x] `runData` 成功（loot tables / lang / models / worldgen 重新生成；`hall_*` 实体掉落表、语言键已生成，zh/en 各 230 键）。
+- [x] `runClient` 冒烟：mod 构造、mixin 加载、着色器/mask 层、难度系统均正常启动进游戏（旧 dev 存档因旧 `hall:*` 注册名报 137 条 missing 警告，符合弃档决策；无崩溃）。
+- [x] `runServer` 新世界：**Done (13.921s)**，新世界生成、数据包/战利品表加载、infcore 难度迁移（`infcore:normal` → `rotten_ruins:normal`）全部正常，无 ERROR/FATAL。
+- [x] `gradlew build` 成功，产物：`build/libs/rotten_ruins-1.0.0.jar` / `-all.jar` / `-dev.jar` / `-sources.jar`（jarJar 含 cloth-config + GeckoLib 4.8.4）。
+- [x] 提交：`01692cf feat: 合并 corruption 简化内容到 rotten_ruins`（连同改名提交 `acddd73`、基线 `f5e0977`）。
+
+> 备注：旧 dev 服务器世界已改名为 `run/world_pre_rotten_ruins_backup`（未删除）；旧单机存档 `run/saves/*` 按弃档决策原样保留、未做迁移。
+
+### 1.5 创造物品栏分区（本轮新增）
+- [x] 重写 `RegisterTab`：物品按功能分 6 类，每类内先王庭（原 Hall）后腐化（原 corruption）：
+  | 分区 | 键 | 数量 | 内容 |
+  |---|---|---|---|
+  | 刷怪蛋 | creatures | 33 | 王庭 10 + 腐化 23 |
+  | 材料 | materials | 23 | 王庭 11 + 腐化 12 |
+  | 魔法 | magic（新增） | 10 | 六系法力板 + 催化剂 + 虚空符文 + 2 法杖 |
+  | 武器与工具 | gear | 16 | 王庭 9 + 粗制工具 5 + 注射器 2 |
+  | 方块 | blocks | 54 | 王庭 33（含血肉裂隙/矿石）+ 腐化 21 |
+  | 其它 | misc | 1 | `hall_ender_pear`；另保留兜底扫描 |
+- [x] 分区标题随内容更新：主标题 `腐朽之疫` / `Rotten Ruins`，分区英文改为通用名（Spawn Eggs / Materials / Magic / Weapons & Tools / Blocks / Miscellaneous）。
+- [x] 占位图标 `example_item` 不再展示在创造栏（仅作 tab 图标）。
+- [x] 校验脚本确认注册表 137 个展示物品（不含 example_item）**全部被分区覆盖、无重复、无拼写错误**；`runData` 重新生成语言（中英各 231 键），`compileJava`/`build` 通过。
 
 ---
 

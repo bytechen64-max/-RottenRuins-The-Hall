@@ -14,10 +14,11 @@ public class LangDataCN extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
-        add("itemGroup." + HallMod.MODID + ".main", "腐朽之疫:王庭");
+        add("itemGroup." + HallMod.MODID + ".main", "腐朽之疫");
         // 创造物品栏的分区隔断行标题（见 SectionedCreativeModeTab / RegisterTab）
         add("itemGroup." + HallMod.MODID + ".main.section.creatures", "刷怪蛋");
         add("itemGroup." + HallMod.MODID + ".main.section.materials", "材料");
+        add("itemGroup." + HallMod.MODID + ".main.section.magic", "魔法");
         add("itemGroup." + HallMod.MODID + ".main.section.gear", "武器与工具");
         add("itemGroup." + HallMod.MODID + ".main.section.blocks", "方块");
         add("itemGroup." + HallMod.MODID + ".main.section.misc", "其它");
