@@ -31,7 +31,7 @@
 ### 1.3 腐化内容（简化版）
 | 类别 | 数量 | 说明 |
 |---|---|---|
-| 方块 | 21 | 全部按普通满方块占位（cube_all 模型），无扩散/生长/方块实体；cube_all 资源见 `assets/rotten_ruins/{blockstates,models/block}` |
+| 方块 | 21 | 9 个普通地貌方块仍按 cube_all 占位；12 个特殊方块已按 corruption 原实现移植（见 1.6） |
 | 方块物品 | 21 | 自动注册，掉落表为自掉落 |
 | 物品 | 42 | 材料 14 + 粗制工具 5（石级 Tier）+ 注射器 2（占位无功能）+ 刷怪蛋 21/23 |
 | 效果 | 6 | corruption / lysis / miasma / sclerosis / bleeding / fear（流血、腐化有周期扣血，其余占位） |
@@ -62,6 +62,21 @@
 - [x] 占位图标 `example_item` 不再展示在创造栏（仅作 tab 图标）。
 - [x] 校验脚本确认注册表 137 个展示物品（不含 example_item）**全部被分区覆盖、无重复、无拼写错误**；`runData` 重新生成语言（中英各 231 键），`compileJava`/`build` 通过。
 
+### 1.6 特殊方块模型与 datagen（本轮新增）
+从 corruption 工程按原实现移植了"有单独模型 / 特殊格式 datagen"的 12 个方块：
+
+| 方块 | 移植内容 |
+|---|---|
+| 残骸 ×9（腐化/同化/重构 × 小/中/大） | 新基类 `RemainsBlock`（六向 `facing`、贴面碰撞箱、玩家可穿过、可旋转/镜像）；datagen `directionComplexBlockWithItem` 生成十字交叉特殊格式模型（两片 45° 平面 + 底面）+ 六向 blockstate；新增 `*_side.png` 9 张 |
+| 血肉温床 | 新类 `FleshbedBlock`（水平朝向 + 模型渲染）；手写 Blockbench 模型 `models/block/fleshbed.json` 原样迁入（改命名空间）；datagen 生成水平朝向 blockstate + 物品模型 |
+| 腐染矮草 | 新类 `CorruptionGrassBlock`（cross cutout 模型；只认腐染泥土、下方消失即破坏）；datagen 生成 cross 模型 + blockstate + 物品模型 |
+| 腐染经络 | 新类 `CorruptionVariableHeightCropBlock`（`age` 0~25 + `section(bottom/middle/top)`、随机生长、只认腐染泥土）；datagen 生成三段 cross 模型与 `age×section` 变体 blockstate；新增 `_bottom/_middle/_top.png` 3 张 |
+
+- 新增 datagen provider：`datagen/gen/corruption/CorruptionBlockStateData`（在 `DataGenEvent` 注册；复写了 `getName()` 以避免与 Hall 的 `BlockStateData` 重名冲突）。
+- 删除了这 12 个方块此前的静态占位 blockstate / 方块模型 / 物品模型，统一由 datagen 生成。
+- 校验：`runData` 生成的 34 个对应 JSON 与 corruption 工程产物**逐字段一致**（仅命名空间不同）；`compileJava` / `build` / 客户端资源加载（无 missing model/texture 报错、无崩溃）全部通过。
+- 仍待补：血肉温床的 BlockEntity（培养物/生物量）与配方交互（原 `FleshbedRecipeConfig`/`InfectionItem`）。
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）
@@ -76,9 +91,8 @@
 7. 玩家皮肤/模型切换系统（corruption_player slim/wide）、OnlineSkinDownloader（已定不搬）。
 
 ### 表现/内容层占位
-- 21 个方块全是 cube_all 满方块（遗骸/经络等真实模型可从 corruption 的 generated 资源替换）。
-- 腐化内容暂未单独分区，落入创造栏 `misc` 兜底分区。
-- 注射器、粗制工具的手感/配方等待调；`fleshbed` 无方块实体与转化逻辑。
+- 剩余 9 个腐化地貌方块仍是 cube_all 满方块（`spread_dirt/stone/leaves/wood`、`infection_cobblestone_block`、`corruption_trachea`、`connect_block`、`decidual_tissue_block`、`spiracle_block`）；残骸/血肉温床/腐染矮草/腐染经络 12 个已换成真实模型（见 1.6）。
+- 注射器、粗制工具的手感/配方等待调；`fleshbed` 无方块实体与转化逻辑（模型已完成）。
 - corruption 生物只有基础索敌/近战，无原技能；蝙蝠暂按地面单位处理（TODO 飞行）。
 
 ---
@@ -101,9 +115,9 @@
 
 ## 4. 下一轮建议优先级
 
-1. **先跑 `gradlew build` + 新世界 `runServer` 完整验收**，确保 jar 产物可用。
-2. 把腐化内容加进创造栏独立分区（`RegisterTab` 新增 section）。
+1. **进游戏实测特殊方块**：残骸六向放置、腐染矮草贴地消失、腐染经络生长分段、血肉温床朝向与模型。
+2. 血肉温床机制补齐：BlockEntity（培养物/生物量）+ 配方配置/交互（原 `FleshbedRecipeConfig`/`InfectionItem`）。
 3. 世界机制闭环：infcore blockspread（`rotten_ruins:corruption_spread`）+ 刷怪（SpawnPlacements）+ 演化数据。
-4. 方块模型替换（遗骸/经络用 corruption 原模型）+ 26→21 方块行为（fleshbed BE 等）。
+4. 剩余 9 个腐化地貌方块的方块行为（扩散/腐染转化，接 Hall `swarm` + infcore）。
 5. 注射器/粗制工具/掉落/配方等玩法补齐。
 6. 技能与投射物系统（按模块逐个恢复）。

@@ -1,0 +1,238 @@
+{
+  "variants": {
+    "age=0,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=0,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=0,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=1,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=1,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=1,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=10,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=10,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=10,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=11,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=11,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=11,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=12,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=12,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=12,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=13,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=13,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=13,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=14,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=14,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=14,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=15,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=15,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=15,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=16,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=16,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=16,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=17,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=17,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=17,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=18,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=18,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=18,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=19,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=19,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=19,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=2,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=2,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=2,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=20,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=20,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=20,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=21,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=21,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=21,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=22,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=22,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=22,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=23,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=23,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=23,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=24,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=24,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=24,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=25,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=25,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=25,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=3,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=3,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=3,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=4,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=4,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=4,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=5,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=5,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=5,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=6,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=6,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=6,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=7,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=7,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=7,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=8,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=8,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=8,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    },
+    "age=9,section=bottom": {
+      "model": "rotten_ruins:block/variable_height_crop_bottom"
+    },
+    "age=9,section=middle": {
+      "model": "rotten_ruins:block/variable_height_crop_middle"
+    },
+    "age=9,section=top": {
+      "model": "rotten_ruins:block/variable_height_crop_top"
+    }
+  }
+}

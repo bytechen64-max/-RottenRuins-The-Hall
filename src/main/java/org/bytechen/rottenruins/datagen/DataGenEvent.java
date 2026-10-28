@@ -1,6 +1,7 @@
 package org.bytechen.rottenruins.datagen;
 
 import org.bytechen.rottenruins.datagen.gen.*;
+import org.bytechen.rottenruins.datagen.gen.corruption.CorruptionBlockStateData;
 import org.bytechen.rottenruins.datagen.gen.lang.LangDataCN;
 import org.bytechen.rottenruins.datagen.gen.lang.LangDataEN;
 import net.minecraft.data.PackOutput;
@@ -17,6 +18,8 @@ public class DataGenEvent {
         var lp = event.getLookupProvider();
 
         event.getGenerator().addProvider(event.includeClient(), new BlockStateData(out, efh));
+        // 腐化系特殊方块（残骸 / 血肉温床 / 腐染矮草 / 腐染经络）的 blockstate+model
+        event.getGenerator().addProvider(event.includeClient(), new CorruptionBlockStateData(out, efh));
         event.getGenerator().addProvider(event.includeClient(), new ItemGenData(out, efh));
         event.getGenerator().addProvider(event.includeClient(), new LangDataCN(out, "zh_cn"));
         event.getGenerator().addProvider(event.includeClient(), new LangDataEN(out, "en_us"));
