@@ -14,7 +14,7 @@ import org.bytechen.rottenruins.client.rend.SplendidingShaders;
 import org.bytechen.rottenruins.client.rend.glint.HeldItemOutlineCompat;
 import org.bytechen.rottenruins.config.ConfigHelper;
 import org.bytechen.rottenruins.config.data.SplendidingConfig;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.ShockwaveEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.ShockwaveEntity;
 import org.joml.Matrix4f;
 import org.joml.Matrix3f;
 import org.lwjgl.opengl.GL11;

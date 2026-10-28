@@ -10,7 +10,7 @@ import org.bytechen.rottenruins.overworld.difficulty.HallDifficulty;
 import org.bytechen.rottenruins.network.NetworkHelper;
 import org.bytechen.rottenruins.overworld.registry.*;
 import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionContent;
-import org.bytechen.rottenruins.overworld.registry.entities.population.ulcerated.UlceratedConversionRules;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ulcerated.UlceratedConversionRules;
 import org.bytechen.rottenruins.overworld.registry.spawning.SplendidingSpawnPlacements;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.world.BiomeModifier;
@@ -28,12 +28,6 @@ public class HallMod {
 
     public static final String MODID = "rotten_ruins";
     public static final Logger LOGGER = LogUtils.getLogger();
-
-    /**
-     * 感染类型 —— 进化表（{@code data/hall/infcore_evolution/*.json} 里的 {@code type}）
-     * 与兜底档位共用；被王庭感染生物击杀的生物按该类型被感染。
-     */
-    public static final ResourceLocation INFECTION_TYPE = new ResourceLocation(MODID, "inf");
 
     /** 群系修改器序列化器注册（数据包级别群系修改） */
     private static final DeferredRegister<Codec<? extends BiomeModifier>> BIOME_MODIFIER_SERIALIZERS =

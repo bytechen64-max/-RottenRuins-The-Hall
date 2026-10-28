@@ -32,11 +32,11 @@ import org.bytechen.rottenruins.api.ItemFxProvider;
 
 import java.util.List;
 import org.bytechen.rottenruins.overworld.registry.effect.VerdictEffect;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.ShockwaveEntity;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.SwordAuraEntity;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.VerdictBeamEntity;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.VerdictFieldEntity;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.VerdictSwordDropEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.ShockwaveEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.SwordAuraEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.VerdictBeamEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.VerdictFieldEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.VerdictSwordDropEntity;
 import org.bytechen.rottenruins.overworld.registry.items.verdict.HeightFactor;
 import org.bytechen.rottenruins.overworld.registry.items.verdict.VerdictCooldown;
 import org.bytechen.rottenruins.overworld.registry.items.verdict.VerdictDamage;

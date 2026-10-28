@@ -9,8 +9,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.CrimsonVowChargeEntity;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.CrimsonVowFieldEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.CrimsonVowChargeEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.CrimsonVowFieldEntity;
 import org.bytechen.rottenruins.overworld.registry.items.CrimsonVow;
 
 import static net.minecraft.commands.Commands.argument;

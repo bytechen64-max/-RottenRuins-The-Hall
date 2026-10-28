@@ -9,7 +9,7 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.VerdictFieldEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.VerdictFieldEntity;
 import org.bytechen.rottenruins.overworld.registry.items.verdict.VerdictDebug;
 
 /**

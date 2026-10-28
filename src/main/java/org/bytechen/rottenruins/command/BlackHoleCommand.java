@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.BlackHoleEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.BlackHoleEntity;
 
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;

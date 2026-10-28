@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.MeteoriteEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.MeteoriteEntity;
 import org.joml.Matrix4f;
 
 import java.util.List;

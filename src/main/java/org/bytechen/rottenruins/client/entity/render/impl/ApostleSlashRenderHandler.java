@@ -9,7 +9,7 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.SwordAuraEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.SwordAuraEntity;
 
 import java.util.ArrayList;
 import java.util.List;

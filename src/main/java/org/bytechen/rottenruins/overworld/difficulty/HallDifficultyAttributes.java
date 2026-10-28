@@ -20,6 +20,7 @@ import org.bytechen.infcore.core.difficulty.DifficultyHelper;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
+import org.bytechen.rottenruins.overworld.registry.entities.base.RottenFaction;
 
 /**
  * 难度倍率的实际施加点：按当前难度给王庭生物乘上最大生命值与攻击伤害。
@@ -87,8 +88,7 @@ public final class HallDifficultyAttributes {
         if (!(entity instanceof LivingEntity)) return false;
         if (!(entity instanceof IInfectedEntity infected)) return false;
 
-        ResourceLocation type = infected.getInfectionType();
-        return type != null && HallMod.MODID.equals(type.getNamespace());
+        return RottenFaction.HALL.matches(infected.getInfectionType());
     }
 
     // ==================== 施加 ====================

@@ -155,7 +155,7 @@ public final class CrimsonVowBlockRig {
         if (mc.player == null || mc.level == null) return 0f;
         java.util.UUID self = mc.player.getUUID();
         for (net.minecraft.world.entity.Entity e : mc.level.entitiesForRendering()) {
-            if (e instanceof org.bytechen.rottenruins.overworld.registry.entities.population.skills.CrimsonVowChargeEntity c
+            if (e instanceof org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.CrimsonVowChargeEntity c
                     && self.equals(c.getOwnerUUID())) {
                 return c.charge(mc.getFrameTime());
             }

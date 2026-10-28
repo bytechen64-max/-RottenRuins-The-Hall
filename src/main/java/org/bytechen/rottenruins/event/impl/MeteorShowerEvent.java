@@ -12,7 +12,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.config.ConfigHelper;
 import org.bytechen.rottenruins.config.data.MeteorShowerConfig;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.MeteoriteEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.MeteoriteEntity;
 
 /**
  * 陨石雨事件 —— 每天晚上在玩家周围随机生成陨石从天而降。

@@ -5,7 +5,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.bytechen.rottenruins.compat.BCCoreCompat;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.SwordAuraEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.SwordAuraEntity;
 
 /**
  * 虚空剑的<b>蹲下左键</b>能力：把目标的生命值直接改成 {@code -1}。

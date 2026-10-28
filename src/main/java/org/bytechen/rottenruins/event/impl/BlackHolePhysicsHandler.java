@@ -14,12 +14,13 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.compat.BCCoreCompat;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.BlackHoleEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.BlackHoleEntity;
 import org.bytechen.infcore.api.IInfectedEntity;
 
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.bytechen.rottenruins.overworld.registry.entities.base.RottenFaction;
 
 /**
  * 黑洞的引力与伤害 —— 全部逻辑都在这里，{@link BlackHoleEntity} 只是数据载体。
@@ -301,14 +302,10 @@ public final class BlackHolePhysicsHandler {
             if (player.isCreative() || player.isSpectator()) return true;
         }
 
-        // hall 感染生物豁免
-        if (entity instanceof IInfectedEntity infected) {
-            ResourceLocation type = infected.getInfectionType();
-            if (type != null
-                    && HallMod.MODID.equals(type.getNamespace())
-                    && HallMod.MODID.equals(type.getPath())) {
-                return true;
-            }
+        // 王庭感染生物豁免（腐化系不吃这条王庭机制，后续按各自机制补）
+        if (entity instanceof IInfectedEntity infected
+                && RottenFaction.HALL.matches(infected.getInfectionType())) {
+            return true;
         }
 
         // 黑洞之间互不影响

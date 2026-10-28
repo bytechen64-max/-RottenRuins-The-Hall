@@ -17,7 +17,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import org.bytechen.rottenruins.client.rend.SplendidingShaders;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.CrimsonVowChargeEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.CrimsonVowChargeEntity;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;

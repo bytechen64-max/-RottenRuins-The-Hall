@@ -16,7 +16,7 @@ import net.minecraftforge.common.ForgeMod;
 import org.bytechen.rottenruins.api.IBlockingWeapon;
 import org.bytechen.rottenruins.api.ICustomOutline;
 import org.bytechen.rottenruins.compat.BCCoreCompat;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.SwordAuraEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.SwordAuraEntity;
 
 import java.util.Map;
 

@@ -13,7 +13,7 @@ import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.client.rend.MeteorScreenEffect;
 import org.bytechen.rottenruins.client.rend.ScreenShake;
 import org.bytechen.rottenruins.client.rend.glint.HeldItemOutlineCompat;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.MeteorEventEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.MeteorEventEntity;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;

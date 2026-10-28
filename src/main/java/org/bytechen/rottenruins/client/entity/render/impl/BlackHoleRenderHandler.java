@@ -1,7 +1,7 @@
 package org.bytechen.rottenruins.client.entity.render.impl;
 
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.BlackHoleEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.BlackHoleEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;

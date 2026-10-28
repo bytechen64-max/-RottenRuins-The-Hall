@@ -7,7 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
 import org.bytechen.rottenruins.client.rend.SplendidingShaders;
 import org.bytechen.rottenruins.client.rend.glint.HeldItemOutlineCompat;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.SwordAuraEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.SwordAuraEntity;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;

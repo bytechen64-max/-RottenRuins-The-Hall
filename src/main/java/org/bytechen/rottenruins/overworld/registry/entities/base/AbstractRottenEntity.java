@@ -261,19 +261,23 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
 
     @Override
     public ResourceLocation getInfectionType() {
-        return new ResourceLocation(HallMod.MODID,HallMod.MODID);
+        // 王庭 / 腐化各有自己的感染阵营标识（不是同一个 type）
+        return this.faction.infectionType();
     }
 
     // ==================== 击杀 → 感染 ====================
 
     /**
-     * 击杀事件：被王庭感染生物<b>击杀</b>的生物会被同化成感染形态。
+     * 击杀事件：被本模组感染生物<b>击杀</b>的生物会被同化成<b>该阵营</b>的感染形态。
      * <p>
      * 由 infcore 在 {@code LivingDeathEvent} 中通过 {@link IKillCounter#onKilledEntity(Entity)}
-     * 调用；具体转化规则交给 infcore 的 {@link EvolutionManager} 判定：
-     * 有专属感染形态的走进化表（玩家 → 畸骸玩家、骷髅 → 畸骸骷髅……），
-     * 没有专属形态的按碰撞体积（宽 × 高）走进
-     * {@code UlceratedConversionRules} 注册的兜底档位（斥候 / 巨碑）。
+     * 调用；使用的规则 type 为 {@code getFaction().infectionRuleType()}
+     * （王庭 {@code rotten_ruins:hall_inf} / 腐化 {@code rotten_ruins:corruption_inf}），
+     * 具体转化规则交给 infcore 的 {@link EvolutionManager} 判定：
+     * 有专属感染形态的走进化表（王庭：玩家 → 畸骸玩家、骷髅 → 畸骸骷髅……；
+     * 腐化：蝙蝠/猪/羊/牛/狼/鸡/骷髅/僵尸/村民/玩家 → {@code corruption_*} 同化种），
+     * 王庭侧没有专属形态的再按碰撞体积走 {@code UlceratedConversionRules} 的兜底档位；
+     * 腐化侧没有兜底（与原 corruption 工程一致，只做表内映射）。
      *
      * @param killed 被本实体击杀的实体
      */
@@ -293,7 +297,7 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
         float proxyDamage = victim.getMaxHealth() * 0.5F;
 
         // 只有真的"造成感染"（转化成功）才喷血 —— applyEvolution 的返回值就是判定结果。
-        if (EvolutionManager.applyEvolution(serverLevel, victim, HallMod.INFECTION_TYPE)) {
+        if (EvolutionManager.applyEvolution(serverLevel, victim, this.faction.infectionRuleType())) {
             this.onInfectionBlood(serverLevel, victimCenter, victimBox, proxyDamage);
         }
     }

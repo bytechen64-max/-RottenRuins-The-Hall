@@ -12,7 +12,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.MeteorEventEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.MeteorEventEntity;
 
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;

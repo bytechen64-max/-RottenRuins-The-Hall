@@ -11,7 +11,7 @@ import org.bytechen.rottenruins.overworld.registry.capability.threat.ThreatCapab
 import org.bytechen.rottenruins.overworld.registry.capability.threat.ThreatHelper;
 import org.bytechen.rottenruins.overworld.registry.capability.PlayerMagicPool;
 import org.bytechen.rottenruins.overworld.registry.capability.TwistedPoint;
-import org.bytechen.rottenruins.overworld.registry.entities.population.ecological.HeavyBombEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ecological.HeavyBombEntity;
 import org.bytechen.rottenruins.overworld.registry.items.DomeriteAxe;
 import org.bytechen.rottenruins.overworld.registry.items.DomeriteHoe;
 import org.bytechen.rottenruins.overworld.registry.items.DomeritePickaxe;
@@ -36,6 +36,7 @@ import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 
 import java.util.Map;
+import org.bytechen.rottenruins.overworld.registry.entities.base.RottenFaction;
 
 public class ForgeEventHelpers {
 
@@ -165,10 +166,7 @@ public class ForgeEventHelpers {
 
     private static boolean isHallInfected(Entity entity) {
         if (entity instanceof IInfectedEntity infected) {
-            ResourceLocation type = infected.getInfectionType();
-            return type != null
-                    && HallMod.MODID.equals(type.getNamespace())
-                    && HallMod.MODID.equals(type.getPath());
+            return RottenFaction.HALL.matches(infected.getInfectionType());
         }
         return false;
     }

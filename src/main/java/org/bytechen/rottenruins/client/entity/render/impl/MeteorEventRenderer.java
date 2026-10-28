@@ -16,7 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.client.rend.SplendidingShaders;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.MeteorEventEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.MeteorEventEntity;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 

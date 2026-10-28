@@ -20,7 +20,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.client.rend.SplendidingShaders;
 import org.bytechen.rottenruins.client.rend.glint.HeldItemOutlineCompat;
-import org.bytechen.rottenruins.overworld.registry.entities.population.apostle.CollapsarEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.apostle.CollapsarEntity;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;

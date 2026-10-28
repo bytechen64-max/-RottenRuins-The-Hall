@@ -10,7 +10,7 @@ import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.MeteorEventEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.MeteorEventEntity;
 
 /**
  * 陨石出现时把玩家的视线"拉"向天空里的十字星。

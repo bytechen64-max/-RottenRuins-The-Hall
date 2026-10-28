@@ -77,6 +77,27 @@
 - 校验：`runData` 生成的 34 个对应 JSON 与 corruption 工程产物**逐字段一致**（仅命名空间不同）；`compileJava` / `build` / 客户端资源加载（无 missing model/texture 报错、无崩溃）全部通过。
 - 仍待补：血肉温床的 BlockEntity（培养物/生物量）与配方交互（原 `FleshbedRecipeConfig`/`InfectionItem`）。
 
+### 1.7 两派阵营、包结构与感染规则（本轮新增）
+- [x] **包结构**：`population` 下按来源分成两个平级包，不再混在一起：
+  `population/hall/{apostle,defensive,ecological,infected,skills,ulcerated}`（原 Hall 内容）与
+  `population/corruption/{host,degenerate,deteriorated,refactored,linked,original}`（原 corruption 内容）。
+- [x] **阵营类型分离**（`RottenFaction`）：两派不是从属关系，各有独立 id：
+  | 概念 | 王庭 | 腐化 |
+  |---|---|---|
+  | 阵营标识（`getInfectionType`） | `rotten_ruins:hall` | `rotten_ruins:corruption` |
+  | 击杀感染规则 type | `rotten_ruins:hall_inf` | `rotten_ruins:corruption_inf` |
+  | 自身进化规则 type | `rotten_ruins:hall_evo` | `rotten_ruins:corruption_evo` |
+- [x] `AbstractRottenEntity.getInfectionType()` 改为返回 `faction.infectionType()`；
+  击杀感染使用 `faction.infectionRuleType()`；巨碑/孕育者等自进化使用 `faction.evolutionRuleType()`。
+- [x] **王庭机制只作用于王庭阵营**：友伤取消、黑洞豁免、难度属性倍率、使徒技能同类判定、
+  缠绕之柱同族判定、陨石治疗，全部从"命名空间判断"改为 `RottenFaction.HALL.matches(type)`（腐化系不吃这些王庭机制，后续按各自机制补）。
+- [x] **corruption 感染映射已迁成 infcore 数据写法**（`EvolutionDataProvider`）：
+  - `corruption_inf`：蝙蝠/猪/羊/牛/狼/鸡 → `corruption_*`，骷髅/僵尸/村民/玩家 → 对应同化种
+  - `corruption_evo`：孕育者 → 长臂兽 / 震撼者（50/50）
+  - 同时修复了王庭旧数据中"巨碑两条同 source 规则互相覆盖"的 bug（改为一条 entry + 两个 target）
+  - 原工程的"村民非幼年 + 精英名 + 持久化"回调 infcore 数据格式暂不支持，留待实体/事件层补
+  - `runData` 生成 4 个 type / 14 条规则，类型字符串与运行期传入的 `RottenFaction.*RuleType()` 完全一致。
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）

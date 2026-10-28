@@ -18,7 +18,7 @@ import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.client.rend.SplendidingShaders;
 import org.bytechen.rottenruins.client.rend.glint.HeldItemOutlineCompat;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.VerdictBeamEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.VerdictBeamEntity;
 import org.bytechen.rottenruins.overworld.registry.items.verdict.VerdictDebug;
 import org.bytechen.rottenruins.overworld.registry.items.verdict.VerdictTuning;
 import org.joml.Matrix3f;

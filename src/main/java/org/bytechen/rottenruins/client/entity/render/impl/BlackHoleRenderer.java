@@ -15,7 +15,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import org.bytechen.rottenruins.client.rend.SplendidingShaders;
 import org.bytechen.rottenruins.client.rend.glint.HeldItemOutlineCompat;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.BlackHoleEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.BlackHoleEntity;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;

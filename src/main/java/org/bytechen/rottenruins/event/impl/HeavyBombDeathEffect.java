@@ -5,9 +5,9 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.overworld.registry.entities.population.ecological.HeavyBombEntity;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.BlackHoleEntity;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.ShockwaveEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ecological.HeavyBombEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.BlackHoleEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.ShockwaveEntity;
 
 /**
  * HeavyBomb 的死亡效果 —— 巨大冲击波 + 原地留下小型黑洞。

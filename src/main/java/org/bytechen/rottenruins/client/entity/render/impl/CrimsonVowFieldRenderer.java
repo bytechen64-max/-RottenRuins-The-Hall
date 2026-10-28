@@ -18,7 +18,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.client.rend.SplendidingShaders;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.CrimsonVowFieldEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.CrimsonVowFieldEntity;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;

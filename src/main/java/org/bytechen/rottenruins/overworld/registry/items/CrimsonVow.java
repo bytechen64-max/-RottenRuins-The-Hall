@@ -35,7 +35,7 @@ import org.bytechen.rottenruins.api.TooltipShaderSpec;
 import org.bytechen.rottenruins.client.rend.text.FlowingNameColors;
 import org.bytechen.rottenruins.client.rend.text.TooltipLines;
 import org.bytechen.rottenruins.client.rend.twitch.ITwitchItem;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.CrimsonVowChargeEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.CrimsonVowChargeEntity;
 import org.bytechen.rottenruins.utils.ModUtils;
 import org.bytechen.rottenruins.utils.TranslateUtils;
 import org.jetbrains.annotations.Nullable;

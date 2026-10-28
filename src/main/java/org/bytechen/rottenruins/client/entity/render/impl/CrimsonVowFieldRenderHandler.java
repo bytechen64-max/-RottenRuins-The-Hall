@@ -12,8 +12,8 @@ import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.client.rend.ScreenShake;
 import org.bytechen.rottenruins.client.rend.glint.HeldItemOutlineCompat;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.CrimsonVowChargeEntity;
-import org.bytechen.rottenruins.overworld.registry.entities.population.skills.CrimsonVowFieldEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.CrimsonVowChargeEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.CrimsonVowFieldEntity;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
