@@ -17,7 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.infcore.api.goal.InfectedTargetGoal;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
@@ -51,7 +51,7 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
     private static final double FACING_VELOCITY_EPSILON = 5.0E-3D;
 
     public InfSkeletonEntity(EntityType<? extends BaseInfectedEntity> entityType, Level level,
-                             Consumer<AbstractHallEntity> consumer) {
+                             Consumer<AbstractRottenEntity> consumer) {
         super(entityType, level);
         consumer.accept(this);
         // 飞行生物：无重力 + 飞行寻路 + 顺滑飞行控制
@@ -179,7 +179,7 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
 
     @Override
     protected void registerGoals() {
-        // 与 inf_player 相同的索敌：40 格、无需视线
+        // 与 hall_player 相同的索敌：40 格、无需视线
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .range(40.0)
                 .mustSee(false)

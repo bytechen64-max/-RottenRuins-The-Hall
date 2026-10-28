@@ -14,14 +14,14 @@ import org.bytechen.rottenruins.overworld.registry.RegisterParticles;
 /**
  * 受击血花（{@link RegisterParticles#BLOOD}）的 S2C 包 —— 在目标身上朝"攻击源方向"喷一串血点。
  *
- * <h3>只在两个地方触发（由 {@code AbstractHallEntity} 基类直接调用，不走事件）</h3>
+ * <h3>只在两个地方触发（由 {@code AbstractRottenEntity} 基类直接调用，不走事件）</h3>
  * <ol>
- *   <li><b>王庭生物自己被打</b>：{@code AbstractHallEntity#hurt} → {@code onHurtBlood(...)}
+ *   <li><b>王庭生物自己被打</b>：{@code AbstractRottenEntity#hurt} → {@code onHurtBlood(...)}
  *       → {@link #sendBurst}，粒子出现在<b>被打的王庭生物</b>身上；</li>
- *   <li><b>王庭生物击杀并成功感染</b>：{@code AbstractHallEntity#onKilledEntity} →
+ *   <li><b>王庭生物击杀并成功感染</b>：{@code AbstractRottenEntity#onKilledEntity} →
  *       {@code onInfectionBlood(...)} → {@link #sendBurstAt}，粒子出现在<b>被击杀者原位</b>。</li>
  * </ol>
- * <p>因为入口都写在 {@code AbstractHallEntity} 里，原版 / 其它模组的生物被打时根本不会调用到这里 ——
+ * <p>因为入口都写在 {@code AbstractRottenEntity} 里，原版 / 其它模组的生物被打时根本不会调用到这里 ——
  * "其他生物被攻击不会出血"是<b>结构上</b>保证的，不依赖事件过滤。子类想改/禁用直接覆写
  * 那两个 {@code protected} 钩子即可。</p>
  *
@@ -45,7 +45,7 @@ import org.bytechen.rottenruins.overworld.registry.RegisterParticles;
  * <h3>数量由"实际吃到的伤害"决定</h3>
  * <p>{@link #countForDamage(float)}：{@code ceil(伤害 × COUNT_PER_DAMAGE)}，再夹在
  * {@link #MIN_COUNT} ~ {@link #MAX_COUNT} 之间。受击路径传的是血条实际变化量
- * + 吸收盾消耗量（见 {@code AbstractHallEntity#hurt}），不是护甲减免前的原始伤害 ——
+ * + 吸收盾消耗量（见 {@code AbstractRottenEntity#hurt}），不是护甲减免前的原始伤害 ——
  * 穿铁甲和裸奔不应该喷一样多。感染击杀路径拿不到"最后一击"的伤害，用生命上限的一半代理。</p>
  *
  * <h3>为什么仍然走通用包</h3>

@@ -6,7 +6,7 @@
       "keepNbt": false,
       "results": [
         {
-          "target": "rotten_ruins:inf_player",
+          "target": "rotten_ruins:hall_player",
           "weight": 100
         }
       ],
@@ -18,7 +18,7 @@
       "keepNbt": false,
       "results": [
         {
-          "target": "rotten_ruins:inf_skeleton",
+          "target": "rotten_ruins:hall_skeleton",
           "weight": 100
         }
       ],

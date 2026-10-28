@@ -7,7 +7,7 @@ import org.bytechen.rottenruins.client.entity.IGeoLayerProvider;
 import org.bytechen.rottenruins.client.entity.IGeoModelBehavior;
 import org.bytechen.rottenruins.client.entity.model.GeoBaseModel;
 import org.bytechen.rottenruins.overworld.registry.ClientRenderRegistry;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -50,11 +50,11 @@ public class GeoBaseRender<T extends LivingEntity & IAutoRenderableEntity> exten
      * 之后 GeckoLib 的模型、所有 render layer（包括自定义贴图层）都会继承这个缩放；
      * 外层 {@code push/pop} 保证它不会泄漏到实体渲染器之后的绘制。</p>
      *
-     * <p>没有在 {@code AbstractHallEntity} 里直接调 {@code PoseStack}，是为了让实体类
-     * 保持纯逻辑；数学入口见 {@link AbstractHallEntity#getBurstScale(float)}。</p>
+     * <p>没有在 {@code AbstractRottenEntity} 里直接调 {@code PoseStack}，是为了让实体类
+     * 保持纯逻辑；数学入口见 {@link AbstractRottenEntity#getBurstScale(float)}。</p>
      */
     private void applyBurstScale(T animatable, PoseStack poseStack, float partialTick) {
-        if (!(animatable instanceof AbstractHallEntity hall)) return;
+        if (!(animatable instanceof AbstractRottenEntity hall)) return;
         float scale = hall.getBurstScale(partialTick);
         if (Math.abs(scale - 1.0f) < 1.0e-4f) return;
         poseStack.scale(scale, scale, scale);

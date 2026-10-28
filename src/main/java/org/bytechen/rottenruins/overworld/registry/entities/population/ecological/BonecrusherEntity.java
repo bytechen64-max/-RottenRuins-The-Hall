@@ -12,7 +12,7 @@ import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.level.Level;
 import org.bytechen.rottenruins.overworld.difficulty.HallDifficultyAttributes;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.ChaseLockGoal;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.skills.SwordAuraEntity;
 import org.bytechen.rottenruins.utils.TickUtils;
 import org.bytechen.rottenruins.utils.entity.EntityBreakUtils;
@@ -32,7 +32,7 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
     private int chargeCooldown = 0;      // 冷却剩余 tick
     private int chargeDuration = 0;      // 冲撞持续剩余 tick（>0 表示正在冲撞）
 
-    public BonecrusherEntity(EntityType<? extends BaseEcologicalEntity> entityType, Level level, Consumer<AbstractHallEntity> consumer) {
+    public BonecrusherEntity(EntityType<? extends BaseEcologicalEntity> entityType, Level level, Consumer<AbstractRottenEntity> consumer) {
         super(entityType, level);
         consumer.accept(this);
         this.setHasWalkAnim(true);
@@ -81,7 +81,7 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
             // 向目标快速移动（速度倍率 1.5）
             if (target != null && target.isAlive()) {
                 // 冲撞期间不必每 tick 重算路径：A* 一次够走好几格；目标不可达时
-                // 每 tick 一次寻路是纯粹的浪费（同 AbstractHallEntity#tickChase 的原因）。
+                // 每 tick 一次寻路是纯粹的浪费（同 AbstractRottenEntity#tickChase 的原因）。
                 if (chargeDuration % 10 == 0 && this.getNavigation().isDone()) {
                     this.getNavigation().moveTo(target, 1.5D);
                 }
@@ -126,7 +126,7 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
     @Override
     protected void registerGoals() {
         // 追击占位（只占 MOVE）：有目标时压住 RandomStrollGoal，
-        // 免得"追击路径"被随机散步顶掉（位移本身仍由 AbstractHallEntity#tickChase 发起）
+        // 免得"追击路径"被随机散步顶掉（位移本身仍由 AbstractRottenEntity#tickChase 发起）
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .range(40.0)
@@ -163,7 +163,7 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
         if (!defaultControllersEnabled) return;
-        AnimationController<AbstractHallEntity> movementController =
+        AnimationController<AbstractRottenEntity> movementController =
                 new AnimationController<>(this, "movement_controller", 3, state -> {
                     if (isDeadOrDying() || isBurstAnimating()) return PlayState.STOP;
                     if (isActuallyMoving) {
@@ -181,10 +181,10 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
                     return PlayState.STOP;
                 });
         registrar.add(movementController);
-        AnimationController<AbstractHallEntity> dieController =
+        AnimationController<AbstractRottenEntity> dieController =
                 new AnimationController<>(this, "die_controller", 3, state ->
                         isBurstAnimating() ? state.setAndContinue(ANIM_DIE) : PlayState.STOP);
-        AnimationController<AbstractHallEntity> idleController =
+        AnimationController<AbstractRottenEntity> idleController =
                 new AnimationController<>(this, "idle_controller", 3, state ->
                         isAlive() ? state.setAndContinue(ANIM_IDLE) : PlayState.STOP);
         dieController.setAnimationSpeed(getDieAnimSpeed());

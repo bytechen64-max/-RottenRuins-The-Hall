@@ -199,5 +199,120 @@ public class LangDataEN extends LanguageProvider {
         // ---- Sound subtitles (see SoundData) ----
         // Body-explosion sound: same subtitle text as corruption's rip_body, hall namespace.
         add("subtitles." + HallMod.MODID + ".rip_body", "Body rips apart");
+
+        // ====================================================================
+        // ---- Simplified corruption content (migrated from the corruption mod) ----
+        // The block/item/entity/effect registrations are not in this project yet, so
+        // the translation keys are registered directly as "<type>.rotten_ruins.<id>"
+        // strings. Once the content is migrated the keys match the registry IDs and
+        // runData will keep them.
+        // ====================================================================
+
+        // ---- A. Blocks: block.rotten_ruins.<id> (21) ----
+        add("block." + HallMod.MODID + ".spread_dirt", "Corrupted Dirt");
+        add("block." + HallMod.MODID + ".spread_stone", "Corrupted Stone");
+        add("block." + HallMod.MODID + ".infection_cobblestone_block", "Corrupted Cobblestone");
+        add("block." + HallMod.MODID + ".spread_infection_leaves", "Corrupted Leaves");
+        // corruption registers this block as spread_infection_wood but names it in neither lang file
+        add("block." + HallMod.MODID + ".spread_infection_wood", "Corrupted Log");
+        add("block." + HallMod.MODID + ".corruption_grass", "Corrupted Short Grass");
+        add("block." + HallMod.MODID + ".corruption_trachea", "Respiratory Tract");
+        add("block." + HallMod.MODID + ".connect_block", "Connective Tissue Block");
+        add("block." + HallMod.MODID + ".decidual_tissue_block", "Decidual Tissue Block");
+        // corruption has no English name for fleshbed either
+        add("block." + HallMod.MODID + ".fleshbed", "Fleshbed");
+        add("block." + HallMod.MODID + ".degenerate_remains_small", "Small Degenerate Remains");
+        add("block." + HallMod.MODID + ".degenerate_remains_medium", "Medium Degenerate Remains");
+        add("block." + HallMod.MODID + ".degenerate_remains_large", "Large Degenerate Remains");
+        add("block." + HallMod.MODID + ".host_remains_small", "Small Assimilated Remains");
+        add("block." + HallMod.MODID + ".host_remains_medium", "Medium Assimilated Remains");
+        add("block." + HallMod.MODID + ".host_remains_large", "Large Assimilated Remains");
+        add("block." + HallMod.MODID + ".refactored_remains_small", "Small Refactored Remains");
+        add("block." + HallMod.MODID + ".refactored_remains_medium", "Medium Refactored Remains");
+        add("block." + HallMod.MODID + ".refactored_remains_large", "Large Refactored Remains");
+        add("block." + HallMod.MODID + ".variable_height_crop", "Corrupted Meridian");
+        add("block." + HallMod.MODID + ".spiracle_block", "Living Spiracle");
+
+        // ---- B. Items: item.rotten_ruins.<id> (42 = 14 materials + 5 tools + 23 spawn eggs) ----
+        // Materials
+        add("item." + HallMod.MODID + ".infection_bone", "Infected Bone");
+        add("item." + HallMod.MODID + ".hard_fragments", "Hardened Fragments");
+        // corruption has no English name for chitin_polymer either
+        add("item." + HallMod.MODID + ".chitin_polymer", "Chitin Polymer");
+        add("item." + HallMod.MODID + ".live_meat", "Living Flesh");
+        add("item." + HallMod.MODID + ".host_meat", "Assimilated Flesh");
+        add("item." + HallMod.MODID + ".host_carapace", "Assimilated Carapace");
+        add("item." + HallMod.MODID + ".host_tooth", "Assimilated Tooth");
+        add("item." + HallMod.MODID + ".degenerate_heart", "Degenerate Heart");
+        add("item." + HallMod.MODID + ".long_arm_beast_head", "Longibrachiate Head");
+        add("item." + HallMod.MODID + ".long_arm_beast_tooth", "Longibrachiate Tooth");
+        add("item." + HallMod.MODID + ".acid_sac", "Acid Sac");
+        add("item." + HallMod.MODID + ".acid_ball", "Acid Ball");
+        add("item." + HallMod.MODID + ".syringe", "Syringe");
+        add("item." + HallMod.MODID + ".syringe_bloody_concentrate", "Concentrated Blood Syringe");
+        // Tools
+        add("item." + HallMod.MODID + ".crude_axe", "Crude Axe");
+        add("item." + HallMod.MODID + ".crude_hoe", "Crude Hoe");
+        add("item." + HallMod.MODID + ".crude_pickaxe", "Crude Pickaxe");
+        add("item." + HallMod.MODID + ".crude_shovel", "Crude Shovel");
+        add("item." + HallMod.MODID + ".crude_sword", "Crude Sword");
+        // Spawn eggs (key follows the entity id, value is "<entity name> Spawn Egg")
+        add("item." + HallMod.MODID + ".corruption_zombie_spawn_egg", "Assimilated Zombie Spawn Egg");
+        add("item." + HallMod.MODID + ".corruption_player_spawn_egg", "Assimilated Player Spawn Egg");
+        add("item." + HallMod.MODID + ".corruption_cow_spawn_egg", "Assimilated Cow Spawn Egg");
+        add("item." + HallMod.MODID + ".corruption_sheep_spawn_egg", "Assimilated Sheep Spawn Egg");
+        add("item." + HallMod.MODID + ".corruption_pig_spawn_egg", "Assimilated Pig Spawn Egg");
+        add("item." + HallMod.MODID + ".corruption_bat_spawn_egg", "Assimilated Bat Spawn Egg");
+        add("item." + HallMod.MODID + ".corruption_skeleton_spawn_egg", "Assimilated Skeleton Spawn Egg");
+        add("item." + HallMod.MODID + ".corruption_bone_ruins_spawn_egg", "Skeletal Remains Spawn Egg");
+        add("item." + HallMod.MODID + ".corruption_villager_spawn_egg", "Assimilated Villager Spawn Egg");
+        add("item." + HallMod.MODID + ".corruption_wolf_spawn_egg", "Assimilated Wolf Spawn Egg");
+        add("item." + HallMod.MODID + ".corruption_chicken_spawn_egg", "Assimilated Chicken Spawn Egg");
+        add("item." + HallMod.MODID + ".degenerate_pig_spawn_egg", "Degenerate Pig Spawn Egg");
+        add("item." + HallMod.MODID + ".degenerate_zombie_spawn_egg", "Degenerate Zombie Spawn Egg");
+        add("item." + HallMod.MODID + ".degenerate_villager_spawn_egg", "Degenerate Villager Spawn Egg");
+        add("item." + HallMod.MODID + ".degenerate_cow_spawn_egg", "Degenerate Cow Spawn Egg");
+        add("item." + HallMod.MODID + ".groveler_spawn_egg", "Crawlfex Spawn Egg");
+        add("item." + HallMod.MODID + ".attacker_spawn_egg", "Attacker Spawn Egg");
+        add("item." + HallMod.MODID + ".bearer_spawn_egg", "Gestaltomb Spawn Egg");
+        add("item." + HallMod.MODID + ".long_arm_beast_spawn_egg", "Longibrachiate Spawn Egg");
+        add("item." + HallMod.MODID + ".shocker_spawn_egg", "Shocker Spawn Egg");
+        add("item." + HallMod.MODID + ".humus_column_spawn_egg", "Stage I Humus Column Spawn Egg");
+        add("item." + HallMod.MODID + ".summoning_pillar_spawn_egg", "Stage I Summoning Pillar Spawn Egg");
+        add("item." + HallMod.MODID + ".original_bug_spawn_egg", "Primordial Worm Spawn Egg");
+
+        // ---- C. Entities: entity.rotten_ruins.<id> (23) ----
+        add("entity." + HallMod.MODID + ".corruption_zombie", "Assimilated Zombie");
+        add("entity." + HallMod.MODID + ".corruption_player", "Assimilated Player");
+        add("entity." + HallMod.MODID + ".corruption_cow", "Assimilated Cow");
+        add("entity." + HallMod.MODID + ".corruption_sheep", "Assimilated Sheep");
+        // corruption has no entity name for the pig/skeleton, only their spawn eggs
+        add("entity." + HallMod.MODID + ".corruption_pig", "Assimilated Pig");
+        add("entity." + HallMod.MODID + ".corruption_bat", "Assimilated Bat");
+        add("entity." + HallMod.MODID + ".corruption_skeleton", "Assimilated Skeleton");
+        add("entity." + HallMod.MODID + ".corruption_bone_ruins", "Skeletal Remains");
+        add("entity." + HallMod.MODID + ".corruption_villager", "Assimilated Villager");
+        add("entity." + HallMod.MODID + ".corruption_wolf", "Assimilated Wolf");
+        add("entity." + HallMod.MODID + ".corruption_chicken", "Assimilated Chicken");
+        add("entity." + HallMod.MODID + ".degenerate_pig", "Degenerate Pig");
+        add("entity." + HallMod.MODID + ".degenerate_zombie", "Degenerate Zombie");
+        add("entity." + HallMod.MODID + ".degenerate_villager", "Degenerate Villager");
+        add("entity." + HallMod.MODID + ".degenerate_cow", "Degenerate Cow");
+        add("entity." + HallMod.MODID + ".groveler", "Crawlfex");
+        add("entity." + HallMod.MODID + ".attacker", "Attacker");
+        add("entity." + HallMod.MODID + ".bearer", "Gestaltomb");
+        add("entity." + HallMod.MODID + ".long_arm_beast", "Longibrachiate");
+        add("entity." + HallMod.MODID + ".shocker", "Shocker");
+        add("entity." + HallMod.MODID + ".humus_column", "Stage I Humus Column");
+        add("entity." + HallMod.MODID + ".summoning_pillar", "Stage I Summoning Pillar");
+        add("entity." + HallMod.MODID + ".original_bug", "Primordial Worm");
+
+        // ---- D. Effects: effect.rotten_ruins.<id> (6) ----
+        add("effect." + HallMod.MODID + ".corruption", "Corruption");
+        add("effect." + HallMod.MODID + ".lysis", "Lysis");
+        add("effect." + HallMod.MODID + ".miasma", "Despair");
+        add("effect." + HallMod.MODID + ".sclerosis", "Sclerosis");
+        add("effect." + HallMod.MODID + ".bleeding", "Bleeding");
+        add("effect." + HallMod.MODID + ".fear", "Fear");
     }
 }

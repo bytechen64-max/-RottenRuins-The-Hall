@@ -183,5 +183,116 @@ public class LangDataCN extends LanguageProvider {
         // ---- 音效字幕（见 SoundData）----
         // 爆体音效：与 corruption 的 rip_body 同一条字幕文案，只是命名空间换成 hall。
         add("subtitles." + HallMod.MODID + ".rip_body", "躯体爆裂");
+
+        // ====================================================================
+        // ---- 简化版腐化内容（自 corruption 工程迁入，沿用 rotten_ruins 命名空间）----
+        // 这些方块/物品/实体/效果的注册代码尚未迁入本工程，因此先用字符串直接登记
+        // "<类型>.rotten_ruins.<id>" 翻译键；待注册迁入后键名与注册 ID 一一对应，
+        // runData 重新生成 lang json 时这些键不会丢失。
+        // ====================================================================
+
+        // ---- A. 方块 block.rotten_ruins.<id>（21 个）----
+        add("block." + HallMod.MODID + ".spread_dirt", "腐染泥土");
+        add("block." + HallMod.MODID + ".spread_stone", "腐染原石");
+        add("block." + HallMod.MODID + ".infection_cobblestone_block", "腐染圆石");
+        add("block." + HallMod.MODID + ".spread_infection_leaves", "腐染树叶");
+        // corruption 里该方块注册为 spread_infection_wood，但那边两个语言文件都缺这条译名
+        add("block." + HallMod.MODID + ".spread_infection_wood", "腐染原木");
+        add("block." + HallMod.MODID + ".corruption_grass", "腐染矮草");
+        add("block." + HallMod.MODID + ".corruption_trachea", "呼吸道");
+        add("block." + HallMod.MODID + ".connect_block", "结缔块");
+        add("block." + HallMod.MODID + ".decidual_tissue_block", "蜕膜组织");
+        add("block." + HallMod.MODID + ".fleshbed", "血肉温床");
+        add("block." + HallMod.MODID + ".degenerate_remains_small", "腐化种小型遗骸");
+        add("block." + HallMod.MODID + ".degenerate_remains_medium", "腐化种中型遗骸");
+        add("block." + HallMod.MODID + ".degenerate_remains_large", "腐化种大型遗骸");
+        add("block." + HallMod.MODID + ".host_remains_small", "同化种小型遗骸");
+        add("block." + HallMod.MODID + ".host_remains_medium", "同化种中型遗骸");
+        add("block." + HallMod.MODID + ".host_remains_large", "同化种大型遗骸");
+        add("block." + HallMod.MODID + ".refactored_remains_small", "重构种小型遗骸");
+        add("block." + HallMod.MODID + ".refactored_remains_medium", "重构种中型遗骸");
+        add("block." + HallMod.MODID + ".refactored_remains_large", "重构种大型遗骸");
+        add("block." + HallMod.MODID + ".variable_height_crop", "腐染经络");
+        add("block." + HallMod.MODID + ".spiracle_block", "活体气门");
+
+        // ---- B. 物品 item.rotten_ruins.<id>（42 个：材料 14 + 工具 5 + 刷怪蛋 23）----
+        // 材料
+        add("item." + HallMod.MODID + ".infection_bone", "感染的骨头");
+        add("item." + HallMod.MODID + ".hard_fragments", "硬质碎片");
+        add("item." + HallMod.MODID + ".chitin_polymer", "聚合甲壳");
+        add("item." + HallMod.MODID + ".live_meat", "活体肉块");
+        add("item." + HallMod.MODID + ".host_meat", "被同化的肉");
+        add("item." + HallMod.MODID + ".host_carapace", "同化种甲壳");
+        add("item." + HallMod.MODID + ".host_tooth", "被同化的牙齿");
+        add("item." + HallMod.MODID + ".degenerate_heart", "腐化之心");
+        add("item." + HallMod.MODID + ".long_arm_beast_head", "长臂兽头颅");
+        add("item." + HallMod.MODID + ".long_arm_beast_tooth", "长臂兽骨齿");
+        add("item." + HallMod.MODID + ".acid_sac", "酸囊");
+        add("item." + HallMod.MODID + ".acid_ball", "酸液球");
+        add("item." + HallMod.MODID + ".syringe", "注射器");
+        add("item." + HallMod.MODID + ".syringe_bloody_concentrate", "浓缩血液注射器");
+        // 工具
+        add("item." + HallMod.MODID + ".crude_axe", "粗制斧");
+        add("item." + HallMod.MODID + ".crude_hoe", "粗制锄");
+        add("item." + HallMod.MODID + ".crude_pickaxe", "粗制镐");
+        add("item." + HallMod.MODID + ".crude_shovel", "粗制铲");
+        add("item." + HallMod.MODID + ".crude_sword", "粗制剑");
+        // 刷怪蛋（键名取实体 ID，值取「<实体名>刷怪蛋」）
+        add("item." + HallMod.MODID + ".corruption_zombie_spawn_egg", "同化僵尸刷怪蛋");
+        add("item." + HallMod.MODID + ".corruption_player_spawn_egg", "同化玩家刷怪蛋");
+        add("item." + HallMod.MODID + ".corruption_cow_spawn_egg", "同化牛刷怪蛋");
+        add("item." + HallMod.MODID + ".corruption_sheep_spawn_egg", "同化羊刷怪蛋");
+        add("item." + HallMod.MODID + ".corruption_pig_spawn_egg", "同化猪刷怪蛋");
+        add("item." + HallMod.MODID + ".corruption_bat_spawn_egg", "同化蝙蝠刷怪蛋");
+        add("item." + HallMod.MODID + ".corruption_skeleton_spawn_egg", "同化骷髅刷怪蛋");
+        add("item." + HallMod.MODID + ".corruption_bone_ruins_spawn_egg", "骷髅遗骸刷怪蛋");
+        add("item." + HallMod.MODID + ".corruption_villager_spawn_egg", "同化村民刷怪蛋");
+        add("item." + HallMod.MODID + ".corruption_wolf_spawn_egg", "同化狼刷怪蛋");
+        add("item." + HallMod.MODID + ".corruption_chicken_spawn_egg", "同化鸡刷怪蛋");
+        add("item." + HallMod.MODID + ".degenerate_pig_spawn_egg", "腐化猪刷怪蛋");
+        add("item." + HallMod.MODID + ".degenerate_zombie_spawn_egg", "腐化僵尸刷怪蛋");
+        add("item." + HallMod.MODID + ".degenerate_villager_spawn_egg", "腐化村民刷怪蛋");
+        add("item." + HallMod.MODID + ".degenerate_cow_spawn_egg", "腐化牛刷怪蛋");
+        add("item." + HallMod.MODID + ".groveler_spawn_egg", "匍匐者刷怪蛋");
+        add("item." + HallMod.MODID + ".attacker_spawn_egg", "袭击者刷怪蛋");
+        add("item." + HallMod.MODID + ".bearer_spawn_egg", "孕育者刷怪蛋");
+        add("item." + HallMod.MODID + ".long_arm_beast_spawn_egg", "长臂兽刷怪蛋");
+        add("item." + HallMod.MODID + ".shocker_spawn_egg", "震撼者刷怪蛋");
+        add("item." + HallMod.MODID + ".humus_column_spawn_egg", "Ⅰ阶腐植柱刷怪蛋");
+        add("item." + HallMod.MODID + ".summoning_pillar_spawn_egg", "Ⅰ阶召唤柱刷怪蛋");
+        add("item." + HallMod.MODID + ".original_bug_spawn_egg", "原虫刷怪蛋");
+
+        // ---- C. 实体 entity.rotten_ruins.<id>（23 个）----
+        add("entity." + HallMod.MODID + ".corruption_zombie", "同化僵尸");
+        add("entity." + HallMod.MODID + ".corruption_player", "同化玩家");
+        add("entity." + HallMod.MODID + ".corruption_cow", "同化牛");
+        add("entity." + HallMod.MODID + ".corruption_sheep", "同化羊");
+        add("entity." + HallMod.MODID + ".corruption_pig", "同化猪");
+        add("entity." + HallMod.MODID + ".corruption_bat", "同化蝙蝠");
+        add("entity." + HallMod.MODID + ".corruption_skeleton", "同化骷髅");
+        add("entity." + HallMod.MODID + ".corruption_bone_ruins", "骷髅遗骸");
+        add("entity." + HallMod.MODID + ".corruption_villager", "同化村民");
+        add("entity." + HallMod.MODID + ".corruption_wolf", "同化狼");
+        add("entity." + HallMod.MODID + ".corruption_chicken", "同化鸡");
+        add("entity." + HallMod.MODID + ".degenerate_pig", "腐化猪");
+        add("entity." + HallMod.MODID + ".degenerate_zombie", "腐化僵尸");
+        add("entity." + HallMod.MODID + ".degenerate_villager", "腐化村民");
+        add("entity." + HallMod.MODID + ".degenerate_cow", "腐化牛");
+        add("entity." + HallMod.MODID + ".groveler", "匍匐者");
+        add("entity." + HallMod.MODID + ".attacker", "袭击者");
+        add("entity." + HallMod.MODID + ".bearer", "孕育者");
+        add("entity." + HallMod.MODID + ".long_arm_beast", "长臂兽");
+        add("entity." + HallMod.MODID + ".shocker", "震撼者");
+        add("entity." + HallMod.MODID + ".humus_column", "Ⅰ阶腐植柱");
+        add("entity." + HallMod.MODID + ".summoning_pillar", "Ⅰ阶召唤柱");
+        add("entity." + HallMod.MODID + ".original_bug", "原虫");
+
+        // ---- D. 状态效果 effect.rotten_ruins.<id>（6 个）----
+        add("effect." + HallMod.MODID + ".corruption", "腐化");
+        add("effect." + HallMod.MODID + ".lysis", "裂解");
+        add("effect." + HallMod.MODID + ".miasma", "绝望");
+        add("effect." + HallMod.MODID + ".sclerosis", "硬化");
+        add("effect." + HallMod.MODID + ".bleeding", "流血");
+        add("effect." + HallMod.MODID + ".fear", "恐惧");
     }
 }

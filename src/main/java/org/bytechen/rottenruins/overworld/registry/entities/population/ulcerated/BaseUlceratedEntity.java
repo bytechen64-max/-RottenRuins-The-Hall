@@ -4,7 +4,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import org.bytechen.rottenruins.overworld.registry.RegisterParticles;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.infected.BaseInfectedEntity;
 import org.bytechen.rottenruins.utils.TickUtils;
 import org.bytechen.rottenruins.utils.entity.EntityParticleUtils;
@@ -42,7 +42,7 @@ public abstract class BaseUlceratedEntity extends BaseInfectedEntity {
     private static final float HURT_DRIP_RANGE_SCALE = 1.0F;
 
     protected BaseUlceratedEntity(EntityType<? extends BaseInfectedEntity> entityType, Level level,
-                                  Consumer<AbstractHallEntity> consumer) {
+                                  Consumer<AbstractRottenEntity> consumer) {
         super(entityType, level);
         consumer.accept(this);
     }

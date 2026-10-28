@@ -93,7 +93,7 @@ public class RegisterItem {
             SilentDaylight::new);
 
     /** Infested ender pearl — teleportation item with glitch twitch visual effect. */
-    public static final RegistryObject<Item> INF_ENDER_PEAR = ITEMS.register("inf_ender_pear",
+    public static final RegistryObject<Item> INF_ENDER_PEAR = ITEMS.register("hall_ender_pear",
             () -> new InfEnderPearItem(new Item.Properties().stacksTo(16)));
 
     //impl
@@ -202,9 +202,9 @@ public class RegisterItem {
     public static final RegistryObject<Item> WAND_NATURE = ITEMS.register("wand_nature",
             () -> new WandItem(new Item.Properties().stacksTo(1), MagicType.NATURE));
 
-    public static final RegistryObject<Item> INF_PLAYER_SPAWN_EGG = registerSpawnEgg("inf_player",EntityTypeRegistry.INF_PLAYER);
-    public static final RegistryObject<Item> INF_ENDERMAN_SPAWN_EGG = registerSpawnEgg("inf_enderman",EntityTypeRegistry.INF_ENDERMAN);
-    public static final RegistryObject<Item> INF_SKELETON_SPAWN_EGG = registerSpawnEgg("inf_skeleton",EntityTypeRegistry.INF_SKELETON);
+    public static final RegistryObject<Item> INF_PLAYER_SPAWN_EGG = registerSpawnEgg("hall_player",EntityTypeRegistry.INF_PLAYER);
+    public static final RegistryObject<Item> INF_ENDERMAN_SPAWN_EGG = registerSpawnEgg("hall_enderman",EntityTypeRegistry.INF_ENDERMAN);
+    public static final RegistryObject<Item> INF_SKELETON_SPAWN_EGG = registerSpawnEgg("hall_skeleton",EntityTypeRegistry.INF_SKELETON);
     public static final RegistryObject<Item> SCOUT_SPAWN_EGG = registerSpawnEgg("scout",EntityTypeRegistry.SCOUT);
     public static final RegistryObject<Item> PURSUER_SPAWN_EGG = registerSpawnEgg("pursuer",EntityTypeRegistry.PURSUER);
     public static final RegistryObject<Item> MONOLITH_SPAWN_EGG = registerSpawnEgg("monolith",EntityTypeRegistry.MONOLITH);

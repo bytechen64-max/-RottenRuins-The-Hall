@@ -4,9 +4,9 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 
-public class BaseInfectedEntity extends AbstractHallEntity {
+public class BaseInfectedEntity extends AbstractRottenEntity {
     @Override
     protected boolean getAttack(LivingEntity target) {
         return false;

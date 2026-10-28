@@ -23,7 +23,7 @@ import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.event.impl.HeavyBombDeathEffect;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.FaceTargetGoal;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.skills.BlackHoleEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.skills.ShockwaveEntity;
 import org.bytechen.infcore.api.goal.InfectedTargetGoal;
@@ -49,7 +49,7 @@ public class HeavyBombEntity extends BaseEcologicalEntity {
     private static final double DISTANCE_ADJUST_SPEED = 0.8D;
 
     public HeavyBombEntity(EntityType<? extends BaseEcologicalEntity> entityType, Level level,
-                           Consumer<AbstractHallEntity> consumer) {
+                           Consumer<AbstractRottenEntity> consumer) {
         super(entityType, level);
         consumer.accept(this);
         this.moveControl = new SmoothFlyingMoveControl(this);
@@ -61,7 +61,7 @@ public class HeavyBombEntity extends BaseEcologicalEntity {
         this.setDoHurtDistance(28.0F);
     }
 
-    public static Consumer<AbstractHallEntity> resources() {
+    public static Consumer<AbstractRottenEntity> resources() {
         return entity -> {
             entity.model = ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "geo/hall_heavy_bomb.geo.json");
             entity.texture = ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "textures/entity/hall_heavy_bomb.png");

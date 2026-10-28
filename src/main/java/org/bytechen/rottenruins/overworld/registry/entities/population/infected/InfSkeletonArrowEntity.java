@@ -43,12 +43,12 @@ public class InfSkeletonArrowEntity extends Entity implements IAutoRenderableEnt
     private static final double DAMPING = 0.985D;
 
     private static final ResourceLocation MODEL =
-            ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "geo/inf_skeleton_arrow.geo.json");
+            ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "geo/hall_skeleton_arrow.geo.json");
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "textures/entity/inf_skeleton_arrow.png");
+            ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "textures/entity/hall_skeleton_arrow.png");
     // 没有独立的 animation 文件，借用现有 idle 动画文件避免 GeckoLib 加载空路径
     private static final ResourceLocation DUMMY_ANIMATION =
-            ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "animations/inf_skeleton.animation.json");
+            ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "animations/hall_skeleton.animation.json");
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 

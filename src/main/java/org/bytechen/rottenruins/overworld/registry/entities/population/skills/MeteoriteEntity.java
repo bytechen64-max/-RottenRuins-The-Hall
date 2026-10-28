@@ -270,7 +270,7 @@ public class MeteoriteEntity extends Entity implements IAutoRenderableEntity {
                     } else {
                         // 清零无敌帧，确保每 tick 都能命中非 hall 生物
                         // 注意：陨石本身不感染生物 —— 感染由「王庭感染生物击杀生物」触发
-                        // （见 AbstractHallEntity#onKilledEntity）
+                        // （见 AbstractRottenEntity#onKilledEntity）
                         target.invulnerableTime = 0;
                         target.hurt(level().damageSources().magic(), cfgAoeDamage);
                     }

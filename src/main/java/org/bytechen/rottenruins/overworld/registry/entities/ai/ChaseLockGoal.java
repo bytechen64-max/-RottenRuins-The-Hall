@@ -3,7 +3,7 @@ package org.bytechen.rottenruins.overworld.registry.entities.ai;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.Goal;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 
 import java.util.EnumSet;
 
@@ -12,7 +12,7 @@ import java.util.EnumSet;
  *
  * <h3>为什么需要它</h3>
  * <p>王庭生物的「靠近目标 + 贴身出手」全部由
- * {@link AbstractHallEntity#tickChase()} 统一负责（那里带寻路节流与失败退避）。
+ * {@link AbstractRottenEntity#tickChase()} 统一负责（那里带寻路节流与失败退避）。
  * 但目标丢失之前如果不占住 {@code Flag.MOVE}，优先级更低的
  * {@code RandomStrollGoal}（同样用 {@code Flag.MOVE}）就会随机接管：
  * 它会另开一条"散步"路径，把 {@code tickChase} 设好的追击路径顶掉，
@@ -23,7 +23,7 @@ import java.util.EnumSet;
  * <ul>
  *   <li>它自己会 {@code navigation.moveTo} —— 与 {@code tickChase} 各算各的路径，
  *       一只怪同时跑两份 A*；</li>
- *   <li>它靠 {@code mob.doHurtTarget()} 出手，而 {@link AbstractHallEntity}
+ *   <li>它靠 {@code mob.doHurtTarget()} 出手，而 {@link AbstractRottenEntity}
  *       把 {@code doHurtTarget} 写死返回 {@code false}，伤害其实走的是
  *       {@code doHurtGoal → getAttack} —— 也就是说它的攻击部分<b>一直是空转</b>。</li>
  * </ul>

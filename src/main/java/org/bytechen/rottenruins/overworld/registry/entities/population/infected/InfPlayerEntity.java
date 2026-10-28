@@ -22,7 +22,7 @@ import org.bytechen.rottenruins.client.rend.gui.GuiShaderManager;
 import org.bytechen.rottenruins.overworld.difficulty.HallDifficultyAttributes;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.ChaseLockGoal;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.FaceTargetGoal;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.skills.SwordAuraEntity;
 import org.bytechen.rottenruins.utils.TickUtils;
 import org.bytechen.rottenruins.utils.combat.RangeAttackCallback;
@@ -61,7 +61,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
     private int getLeapCooldown()     { return entityData.get(LEAP_COOLDOWN); }
     private void setLeapCooldown(int v) { entityData.set(LEAP_COOLDOWN, v); }
 
-    public InfPlayerEntity(EntityType<? extends BaseInfectedEntity> entityType, Level level, Consumer<AbstractHallEntity> consumer) {
+    public InfPlayerEntity(EntityType<? extends BaseInfectedEntity> entityType, Level level, Consumer<AbstractRottenEntity> consumer) {
         super(entityType, level);
         consumer.accept(this);
         this.setHasWalkAnim(true);
@@ -71,7 +71,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
 
         // ── 爆体 ──
         // 所有非使徒生物默认参与爆体（基类：40% 概率、1.5 秒、10 次/秒脉冲、最大 1.4 倍、
-        // 逐 tick 抖动），inf_player 不再单独配置数值。
+        // 逐 tick 抖动），hall_player 不再单独配置数值。
         // 它没有 "die" 动画（hasDieAnim 默认 false）：爆体只缩放、不播死亡动画，
         // idle / walk / run 照常播放（见 isBurstAnimating）。
         this.setBurstRenderMode(BurstRenderMode.SCALE_ONLY);
@@ -89,7 +89,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
 
     @Override
     protected void registerGoals() {
-        // 追击占位（只占 MOVE）：位移与出手由 AbstractHallEntity#tickChase 统一负责。
+        // 追击占位（只占 MOVE）：位移与出手由 AbstractRottenEntity#tickChase 统一负责。
         // 原版 MeleeAttackGoal 会再算一份路径，而它的出手走 doHurtTarget()，
         // 在基类里被写死为 false —— 那部分一直是空转。
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
@@ -124,7 +124,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
 
     // ── 攻击动画 / 命中时机（attack_controller）──
     //
-    // inf_player.animation.json 里的 attack（双手）、attack_left（左手）、attack_right（右手）
+    // hall_player.animation.json 里的 attack（双手）、attack_left（左手）、attack_right（右手）
     // 都是 thenPlay、animation_length = 1.2083s、不循环，三个招式共用同一套命中时刻。
     //
     // 需求是「动画真正开始播放后 0.58s 命中」。这里不能直接拿 0.58 * 20 = 11.6 tick 去倒计时，
@@ -141,7 +141,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
     private static final int ATTACK_HIT_TICK_IN_ANIM = Math.round(ATTACK_HIT_SECONDS * 20.0F);
     /** 从 triggerAnim 到结算伤害的真实延迟 = transition 补偿 + 动画内命中点 = 3 + 12 = 15 tick（0.75s）。 */
     private static final int ATTACK_HIT_DELAY_TICKS = ATTACK_TRANSITION_TICKS + ATTACK_HIT_TICK_IN_ANIM;
-    /** 攻击动画长度（秒），与 inf_player.animation.json 的 animation_length 保持一致。 */
+    /** 攻击动画长度（秒），与 hall_player.animation.json 的 animation_length 保持一致。 */
     private static final float ATTACK_ANIM_LENGTH_SECONDS = 1.2083F;
     /** 动画长度换算成 tick：ceil(1.2083 * 20) = ceil(24.166) = 25，向上取整宁可多等一 tick 也别提前打断。 */
     private static final int ATTACK_ANIM_TICKS = (int) Math.ceil(ATTACK_ANIM_LENGTH_SECONDS * 20.0F);
@@ -278,7 +278,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
     }
 
     /**
-     * 出手入口：由 {@link AbstractHallEntity#tickChase()} 在贴身且视线通时调用。
+     * 出手入口：由 {@link AbstractRottenEntity#tickChase()} 在贴身且视线通时调用。
      *
      * <p>这里<b>只触发动画 + 起倒计时 + 锁定扇形方向，不立刻造成伤害</b>。伤害统一在
      * {@link #tickAttack()} 里、triggerAnim 之后 {@link #ATTACK_HIT_DELAY_TICKS} tick 结算，
@@ -572,14 +572,14 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
         // 播完自动回落到 movement_controller。放在 movement 之后、die 之前：
         // GeckoLib 按注册顺序应用控制器、后者覆盖前者的骨骼，攻击必须压在移动之上，
         // 否则走路动画会把手臂拽回去；die 仍排最后，爆体动画优先级最高。
-        AnimationController<AbstractHallEntity> attackController =
+        AnimationController<AbstractRottenEntity> attackController =
                 new AnimationController<>(this, "attack_controller", ATTACK_TRANSITION_TICKS, state -> PlayState.STOP);
         attackController.triggerableAnim("attack", ANIM_ATTACK);
         attackController.triggerableAnim("attack_left", ANIM_ATTACK_LEFT);
         attackController.triggerableAnim("attack_right", ANIM_ATTACK_RIGHT);
         registrar.add(attackController);
 
-        AnimationController<AbstractHallEntity> dieController =
+        AnimationController<AbstractRottenEntity> dieController =
                 new AnimationController<>(this, "die_controller", 3, state ->
                         isBurstAnimating() ? state.setAndContinue(ANIM_DIE) : PlayState.STOP);
         dieController.setAnimationSpeed(getDieAnimSpeed());

@@ -12,7 +12,7 @@ import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.overworld.difficulty.HallDifficultyAttributes;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.ChaseLockGoal;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.FaceTargetGoal;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.infected.BaseInfectedEntity;
 import org.bytechen.rottenruins.utils.combat.RangeAttackCallback;
 import org.bytechen.rottenruins.utils.combat.RangeAttackUtils;
@@ -134,7 +134,7 @@ public class PursuerEntity extends BaseUlceratedEntity implements RangeAttackCal
     private boolean primaryHitThisSwing;
 
     public PursuerEntity(EntityType<? extends BaseInfectedEntity> entityType, Level level,
-                         Consumer<AbstractHallEntity> consumer) {
+                         Consumer<AbstractRottenEntity> consumer) {
         super(entityType, level, consumer);
         // 只有 idle / walk / attack 三段动画，没有 run 动画
         this.setHasWalkAnim(false);
@@ -161,9 +161,9 @@ public class PursuerEntity extends BaseUlceratedEntity implements RangeAttackCal
     // ---------- 目标与行为（与其它王庭生物保持一致） ----------
     @Override
     protected void registerGoals() {
-        // 追击占位：只占 MOVE 标记 —— 位移与出手全部由 AbstractHallEntity#tickChase 负责。
+        // 追击占位：只占 MOVE 标记 —— 位移与出手全部由 AbstractRottenEntity#tickChase 负责。
         // 原来这里是原版 MeleeAttackGoal：它会再算一份路径，而它的出手走的是
-        // doHurtTarget()，在 AbstractHallEntity 里被写死为 false，本来就在空转。
+        // doHurtTarget()，在 AbstractRottenEntity 里被写死为 false，本来就在空转。
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
         // 索敌：goalSelector 优先级 2，40 格内不需要视线
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
@@ -180,7 +180,7 @@ public class PursuerEntity extends BaseUlceratedEntity implements RangeAttackCal
     // ---------- 攻击动画 + 扇形范围伤害（attack_controller） ----------
 
     /**
-     * 出手入口：由 {@link AbstractHallEntity#tickChase()} 在贴身且视线通时调用。
+     * 出手入口：由 {@link AbstractRottenEntity#tickChase()} 在贴身且视线通时调用。
      *
      * <p>这里<b>只触发动画 + 起倒计时，不立刻造成伤害</b>。伤害统一在
      * {@link #tickAttack()} 里、triggerAnim 之后 {@link #ATTACK_HIT_DELAY_TICKS} tick 结算，
@@ -334,7 +334,7 @@ public class PursuerEntity extends BaseUlceratedEntity implements RangeAttackCal
      * 扇形范围伤害的目标过滤。
      * <p>主目标（起手瞬间锁定的那只）只要还活着就放行 —— 即使它的威胁点数在 0.65s 前摇里
      * 掉回阈值以下，这一刀也已经挥出去了；其余目标统一走基类的
-     * {@link AbstractHallEntity#canHitWithRangeAttack(LivingEntity)}（玩家威胁闸门、
+     * {@link AbstractRottenEntity#canHitWithRangeAttack(LivingEntity)}（玩家威胁闸门、
      * 感染生物不互伤、存活/可攻击/类型允许）。</p>
      */
     private boolean canHitByAoeAttack(LivingEntity target) {
@@ -374,7 +374,7 @@ public class PursuerEntity extends BaseUlceratedEntity implements RangeAttackCal
      */
     @Override
     protected void registerAdditionalControllers(AnimatableManager.ControllerRegistrar registrar) {
-        AnimationController<AbstractHallEntity> attackController =
+        AnimationController<AbstractRottenEntity> attackController =
                 new AnimationController<>(this, "attack_controller", ATTACK_TRANSITION_TICKS,
                         state -> PlayState.STOP);
         attackController.triggerableAnim("attack", ANIM_ATTACK);

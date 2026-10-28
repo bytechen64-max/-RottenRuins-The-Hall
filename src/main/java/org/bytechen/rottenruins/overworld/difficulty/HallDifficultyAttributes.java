@@ -78,7 +78,7 @@ public final class HallDifficultyAttributes {
      * <p>判据与模组其它地方保持一致（{@code ForgeEventHelpers.isHallInfected}、
      * {@code MeteoriteEntity} 的友军判定）：实现 {@link IInfectedEntity}，
      * 且感染类型的命名空间是 {@code hall}。
-     * <p>这样写而不是 {@code instanceof AbstractHallEntity}，是因为
+     * <p>这样写而不是 {@code instanceof AbstractRottenEntity}，是因为
      * {@link IInfectedEntity} 才是 infcore 约定的「感染生物」标记；
      * 同时它天然排除了技能类实体（{@code SwordAuraEntity}、{@code BlackHoleEntity}
      * 这些是纯 {@code Entity}）和玩家。

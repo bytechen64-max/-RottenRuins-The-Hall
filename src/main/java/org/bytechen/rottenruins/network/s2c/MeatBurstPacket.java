@@ -14,7 +14,7 @@ import org.bytechen.rottenruins.utils.entity.EntityParticleUtils;
  * 位置 / 数量 / 速度全部由客户端按同一份配置自己算。
  *
  * <h3>为什么必须由服务端决定"什么时候炸"</h3>
- * <p>爆体（{@code AbstractHallEntity} 的 fake death → {@code onBurstEnd()}）是<b>服务端</b>
+ * <p>爆体（{@code AbstractRottenEntity} 的 fake death → {@code onBurstEnd()}）是<b>服务端</b>
  * 状态机推进出来的事件：只有服务端知道 fake death 计时器何时归零、实体何时被
  * {@code remove(RemovalReason.KILLED)}。如果让每个客户端各自监听"实体消失了"再放粒子，
  * 就会遇到两个问题：</p>
@@ -77,7 +77,7 @@ public final class MeatBurstPacket {
     /**
      * 服务端入口：把"实体 {@code entity} 爆体了"广播给所有正在追踪它的客户端。
      *
-     * <p>只在服务端调用（由 {@code AbstractHallEntity#onBurstEnd()} 发起）。
+     * <p>只在服务端调用（由 {@code AbstractRottenEntity#onBurstEnd()} 发起）。
      * 注意必须<b>在实体被移除之前</b>调用 —— 包先入队、实体移除包后入队，
      * 客户端处理本包时还能用 id 解析到实体。</p>
      *

@@ -295,7 +295,7 @@ public final class EntityParticleUtils {
      * 由 {@link ServerLevel#sendParticles} 广播给附近客户端 —— 所有玩家在同一位置、
      * 同一 tick 看到同一团爆炸，和 {@code MeatBurstPacket} 的"服务端决定时机"是同一个原则。</p>
      *
-     * <p>调用点见 {@code AbstractHallEntity#onBurstEnd()}：爆体结束、实体被移除前，
+     * <p>调用点见 {@code AbstractRottenEntity#onBurstEnd()}：爆体结束、实体被移除前，
      * 与肉屑包同一 tick 发出，观感上是"炸开一团血雾 + 溅出肉屑"同时发生。</p>
      */
     public static void spawnExplosionParticles(Entity entity) {

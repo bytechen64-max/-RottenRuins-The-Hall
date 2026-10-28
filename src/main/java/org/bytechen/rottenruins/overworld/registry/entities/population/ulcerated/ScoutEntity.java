@@ -21,7 +21,7 @@ import org.bytechen.rottenruins.overworld.difficulty.HallDifficultyAttributes;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.ChaseLockGoal;
 import org.bytechen.rottenruins.overworld.registry.EntityTypeRegistry;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.FaceTargetGoal;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.infected.BaseInfectedEntity;
 import org.bytechen.infcore.api.event.EntityEvolveEvent;
 import org.bytechen.infcore.api.goal.InfectedTargetGoal;
@@ -130,7 +130,7 @@ public class ScoutEntity extends BaseUlceratedEntity {
     private int gatherRepathFailures;
 
     public ScoutEntity(EntityType<? extends BaseInfectedEntity> entityType, Level level,
-                       Consumer<AbstractHallEntity> consumer) {
+                       Consumer<AbstractRottenEntity> consumer) {
         super(entityType, level, consumer);
         // 只有 idle / walk 两段动画，没有 run 动画
         this.setHasWalkAnim(false);
@@ -157,7 +157,7 @@ public class ScoutEntity extends BaseUlceratedEntity {
     @Override
     protected void registerGoals() {
         // 追击占位（只占 MOVE）：有目标时压住 RandomStrollGoal，
-        // 免得"追击路径"被随机散步顶掉（位移本身仍由 AbstractHallEntity#tickChase 发起）
+        // 免得"追击路径"被随机散步顶掉（位移本身仍由 AbstractRottenEntity#tickChase 发起）
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
         // 索敌：与其它王庭生物一致 —— goalSelector 优先级 2，40 格内无需视线
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)

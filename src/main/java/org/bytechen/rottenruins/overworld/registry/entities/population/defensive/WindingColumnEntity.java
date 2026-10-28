@@ -27,7 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.utils.entity.EntityParticleUtils;
 import org.bytechen.infcore.api.IInfectedEntity;
 import org.jetbrains.annotations.Nullable;
@@ -70,7 +70,7 @@ import java.util.function.Consumer;
  * <p>模型 {@code geo/winding_column.geo.json}、贴图 {@code textures/entity/winding_column.png}、
  * 动画 {@code animations/winding_column.animation.json}（只有 idle）。</p>
  */
-public class WindingColumnEntity extends AbstractHallEntity {
+public class WindingColumnEntity extends AbstractRottenEntity {
 
     // ==================== 抓取 ====================
 
@@ -214,7 +214,7 @@ public class WindingColumnEntity extends AbstractHallEntity {
     private int seekCooldown;
 
     public WindingColumnEntity(EntityType<? extends Monster> entityType, Level level,
-                               Consumer<AbstractHallEntity> consumer) {
+                               Consumer<AbstractRottenEntity> consumer) {
         super(entityType, level);
         consumer.accept(this);
 
@@ -250,7 +250,7 @@ public class WindingColumnEntity extends AbstractHallEntity {
      * 一个 Goal 都不注册。
      *
      * <p>索敌自己写在 {@link #tickSeeking} 里。基类那套 {@code InfectedTargetGoal}
-     * 会把目标写进 {@code getTarget()}，而 {@code AbstractHallEntity#tick} 一旦看到
+     * 会把目标写进 {@code getTarget()}，而 {@code AbstractRottenEntity#tick} 一旦看到
      * 目标在 {@code doHurtDistance} 之外就会寻路过去 —— 虽然已经被
      * {@link #NO_CHASE_DISTANCE} 堵死，但少一条路径就少一个「它怎么动了」的来源。</p>
      */
@@ -406,7 +406,7 @@ public class WindingColumnEntity extends AbstractHallEntity {
      * <p>排除：自己、已死亡 / 已移除、不可攻击、王庭自家生物（见 {@link #isHallKin}）、
      * 创造 / 旁观玩家。</p>
      *
-     * <p>与其它王庭生物不同，这里<b>没有</b>套 {@code AbstractHallEntity#canTarget}
+     * <p>与其它王庭生物不同，这里<b>没有</b>套 {@code AbstractRottenEntity#canTarget}
      * 的威胁点数闸门：它是一根「谁踩进来就抓谁」的防御柱，不是会主动出击的巡逻怪。</p>
      */
     private boolean isValidVictim(LivingEntity candidate) {
@@ -419,7 +419,7 @@ public class WindingColumnEntity extends AbstractHallEntity {
 
     /** 是否王庭自家生物（同族不互抓）。 */
     private static boolean isHallKin(LivingEntity candidate) {
-        if (candidate instanceof AbstractHallEntity) return true;
+        if (candidate instanceof AbstractRottenEntity) return true;
         if (candidate instanceof IInfectedEntity infected) {
             ResourceLocation type = infected.getInfectionType();
             return type != null && HallMod.MODID.equals(type.getNamespace());

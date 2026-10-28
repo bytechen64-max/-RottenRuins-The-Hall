@@ -26,7 +26,7 @@ public class SoundEventRegistry {
      *
      * <p>声音文件：{@code assets/hall/sounds/rip_body.ogg}（直接从 corruption 复制，未改音频）；
      * sounds.json 条目由 datagen（{@code SoundData}）生成，带字幕键
-     * {@code subtitles.rotten_ruins.rip_body}；播放点在 {@code AbstractHallEntity#onBurstEnd()}，
+     * {@code subtitles.rotten_ruins.rip_body}；播放点在 {@code AbstractRottenEntity#onBurstEnd()}，
      * 由服务端 {@code playSound} 广播，附近所有玩家都能听到同一时刻的一声。</p>
      */
     public static final RegistryObject<SoundEvent> RIP_BODY = registerSound("rip_body");

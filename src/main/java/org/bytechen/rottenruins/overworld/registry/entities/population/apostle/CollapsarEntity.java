@@ -34,7 +34,7 @@ import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.compat.BCCoreCompat;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.skills.BlackHoleEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.skills.ShockwaveEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.skills.SwordAuraEntity;
@@ -88,7 +88,7 @@ public class CollapsarEntity extends BaseApostleEntity {
      * <p>比玩家走路（约 4.3 格/秒）还慢一点 —— 使徒靠技能而不是靠贴身，
      * 飞行只需要"慢慢挪到目标头顶"。</p>
      * <p><b>注意</b>：这个值会被构造函数里的 {@code setWalkSpeed()} 覆盖
-     * （AbstractHallEntity#applyMoveSpeed 把 walkSpeed 写进属性 baseValue），
+     * （AbstractRottenEntity#applyMoveSpeed 把 walkSpeed 写进属性 baseValue），
      * 所以两处必须保持一致。</p>
      */
     private static final double MOVEMENT_SPEED = 0.16D;
@@ -335,14 +335,14 @@ public class CollapsarEntity extends BaseApostleEntity {
     private float lastBossProgress = 1.0F;
 
     public CollapsarEntity(EntityType<? extends Monster> entityType, Level level,
-                           Consumer<AbstractHallEntity> consumer) {
+                           Consumer<AbstractRottenEntity> consumer) {
         super(entityType, level);
         consumer.accept(this);
         this.hoverMoveControl = new HoverMoveControl(this);
         this.moveControl = this.hoverMoveControl;
         this.setNoGravity(true);
         this.setPersistenceRequired();
-        // 只有 idle 动画：不声明 walk/run，避免 AbstractHallEntity 去找不存在的动画
+        // 只有 idle 动画：不声明 walk/run，避免 AbstractRottenEntity 去找不存在的动画
         this.setHasWalkAnim(false);
         // 悬停飞行的速度上限（与 MOVEMENT_SPEED 常量保持一致，见那里的说明）
         this.setWalkSpeed((float) MOVEMENT_SPEED);
@@ -352,7 +352,7 @@ public class CollapsarEntity extends BaseApostleEntity {
     }
 
     /** 资源绑定：geo / png / animation 三个文件名都是 collapsar。 */
-    public static Consumer<AbstractHallEntity> resources() {
+    public static Consumer<AbstractRottenEntity> resources() {
         return entity -> {
             entity.model = ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "geo/collapsar.geo.json");
             entity.texture = ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "textures/entity/collapsar.png");
@@ -560,7 +560,7 @@ public class CollapsarEntity extends BaseApostleEntity {
         this.level().broadcastEntityEvent(this, (byte) 2);        // 客户端播受击音效 + 播放受击动画
         this.getCombatTracker().recordDamage(source, finalDamage);
 
-        // 受击溅血（基类钩子）：本类完整接管了 hurt、不经过 AbstractHallEntity#hurt，
+        // 受击溅血（基类钩子）：本类完整接管了 hurt、不经过 AbstractRottenEntity#hurt，
         // 所以这里显式补一次，保证这个 boss 挨打时也会触发"只有王庭生物才有的"血花。
         this.onHurtBlood(source, finalDamage);
 
@@ -838,7 +838,7 @@ public class CollapsarEntity extends BaseApostleEntity {
         // 朝向：唯一写入者（见 registerGoals 里关于 FaceTargetGoal 的说明）
         updateFacing(target);
 
-        // 无条件停掉路径导航：AbstractHallEntity#tick 在目标超出贴身距离时
+        // 无条件停掉路径导航：AbstractRottenEntity#tick 在目标超出贴身距离时
         // 会每 tick 调一次 navigation.moveTo(target)，而那条路径由 FlyingPathNavigation
         // 自己驱动 MoveControl —— 与上面的悬停指令抢控制权。悬停单位不需要地面寻路。
         this.getNavigation().stop();

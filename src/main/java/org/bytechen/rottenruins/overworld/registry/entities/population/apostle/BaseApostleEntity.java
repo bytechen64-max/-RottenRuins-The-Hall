@@ -4,7 +4,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 
 /**
  * 使徒（apostle）分类的基类。
@@ -16,13 +16,13 @@ import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEnt
  * <p>与 {@code BaseEcologicalEntity}（王庭生态单位，同样是远程/技能向）的区别只在语义：
  * 使徒按"一次战斗只有一只"的强度设计，血量/护甲/技能冷却都按 boss 规格给。
  */
-public abstract class BaseApostleEntity extends AbstractHallEntity {
+public abstract class BaseApostleEntity extends AbstractRottenEntity {
 
     protected BaseApostleEntity(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
-        // 使徒不用"撞上去平砍"这套：把 AbstractHallEntity 的近距离攻击钩子关掉
+        // 使徒不用"撞上去平砍"这套：把 AbstractRottenEntity 的近距离攻击钩子关掉
         this.setDoHurtDistance(0.0F);
-        // 需求：除使徒外所有生物都爆体（AbstractHallEntity 默认开启 40% 概率），
+        // 需求：除使徒外所有生物都爆体（AbstractRottenEntity 默认开启 40% 概率），
         // 使徒作为 boss 规格单位不参与爆体 —— 死亡仍走正常 die() / LivingDeathEvent。
         this.setFakeDeathEnabled(false);
     }

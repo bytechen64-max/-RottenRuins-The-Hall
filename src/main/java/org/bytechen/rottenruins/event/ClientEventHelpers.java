@@ -20,16 +20,16 @@ public class ClientEventHelpers {
         // 注册发光图层 —— InfPlayer
         ClientRenderRegistry.registerRenderLayer(
                 EntityTypeRegistry.INF_PLAYER.get(),
-                new GlowLayer("textures/entity/inf_player_glow_layer.png"));
+                new GlowLayer("textures/entity/hall_player_glow_layer.png"));
         ClientRenderRegistry.registerRenderLayer(
                 EntityTypeRegistry.INF_ENDERMAN.get(),
-                new GlowLayer("textures/entity/inf_enderman_glow_layer.png"));
+                new GlowLayer("textures/entity/hall_enderman_glow_layer.png"));
         ClientRenderRegistry.registerRenderLayer(
                 EntityTypeRegistry.INF_SKELETON.get(),
-                new GlowLayer("textures/entity/inf_skeleton_glow_layer.png"));
+                new GlowLayer("textures/entity/hall_skeleton_glow_layer.png"));
         ClientRenderRegistry.registerRenderLayer(
                 EntityTypeRegistry.INF_SKELETON_ARROW.get(),
-                new GlowLayer("textures/entity/inf_skeleton_arrow_glow_layer.png"));
+                new GlowLayer("textures/entity/hall_skeleton_arrow_glow_layer.png"));
         ClientRenderRegistry.registerRenderLayer(
                 EntityTypeRegistry.SCOUT.get(),
                 new GlowLayer("textures/entity/scout_glow_layer.png"));

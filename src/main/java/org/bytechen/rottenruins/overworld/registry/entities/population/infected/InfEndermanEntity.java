@@ -13,7 +13,7 @@ import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.overworld.difficulty.HallDifficultyAttributes;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.ChaseLockGoal;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.FaceTargetGoal;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.infcore.api.goal.InfectedTargetGoal;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
@@ -40,18 +40,18 @@ public class InfEndermanEntity extends BaseInfectedEntity {
     // ---------- 动画定义 ----------
     private static final RawAnimation ANIM_ATTACK = RawAnimation.begin().thenPlay("attack");
     private static final RawAnimation ANIM_CRAWL  = RawAnimation.begin().thenLoop("crawl");
-    /** 爬行且静止时的待机动画（资源文件 inf_enderman.animation.json 中的 idle_crawl） */
+    /** 爬行且静止时的待机动画（资源文件 hall_enderman.animation.json 中的 idle_crawl） */
     private static final RawAnimation ANIM_CRAWL_IDLE = RawAnimation.begin().thenLoop("idle_crawl");
 
     // ---------- 构造函数 ----------
-    public InfEndermanEntity(EntityType<? extends BaseInfectedEntity> entityType, Level level, Consumer<AbstractHallEntity> consumer) {
+    public InfEndermanEntity(EntityType<? extends BaseInfectedEntity> entityType, Level level, Consumer<AbstractRottenEntity> consumer) {
         super(entityType, level);
         consumer.accept(this);
         this.setHasWalkAnim(false);
         this.setWalkSpeed(0.22F);
         this.setDoHurtTime(30);
         // 原来由 MeleeAttackGoal(this, 1.2, true) 提供的追击速度倍率，
-        // 现在追击统一由 AbstractHallEntity#tickChase 发起，倍率在这里声明
+        // 现在追击统一由 AbstractRottenEntity#tickChase 发起，倍率在这里声明
         this.setChaseSpeed(1.2F);
     }
 
@@ -71,7 +71,7 @@ public class InfEndermanEntity extends BaseInfectedEntity {
     protected void registerGoals() {
         // === 目标选择器（targetSelector）===
         // 使用 InfectedTargetGoal 选择最近的玩家或指定目标
-        // 追击占位（只占 MOVE）：位移与出手由 AbstractHallEntity#tickChase 统一负责。
+        // 追击占位（只占 MOVE）：位移与出手由 AbstractRottenEntity#tickChase 统一负责。
         // 原来的 MeleeAttackGoal 在这里是重复劳动 —— 它会再算一份路径，
         // 而它的 doHurtTarget 在基类里被写死为 false，攻击部分一直空转。
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
@@ -203,7 +203,7 @@ public class InfEndermanEntity extends BaseInfectedEntity {
                         && this.hasLineOfSight(crawlTarget)) {
                     getAttack(crawlTarget);
                 }
-                // 追击寻路交给 AbstractHallEntity#tickChase（已带节流 + 失败退避）。
+                // 追击寻路交给 AbstractRottenEntity#tickChase（已带节流 + 失败退避）。
                 // 这里原来写的是 `isDone() || tickCount % 10 == 0` —— 但寻路失败时
                 // isDone() 恒为 true，等于每 tick 跑一次 A*，目标卡在墙里时直接把 TPS 打穿。
             }
@@ -278,7 +278,7 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         registrar.add(attackController);
 
         // 死亡控制器
-        AnimationController<AbstractHallEntity> dieController =
+        AnimationController<AbstractRottenEntity> dieController =
                 new AnimationController<>(this, "die_controller", 3, state ->
                         isBurstAnimating() ? state.setAndContinue(ANIM_DIE) : PlayState.STOP);
         dieController.setAnimationSpeed(getDieAnimSpeed());

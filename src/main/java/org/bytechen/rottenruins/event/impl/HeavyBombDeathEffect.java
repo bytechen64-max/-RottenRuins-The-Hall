@@ -13,7 +13,7 @@ import org.bytechen.rottenruins.overworld.registry.entities.population.skills.Sh
  * HeavyBomb 的死亡效果 —— 巨大冲击波 + 原地留下小型黑洞。
  *
  * <h3>为什么不用实体自己的 {@code die()} 重写</h3>
- * {@link org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity}
+ * {@link org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity}
  * 的 {@code hurt()} 与 {@code die()} 都会拦截一层假死逻辑
  * （{@code fakeDeathEnabled} 时 {@code die()} 直接 return、由假死计时器
  * 走 {@code remove(KILLED)} 而不是走死亡流程），从实体内部挂钩很容易

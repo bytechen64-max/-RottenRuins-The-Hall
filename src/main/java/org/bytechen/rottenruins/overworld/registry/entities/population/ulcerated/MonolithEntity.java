@@ -13,7 +13,7 @@ import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.difficulty.HallDifficultyAttributes;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.ChaseLockGoal;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.FaceTargetGoal;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.infected.BaseInfectedEntity;
 import org.bytechen.rottenruins.utils.TickUtils;
 import org.bytechen.infcore.api.goal.InfectedTargetGoal;
@@ -38,7 +38,7 @@ import java.util.function.Consumer;
 public class MonolithEntity extends BaseUlceratedEntity {
 
     public MonolithEntity(EntityType<? extends BaseInfectedEntity> entityType, Level level,
-                          Consumer<AbstractHallEntity> consumer) {
+                          Consumer<AbstractRottenEntity> consumer) {
         super(entityType, level, consumer);
         // 只有 idle / walk 两段动画，没有 run 动画
         this.setHasWalkAnim(false);
@@ -78,7 +78,7 @@ public class MonolithEntity extends BaseUlceratedEntity {
     @Override
     protected void registerGoals() {
         // 索敌：与其它王庭生物一致 —— goalSelector 优先级 2，40 格内无需视线
-        // 追击占位（只占 MOVE）：位移与出手由 AbstractHallEntity#tickChase 统一负责
+        // 追击占位（只占 MOVE）：位移与出手由 AbstractRottenEntity#tickChase 统一负责
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .range(40.0)

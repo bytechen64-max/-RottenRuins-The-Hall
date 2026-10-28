@@ -3,7 +3,7 @@ package org.bytechen.rottenruins.overworld.registry;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.client.entity.IAutoRenderableEntity;
 import org.bytechen.rottenruins.client.entity.IAutoRenderableProjectile;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractHallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.base.EntityManager;
 import org.bytechen.rottenruins.overworld.registry.entities.base.HallEntityManager;
 import org.bytechen.rottenruins.overworld.registry.entities.base.HallProjectileManager;
@@ -46,7 +46,7 @@ import java.util.function.Supplier;
 public class EntityTypeRegistry {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, HallMod.MODID);
 
-    public static <T extends AbstractHallEntity> RegistryObject<EntityType<T>> registerMob(
+    public static <T extends AbstractRottenEntity> RegistryObject<EntityType<T>> registerMob(
             String name, float width, float height,
             EntityType.EntityFactory<T> factory,
             Supplier<AttributeSupplier.Builder> attributes) {
@@ -130,7 +130,7 @@ public class EntityTypeRegistry {
         });
     }
 
-    public static <T extends AbstractHallEntity> Consumer<T> defaultResources(String name) {
+    public static <T extends AbstractRottenEntity> Consumer<T> defaultResources(String name) {
         return entity -> {
             entity.model = new ResourceLocation(HallMod.MODID, "geo/" + name + ".geo.json");
             entity.texture = new ResourceLocation(HallMod.MODID, "textures/entity/" + name + ".png");
@@ -147,22 +147,22 @@ public class EntityTypeRegistry {
 
 
     public static final RegistryObject<EntityType<InfPlayerEntity>> INF_PLAYER =
-            registerMob("inf_player", 1.2f, 4f,
-                    (type, level) -> new InfPlayerEntity(type, level, defaultResources("inf_player")),
+            registerMob("hall_player", 1.2f, 4f,
+                    (type, level) -> new InfPlayerEntity(type, level, defaultResources("hall_player")),
                     InfPlayerEntity::createAttributes);
 
     public static final RegistryObject<EntityType<InfEndermanEntity>> INF_ENDERMAN =
-            registerMob("inf_enderman", 1.2f, 4f,
-                    (type, level) -> new InfEndermanEntity(type, level, defaultResources("inf_enderman")),
+            registerMob("hall_enderman", 1.2f, 4f,
+                    (type, level) -> new InfEndermanEntity(type, level, defaultResources("hall_enderman")),
                     InfEndermanEntity::createAttributes);
 
     public static final RegistryObject<EntityType<InfSkeletonEntity>> INF_SKELETON =
-            registerMob("inf_skeleton", 1.2f, 1.2f,
-                    (type, level) -> new InfSkeletonEntity(type, level, defaultResources("inf_skeleton")),
+            registerMob("hall_skeleton", 1.2f, 1.2f,
+                    (type, level) -> new InfSkeletonEntity(type, level, defaultResources("hall_skeleton")),
                     InfSkeletonEntity::createAttributes);
 
     public static final RegistryObject<EntityType<InfSkeletonArrowEntity>> INF_SKELETON_ARROW =
-            registerSkill("inf_skeleton_arrow", 0.6f, 0.6f,
+            registerSkill("hall_skeleton_arrow", 0.6f, 0.6f,
                     InfSkeletonArrowEntity::new);
 
     // ────────── 溃烂 —— 斥候 / 追蹤者 / 巨碑（无专属感染形态时的兜底形态） ──────────

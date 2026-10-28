@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "rotten_ruins:item/long_arm_beast_spawn_egg"
+  }
+}

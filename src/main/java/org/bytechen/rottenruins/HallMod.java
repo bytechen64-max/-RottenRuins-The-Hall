@@ -9,6 +9,7 @@ import org.bytechen.rottenruins.api.magic.MagicStatRegistry;
 import org.bytechen.rottenruins.overworld.difficulty.HallDifficulty;
 import org.bytechen.rottenruins.network.NetworkHelper;
 import org.bytechen.rottenruins.overworld.registry.*;
+import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionContent;
 import org.bytechen.rottenruins.overworld.registry.entities.population.ulcerated.UlceratedConversionRules;
 import org.bytechen.rottenruins.overworld.registry.spawning.SplendidingSpawnPlacements;
 import net.minecraftforge.common.MinecraftForge;
@@ -55,6 +56,9 @@ public class HallMod {
         RegisterParticles.PARTICLE_TYPES.register(modEventBus);
         RegisterBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         RegisterFeature.FEATURES.register(modEventBus);
+
+        // 腐化系内容（原 corruption 工程，简化移植）：方块 / 物品 / 生物 / 效果
+        CorruptionContent.register(modEventBus);
 
         // 魔法属性（法力上限 / 回速 / 回复倍率 / 法术强度 / 槽位数）。
         // 注册后由 RegisterAttributes 里的 EntityAttributeModificationEvent 处理器
