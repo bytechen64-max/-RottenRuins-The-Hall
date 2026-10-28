@@ -27,7 +27,11 @@ public abstract class BaseCorruptionEntity extends AbstractRottenEntity {
                                    Consumer<AbstractRottenEntity> resources) {
         super(entityType, level);
         resources.accept(this);
-        this.setFaction(RottenFaction.CORRUPTION);
+    }
+
+    @Override
+    protected RottenFaction faction() {
+        return RottenFaction.CORRUPTION;
     }
 
     @Override

@@ -48,14 +48,14 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
 
 
     /**
-     * 合并后的阵营标记（王庭 / 腐化）。只用于数据、表现与统计，
-     * <b>不参与默认索敌</b>——敌我统一由 infcore 的感染类型 + ITargetFilter 决定。
+     * 阵营：王庭 / 腐化。
+     * <p><b>必须是可覆写方法而不是实例字段</b>：{@link net.minecraft.world.entity.Mob} 的构造器
+     * 会在子类字段初始化之前调用 {@code registerGoals()}，而 {@value InfectedTargetGoal} 构造时会调用
+     * {@link #getInfectionType()}；若用字段，构造期会读到 null 并 NPE（表现为刷怪蛋放不出生物）。</p>
      */
-    protected RottenFaction faction = RottenFaction.HALL;
+    protected RottenFaction faction() { return RottenFaction.HALL; }
 
-    public RottenFaction getFaction() { return faction; }
-
-    public void setFaction(RottenFaction faction) { this.faction = faction; }
+    public RottenFaction getFaction() { return faction(); }
 
     public ResourceLocation model, texture, animation;
     protected float idleAnimSpeed = 1.0f;
@@ -262,7 +262,7 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
     @Override
     public ResourceLocation getInfectionType() {
         // 王庭 / 腐化各有自己的感染阵营标识（不是同一个 type）
-        return this.faction.infectionType();
+        return this.faction().infectionType();
     }
 
     // ==================== 击杀 → 感染 ====================
@@ -297,7 +297,7 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
         float proxyDamage = victim.getMaxHealth() * 0.5F;
 
         // 只有真的"造成感染"（转化成功）才喷血 —— applyEvolution 的返回值就是判定结果。
-        if (EvolutionManager.applyEvolution(serverLevel, victim, this.faction.infectionRuleType())) {
+        if (EvolutionManager.applyEvolution(serverLevel, victim, this.faction().infectionRuleType())) {
             this.onInfectionBlood(serverLevel, victimCenter, victimBox, proxyDamage);
         }
     }

@@ -98,6 +98,18 @@
   - 原工程的"村民非幼年 + 精英名 + 持久化"回调 infcore 数据格式暂不支持，留待实体/事件层补
   - `runData` 生成 4 个 type / 14 条规则，类型字符串与运行期传入的 `RottenFaction.*RuleType()` 完全一致。
 
+### 1.8 修复记录：刷怪蛋放不出生物（2026-10-28）
+- **现象**：两派所有生物的刷怪蛋都无法生成生物（服务端日志刷 `NullPointerException`）。
+- **根因**：阵营信息写成了实例字段 `faction`，而 `Mob` 的构造器会在子类字段初始化之前调用
+  `registerGoals()`；`InfectedTargetGoal` 的构造器又会调用 `getInfectionType()` →
+  此时 `faction` 仍是 `null`，直接在实体构造期 NPE，`EntityType.spawn` 失败。
+- **修复**：把阵营改成可覆写方法 `protected RottenFaction faction()`（基类返回 HALL，
+  `BaseCorruptionEntity` 覆写返回 CORRUPTION）；`getInfectionType()` / `onKilledEntity()` 改用 `faction()`。
+  这样构造期虚分派也能拿到正确常量，不再依赖字段初始化时机。
+- **验证**：dedicated server + RCON 依次 `summon` 王庭 7 只 + 腐化 8 只（含玩家/末影人/骷髅/斥候/碎骨/使徒/缠绕之柱/同化僵尸/同化牛/同化玩家/腐化猪/袭击者/孕育者/腐植柱/原虫），全部返回 `Summoned new ...`，随后 tick 无任何 ERROR/FATAL。
+- **附带修复**：`InfPlayerEntity` / `BonecrusherEntity` 的通用 tick 里用 `this.level() instanceof ClientLevel` 判断客户端，
+  在 dedicated server 上会触发 `RuntimeDistCleaner` 崩溃，已改为 `this.level().isClientSide()`。
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）

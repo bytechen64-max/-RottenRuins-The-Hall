@@ -1,6 +1,5 @@
 package org.bytechen.rottenruins.overworld.registry.entities.population.hall.infected;
 
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -367,7 +366,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
     @Override
     public void tick() {
         //Client
-        if(this.level() instanceof ClientLevel)
+        if(this.level().isClientSide())
         {
             clientTick();
         }

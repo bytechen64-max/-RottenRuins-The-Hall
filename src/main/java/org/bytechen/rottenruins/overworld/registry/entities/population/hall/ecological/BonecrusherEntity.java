@@ -1,6 +1,5 @@
 package org.bytechen.rottenruins.overworld.registry.entities.population.hall.ecological;
 
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -45,7 +44,7 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
     public void tick() {
         // 爆体（假死）期间只播缩放：停掉破坏方块 / 冲撞，避免爆体还在拆地形。
         if (!this.isFakeDying()) {
-            if (this.level() instanceof ClientLevel) {
+            if (this.level().isClientSide()) {
                 clientTick();
             } else {
                 serverTick();
