@@ -66,6 +66,12 @@ public final class TranslateUtils {
     public static final String CRIMSON_VOW_TOOLTIP_LABEL_TRAIT = "item.hall.crimson_vow.tooltip.label.trait";
     /** 绯红誓约 · F3+H 高级 tooltip 的调试行（%s ×4） */
     public static final String CRIMSON_VOW_TOOLTIP_DEBUG = "item.hall.crimson_vow.tooltip.debug";
+    /** 绯红誓约 · 「起誓」标签（蹲下右键蓄力 → 巨型法阵，本剑独有的主动技） */
+    public static final String CRIMSON_VOW_TOOLTIP_LABEL_SIGIL = "item.hall.crimson_vow.tooltip.label.sigil";
+    /** 绯红誓约 · 「起誓」正文 */
+    public static final String CRIMSON_VOW_TOOLTIP_SIGIL = "item.hall.crimson_vow.tooltip.sigil";
+    /** 绯红誓约 · 冷却未就绪时给玩家的一行提示（%s = 剩余秒数） */
+    public static final String CRIMSON_VOW_COOLDOWN = "item.hall.crimson_vow.cooldown";
 
     // ==================== 寂寒白日 tooltip ====================
 

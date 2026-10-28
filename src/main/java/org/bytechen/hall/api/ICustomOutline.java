@@ -2,6 +2,7 @@ package org.bytechen.hall.api;
 
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * Items implementing this interface gain automatic outline + GUI glint
@@ -40,6 +41,32 @@ public interface ICustomOutline {
     /** Outline colour as ARGB int (e.g. {@code 0xFFFF6600}). Required. */
     int outlineColor();
 
+    /**
+     * 实例级覆写：默认退回 {@link #outlineColor()}。
+     *
+     * <p>为什么需要这一层：{@code outlineColor()} 这类方法<b>拿不到 ItemStack</b>，
+     * 于是"同一件物品因为改名 / 附魔 / NBT 而表现不同"根本表达不出来。
+     * 需要按实例变化的物品覆写带 {@code stack} 的这几个方法即可，管线优先用它们。</p>
+     */
+    default int outlineColorFor(ItemStack stack) {
+        return outlineColor();
+    }
+
+    /** 实例级覆写：默认退回 {@link #outlineSecondaryColor()}。 */
+    default int outlineSecondaryColorFor(ItemStack stack) {
+        return outlineSecondaryColor();
+    }
+
+    /** 实例级覆写：默认退回 {@link #outlineShaderKey()}。 */
+    default String outlineShaderKeyFor(ItemStack stack) {
+        return outlineShaderKey();
+    }
+
+    /** 实例级覆写：默认退回 {@link #outlineBlend()}。 */
+    default BlendMode outlineBlendFor(ItemStack stack) {
+        return outlineBlend();
+    }
+
     /** @return true to enable outline for the given context. Default: all world contexts. */
     default boolean outlineEnabled(ItemDisplayContext ctx) {
         return switch (ctx) {
@@ -53,14 +80,37 @@ public interface ICustomOutline {
     /**
      * 描边向外扩展的宽度，单位是 <b>屏幕像素</b>。默认 2.5。
      *
-     * <p>等宽就是靠它：与物品大小、与玩家距离都无关，GUI 图标 / 一手 / 掉落物
-     * 在任何情况下描边一样粗。</p>
+     * <p>它同时是宽度的<b>上限</b>：默认的 {@link OutlineWidthMode#DISTANCE} 下，实际宽度取
+     * {@code min(本值, 物品表观尺寸 × SplendidingConfig.outlineWidthMaxRatio)}，
+     * 再夹在 {@code SplendidingConfig.outlineMinPixelWidth} 之上（表观尺寸 = 物品包围盒对角线
+     * 按当前距离换成的像素数）。于是物品在屏幕上够大时就是本值（近处恒定像素宽，与旧行为逐位一致），
+     * 只有物品小到环会占去它一成多时环才按比例收细 ——
+     * 否则远处的环相对物品过粗，观感是糊成一圈外扩的厚边。</p>
      *
-     * <p>描边只向外长，不会侵占物品表面 —— 贴在表面的宇宙星空层因此不受影响。
-     * 想要更细/更粗就改这里；也可以在配置文件里用全局倍率
-     * {@code SplendidingConfig.outlineWidthScale} 整体缩放。</p>
+     * <p>想要旧的「任何距离都一样粗」，把 {@link #outlineWidthMode()} 返回
+     * {@link OutlineWidthMode#SCREEN}；想整体加粗/变细用 {@code SplendidingConfig.outlineWidthScale}。</p>
+     *
+     * <p>描边只向外长，不会侵占物品表面 —— 贴在表面的宇宙星空层因此不受影响。</p>
      */
     default float outlinePixelWidth() { return 2.5f; }
+
+    /**
+     * 描边宽度怎么算。
+     *
+     * <ul>
+     *   <li>{@link OutlineWidthMode#SCREEN} —— 恒定屏幕像素宽（旧行为）。</li>
+     *   <li>{@link OutlineWidthMode#DISTANCE} —— 屏幕像素宽，但按物品的屏幕占比收缩（默认）。</li>
+     * </ul>
+     */
+    enum OutlineWidthMode {
+        /** 恒定屏幕像素宽：远处的物品上，环会相对过粗。 */
+        SCREEN,
+        /** 近处与 {@link #SCREEN} 逐位一致，远处按「物品表观尺寸 × 比例」收细。 */
+        DISTANCE
+    }
+
+    /** @return 宽度计算方式。默认 {@link OutlineWidthMode#DISTANCE}。 */
+    default OutlineWidthMode outlineWidthMode() { return OutlineWidthMode.DISTANCE; }
 
     /** 描边整体不透明度。默认 1.0（完全不透明，对齐原版发光描边）。 */
     default float outlineOpacity() { return 1.0f; }
@@ -90,11 +140,18 @@ public interface ICustomOutline {
 
     /**
      * 颜色模式选择器。它<b>不再</b>对应独立的着色器与 RenderType ——
-     * 三条旧的"描边着色器"已经收敛成同一个几何算法，这个 key 只决定颜色怎么算：
+     * 几条旧的"描边着色器"已经收敛成同一个几何算法，这个 key 只决定颜色怎么算：
      * <ul>
      *   <li>{@code null} / {@code "default"} — 纯色</li>
      *   <li>{@code "gradient"} — 主色↔副色 沿物品表面流动</li>
      *   <li>{@code "warp_fbm"} — 彩虹流动（旧噪声风格的动态观感）</li>
+     *   <li>{@code "fire"} — 火焰：噪声湍流 + 白热核（移植自 shadertoy MdjfRK）。
+     *       用 {@link #outlineColor()} 当白热核、{@link #outlineSecondaryColor()} 当冷尾；
+     *       加法混合下尾部几乎看不见，只剩几缕顺着描边爬的火丝</li>
+     *   <li>{@code "fire_2"} — 燃烧描边：<b>世界空间体积火焰</b>。以物品为中心、固定尺寸
+     *       （0.9 × 1.0 × 0.9 格）的盒子里 ray marching 3D 噪声，场景深度截断 + Beer 累积。
+     *       有视差、范围固定、能被墙遮挡；不是把火画在物品贴图上。
+     *       覆盖掉落物 / 展示框 / 一手，GUI 不画。见 {@code docs/item-shader-outline.md} 第十二章</li>
      * </ul>
      */
     default String outlineShaderKey() { return null; }

@@ -24,7 +24,13 @@ public class GlintEffectProfile {
         SINGLE(0.0f),
         DUAL_SCROLL(1.0f),
         RAINBOW(2.0f),
-        AUTO_SAMPLE_SCROLL(3.0f);
+        AUTO_SAMPLE_SCROLL(3.0f),
+        /**
+         * 火焰：噪声湍流 + 1/t 过曝 ramp（移植自 shadertoy MdjfRK，见 outline_mask.fsh 的
+         * fireColor）。主色是白热核、副色是冷尾；{@code ColorFloor}（GUI 里是
+         * guiOutlineMinMix）决定尾部有多亮。ICustomOutline 侧对应的 key 是 {@code "fire"}。
+         */
+        FIRE(4.0f);
 
         public final float shaderValue;
 
@@ -51,7 +57,12 @@ public class GlintEffectProfile {
     /** @deprecated 旧的模型空间缩放系数，新管线不再使用。见 {@link #worldOutlinePixelWidth}。 */
     @Deprecated
     float worldOutlineWidth = 0.06f;
-    /** 描边宽度，单位屏幕像素。等宽靠它，与距离无关。 */
+    /**
+     * 描边宽度，单位屏幕像素；同时是距离自适应下的<b>上限</b> —— 近处就是本值，远处按
+     * 「物品屏幕长边 × {@code SplendidingConfig.outlineWidthMaxRatio}」收细
+     * （见 {@code ItemOutlinePipeline.adaptPixelWidth}）。恒定像素宽用
+     * {@code SplendidingConfig.outlineDistanceScaling=false} 整体关掉。
+     */
     float worldOutlinePixelWidth = 2.5f;
     /** 描边整体不透明度。 */
     float worldOutlineOpacity = 1.0f;
@@ -159,6 +170,23 @@ public class GlintEffectProfile {
 
     public static GlintEffectProfile rainbow() {
         return builder().colorMode(ColorMode.RAINBOW).speed(0.8f).intensity(0.9f).build();
+    }
+
+    /**
+     * 火焰预设：橙黄白热核 + 暗红冷尾，噪声湍流会顺着描边爬。
+     *
+     * <p>用加法混合（描边默认）时最像参考图：尾部接近黑、几乎不贡献亮度，
+     * 只剩几缕白热的火丝。想要"整圈泛着底光"的厚火，把 {@code guiOutlineMinMix}
+     * （或直接调 {@code ColorFloor}）抬起来。</p>
+     */
+    public static GlintEffectProfile fire() {
+        return builder()
+                .color(0xFFFFB03A)
+                .secondaryColor(0xFF6E1208)
+                .colorMode(ColorMode.FIRE)
+                .speed(1.1f)
+                .intensity(0.95f)
+                .build();
     }
 
     public static GlintEffectProfile goldenGlint() {

@@ -9,6 +9,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.bytechen.hall.overworld.registry.RegisterParticles;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Random;
@@ -274,6 +275,31 @@ public final class EntityParticleUtils {
                 level.addParticle(particleTypes, px, py, pz, vx, vy, vz);
             }
         }
+    }
+
+    // ==================== 爆体爆炸 ====================
+
+    /**
+     * 在实体碰撞箱范围内炸开一团「血腥爆炸」粒子（{@link RegisterParticles#EXPLOSION_BLOODY}）。
+     *
+     * <p>移植自 corruption 的
+     * {@code CorruptionEntityParticleUtil#spawnExplosionParticles(Entity)}：数量按碰撞箱
+     * 体积算 —— {@code 体积 × 1 + 5}（至少 5 颗，上限 200），每颗在碰撞箱内均匀取点、
+     * 带一点随机初速。用体积而不是固定数量，是为了让"小怪一小团、大体型怪一大片"
+     * 自然成立，不必给每个实体单独配数量。</p>
+     *
+     * <p>这是给「爆体」这个固定场景的语义化入口（密度 1.0、速度扰动 0.1），数值与
+     * corruption {@code BaseOriginalEntity} 里的
+     * {@code spawnExplosionParticles(this, 1, 0.1)} 一致；底层就是上面的通用重载
+     * {@link #spawnParticles(Entity, ParticleOptions, double, double, float)}。服务端调用时
+     * 由 {@link ServerLevel#sendParticles} 广播给附近客户端 —— 所有玩家在同一位置、
+     * 同一 tick 看到同一团爆炸，和 {@code MeatBurstPacket} 的"服务端决定时机"是同一个原则。</p>
+     *
+     * <p>调用点见 {@code AbstractHallEntity#onBurstEnd()}：爆体结束、实体被移除前，
+     * 与肉屑包同一 tick 发出，观感上是"炸开一团血雾 + 溅出肉屑"同时发生。</p>
+     */
+    public static void spawnExplosionParticles(Entity entity) {
+        spawnParticles(entity, RegisterParticles.EXPLOSION_BLOODY.get(), 1.0D, 0.1D, 1.0F);
     }
 
     /**

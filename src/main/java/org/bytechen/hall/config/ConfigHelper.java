@@ -80,6 +80,111 @@ public class ConfigHelper {
                 HallMod.LOGGER.info("[Config] verdictCooldownSeconds 已重置为 1.5（版本 {} → 2）", from);
             }
 
+            // ── 版本 <3：把描边距离自适应的比例重置为 0.04 ──
+            //  又一个"改了代码默认值却没反应"的实例，和上面那次同源：
+            //  0.15 是我第一版实现写进配置文件的默认值，而 cloth-config 以文件为准 ——
+            //  之后把代码默认值改成 0.10 对已有文件的机器完全不生效，表现是
+            //  "描边距离自适应改了两轮，看上去一直是恒定 4.5px"。
+            //  0.15 这个值本身也定得太宽松（分界点在表观尺寸 30 像素，实测 20 格外的
+            //  物品正好卡在分界点附近，等于没生效），所以直接按新默认值重置。
+            if (from < 3) {
+                cfg.outlineWidthMaxRatio = SplendidingConfig.DEFAULT_OUTLINE_WIDTH_MAX_RATIO;
+                HallMod.LOGGER.info("[Config] outlineWidthMaxRatio 已重置为 {}（版本 {} → 3）",
+                        SplendidingConfig.DEFAULT_OUTLINE_WIDTH_MAX_RATIO, from);
+            }
+
+            // ── 版本 <4：火焰高度三件套重调 ──
+            //  同一类问题：这三个值在第一次跑火焰时就写进配置文件了，之后改代码默认值
+            //  对已有文件的机器完全不生效。这次是把"向上扩散距离"整体压小
+            //  （火羽不再一屏高、也不再超出物品栏那种离谱比例）。
+            if (from < 4) {
+                cfg.flameRise = 0.16f;
+                cfg.flameBuoyancy = 0.30f;
+                cfg.flameCooling = 4.0f;
+                HallMod.LOGGER.info("[Config] 火焰高度已重调：rise=0.16 buoyancy=0.30 cooling=4.0（版本 {} → 4）", from);
+            }
+
+            // ── 版本 <5：火焰高度再配平 ──
+            //  版本 4 那组把火压过头了：小物品（掉落物 / 三手 / 远处）上只剩贴着轮廓的一层雾。
+            //  这次把三个值往回抬，同时下调可见性包络门槛、放宽尺寸比例下限。
+            //  （又是同一类：值已经在文件里了，不迁移就不生效。）
+            if (from < 5) {
+                cfg.flameRise = 0.20f;
+                cfg.flameBuoyancy = 0.35f;
+                cfg.flameCooling = 3.4f;
+                HallMod.LOGGER.info("[Config] 火焰高度再配平：rise=0.20 buoyancy=0.35 cooling=3.4（版本 {} → 5）", from);
+            }
+
+            // ── 版本 <6：电弧密度拉满 ──
+            //  用户要求"尽量每一个地方都有电弧"：早期默认值太稀（scale 9 / threshold 0.22），
+            //  细丝只在噪声恰好穿过阈值的地方零星出现。这四个键同样是"已经写进文件"的。
+            if (from < 6) {
+                cfg.arcScale = 16.0f;
+                cfg.arcThreshold = 0.10f;
+                cfg.arcGain = 2.2f;
+                cfg.arcReach = 0.035f;
+                HallMod.LOGGER.info("[Config] 电弧密度已拉满：scale=16 threshold=0.10 gain=2.2 reach=0.12（版本 {} → 6）", from);
+            }
+
+            // ── 版本 <7：电弧从"贴着轮廓的一条缝"改成"完整电弧带" ──
+            //  根因：环形合成的剪裁框只外扩 AURA_REACH_PX(52px)，而且 reach 挂在光雾
+            //  模糊图上（同一个 52px 支撑域）—— 电弧再密也只能挤在那条缝里。
+            //  现在改成按物品包围盒算的软椭圆带 + 剪裁框按 arcBandPx 放大。
+            //  scale 也一并提高：特征尺度 = 屏高/scale，16 时约 100px（比带宽还大，等于看不到细丝）。
+            // ── 版本 <8：修正电弧带的错配 ──
+            //  v7 把 arcReach 设成 0（当时改成"包围盒椭圆带"），但着色器里 `ArcReach > 0`
+            //  才是「锚定剪影」的开关 —— 0 等于完全不限，电弧会铺满整个剪裁框。
+            //  教训：锚点必须是**剪影**，不能是包围盒（剑在盒子里是斜的，盒子角落离剑很远）。
+            // ── 版本 <9：电弧从"铺满包围盒"收回到"剪影周围的窄带"（那才叫描边）──
+            // ── 版本 <10：电弧正式启用 ──
+            //  又是"文件优先"那口坑：arcEnabled 曾以 false 的默认值被写进文件，改代码
+            //  默认值不生效。症状是电弧怎么都不显示，而日志里 已注册效果=[flame] 少了 arc。
+            // ── 版本 <11：裂纹线宽/辉光提高（"太细看不清"）──
+            //  顺带修了一个量纲 bug：edgeDist 在单元尺度上，屏幕线宽必须乘 CrackScale ——
+            //  着色器侧已改，这里把文件里的旧值一并提到新的默认。
+            // ── 版本 <12：裂纹可以铺满整个物品（不再只贴着边缘）──
+            if (from < 12) {
+                cfg.crackReach = 1.0f;
+                HallMod.LOGGER.info("[Config] 裂纹可覆盖整个物品：crackReach=1.0（版本 {} → 12）", from);
+            }
+
+            if (from < 11) {
+                cfg.crackLinePx = 3.5f;
+                cfg.crackGlow = 0.95f;
+                HallMod.LOGGER.info("[Config] 裂纹加粗：line=3.5px glow=0.95（版本 {} → 11）", from);
+            }
+
+            if (from < 10) {
+                cfg.arcEnabled = true;
+                HallMod.LOGGER.info("[Config] 电弧已启用：arcEnabled=true（版本 {} → 10）", from);
+            }
+
+            if (from < 9) {
+                cfg.arcScale = 26f;
+                cfg.arcGain = 2f;
+                cfg.arcReach = 0.10f;
+                cfg.arcLinePx = 2.5f;
+                cfg.arcBandPx = 0f;
+                HallMod.LOGGER.info("[Config] 电弧收窄：scale=26 gain=2 reach=0.10 line=2.5px（版本 {} → 9）", from);
+            }
+
+            if (from < 8) {
+                cfg.arcReach = 0.035f;
+                cfg.arcGain = 5.0f;
+                cfg.arcSub = 0.12f;
+                cfg.arcBandPx = 0f;
+                HallMod.LOGGER.info("[Config] 电弧回到剪影锚定：reach=0.12 gain=2.6 sub=0.12（版本 {} → 8）", from);
+            }
+
+            if (from < 7) {
+                cfg.arcScale = 30.0f;
+                cfg.arcThreshold = 0.15f;
+                cfg.arcGain = 1.8f;
+                cfg.arcReach = 0.0f;
+                HallMod.LOGGER.info("[Config] 电弧带：scale=30 threshold=0.15 gain=1.8 bandPx={}（版本 {} → 7）",
+                        cfg.arcBandPx, from);
+            }
+
             cfg.configVersion = SplendidingConfig.CONFIG_VERSION;
             configHolder.save();
             HallMod.LOGGER.info("[Config] SplendidingConfig 迁移完成并已存盘（版本 {}，冷却 {}）",

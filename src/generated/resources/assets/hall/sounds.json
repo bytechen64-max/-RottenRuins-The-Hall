@@ -6,5 +6,11 @@
         "stream": true
       }
     ]
+  },
+  "rip_body": {
+    "sounds": [
+      "hall:rip_body"
+    ],
+    "subtitle": "subtitles.hall.rip_body"
   }
 }

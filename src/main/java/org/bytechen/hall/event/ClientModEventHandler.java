@@ -4,6 +4,9 @@ import org.bytechen.hall.HallMod;
 import org.bytechen.hall.client.ClientPacketHandlers;
 import org.bytechen.hall.client.entity.render.impl.BlackHoleRenderer;
 import org.bytechen.hall.client.entity.render.impl.CollapseRenderer;
+import org.bytechen.hall.client.entity.render.impl.CrimsonVowChargeRenderer;
+import org.bytechen.hall.client.entity.render.impl.CrimsonVowFieldRenderer;
+import org.bytechen.hall.client.entity.render.impl.MeteorEventRenderer;
 import org.bytechen.hall.client.entity.render.GeoBaseRender;
 import org.bytechen.hall.client.entity.render.GeoEntityRender;
 import org.bytechen.hall.client.entity.render.GeoProjectileRenderer;
@@ -13,7 +16,10 @@ import org.bytechen.hall.client.entity.render.impl.SwordAuraRenderer;
 import org.bytechen.hall.client.entity.render.impl.VerdictBeamRenderer;
 import org.bytechen.hall.client.entity.render.impl.VerdictFieldRenderer;
 import org.bytechen.hall.client.entity.render.impl.VerdictSwordDropRenderer;
+import org.bytechen.hall.client.particle.BloodParticle;
+import org.bytechen.hall.client.particle.ExplosionBloodyParticle;
 import org.bytechen.hall.client.particle.HeartLoseParticle;
+import org.bytechen.hall.client.particle.MeatParticle;
 import org.bytechen.hall.client.particle.UlceratedMeatParticle;
 import org.bytechen.hall.client.rend.backplate.CrimsonVowBackplateLayer;
 import org.bytechen.hall.client.tooltip.ClientBlockBarTooltip;
@@ -79,6 +85,16 @@ public class ClientModEventHandler {
         // 自定义渲染器 —— 裁决落剑（从天而降、落地插入地面的剑气）
         event.registerEntityRenderer(EntityTypeRegistry.VERDICT_SWORD_DROP.get(),
                 VerdictSwordDropRenderer::new);
+
+        // 自定义渲染器 —— 绯红誓约的蓄力法阵（贴地圆盘 + 上升的立柱）
+        event.registerEntityRenderer(EntityTypeRegistry.CRIMSON_VOW_CHARGE.get(),
+                CrimsonVowChargeRenderer::new);
+
+        // 自定义渲染器 —— 绯红誓约的巨型法阵（地面图案 + 立方体核心 + 上方扭曲 + 终末光柱）
+        event.registerEntityRenderer(EntityTypeRegistry.CRIMSON_VOW_FIELD.get(),
+                CrimsonVowFieldRenderer::new);
+        event.registerEntityRenderer(EntityTypeRegistry.METEOR_EVENT.get(),
+                MeteorEventRenderer::new);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -131,6 +147,12 @@ public class ClientModEventHandler {
         event.registerSpriteSet(RegisterParticles.ULCERATED_MEAT.get(), UlceratedMeatParticle.Provider::new);
         // 失心粒子 —— 序列帧，5 张（heart_lose0..4），按顺序播放
         event.registerSpriteSet(RegisterParticles.HEART_LOSE.get(), HeartLoseParticle.Provider::new);
+        // 血滴 —— 单张贴图（blood.png），有方块碰撞、会弹跳，存活约 6 秒
+        event.registerSpriteSet(RegisterParticles.BLOOD.get(), BloodParticle.Provider::new);
+        // 肉块 —— 单张贴图（meat.png），会弹跳、随寿命缩小
+        event.registerSpriteSet(RegisterParticles.MEAT.get(), MeatParticle.Provider::new);
+        // 血腥爆炸 —— 序列帧，16 张（explosion_bloody0..15），按顺序播放
+        event.registerSpriteSet(RegisterParticles.EXPLOSION_BLOODY.get(), ExplosionBloodyParticle.Provider::new);
     }
 
     /**

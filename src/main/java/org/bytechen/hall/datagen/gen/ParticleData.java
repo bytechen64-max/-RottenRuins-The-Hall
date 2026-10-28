@@ -40,5 +40,39 @@ public class ParticleData extends ParticleDescriptionProvider {
         // 而且它同样会逐张校验 png 是否存在（写错文件名会在 datagen 期就报错，不会拖到运行期）。
         spriteSet(RegisterParticles.HEART_LOSE.get(),
                 RegisterParticles.heartLoseFrames());
+
+        // 血滴（贴图：assets/hall/textures/particle/blood.png）
+        //
+        // ── 单张精灵用 sprite(...)，不要用 spriteSet(...) ──
+        //
+        // blood.png 只有一张图（不是序列帧），所以这里必须走 sprite(...)：它生成的是
+        // {"textures":["hall:blood"]}，客户端 pickSprite 取到的就是这一张。
+        // 反过来如果误用 spriteSet(type, baseName, 1, false)，虽然也能生成同一份 JSON，
+        // 但"spriteSet"在注册侧要求客户端按序列帧处理，语义上就错了 ——
+        // 这里用 sprite() 是"一张图"的准确表达。
+        //
+        // 注意精灵名就是文件名本身（不带 textures/particle/ 前缀）：
+        // 原版粒子图集（assets/minecraft/atlases/particles.json）的 prefix 是空的，
+        // 写成 hall:particle/blood 会在图集里找不到、显示成紫黑缺失贴图。
+        sprite(RegisterParticles.BLOOD.get(),
+                new ResourceLocation(HallMod.MODID, "blood"));
+
+        // 肉块（贴图：assets/hall/textures/particle/meat.png）—— 同样是一张静态图
+        sprite(RegisterParticles.MEAT.get(),
+                new ResourceLocation(HallMod.MODID, "meat"));
+
+        // 血腥爆炸（贴图：assets/hall/textures/particle/explosion_bloody0.png ~ explosion_bloody15.png）
+        //
+        // 16 帧的序列帧，和 heart_lose 一样用 spriteSet(type, Iterable) 逐帧枚举：
+        // 文件名是 explosion_bloody0（不带下划线），Forge 的 baseName+下划线重载拼不出来；
+        // 顺序 / 帧数由 RegisterParticles.explosionBloodyFrames() 这一份定义统一提供，
+        // 客户端 ExplosionBloodyParticle 的 lifetime 也取自同一个常量。
+        //
+        // 这里最容易踩的坑是"看起来像单图就写了 sprite(EXPLOSION_BLOODY, 'explosion_bloody')"
+        // —— 那会写成 {"textures":["hall:explosion_bloody"]}，而图集里根本没有这张图
+        // （实际叫 explosion_bloody0..15），结果是紫黑块。datagen 的 fileHelper 校验只能
+        // 查出"文件不存在"，查不出"你把序列帧写成了单图"，所以这条注释留在这里当护栏。
+        spriteSet(RegisterParticles.EXPLOSION_BLOODY.get(),
+                RegisterParticles.explosionBloodyFrames());
     }
 }

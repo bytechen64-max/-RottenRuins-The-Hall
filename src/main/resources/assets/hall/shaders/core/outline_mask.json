@@ -29,6 +29,8 @@
     { "name": "PaletteColor5", "type": "float", "count": 4, "values": [ 0.5, 0.4, 1.0, 1.0 ] },
     { "name": "PaletteColor6", "type": "float", "count": 4, "values": [ 1.0, 0.4, 0.6, 1.0 ] },
     { "name": "PaletteColor7", "type": "float", "count": 4, "values": [ 0.95, 0.95, 0.95, 1.0 ] },
-    { "name": "AlphaCutoff", "type": "float", "count": 1, "values": [ 0.10 ] }
+    { "name": "AlphaCutoff", "type": "float", "count": 1, "values": [ 0.10 ] },
+    { "name": "ItemRect", "type": "float", "count": 4, "values": [ 0.0, 0.0, 1.0, 1.0 ] },
+    { "name": "ItemOpaque", "type": "float", "count": 4, "values": [ 0.0, 0.0, 1.0, 1.0 ] }
   ]
 }

@@ -15,13 +15,12 @@
   "uniforms": [
     { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
     { "name": "ProjMat",      "type": "matrix4x4", "count": 16, "values": [ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 ] },
-    { "name": "RingRadius",   "type": "float",     "count": 2,  "values": [ 0.80, 0.60 ] },
-    { "name": "Spin",         "type": "float",     "count": 3,  "values": [ 0.02, 0.05, 0.10 ] },
+    { "name": "Spin",         "type": "float",     "count": 3,  "values": [ 0.55, 1.0, 2.4 ] },
     { "name": "Time",         "type": "float",     "count": 1,  "values": [ 0.0 ] },
     { "name": "Reveal",       "type": "float",     "count": 1,  "values": [ 1.0 ] },
     { "name": "Block",        "type": "float",     "count": 1,  "values": [ 0.0 ] },
     { "name": "Intensity",    "type": "float",     "count": 1,  "values": [ 1.0 ] },
-    { "name": "PixelWidth",   "type": "float",     "count": 1,  "values": [ 0.0008 ] },
+    { "name": "GlowPass",     "type": "float",     "count": 1,  "values": [ 0.0 ] },
     { "name": "VowColor",     "type": "float",     "count": 3,  "values": [ 0.66, 0.055, 0.20 ] },
     { "name": "AccentColor",  "type": "float",     "count": 3,  "values": [ 0.96, 0.50, 1.0 ] }
   ]

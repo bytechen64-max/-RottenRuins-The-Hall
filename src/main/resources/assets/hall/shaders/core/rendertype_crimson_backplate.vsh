@@ -11,6 +11,11 @@
 //
 //  —— 注意与 rendertype_collapsar_halo.vsh 的区别：那边把世界坐标烘成
 //  相机相对坐标后**只乘 ProjMat**，两边的 Position 语义不同，不能照抄。
+//
+//  ⚠ UV0 传的是**单位平面局部坐标 (x, y)**，不是 (r, θ)。原因见
+//  CrimsonVowBackplateMesh 的类注释：扇形三角形的顶点角度线性插值不是真实
+//  角度，48 条三角形边上会有 48 次角度跳变，一切依赖 θ 的图案都会被撕成
+//  "花瓣"。位置是线性插值正确的量，角度必须在片元里 atan() 现算。
 // ─────────────────────────────────────────────────────────────────────────
 
 in vec3 Position;
@@ -19,13 +24,10 @@ in vec2 UV0;
 uniform mat4 ModelViewMat;
 uniform mat4 ProjMat;
 
-/** 到板中心的距离：1.0 = 内切圆，1.414 = 方框角上。 */
-out float vRadial;
-/** 方位角（弧度，裸值 —— 接缝处必须连续，见 Mesh 的类注释）。 */
-out float vTheta;
+/** 单位平面局部坐标：x 向右、y 向上，半径 1.0 = 内切于单位方框的圆。 */
+out vec2 vLocal;
 
 void main() {
     gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
-    vRadial = UV0.x;
-    vTheta  = UV0.y;
+    vLocal = UV0;
 }

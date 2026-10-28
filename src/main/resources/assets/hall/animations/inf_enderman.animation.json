@@ -1480,6 +1480,130 @@
 					}
 				}
 			}
+		},
+		"idle_crawl": {
+			"loop": true,
+			"animation_length": 0.625,
+			"bones": {
+				"Waist": {
+					"position": {
+						"0.0": {
+							"post": [0, 2, 0],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				},
+				"Head": {
+					"rotation": {
+						"0.0": {
+							"post": [-120, 0, 0],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				},
+				"Body": {
+					"rotation": {
+						"0.0": {
+							"post": [75, 0, 0],
+							"lerp_mode": "catmullrom"
+						}
+					},
+					"position": {
+						"0.0": {
+							"post": [0, -42, -10],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				},
+				"Right Arm": {
+					"rotation": {
+						"0.0": {
+							"post": [-57.5, 0, 137.5],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				},
+				"Left Leg": {
+					"rotation": {
+						"0.0": {
+							"post": [71.1724, 12.1894, -22.5294],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				},
+				"group": {
+					"rotation": {
+						"0.0": {
+							"post": [-92.8864, -29.9685, 1.4426],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				},
+				"group2": {
+					"rotation": {
+						"0.0": {
+							"post": [117.5, 0, 0],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				},
+				"Left_Arm": {
+					"rotation": {
+						"0.0": {
+							"post": [-35.4282, 28.9062, -156.695],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				},
+				"group3": {
+					"rotation": {
+						"0.0": {
+							"post": [-110, 0, 0],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				},
+				"group8": {
+					"rotation": {
+						"0.0": {
+							"post": [0, 0, 0],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				},
+				"group11": {
+					"rotation": {
+						"0.0": {
+							"post": [-127.5, 0, 0],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				},
+				"Right_Leg2": {
+					"rotation": {
+						"0.0": {
+							"post": [70, 0, 22.5],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				},
+				"group13": {
+					"rotation": {
+						"0.0": {
+							"post": [-132.5, 0, 0],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				},
+				"group16": {
+					"rotation": {
+						"0.0": {
+							"post": [-5, 0, 0],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				}
+			}
 		}
 	}
 }

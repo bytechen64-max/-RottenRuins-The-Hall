@@ -11,6 +11,7 @@ import org.bytechen.hall.network.s2c.ManaSyncPacket;
 import org.bytechen.hall.network.s2c.S2COpenDifficultySelectPacket;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraftforge.network.NetworkDirection;
@@ -62,6 +63,18 @@ public class NetworkHelper {
     public static <MSG> void sendToALLClient(MSG msg) { NETWORK.send(PacketDistributor.ALL.noArg(), msg); }
     public static <MSG> void sendToClient(Entity entity, MSG msg) { NETWORK.send(PacketDistributor.TRACKING_ENTITY.with(() -> entity), msg); }
     public static <MSG> void sendToServer(MSG msg) { NETWORK.sendToServer(msg); }
+
+    /**
+     * 向指定坐标附近的玩家广播一个包（半径 {@code radius} 格）。
+     *
+     * <p>用于"实体本身已经不在世界里 / 追踪关系已经没了"的场合：例如感染转化会把受害者
+     * {@code discard()} 再生成新实体，此时 {@link #sendToClient(Entity, Object)} 的
+     * {@code TRACKING_ENTITY} 已经找不到任何接收者，只能按坐标投影。</p>
+     */
+    public static <MSG> void sendToNear(ServerLevel level, double x, double y, double z, double radius, MSG msg) {
+        NETWORK.send(PacketDistributor.NEAR.with(() ->
+                new PacketDistributor.TargetPoint(x, y, z, radius, level.dimension())), msg);
+    }
 
     // Helper methods for static effect renderers
     public static void sendLightningToAll(UUID instanceId, CompoundTag data) {

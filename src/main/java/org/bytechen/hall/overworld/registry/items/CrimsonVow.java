@@ -5,6 +5,7 @@ import com.google.common.collect.Multimap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.damagesource.DamageSource;
@@ -25,12 +26,16 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.ForgeMod;
 import org.bytechen.hall.api.IBlockingWeapon;
 import org.bytechen.hall.api.ICustomOutline;
+import org.bytechen.hall.api.ItemFxParams;
+import org.bytechen.hall.api.ItemFxProvider;
+import org.bytechen.hall.client.fx.effects.FlameFxEffect;
 import org.bytechen.hall.api.IFlowingName;
 import org.bytechen.hall.api.ITooltipStyle;
 import org.bytechen.hall.api.TooltipShaderSpec;
 import org.bytechen.hall.client.rend.text.FlowingNameColors;
 import org.bytechen.hall.client.rend.text.TooltipLines;
 import org.bytechen.hall.client.rend.twitch.ITwitchItem;
+import org.bytechen.hall.overworld.registry.entities.population.skills.CrimsonVowChargeEntity;
 import org.bytechen.hall.utils.ModUtils;
 import org.bytechen.hall.utils.TranslateUtils;
 import org.jetbrains.annotations.Nullable;
@@ -40,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * BoBao
@@ -73,11 +79,97 @@ import java.util.UUID;
  *       NONE 保留原版手臂渲染，再套自写的低版本举剑姿态。</li>
  * </ul>
  */
-public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem, IBlockingWeapon,
-        IFlowingName, ITooltipStyle {
+public class CrimsonVow extends SwordItem implements ICustomOutline, ItemFxProvider, ITwitchItem,
+        IBlockingWeapon, IFlowingName, ITooltipStyle {
 
     public CrimsonVow() {
         super(Tiers.NETHERITE, 8, -2.4f, new Item.Properties().fireResistant());
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  描边 / 火焰：默认是"绯红 ↔ 雾粉紫 双色流动"的常规模式；
+    //  只有这件物品被**命名为 BoBao** 时才切成火焰模式
+    //  （fire 颜色模式 + 火焰效果层，冷尾深紫、主体品红、核心粉白）。
+    //
+    //  为什么用 *For(ItemStack) 那一组覆写：不带 stack 的老方法（outlineColor() 等）
+    //  拿不到物品实例，表达不了"改名之后才变样子"。
+    // ──────────────────────────────────────────────────────────────
+
+    /** 触发火焰模式的物品名（不区分大小写）。 */
+    public static final String FIRE_MODE_NAME = "BoBao";
+
+    /**
+     * 这件物品实例是不是"BoBao"。
+     *
+     * <p>判定故意写得很宽松：<b>名字里包含</b> {@code bobao}（不区分大小写）就算，
+     * 也不要求"必须是自定义名"。原因：铁砧的输入框是<b>预填当前显示名</b>的，
+     * 直接往里打字会得到"绯红誓约BoBao"这类拼接结果 —— 用 equals 精确匹配的话
+     * 就会出现"我明明改了名却没反应"。包含匹配让两种输入法都能生效，
+     * 而默认名（绯红誓约 / Crimson Vow）里不含这个字样，不会有误触发。</p>
+     */
+    public static boolean isFireMode(ItemStack stack) {
+        if (stack == null) return false;
+        String name = stack.getHoverName().getString();
+        return name != null && name.toLowerCase(java.util.Locale.ROOT)
+                .contains(FIRE_MODE_NAME.toLowerCase(java.util.Locale.ROOT));
+    }
+
+    /** 常规模式：描边暗部（深紫黑）。火焰模式：白热核（亮粉）。 */
+    @Override
+    public int outlineColorFor(ItemStack stack) {
+        return isFireMode(stack) ? ACCENT_FROM : ACCENT_SHADOW;
+    }
+
+    /** 常规模式：描边亮部（雾粉紫）。火焰模式：冷尾（深紫黑）。 */
+    @Override
+    public int outlineSecondaryColorFor(ItemStack stack) {
+        return isFireMode(stack) ? ACCENT_SHADOW : ACCENT_HIGHLIGHT;
+    }
+
+    @Override
+    public String outlineShaderKeyFor(ItemStack stack) {
+        return isFireMode(stack) ? "fire" : "gradient";
+    }
+
+    /**
+     * 混合方式的取舍在两种模式里正好相反，所以这里必须按实例分：
+     * 常规的 gradient 靠 {@code TRANSLUCENT} 才留得住暗部；火焰的尾部是深紫黑，
+     * 用加法（{@code ADDITIVE}）"加 0"等于不画，剩下的才是火丝。
+     */
+    @Override
+    public ICustomOutline.BlendMode outlineBlendFor(ItemStack stack) {
+        return isFireMode(stack) ? ICustomOutline.BlendMode.ADDITIVE : ICustomOutline.BlendMode.TRANSLUCENT;
+    }
+
+    /**
+     * 火焰效果层：也只在 BoBao 上挂，并且 HEAD / GUI 都不挂
+     * （物品栏图标只有 16 像素，而火焰高度按屏幕高算，图标上会冒出一屏高的火）。
+     *
+     * <p>色相用这把剑自己的亮粉：冷尾深紫、主体品红、核心粉白。核心始终由着色器推向白，
+     * 所以染成粉色也不会变成一坨均匀的粉。</p>
+     */
+    @Override
+    public List<ItemFxProvider.ItemFxBinding> itemFxLayers(ItemStack stack, ItemDisplayContext ctx) {
+        if (ctx == ItemDisplayContext.HEAD || ctx == ItemDisplayContext.GUI) return List.of();
+
+        // 电弧：**暂时撤下**（实现完整保留在 ArcFxEffect + arc_composite 里 ——
+        // 想再让这把剑放电，把下面三行解注释，并把配置里的 arcEnabled 设为 true）。
+        // 框架效果与"挂在哪个物品上"是分开的两件事，所以撤下不需要删任何实现。
+        List<ItemFxProvider.ItemFxBinding> layers = new java.util.ArrayList<>(2);
+        // layers.add(ItemFxProvider.ItemFxBinding.of(
+        //         org.bytechen.hall.client.rend.glint.ItemOutlinePipeline.ARC_EFFECT_ID,
+        //         ItemFxParams.builder().set("strength", 1.0F).build()));
+
+        if (!isFireMode(stack)) return layers;
+
+        int c = ACCENT_FROM;
+        ItemFxParams tint = ItemFxParams.builder()
+                .set("tintR", ((c >> 16) & 0xFF) / 255.0F)
+                .set("tintG", ((c >> 8) & 0xFF) / 255.0F)
+                .set("tintB", (c & 0xFF) / 255.0F)
+                .build();
+        layers.add(ItemFxProvider.ItemFxBinding.of(FlameFxEffect.ID, tint));
+        return layers;
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -87,6 +179,8 @@ public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem
     // 这四处消费方全部指向同一组常量：名字的粉紫渐变、描边的暗部/亮部、
     // 以及 tooltip 里的标签与誓约条（见 appendHoverText / getTooltipImage）。
     // 之前描边色和名字色是各自写死的字面量，改一次要翻四个方法，还会漏。
+
+
 
     /** 亮粉 —— 名字渐变起色，也是 tooltip 数值与面板上边框的颜色。 */
     private static final int ACCENT_FROM = 0xFFFF4FB8;
@@ -117,6 +211,10 @@ public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem
     /** 「誓约」正文：冰蓝紫 → 雾紫（有意偏冷）。 */
     private static final int VOW_TEXT_FROM = 0xFF8FD6FF;
     private static final int VOW_TEXT_TO = 0xFFB388FF;
+
+    /** 「起誓」正文：暗红 → 亮粉（最暖的一行 —— 它是主动技里最重的那一招）。 */
+    private static final int SIGIL_TEXT_FROM = 0xFFC2527A;
+    private static final int SIGIL_TEXT_TO = 0xFFFF9AD4;
 
     // ── tooltip 底板（原来那块接近纯黑的 0xF0100010 太出戏，见 ITooltipStyle） ──
 
@@ -184,6 +282,56 @@ public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem
         return dynamic;
     }
 
+    // ──────────────────────────────────────────────────────────────
+    //  誓约（大招）的冷却
+    // ──────────────────────────────────────────────────────────────
+    //
+    //  刻意不用原版 ItemCooldowns：它是"整件物品不可用"，而格挡必须一直可用 ——
+    //  被大招冷却连坐的结果是"放完一次之后连架都格不了"，那比没有冷却更糟。
+    //  所以这里只锁"起誓"，不锁右键。
+    //
+    //  表放在公共类里、键是 UUID：与 VerdictFeedback 的抖动表同一套做法 ——
+    //  服务端写、服务端读，不需要任何网络包；条目在读取时顺手清掉，
+    //  不会随对局数无限增长。
+
+    /** 誓约冷却（tick）= 30 秒（法阵持续 20 秒 + 10 秒余韵）。 */
+    public static final int SKILL_COOLDOWN_TICKS = 20 * 30;
+
+    /** playerUUID → 可以再次起誓的 gameTime。 */
+    private static final Map<UUID, Long> SKILL_READY_AT = new ConcurrentHashMap<>();
+
+    /** 这一位玩家现在能不能起誓（冷却好了 / 从没放过）。 */
+    public static boolean isSkillReady(Player player) {
+        if (player == null) return false;
+        Long until = SKILL_READY_AT.get(player.getUUID());
+        if (until == null) return true;
+        if (player.level().getGameTime() >= until) {
+            SKILL_READY_AT.remove(player.getUUID());
+            return true;
+        }
+        return false;
+    }
+
+    /** 剩余冷却（tick），0 = 就绪。 */
+    public static int skillCooldownLeft(Player player) {
+        if (player == null) return 0;
+        Long until = SKILL_READY_AT.get(player.getUUID());
+        if (until == null) return 0;
+        return (int) Math.max(0L, until - player.level().getGameTime());
+    }
+
+    /** 起誓成功、法阵已经放出去：开始计冷却。 */
+    public static void beginSkillCooldown(Player player) {
+        if (player == null) return;
+        SKILL_READY_AT.put(player.getUUID(),
+                player.level().getGameTime() + SKILL_COOLDOWN_TICKS);
+    }
+
+    /** 退出登录 / 死亡时清掉残留（由事件层调用；不调也不会泄漏，只是晚一点清）。 */
+    public static void clearSkillCooldown(Player player) {
+        if (player != null) SKILL_READY_AT.remove(player.getUUID());
+    }
+
 
 
     // ──────────────────────────────────────────────────────────────
@@ -234,12 +382,27 @@ public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem
     // 所以这里只覆写 getName 即可 —— ItemStack.getHoverName() 在没有自定义名时
     // 回退到的就是 item.getName(stack)，手持显示走的正是它。
 
+    /** 名字前缀符号（原版风格的"加个符号"）：颜色放在符号上，名字本体保持纯文本。 */
+    public static final String NAME_PREFIX = "★ ";
+
+    /**
+     * 显示名 = <b>彩色前缀符号 + 纯文本名字</b>（不再是"整个名字套渐变色"）。
+     *
+     * <p>为什么改掉整名渐变：那会让物品的显示名不再等于它的真实名字 —— 铁砧里一眼看不出
+     * 自己改的名字有没有生效、也分不清哪部分是"彩字"；而且任何"按名字比较"的逻辑
+     * （包括我们自己的火焰模式判定、其它模组、命令选择器）都得跟着绕开装饰。</p>
+     *
+     * <p>前缀方案下：符号带色（ACcent 起色），名字本体是纯文本。注意 MC 的
+     * {@code getHoverName()} 在物品<b>有自定义名</b>时走的是自定义名，不会经过这里 ——
+     * 所以用铁砧改名之后，前缀会消失、显示的就是你自己写的那个名字（这正是原版行为）。</p>
+     */
     @Override
     public Component getName(ItemStack stack) {
         Component plain = super.getName(stack);
         if (!flowingNameEnabled()) return plain;
-        return org.bytechen.hall.client.rend.text.FlowingNameColors.gradient(
-                plain, flowingNameColorFrom(), flowingNameColorTo());
+        return Component.literal(NAME_PREFIX)
+                .withStyle(Style.EMPTY.withColor(flowingNameColorFrom()))
+                .append(plain.copy().withStyle(Style.EMPTY.withColor(flowingNameColorTo())));
     }
 
     /** 渐变起色跟着 {@link #ACCENT_FROM} 走，不再依赖接口默认值。 */
@@ -307,6 +470,12 @@ public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem
         tooltip.add(TooltipLines.feature(TranslateUtils.TOOLTIP_LABEL_BLOCK,
                 TranslateUtils.TOOLTIP_BLOCK, level,
                 ACCENT_FROM, ACCENT_TO, BLOCK_TEXT_FROM, BLOCK_TEXT_TO));
+
+        // 起誓行：这把剑独有的主动技（蹲下右键蓄力 → 巨型法阵）。
+        // 放在格挡之后：读的顺序是"先学会举剑，再学会起誓"。
+        tooltip.add(TooltipLines.feature(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_SIGIL,
+                TranslateUtils.CRIMSON_VOW_TOOLTIP_SIGIL, level,
+                ACCENT_FROM, ACCENT_TO, SIGIL_TEXT_FROM, SIGIL_TEXT_TO));
 
         // 特性行：标签是本剑的身份（「誓约」），正文共用
         tooltip.add(TooltipLines.feature(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_TRAIT,
@@ -431,23 +600,34 @@ public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem
      * 按下右键、格挡开始。
      *
      * <p>服务端回调 —— 这就是"按下格挡时该做点事"的挂载点：
-     * 上 buff / 起冷却 / 播动作音 / 记录开始时间都放这里。
-     * 当前这把剑没有额外逻辑，只留一条 debug 日志便于排查。</p>
+     * 上 buff / 起冷却 / 播动作音 / 记录开始时间都放这里。</p>
      */
     @Override
     public void onBlockStart(ItemStack stack, Level level, Player player, InteractionHand hand) {
-        ModUtils.LOGGER.debug("[CrimsonVow] 格挡开始 player={} hand={}",
-                player.getName().getString(), hand);
+        // ── 蹲下 + 右键 = 起誓：进入蓄力 ──
+        //
+        //  判断放在这里而不是 use()：use() 两端都会跑（客户端还要靠它进使用态，
+        //  否则举剑姿态与格挡减伤都会不同步），而"要不要起蓄力法阵"是一件
+        //  纯服务端的事 —— onBlockStart 本来就只在服务端触发。
+        //
+        //  冷却期间仍然可以正常格挡，只是不起誓：格挡是这把剑的基本盘，
+        //  不该被大招的冷却连坐。
+        if (player.isShiftKeyDown() && isSkillReady(player)) {
+            CrimsonVowChargeEntity.spawn(level, player);
+            ModUtils.LOGGER.debug("[CrimsonVow] 起誓蓄力 player={}", player.getName().getString());
+        }
     }
 
     /**
      * 格挡持续中。
      *
-     * <p>每 20 tick 心跳一次，避免刷屏；需要做持续消耗 / 进度累积时在这里扩展。</p>
+     * <p>蓄力的推进<b>不在这里</b> —— 它在 {@link CrimsonVowChargeEntity} 自己的 tick 里，
+     * 因为那个实体还负责"跟随玩家 / 同步进度 / 到点选点放技能"这一整条链路。
+     * 物品类只负责"开启"，这样同一套蓄力以后可以被别的剑直接复用。</p>
      */
     @Override
     public void onBlockTick(ItemStack stack, Level level, Player player, int heldTicks) {
-        if (heldTicks % 20 == 0) {
+        if (heldTicks % 40 == 0) {
             ModUtils.LOGGER.debug("[CrimsonVow] 格挡持续 {} tick", heldTicks);
         }
     }
@@ -502,17 +682,16 @@ public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem
         return false;
     }
 
-    // ──────────────────────────────────────────────────────────────
-    //  描边：绯红 / 深粉流动交替
-    // ──────────────────────────────────────────────────────────────
-
-    /** （描边暗部）。 */
+    /**
+     * 不带 stack 的旧方法 = <b>常规模式</b>的取值（也是 {@code *For} 的兜底）。
+     * 管线走的是 {@link #outlineColorFor(ItemStack)} 那一组，火焰模式在那边判断。
+     */
     @Override
     public int outlineColor() {
         return ACCENT_SHADOW; // 深紫黑，粉紫阴影
     }
 
-    /** （描边亮部）。 */
+    /** 常规模式：描边亮部（雾粉紫高光）。 */
     @Override
     public int outlineSecondaryColor() {
         return ACCENT_HIGHLIGHT; // 雾粉紫高光
@@ -524,8 +703,9 @@ public class CrimsonVow extends SwordItem implements ICustomOutline, ITwitchItem
     }
 
     /**
-     * 必须用 {@code TRANSLUCENT}：加法混合会把暗部整个吃掉，
-     * 双色流动的对比就不成立了（和 {@link VoidSword} 同理）。
+     * 常规的 gradient 必须用 {@code TRANSLUCENT}：加法混合会把暗部整个吃掉，
+     * 双色流动的对比就不成立了（与 {@link VoidSword} 同理）。
+     * 火焰模式反过来要 {@code ADDITIVE}，见 {@link #outlineBlendFor(ItemStack)}。
      */
     @Override
     public ICustomOutline.BlendMode outlineBlend() {

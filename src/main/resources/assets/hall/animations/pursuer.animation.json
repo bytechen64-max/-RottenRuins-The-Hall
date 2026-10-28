@@ -394,6 +394,51 @@
 					}
 				}
 			}
+		},
+		"attack": {
+			"animation_length": 0.691,
+			"bones": {
+				"group6": {
+					"rotation": {
+						"0.0": {
+							"post": [0, 0, 0],
+							"lerp_mode": "catmullrom"
+						},
+						"0.2704": {
+							"post": [19.379, 16.9121, -55.3218],
+							"lerp_mode": "catmullrom"
+						},
+						"0.4806": {
+							"post": [-45.7196, 31.0835, -37.8549],
+							"lerp_mode": "catmullrom"
+						},
+						"0.6909": {
+							"post": [0, 0, 0],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				},
+				"group7": {
+					"rotation": {
+						"0.0": {
+							"post": [0, 0, 0],
+							"lerp_mode": "catmullrom"
+						},
+						"0.2704": {
+							"post": [-22.5, 0, 0],
+							"lerp_mode": "catmullrom"
+						},
+						"0.5407": {
+							"post": [-80, 0, 0],
+							"lerp_mode": "catmullrom"
+						},
+						"0.6909": {
+							"post": [0, 0, 0],
+							"lerp_mode": "catmullrom"
+						}
+					}
+				}
+			}
 		}
 	}
 }

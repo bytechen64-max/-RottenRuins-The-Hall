@@ -82,6 +82,21 @@ public final class CrimsonVowBlockRig {
     /** 整体缩小一点，防止剑尖顶出画面。 */
     private static final float SCALE = 0.95F;
 
+    // ── 「起誓」蓄力期间叠加的增量 ──
+    //
+    //  这段是**表现层**的：蓄力本身由服务端的 CrimsonVowChargeEntity 推进，
+    //  这里只是把"正在积攒"这件事画到剑上，让第一人称也有反馈 ——
+    //  否则玩家低头只看得到地上那个圈，手上毫无变化。
+    //
+    //  三个量都很小：第一人称的任何大幅位移都会让剑看起来"脱手"。
+
+    /** 蓄满时剑往前推多少（格）。 */
+    private static final float CHARGE_PUSH = 0.17F;
+    /** 蓄满时剑抬高多少（格）。 */
+    private static final float CHARGE_LIFT = 0.055F;
+    /** 蓄满时绕 X 轴压低多少（度）。 */
+    private static final float CHARGE_TILT = -9.0F;
+
     private CrimsonVowBlockRig() {}
 
     /**
@@ -108,6 +123,44 @@ public final class CrimsonVowBlockRig {
         poseStack.mulPose(Axis.YP.rotationDegrees(FACE_Y));
         poseStack.mulPose(Axis.XP.rotationDegrees(TILT_X));
         poseStack.scale(SCALE, SCALE, SCALE);
+        applyChargeDelta(poseStack);
+    }
+
+    /**
+     * 蓄力增量：把剑往前推、略微抬高并压低剑尖。
+     *
+     * <p>叠在格挡姿态<b>之后</b>（而不是替换它）：蓄力是"举着剑继续攒"，
+     * 格挡的基准姿态必须原样保留，两者是相加关系。</p>
+     *
+     * <p>进度直接读客户端那个蓄力法阵实体 —— 它的 {@code DATA_CHARGE} 是
+     * 同步数据，两端一致，所以这里不需要任何新网络包，也不会与真正的
+     * 蓄力进度错开（读的是同一个源）。</p>
+     */
+    private static void applyChargeDelta(PoseStack poseStack) {
+        float charge = localCharge();
+        if (charge <= 0.001F) return;
+
+        poseStack.translate(0.0F, CHARGE_LIFT * charge, -CHARGE_PUSH * charge);
+        poseStack.mulPose(Axis.XP.rotationDegrees(CHARGE_TILT * charge));
+    }
+
+    /**
+     * 本地玩家当前举着的剑的蓄力进度（0..1）；没在蓄力时返回 0。
+     *
+     * <p>按 {@code ownerUUID} 认人，而不是"找到最近的一个" —— 附近可能有
+     * 别的玩家也在蓄力，认错人会让你的剑跟着别人的节奏抖。</p>
+     */
+    public static float localCharge() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return 0f;
+        java.util.UUID self = mc.player.getUUID();
+        for (net.minecraft.world.entity.Entity e : mc.level.entitiesForRendering()) {
+            if (e instanceof org.bytechen.hall.overworld.registry.entities.population.skills.CrimsonVowChargeEntity c
+                    && self.equals(c.getOwnerUUID())) {
+                return c.charge(mc.getFrameTime());
+            }
+        }
+        return 0f;
     }
 
     /**

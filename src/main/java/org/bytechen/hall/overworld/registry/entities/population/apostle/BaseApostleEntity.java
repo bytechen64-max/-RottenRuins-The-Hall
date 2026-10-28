@@ -22,6 +22,9 @@ public abstract class BaseApostleEntity extends AbstractHallEntity {
         super(entityType, level);
         // 使徒不用"撞上去平砍"这套：把 AbstractHallEntity 的近距离攻击钩子关掉
         this.setDoHurtDistance(0.0F);
+        // 需求：除使徒外所有生物都爆体（AbstractHallEntity 默认开启 40% 概率），
+        // 使徒作为 boss 规格单位不参与爆体 —— 死亡仍走正常 die() / LivingDeathEvent。
+        this.setFakeDeathEnabled(false);
     }
 
     /** 使徒不进行普通近战攻击（技能全部由子类自己的调度器负责）。 */

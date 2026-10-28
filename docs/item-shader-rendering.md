@@ -58,13 +58,16 @@ public class MyLegendarySword extends Item implements ICustomOutline {
 ## 轮廓：颜色模式
 
 `outlineShaderKey()` 现在**只决定颜色怎么算**，不再对应独立着色器与 RenderType。
-三条"描边着色器"已经收敛成同一个几何算法（`dilate − self`），所以描边形状在任何模式下都是等宽硬边。
+三条"描边着色器"已经收敛成同一个几何算法（`dilate − self`），所以描边形状在任何模式下都是等宽硬边
+（沿剪影一圈宽度恒定；"远处按屏幕占比收细"是另一回事，见 item-shader-outline.md 第五章）。
 
 | Key | 说明 |
 |-----|------|
 | `null` / `"default"` | 纯色，用 `outlineColor()` |
 | `"gradient"` | 主色 ↔ 副色 沿物品表面流动，需 `outlineSecondaryColor()` |
 | `"warp_fbm"` | 彩虹流动（旧噪声风格的动态观感） |
+| `"fire"` | 火焰：白热丝 + 深色尾的噪声湍流（移植自 shadertoy MdjfRK，见 item-shader-outline.md 第十章）。`GlintRenderManager` 侧用 `GlintEffectProfile.fire()` |
+| `"fire_2"` | 燃烧描边：**世界空间体积火焰**（固定 0.9×1.0×0.9 格的盒子内 ray marching 3D 噪声，场景深度截断 + Beer 累积，见 item-shader-outline.md 第十二章）。覆盖掉落物 / 展示框 / 一手三处上下文，不画在物品贴图上。火焰法力板在用 |
 
 颜色是在**剪影遮罩 pass** 里逐像素求值并烘进遮罩 rgb 的，因此同一帧里不同物品可以各自
 有不同颜色，而只需要一次全屏合成。
@@ -91,7 +94,7 @@ SplendidingConfig.use_shader = true;
 GlintEffectProfile.builder()
     .color(0xFFFF6600)                  // ARGB 色调
     .outlineShaderKey("warp_fbm")       // 颜色模式
-    .worldOutlinePixelWidth(2.5f)       // 描边宽度，屏幕像素（默认 2.5）
+    .worldOutlinePixelWidth(2.5f)       // 描边宽度上限，屏幕像素（默认 2.5）；远处按占比收细
     .worldOutlineOpacity(1.0f)          // 不透明度（默认 1.0）
     .worldOutline(false)                // 关闭描边
     .build();
@@ -102,7 +105,8 @@ GlintEffectProfile.builder()
 | 方法 | 返回 | 默认值 | 说明 |
 |------|------|--------|------|
 | `outlineColor()` | `int` | — | **必须**。ARGB 格式 |
-| `outlinePixelWidth()` | `float` | `2.5` | 描边宽度，**屏幕像素** |
+| `outlinePixelWidth()` | `float` | `2.5` | 描边宽度，**屏幕像素**；同时是距离自适应下的**上限** |
+| `outlineWidthMode()` | `OutlineWidthMode` | `DISTANCE` | `SCREEN` = 恒定像素宽（旧行为）；`DISTANCE` = 近处同上限、远处按屏幕占比收细 |
 | `outlineOpacity()` | `float` | `1.0` | 整体不透明度 |
 | `outlineAlphaCutoff()` | `float` | `0.1` | 剪影判定的纹理 alpha 阈值 |
 | `outlineSecondaryColor()` | `int` | `0`（不启用） | 副色，仅 `gradient` 用 |
@@ -144,6 +148,17 @@ GlintEffectProfile.goldenGlint()                 // 金色预设
 `SplendidingConfig.outlineWidthScale = 1.0` — 描边宽度全局倍率（1.5 → 整体加厚 50%，
 0.6 → 整体变细）。改这个不用重新编译，单件物品仍可用 `outlinePixelWidth()` 单独覆盖。
 
+`SplendidingConfig.outlineDistanceScaling = true` — 描边宽度是否随物品的表观尺寸（屏幕占比）收缩。
+false = 任何距离都是同一个像素宽度（远处小物品上的环会显得过粗、发糊）。
+
+`SplendidingConfig.outlineWidthMaxRatio = 0.04` — 越过分界点后，环宽恒为物品表观尺寸的这个比例。
+`SplendidingConfig.outlineMinPixelWidth = 0.75` — 远处收细的下限（像素）。
+详见 item-shader-outline.md 第五章。
+
+> ⚠ 改这三项的**代码默认值**时必须同时提升 `SplendidingConfig.CONFIG_VERSION` 并在
+> `ConfigHelper.migrateSplendidingConfig` 里加迁移 —— cloth-config 以已有配置文件为准，
+> 光改默认值对老机器不生效（`verdictCooldownSeconds`、`outlineWidthMaxRatio` 各踩过一次）。
+
 ---
 
 ## 注意事项
@@ -151,6 +166,6 @@ GlintEffectProfile.goldenGlint()                 // 金色预设
 1. 所有注册在 `FMLClientSetupEvent` 完成
 2. 物品必须有模型 JSON 文件
 3. 描边在 GUI / 一手 / 三手 / 掉落物全上下文统一生效，无需分路配置
-4. 光影包（Oculus/Iris）下**只有最后那次合成**被推迟到 `renderLevel` 之后；剪影遮罩仍在
-   物品渲染当帧立刻捕获，因为只有那一刻场景深度才是对的
+4. 光影包（Oculus/Iris）下**合成**统一放在 `renderLevel` 的 TAIL；剪影遮罩分两批捕获 ——
+   世界/三手在 vanilla 清深度之前（`renderHand` 字段读取处），一手在 TAIL 合成前补一批。
 5. 挂不上场景深度时会退化成"不遮挡"，不会崩 —— 详见 item-shader-outline.md 第六章

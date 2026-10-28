@@ -1,0 +1,18 @@
+{
+  "blend": { "func": "add", "srcrgb": "srcalpha", "dstrgb": "one" },
+  "depthtest": { "function": "always" },
+  "depthwrite": false,
+  "vertex": "hall:rendertype_crimson_strand",
+  "fragment": "hall:rendertype_crimson_strand",
+  "attributes": ["Position", "UV0"],
+  "samplers": [],
+  "uniforms": [
+    { "name": "ProjMat",     "type": "matrix4x4", "count": 16, "values": [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] },
+    { "name": "uTime",       "type": "float", "count": 1, "values": [0.0] },
+    { "name": "uIntensity",  "type": "float", "count": 1, "values": [0.0] },
+    { "name": "uDrop",       "type": "float", "count": 1, "values": [0.0] },
+    { "name": "uConverge",   "type": "float", "count": 1, "values": [0.0] },
+    { "name": "uResolution", "type": "float", "count": 2, "values": [1920.0, 1080.0] },
+    { "name": "uCenterUV",   "type": "float", "count": 2, "values": [0.5, 0.3] }
+  ]
+}

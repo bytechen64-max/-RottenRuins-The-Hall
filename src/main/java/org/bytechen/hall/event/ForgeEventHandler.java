@@ -5,6 +5,8 @@ import org.bytechen.hall.HallMod;
 import org.bytechen.hall.command.AnomalyCommand;
 import org.bytechen.hall.command.BlackHoleCommand;
 import org.bytechen.hall.command.CollapseCommand;
+import org.bytechen.hall.command.CrimsonVowCommand;
+import org.bytechen.hall.command.MeteorEventCommand;
 import org.bytechen.hall.command.SpreadCommand;
 import org.bytechen.hall.command.ThreatCommand;
 import org.bytechen.hall.overworld.registry.items.CrimsonVowAttack;
@@ -117,5 +119,8 @@ public class ForgeEventHandler {
         CollapseCommand.register(event);
         BlackHoleCommand.register(event);
         ThreatCommand.register(event);
+        // 绯红誓约「起誓」的调试入口（直接展开法阵 / 起蓄力阵 / 清冷却）
+        CrimsonVowCommand.register(event);
+        MeteorEventCommand.register(event);
     }
 }

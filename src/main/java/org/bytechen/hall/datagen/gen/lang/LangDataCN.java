@@ -52,6 +52,7 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.BONECRUSHER_SPAWN_EGG.get(), "王庭碎骨刷怪蛋");
         add(RegisterItem.HEAVY_BOMB_SPAWN_EGG.get(), "王庭重型轰炸刷怪蛋");
         add(RegisterItem.COLLAPSAR_SPAWN_EGG.get(), "萨米使徒刷怪蛋【未完成】");
+        add(RegisterItem.WINDING_COLUMN_SPAWN_EGG.get(), "缠绕之柱刷怪蛋");
         add(RegisterBlock.HALL_GRASS_BLOCK.get(), "王庭草方块");
         add(RegisterBlock.HALL_DIRT.get(), "王庭泥土");
         add(RegisterBlock.HALL_STONE.get(), "王庭石块");
@@ -95,6 +96,8 @@ public class LangDataCN extends LanguageProvider {
         add(EntityTypeRegistry.SCOUT.get(), "溃烂纠察");
         add(EntityTypeRegistry.PURSUER.get(), "溃烂追蹤者");
         add(EntityTypeRegistry.MONOLITH.get(), "溃烂巨岩");
+        // 防御型生物：缠绕之柱（不会移动 · 抓取 · 伤害传导 · 潜地偷袭）
+        add(EntityTypeRegistry.WINDING_COLUMN.get(), "缠绕之柱");
         add(EntityTypeRegistry.SHOCKWAVE.get(), "冲击波");
         add(EntityTypeRegistry.METEORITE.get(), "陨石");
         // 天穹裁决 · 裁决领域的落剑（纯视觉技能实体，但仍给一个可读名字便于调试）
@@ -133,6 +136,10 @@ public class LangDataCN extends LanguageProvider {
 
         add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LORE, "「以血为誓，此刃不折。」");
         add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_TRAIT, "誓约");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_SIGIL, "起誓");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_SIGIL,
+                "潜行 + 右键举剑 · 蓄满后于视线所指展开绯红法阵（20 秒）");
+        add(TranslateUtils.CRIMSON_VOW_COOLDOWN, "誓约尚未就绪（%s 秒）");
         add(TranslateUtils.CRIMSON_VOW_TOOLTIP_DEBUG,
                 "调试 · 格挡结算 ×%s%% · 仅正面 %s · 使用时长 %s tick · 实体范围 +%s");
 
@@ -172,5 +179,9 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.VOID_RUNE.get(), "虚空符文");
         add(RegisterItem.WAND.get(), "法杖");
         add(RegisterItem.WAND_NATURE.get(), "自然法杖");
+
+        // ---- 音效字幕（见 SoundData）----
+        // 爆体音效：与 corruption 的 rip_body 同一条字幕文案，只是命名空间换成 hall。
+        add("subtitles." + HallMod.MODID + ".rip_body", "躯体爆裂");
     }
 }

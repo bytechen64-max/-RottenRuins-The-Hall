@@ -50,6 +50,7 @@ public class LangDataEN extends LanguageProvider {
         // 补充缺失条目：王庭重型轰炸刷怪蛋
         add(RegisterItem.HEAVY_BOMB_SPAWN_EGG.get(), "Heavy Bomb Spawn Egg");
         add(RegisterItem.COLLAPSAR_SPAWN_EGG.get(), "Collapsar Spawn Egg");
+        add(RegisterItem.WINDING_COLUMN_SPAWN_EGG.get(), "Winding Column Spawn Egg");
 // 物品：补缺失条目
         add(RegisterItem.BONECRUSHER_CORE.get(), "Bonecrusher Core");
         add(RegisterItem.DOMERITE_STICK.get(), "Domerite Stick");
@@ -61,6 +62,8 @@ public class LangDataEN extends LanguageProvider {
 
 // 实体：补缺失条目
         add(EntityTypeRegistry.COLLAPSAR.get(), "Collapsar");
+        // Defensive creature: the Winding Column (immobile · grab · damage transfer · burrow ambush)
+        add(EntityTypeRegistry.WINDING_COLUMN.get(), "Winding Column");
         // 方块
         add(RegisterBlock.HALL_GRASS_BLOCK.get(), "Hall Grass Block");
         add(RegisterBlock.HALL_DIRT.get(), "Hall Dirt");
@@ -150,6 +153,10 @@ public class LangDataEN extends LanguageProvider {
 
         add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LORE, "\"By blood I vow: this blade shall not break.\"");
         add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_TRAIT, "Vow");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_SIGIL, "Oath");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_SIGIL,
+                "Sneak + right-click to raise the blade · when fully charged, unfurl a crimson sigil where you look (20s)");
+        add(TranslateUtils.CRIMSON_VOW_COOLDOWN, "The oath is not yet ready (%s s)");
         add(TranslateUtils.CRIMSON_VOW_TOOLTIP_DEBUG,
                 "Debug · block resolves x%s%% · frontal only %s · use duration %s ticks · entity reach +%s");
 
@@ -188,5 +195,9 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterItem.VOID_RUNE.get(), "Void Rune");
         add(RegisterItem.WAND.get(), "Wand");
         add(RegisterItem.WAND_NATURE.get(), "Nature Wand");
+
+        // ---- Sound subtitles (see SoundData) ----
+        // Body-explosion sound: same subtitle text as corruption's rip_body, hall namespace.
+        add("subtitles." + HallMod.MODID + ".rip_body", "Body rips apart");
     }
 }

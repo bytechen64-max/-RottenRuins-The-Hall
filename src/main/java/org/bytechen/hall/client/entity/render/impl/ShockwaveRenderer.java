@@ -359,6 +359,22 @@ public class ShockwaveRenderer extends EntityRenderer<ShockwaveEntity> {
         return copyTex;
     }
 
+    /**
+     * 共享场景拷贝：把当前主帧缓冲 blit 进拷贝纹理，供其它屏幕空间特效复用。
+     *
+     * <p>陨石事件的"动漫冲击帧"要<b>把整帧画面重画成漫画分镜</b>
+     * （边缘墨线 / 局部自适应二值 / 网点），必须能采样到真实画面。</p>
+     */
+    public static void copySceneForOverlay() {
+        doSceneCopy();
+    }
+
+    /** 最近一次场景拷贝的纹理 id（-1 = 尚未建立）。 */
+    public static int sceneTextureForOverlay() {
+        return copyTex;
+    }
+
+
     /** 场景拷贝纹理宽度（-1 = 尚未建立）。片元里 {@code uPixelSize} 必须用这个尺寸。 */
     static int sceneCopyWidth() {
         return copyW;

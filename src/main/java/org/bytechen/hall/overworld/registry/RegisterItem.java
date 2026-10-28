@@ -145,24 +145,44 @@ public class RegisterItem {
     // 不要手写 json —— 模型是按注册表自动遍历生成的，手写的文件会被覆盖。
 
     // ---- 法力板：各流派的基础板材 ----
-    // 目前都是纯材料，唯一的例外是光明法力板 —— 它挂了 mask 泛光层（自发光）。
+    // 目前都是纯材料，两个例外：
+    //   * 光明法力板 —— mask 泛光层（自发光）**和**剪影描边（纯色硬边 + 光雾）；
+    //   * 火焰法力板 —— 只有剪影描边，颜色模式 "fire_2"（参考 shadertoy 的燃烧描边）。
     // 想让别的板也发光：放一张同画布的 <流派>_mana_plate_mask_glow.png，
     // 再把对应那行从 registerSimpleItem 换成
     // ITEMS.register(name, () -> new ManaPlateItem(props, <MaskLayerSpec>))。
+    // 想让别的板也描边：在上面的构造参数后追加一个 ManaPlateItem.GlowOutline，
+    // 见下面光明法力板那一行。
     //
     // 注意：贴图里是 water（水），而 bases/MagicType 里对应位置是 ACE。
     // 这两者目前<b>没有建立任何映射</b>（板子还没有接进法术系统），
     // 等做流派数值时再决定 ACE 与水的关系。
     public static final RegistryObject<Item> DEATH_MANA_PLATE = registerSimpleItem("death_mana_plate");
-    public static final RegistryObject<Item> FIRE_MANA_PLATE = registerSimpleItem("fire_mana_plate");
 
     /**
-     * 光明法力板 —— 唯一带泛光的板材。
-     * 泛光走 {@code MaskLayerProvider}（物品自描述），所以模型仍是 datagen 生成的
-     * {@code minecraft:item/generated}，没有手写 JSON。
+     * 火焰法力板 —— 带「燃烧描边」（{@code ICustomOutline} + {@code "fire_2"} 颜色模式）。
+     *
+     * <p>不发光（没有 mask 泛光层），只描边：剪影外侧一条按参考 shadertoy「fire」烧起来的带子
+     * （3D simplex 火焰 + 烟 + 火星），再叠全局光雾。和光明板一样走物品自描述，
+     * 模型仍是 datagen 生成的 {@code minecraft:item/generated}。</p>
+     *
+     * <p>GUI 里不描边（{@link ManaPlateItem.GlowOutline#drawInGui()} = false）：
+     * 它是可堆叠材料，GUI 的描边是逐物品就地合成的，代价会随件数线性涨。</p>
+     */
+    public static final RegistryObject<Item> FIRE_MANA_PLATE = ITEMS.register("fire_mana_plate",
+            () -> new ManaPlateItem(new Item.Properties().stacksTo(64),
+                    null, ManaPlateItem.FIRE_OUTLINE));
+
+    /**
+     * 光明法力板 —— 唯一同时带「泛光」与「泛光描边」的板材。
+     *
+     * <p>泛光走 {@code MaskLayerProvider}，描边走 {@code ICustomOutline} —— 两条路都是
+     * 物品自描述，所以模型仍是 datagen 生成的 {@code minecraft:item/generated}，
+     * 没有手写 JSON。描边 <b>只出现在轮廓外侧</b>，和贴在表面的泛光层不抢像素。</p>
      */
     public static final RegistryObject<Item> LIGHT_MANA_PLATE = ITEMS.register("light_mana_plate",
-            () -> new ManaPlateItem(new Item.Properties().stacksTo(64), ManaPlateItem.LIGHT_GLOW));
+            () -> new ManaPlateItem(new Item.Properties().stacksTo(64),
+                    ManaPlateItem.LIGHT_GLOW, ManaPlateItem.LIGHT_OUTLINE));
 
     public static final RegistryObject<Item> NATURE_MANA_PLATE = registerSimpleItem("nature_mana_plate");
     public static final RegistryObject<Item> VOID_MANA_PLATE = registerSimpleItem("void_mana_plate");
@@ -191,5 +211,6 @@ public class RegisterItem {
     public static final RegistryObject<Item> BONECRUSHER_SPAWN_EGG = registerSpawnEgg("bonecrusher",EntityTypeRegistry.BONECRUSHER);
     public static final RegistryObject<Item> HEAVY_BOMB_SPAWN_EGG = registerSpawnEgg("heavy_bomb",EntityTypeRegistry.HEAVY_BOMB);
     public static final RegistryObject<Item> COLLAPSAR_SPAWN_EGG = registerSpawnEgg("collapsar",EntityTypeRegistry.COLLAPSAR);
+    public static final RegistryObject<Item> WINDING_COLUMN_SPAWN_EGG = registerSpawnEgg("winding_column",EntityTypeRegistry.WINDING_COLUMN);
 
 }

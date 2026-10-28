@@ -50,13 +50,18 @@
 
 新增视觉层时按这条契约放，就不会再互相打架。
 
+> `fire_2`（第十二章）的火焰光环仍然遵守这条契约：它只画在剪影**外侧**，只是绘制区
+> 比普通描边大得多（按物品尺寸外扩，见第十二章）。
+
 ### 设计决定
 
 - **颜色烘进遮罩的 rgb**，不当 uniform 传。同一帧里不同物品可以各自有不同描边颜色，
   却只需要一次全屏合成；也避免了"共享 uniform 被同批次后一个物品覆盖"的老问题。
-- **等宽靠像素半径**（`outlinePixelWidth`，默认 **2.5**），不是模型缩放系数。
-  GUI 图标 / 一手 / 三手 / 掉落物在任何距离下描边一样粗。
-- **硬边、无羽化、无外发光、无 bloom**，对齐原版发光实体描边的观感。
+- **宽度靠像素半径**（`outlinePixelWidth`，默认 **2.5**）+ **表观尺寸比例**，不是模型缩放系数。
+  近处（物品在屏幕上够大）保持恒定像素宽，远处环宽恒为「物品表观尺寸 × `outlineWidthMaxRatio`」，
+  并夹在 `outlineMinPixelWidth` 之上。见 §五。
+- **硬边、无羽化**，对齐原版发光实体描边的观感（后面追加的「光雾」是独立的第二层，
+  见第十一章；关掉 `outlineAuraEnabled` 就回到这里的纯硬环）。
   唯一的柔和来自 `smoothstep` 提供的约 1 像素抗锯齿。
 - **每个物品只在自己的屏幕包围盒里跑环形采样**（scissor）。
   全屏 48 次采样在 1080p 上是两百万像素 × 48 次取纹理，绝对跑不动。
@@ -276,13 +281,15 @@ buffer 类型不对……），结果统统是"就是没有描边"。所以每�
 
 | 方法 | 默认 | 说明 |
 |---|---|---|
-| `outlinePixelWidth()` | `2.5` | 描边宽度，**屏幕像素** |
+| `outlinePixelWidth()` | `2.5` | 描边宽度，**屏幕像素**；同时是距离自适应下的**上限** |
+| `outlineWidthMode()` | `DISTANCE` | `SCREEN` = 恒定像素宽（旧行为）；`DISTANCE` = 近处同上限、远处按表观尺寸收细 |
 | `outlineOpacity()` | `1.0` | 整体不透明度 |
 | `outlineAlphaCutoff()` | `0.1` | 剪影判定的纹理 alpha 阈值 |
 | `outlineSecondaryColor()` | `0`（不启用） | 副色，仅 `gradient` 模式用 |
 
 `outlineShaderKey()` **保留但语义变了**：它不再对应独立着色器与 RenderType，
-只决定颜色怎么算 —— `null`/`"default"` 纯色、`"gradient"` 主色↔副色流动、`"warp_fbm"` 彩虹流动。
+只决定颜色怎么算 —— `null`/`"default"` 纯色、`"gradient"` 主色↔副色流动、
+`"warp_fbm"` 彩虹流动、`"fire"` 火焰湍流（见第十章）、`"fire_2"` 燃烧描边（见第十二章）。
 
 已弃用（仍可编译，但不再生效）：
 
@@ -306,6 +313,79 @@ buffer 类型不对……），结果统统是"就是没有描边"。所以每�
 
 倍率只影响"整体观感"，单个物品仍可用 `outlinePixelWidth()` 单独覆盖。
 最终宽度会被夹在 0.5 ~ 24 像素之间。
+
+### 距离自适应：为什么不再"任何距离都一样粗"
+
+**问题**：环宽是绝对像素值，物品却按 1/距离 缩小。60 格外的掉落物在 1600p 上只有 8px 高，
+而环还是 4.5px —— 环占去物品一半，观感是糊成一圈外扩的厚边。
+
+**做法**（`ItemOutlinePipeline.apparentSizePx` + `adaptPixelWidth`，纯 CPU，GLSL 一行没改）：
+
+```
+apparentPx = 物品包围盒对角线 × 该距离上每格多少像素        // 见下"表观尺寸怎么算"
+widthPx    = clamp( min(物品宽度, apparentPx × outlineWidthMaxRatio),
+                    outlineMinPixelWidth, 物品宽度 )
+```
+
+**表观尺寸怎么算（这里踩过一次坑）**：一开始图省事，直接拿合成用的那个投影包围盒
+（`projectItemBox`）当尺寸基准 —— **错的**。那个框是给 scissor 用的，相机一贴近，顶点落到近平面
+附近，除以 `w` 之后 NDC 会飞到天上、被 `MAX_NDC` 夹成整屏。实测日志里直接出现了
+`rect=2560x1600 apparentPx=3456`，而 **3456 恰好等于 1.35×屏宽**，于是比例上限永远不生效，
+表现就是"改了也还是任何距离一样粗"。
+
+现在换成纯几何算法，**全程不做透视除法、没有任何可退化的环节**：
+
+1. 模型 AABB 的 8 个角点经 `modelView × pose` 变到**视图空间**（pose 里的缩放，比如掉落物的
+   0.5 倍，因此也被算进去），其对角线就是物品在世界里的尺寸（单位：格）；
+2. 距离 = 该 AABB 中心的 `-z`；
+3. 每格占多少像素 = `m11 × 半屏高 / 距离`（透视投影的标准约定，`m11 = 1/tan(fovY/2)`）；
+4. 相乘即得像素尺寸。严格按 1/距离 单调，与相机朝向、与顶点是否贴着近平面都无关；
+   而且 AABB 对角线对旋转几乎不变，掉落物自转时环宽不会脉动。
+
+- **近处逐位不变**：`apparentPx ≥ 宽度 / outlineWidthMaxRatio` 时，取 min 后仍是原宽度，
+  `clamp(x, …, x)` 原样返回。所以手持物与近处物品的行为与改动前**完全一致**。
+- **越过分界点后**，环宽**恒为物品表观尺寸的 `outlineWidthMaxRatio` 倍** —— 也就是透视正确的
+  世界宽度，不会随距离继续变得相对更粗；额外的宽度上限只是为了让近处不跟着一起爆炸
+  （那正是被删掉的"放大壳"的老问题）。
+- **下限 0.75px 而不是 0**：环宽落进亚像素区间后，`outline_ring.fsh` 里那条约 1 像素宽的
+  `smoothstep` 抗锯齿带会把整条环变成半透明薄雾 —— 细是细了，但读起来还是糊。
+  0.75 是"不会糊过头"与"远处仍看得见"之间的折中。
+
+参考数值（**1600p** / fov 70 / 掉落的平面物品 / 该物品的 `outlinePixelWidth() = 4.5`，
+默认比例 `0.04` ⇒ `apparentPx ≈ 708 / 距离`，分界点在 112px ≈ **6 格**）：
+
+| 距离 | 物品表观尺寸 | 描边宽度 |
+|---|---|---|
+| ≤6 格 | ≥112px | 4.5px（**与改动前一致**） |
+| 10 格 | 70.8px | 2.83px |
+| 20 格 | 35.4px | 1.42px |
+| 30 格 | 23.6px | 0.94px |
+| ≥40 格 | ≤17.7px | 0.75px（下限） |
+
+> **比例为什么是 0.04 而不是更大**：这个"分界点"必须落在实际的观察距离以内，否则等于没生效。
+> 第一版取 0.15（分界点 30px）时，实测 20 格外一个物品框里的剑表观尺寸约 45px —— 正好在分界点
+> **之外**，环宽一次都没被收细，表现就是"改了还是一样"。
+
+配置项（`config/hall/SplendidingConfig.json5`）：
+
+```jsonc
+"outlineDistanceScaling": true,   // false = 完全回退到"任何距离都一样粗"的旧行为（同屏 A/B 用）
+"outlineWidthMaxRatio": 0.04,     // 越过分界点后环宽恒为表观尺寸的这个比例；调大 = 远处更粗
+"outlineMinPixelWidth": 0.75      // 远处收细的下限（像素）
+```
+
+> ⚠ **改默认值必须同时提升 `CONFIG_VERSION` 并加迁移**：cloth-config 只在首次运行写入默认值，
+> 之后一律以文件为准 —— 光改上面代码里的默认值，对已经有配置文件的机器**完全不生效**。
+> 这个坑踩过两次（`verdictCooldownSeconds` 一次、`outlineWidthMaxRatio` 一次），
+> 迁移写在 `ConfigHelper.migrateSplendidingConfig` 里。
+
+单个物品想退出自适应：让它实现的 `ICustomOutline.outlineWidthMode()` 返回 `SCREEN`。
+
+> 验证：`run/logs/latest.log` 的 `[ItemOutline]` 段里有两类行 ——
+> `submit ctx=… apparentPx=… widthPx=…`（每个上下文一条）与
+> `距离自适应 ctx=… 表观=…px → 环宽 …px（基准 …px）`（**只在真的收细时打，每秒最多一条**）。
+> 后一条就是"自适应到底有没有生效"的直接证据；如果调远之后它一条都不出，说明物品还没越过分界点，
+> 把 `outlineWidthMaxRatio` 调小即可。
 
 **想让某个物品单独更粗**：改它的 `outlinePixelWidth()`（`ICustomOutline`）或
 `worldOutlinePixelWidth(float)`（`GlintEffectProfile.Builder`）。
@@ -357,7 +437,8 @@ buffer 类型不对……），结果统统是"就是没有描边"。所以每�
 | 着色器 | 职责 |
 |---|---|
 | `outline_mask.vsh` / `.fsh` / `.json` | 剪影遮罩：纹理 alpha 裁剪 + 颜色模式求值，输出 `vec4(color, 1)` |
-| `outline_ring.vsh` / `.fsh` / `.json` | 全屏环形合成：16 方向 × 3 半径圆盘采样，`dilate − self` |
+| `outline_ring.vsh` / `.fsh` / `.json` | 全屏环形合成：16 方向 × 3 半径圆盘采样，`dilate − self`；外加光雾分支（第十一章） |
+| `outline_halo_blur.fsh` / `.json` | 光雾的模糊 pass：可分离高斯 9 tap，降采样 + 原地模糊共四遍 |
 
 ## 九、参考实现：黑白流动描边
 
@@ -386,3 +467,226 @@ public class VoidSword extends SwordItem implements ICustomOutline {
 > ——注册一个 profile 会顺带把辉光画到物品表面，把宇宙星空层糊掉。
 > `ICustomOutline` 路径下 `glintSettings()` 返回 null（默认），就只描边、不动表面。
 > 要批量给一批原版物品加描边又不在意表面辉光时，才用 `GlintRenderManager`。
+
+> **按实例开关（同一份物品代码既有描边版也有纯材料版）**：`outlineEnabled(ctx)` 是
+> 在 `stack.getItem()` 拿到的**注册项实例**上调用的，所以"只有某一块板描边"不需要
+> 按 stack 判断 —— 让构造参数里的描边预设为 `null` 即可。
+> 例子见 `ManaPlateItem`：`LIGHT_MANA_PLATE` 是独立注册项（独立实例），
+> 只有它传了 `GlowOutline(0xFFFFCB32, 3.0f)`（颜色取自板材贴图的琥珀金边），
+> 外面那层光雾仍由全局 `outlineAura*` 配置驱动。
+
+## 十、预设：火焰（ColorMode 4 / `"fire"`）
+
+移植自 **"Inner outline shader for Match2 game cell"**（@remonvv，
+[shadertoy.com/view/MdjfRK](https://www.shadertoy.com/view/MdjfRK)）。
+实现在 `outline_mask.fsh` 的 `fireColor()`：value noise、三层 fBm（`1 / 2.1 / 5.4`）、
+域扭曲这一整套照搬，**但 ramp 的锚点必须换**（见下）。
+
+### 怎么用
+
+```java
+// ICustomOutline 路径：一行
+@Override public String outlineShaderKey() { return "fire"; }
+@Override public int outlineColor()          { return 0xFFFFB03A; }   // 白热核
+@Override public int outlineSecondaryColor() { return 0xFF6E1208; }   // 冷尾
+
+// GlintRenderManager 路径：
+GlintRenderManager.registerForItem(MY_ITEM.get(), GlintEffectProfile.fire());
+```
+
+**用加法混合**（`ICustomOutline.BlendMode.ADDITIVE`，也是默认值）：火焰的尾部很暗，
+加法混合下"加 0"等于不画，于是看起来就是几缕火丝贴着物品爬。换成 `TRANSLUCENT`
+会把尾部涂成一片深色 —— 那是另一种（烟熏）观感，也能用，但要自己调副色。
+
+> **在线例子：绯红誓约（`CrimsonVow`）** —— `outlineShaderKey()` 返回 `"fire"`、
+> `outlineBlend()` 返回 `ADDITIVE`，色板仍用物品自己的粉紫（白热核 = `ACCENT_FROM` 亮粉，
+> 冷尾 = `ACCENT_SHADOW` 深紫黑），再叠上第十一章的光雾 → 一条烧着的粉紫边。
+> 它同时也是"火焰 + 体积光雾"这套组合的实机参照物。
+
+### ★ 最重要的一处偏差：ramp 的锚点
+
+参考的亮度**来自它自造的那条线**：
+
+```glsl
+uv.y = abs(uv.y - shift);                       // 把空间折到线附近
+grad = pow((r.y + r.y) * max(0., uv.y) + .1, 4.0);   // 线上"离线距离"≈0 → grad ≈ 1e-4
+color = ramp(grad);                             // 1/t 把 grad 小的推成过曝白热
+```
+
+而我们的"离线距离"是由环形合成的 **alpha** 承担的（`ring = dilate − self`）。
+所以如果把噪声直接丢进 `1/t` 的 ramp，grad 几乎总是很大 → 整圈都是深色尾。
+
+> **这不是推测**：第一版就是这么写的，离屏渲染出来是一片近乎全黑的底上零星几个亮斑
+> （`MaskColor` 那份输出 mean=4/255），描边等于看不见。
+> 验证工具：`tools/shader-preview/`。
+
+现在的做法是把 ramp **重新锚定在噪声上**，让噪声驱动 `heat` 在 冷尾 ↔ 白热核 之间摆动：
+
+```glsl
+float heat = clamp((1.05 - n) * 2.2 + 0.30, 0.0, 1.0);   // n = fireField(...)，均值 ≈ 1
+vec3 hot   = mix(MaskColor.rgb * 1.15 + 0.28, vec3(1.0), 0.55 * heat * heat);  // 越热越白
+vec3 color = mix(SecondaryColor.rgb, hot, heat);
+color /= (1.0 + 0.25 * color);                            // 轻量 tone map
+```
+
+### 其余偏差
+
+| 参考 | 这里 | 为什么 |
+|---|---|---|
+| `uv.x += uv.y < .5 ? 23. + t*.35 : -11. + t*.30` | 只用固定的 `+23.0 + t*0.35` | 那个上下半格分支会在 `uv.y = 0.5` 留一道硬缝；参考里缝落在两条火线之间所以看不见，而我们的"火线"是物品整圈剪影，缝正好落在物品腰线上 |
+| 算出 `r.x` 却从未使用 | 删掉 | 少一路 `fireField`，省 1/3 的哈希 |
+| 噪声坐标 = `fragCoord / iResolution`（屏幕空间） | 模型空间 | 屏幕空间的图案在镜头移动时会像贴纸一样"滑"过物品；模型空间与既有的 gradient / 彩虹一致 |
+| `valueNoise` 用线性插值 | smoothstep | 线性插值在 16px 物品栏图标上会露出晶格网格纹 |
+| 无 | `hash21` 里 `mod(n, 64.0)` | 噪声晶格折到 64 格周期后，`Time`（可涨到 12000）才不会把 `sin` 的参数推到 1e6 —— 那会先出现块状伪影、最后整个图案冻住 |
+
+### 复用到的既有 uniform
+
+| uniform | 火焰里的含义 |
+|---|---|
+| `MaskColor` | 白热核（内部 `*1.15 + 0.28` 之后还会往白色混） |
+| `SecondaryColor` | 冷尾；未设副色时它等于主色 → 单色火焰 |
+| `ColorFloor` | **火焰尾部有多亮**：0 = 只有几缕火丝；GUI 里由 `guiOutlineMinMix`（0.35）抬起 |
+| `ColorFreq.x` | 噪声频率（世界/手持恒为 18 → 系数 1）；GUI 由 `guiOutlineGradientScale` 压小 → 图标上的火焰自动变粗、变成一整条渐变（不会糊成噪点汤） |
+| `ColorSpeed` × `ColorScrollSpeed` | 火焰流速（GUI 由 `guiOutlineSpeedScale` 放慢） |
+| `Time` | 动画时钟 |
+
+### 代价
+
+每个片元约 **24 次 sin 哈希**（参考实现是它的 6 倍）。剪影遮罩只覆盖物品自身的像素，
+所以代价与物品占屏面积成正比，与分辨率无关；一手物品那种占满半屏的情况最贵。
+嫌贵就删掉 `fireField` 的第三层八度（`n * 5.4`）——细节少了，观感基本不变。
+
+> 与描边宽度无关：火焰只决定**颜色**，环的几何（`dilate − self`、等宽、距离自适应）
+> 和其它模式完全一样共用。
+
+## 十一、描边光雾（体积感）
+
+硬环始终是一条等宽的线。想要"贴着物品的一团雾"，靠的是**另一套几何**：把剪影遮罩
+**降采样模糊**成两级，再在合成时叠上去。火焰配色 + 光雾 = "沿着物品边缘燃烧"。
+
+### 一条链，四个 pass
+
+```
+遮罩(全分辨率，已含颜色) --H(2 源纹素)--> 1/2a --V--> 1/2b    中层雾
+1/2b                    --H(2 源纹素)--> 1/4a --V--> 1/4b    大范围雾
+                          ↓
+             outline_ring：硬环 + max(宽雾×0.8, 中层雾)，噪声扰动 + 云团阈值
+```
+
+- Java 侧：`ItemOutlinePipeline.buildHaloChain`（`compositeAll` 里、环形循环之前跑一次）
+- 着色器：`outline_halo_blur.fsh`（水平那两遍的步长取 **2 个源纹素**，顺带完成降采样；
+  垂直那两遍取 1 个目标纹素，原地模糊）
+- **整屏一次，同屏所有描边物品共用同一份模糊图** —— 这是它比"在全分辨率上做加权径向
+  卷积"便宜一个数量级的原因（面积 1/16，且不随物品数量增长）
+
+### 三条硬约束（少一条就坏）
+
+1. **雾必须减掉自身**：`halo = max(halo − self, 0)`。模糊后的遮罩在剪影**内部**也等于 1，
+   不减掉整件物品会被糊上一层光 —— 等于把物品贴图和 cosmic 星空层一起盖掉。
+   （`mask_glow.fsh` 的 `spill = max(halo − gate, 0)` 是同一个道理。）
+   *离屏验证时第一版就错在这里，图里整把武器在发光。*
+2. **scissor 矩形要按光雾半径外扩**：`AURA_REACH_PX = 52`（四级模糊核半径之和 ≈ 8+8+16+16），
+   再乘 `outlineAuraSpread`。不放大，雾会被自己的剪裁框切出一条直边。
+3. **噪声坐标以「该物品的屏幕中心」为原点**（`HaloNoiseOrigin`），并做屏幕高宽比修正。
+   直接用屏幕 UV 的话，镜头一动图案就会像贴纸一样从物品上滑过去。
+
+### 配置
+
+| 键 | 默认 | 作用 |
+|---|---|---|
+| `outlineAuraEnabled` | `true` | 总开关。false = 只剩等宽硬环（回到光雾出现之前） |
+| `outlineAuraStrength` | `0.9` | 强度；0 = 关闭 |
+| `outlineAuraSpread` | `1.0` | 扩散倍率（放大模糊步长）。1.6 = 更大更淡；上限 4.0 |
+| `outlineAuraNoise` | `0.8` | 云团强度：0 = 光滑椭圆光晕，1.5 以上会碎成缕 |
+
+### 代价与已知取舍
+
+- 模糊链是 **4 个全屏 pass**，但都在 1/2、1/4 分辨率上：1600p 下约 1200 万次取样/帧，
+  **世界/手持那条路**与物品数量无关（整屏只建一次，同屏所有条目共用）。
+  合成 pass 每个物品多 2 次取样（两张模糊图）。
+- ⚠ **GUI 是个例外**：GUI 里的描边是"逐物品就地合成"的（`submit` 末尾直接 `drain`，
+  因为 GUI 是 `renderLevel` 之后独立的一趟），所以**物品栏里每件描边物品都会各建一次模糊链**。
+  描边物品通常是武器、同屏没几件时无所谓；但把一件**可堆叠材料**也设成描边（例如
+  光明法力板）时，一个装满它的箱子/背包会让开销随可见件数线性增长。
+  真要给常见材料加描边，得先把 GUI 的提交攒到 GUI 末尾再统一合成，或者让这类物品
+  在 GUI 上下文不描边（`outlineEnabled(ctx)` 返回 false）。
+- 代价转移到 **scissor 面积**：每个物品的矩形按 52px×spread 外扩，同屏描边物品很多时
+  填充开销上升（小物品尤其明显：30×30 的条目会变成 ~134×134）。
+- 光雾是**屏幕空间**的（固定像素半径），不会像参考图那样"跟着物品一起缩小"；
+  需要时用距离自适应那套（第五章）顺带把它的半径也收细。
+- 光雾的颜色**自动来自遮罩**，所以配 `"fire"` 就是火焰雾；想要"内层白热、外层紫蓝"的
+  层次，需要在合成 pass 里按 `halo` 强度再插一条色带（尚未做）。
+
+## 十二、预设：燃烧描边（ColorMode 5 / `"fire_2"`）—— 世界空间体积火焰
+
+屏幕空间的剪影膨胀/模糊没有体积、范围也被锁死；fire_2 最终改成**世界空间体积渲染**：
+以物品为中心、**固定尺寸**（0.9 × 1.0 × 0.9 格）的盒子里 ray marching 3D 噪声。
+
+- **有体积**：镜头横移时火焰层次会变，任何角度看都是三维的；
+- **范围固定**：盒子是世界尺寸，不随物品大小 / 距离缩放（"火大小固定"）；
+- **遮挡正确**：用场景深度截断每条射线，墙/物品后面的火不会透出来（无光影包时）。
+
+### 管线位置（全部离屏，绘制只在 TAIL）
+
+```
+capture 点    只做一次深度 blit：把当前 FBO 的深度附件拷到一张深度纹理
+              （世界/光影 GBuffer 都行；不在这里画任何东西）
+TAIL          1) 世界批：用刚拷下来的世界深度，在离屏目标 outline/fireVolume 上 raymarch
+              2) 加法合成回主 RT
+              3) 再 blit 一次主 RT 深度（此刻里面是手）→ 画一手批 → 合成
+              4) 最后才画描边环
+```
+
+**盒子在视图空间**（与描边重放同一套 `pose × modelView`），所以世界物品 / 一手都一定围着
+物品本身；只有噪声与"高度"用相机基向量把采样点搬到世界空间求值，火才是沿世界上方窜的。
+
+为什么要离屏：片元要读场景深度，而"采样正被绑成当前 FBO 附件的纹理"是未定义行为；
+先 blit 到独立深度纹理、再在另一张 FBO 上采样就完全绕开了。
+
+### 着色器 `fire_volume`
+
+- 全屏四边形 + 用 `InvProj` 从 `gl_FragCoord` 反解视线方向，再用相机右/上/前基向量搬到世界空间；
+- 世界空间 ray-box（固定盒）求交，步进 **32** 步；
+- 密度 = **外壳**（物品 AABB 的 SDF，指数衰减）× **火柱**（物品上方竖直柱）×
+  `fbm3(世界坐标 + 上升平流)` × 域扭曲；
+- 温度 → 颜色（冷尾 → 主色 → 白热），**Beer 累积**，预乘输出，加法混合（`ONE, ONE`）；
+- 深度：`DepthSampler` 采样主 RT 深度（逆投影反解视图距离）截断 `tExit`；
+  `UseDepth = 0` 时只按盒子边界截断。
+
+### 上下文与时机
+
+| 上下文 | 深度来源 | 备注 |
+|---|---|---|
+| 掉落物 / 展示框 / 三手 | 捕获点 blit 下来的世界深度 | 光影包下来源是 GBuffer，同样可用 |
+| 一手 | TAIL 时主 RT 的手部深度 | 与上一条同一套 blit 流程 |
+| GUI | 不画 | 世界空间效果在 GUI 里没有意义 |
+
+### 已知局限（需要游戏内实测确认）
+
+- **光影包（Oculus / Iris）**：所有绘制本来就在 TAIL，不会被最终合成覆盖；深度来自捕获点
+  从当前绑定 FBO 拷的 GBuffer 深度。若该包深度不可 blit（极端情况），会退化成"不遮挡"。
+- **固定盒尺寸**写死在 `ItemOutlinePipeline.FIRE_VOLUME_HALF / FIRE_VOLUME_HEIGHT`
+  （0.45 / 1.0 格），一手再乘 `0.62`（离相机近，同尺寸会显得很大）。
+- **形状不是立方体**：火柱半径只有 0.26 格左右并被噪声啃出锯齿，六个盒面都做了 `boxFade`
+  淡出，所以看不到盒子的硬边。
+- **防 NaN**：射线方向的分量接近 0 时用有限大值代替、`tExit` 夹到 1e4；
+  输出前若 `acc` / `alpha` 出现 NaN/Inf 直接 `discard`。
+  另外离屏 clear 之后**必须还原 clearColor** —— 不还原的话后面任何一次 clear 都会把画面清成透明黑
+  （实测症状：丢出物品后整屏黑，只剩 HUD 和描边）。
+- **物品自身遮挡**依赖深度：无光影包时正确（物品先写深度）；光影包下退化为不遮挡。
+- 阴影 pass 必须跳过（当前只在主 pass 画；`ShaderPackDetector.isShadowPass()` 已有闸门）。
+- 体积火是**纯自发光**：不照亮世界、不参与阴影。
+
+### 验证
+
+```powershell
+# 体积火焰的离屏预览（假相机 / 假盒子；验证 raymarch 观感与数学，不验证遮挡）
+.\tools\shader-preview\preview.ps1 -ColorMode 9 -Time 3 -Fire 1
+# 产物：build\shader-preview\volume.png
+```
+
+游戏内要看的四件事：
+1. `run/logs/latest.log` 里 `[Shaders] 加载 fire_volume` 是否成功（失败会明确报错）；
+2. 掉落物 / 展示框 / 一手 三处是否都有火；
+3. 走到墙后，火是否被挡住（无光影包时应该被挡住）；
+4. 光影包开启时是否仍然可见（应该可见、但可能透墙）。

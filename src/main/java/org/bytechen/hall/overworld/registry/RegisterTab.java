@@ -57,6 +57,7 @@ public class RegisterTab {
                         output.accept(RegisterItem.BONECRUSHER_SPAWN_EGG.get());
                         output.accept(RegisterItem.HEAVY_BOMB_SPAWN_EGG.get());
                         output.accept(RegisterItem.COLLAPSAR_SPAWN_EGG.get());
+                        output.accept(RegisterItem.WINDING_COLUMN_SPAWN_EGG.get());
                     })
 
                     // ── 王庭材料 ──

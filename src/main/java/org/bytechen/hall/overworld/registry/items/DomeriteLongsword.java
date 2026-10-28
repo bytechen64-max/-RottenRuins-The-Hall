@@ -28,6 +28,9 @@ import net.minecraftforge.common.ToolAction;
 import net.minecraftforge.common.ToolActions;
 import org.jetbrains.annotations.Nullable;
 import org.bytechen.hall.api.ICustomOutline;
+import org.bytechen.hall.api.ItemFxProvider;
+
+import java.util.List;
 import org.bytechen.hall.overworld.registry.effect.VerdictEffect;
 import org.bytechen.hall.overworld.registry.entities.population.skills.ShockwaveEntity;
 import org.bytechen.hall.overworld.registry.entities.population.skills.SwordAuraEntity;
@@ -93,6 +96,18 @@ import java.util.UUID;
  * </ul>
  */
 public class DomeriteLongsword extends SwordItem implements ICustomOutline {
+
+    // ── 框架效果：裂纹 ──
+    // **暂时撤下**（实现完整保留在 FractureFxEffect + fracture_composite 里）。
+    // 想让这把剑裂开：把 implements 加上 ItemFxProvider，并解注释下面这个方法即可。
+    //
+    // @Override
+    // public List<ItemFxProvider.ItemFxBinding> itemFxLayers(net.minecraft.world.item.ItemStack stack,
+    //                                                        ItemDisplayContext ctx) {
+    //     if (ctx == ItemDisplayContext.GUI || ctx == ItemDisplayContext.HEAD) return List.of();
+    //     return List.of(ItemFxProvider.ItemFxBinding.of(
+    //             org.bytechen.hall.client.rend.glint.ItemOutlinePipeline.FRACTURE_EFFECT_ID));
+    // }
 
 
 

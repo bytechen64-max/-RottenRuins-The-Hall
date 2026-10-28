@@ -7,11 +7,11 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.level.Level;
 import org.bytechen.hall.HallMod;
 import org.bytechen.hall.overworld.difficulty.HallDifficultyAttributes;
+import org.bytechen.hall.overworld.registry.entities.ai.ChaseLockGoal;
 import org.bytechen.hall.overworld.registry.entities.ai.FaceTargetGoal;
 import org.bytechen.hall.overworld.registry.entities.base.AbstractHallEntity;
 import org.bytechen.hall.overworld.registry.entities.population.infected.BaseInfectedEntity;
@@ -54,9 +54,12 @@ public class MonolithEntity extends BaseUlceratedEntity {
 
     @Override
     public void tick() {
-        if(this.level() instanceof ServerLevel)        if(TickUtils.tickCountTimerWithoutStart(this.tickCount,20*120)) EvolutionManager.applyEvolution((ServerLevel)this.level(),this,new ResourceLocation(HallMod.MODID,"evo"));
-
-
+        // 爆体期间只播缩放与 idle，不再尝试进化。
+        if (!isFakeDying() && this.level() instanceof ServerLevel
+                && TickUtils.tickCountTimerWithoutStart(this.tickCount, 20 * 120)) {
+            EvolutionManager.applyEvolution((ServerLevel) this.level(), this,
+                    new ResourceLocation(HallMod.MODID, "evo"));
+        }
         super.tick();
     }
 
@@ -75,14 +78,15 @@ public class MonolithEntity extends BaseUlceratedEntity {
     @Override
     protected void registerGoals() {
         // 索敌：与其它王庭生物一致 —— goalSelector 优先级 2，40 格内无需视线
-        this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 1, true));
+        // 追击占位（只占 MOVE）：位移与出手由 AbstractHallEntity#tickChase 统一负责
+        this.goalSelector.addGoal(1, new ChaseLockGoal(this));
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .range(40.0)
                 .mustSee(false)
                 // 威胁点数过滤器：玩家威胁 < 5 不主动索敌；非玩家生物照常索敌
                 .filter(this)
                 .build());
-        this.goalSelector.addGoal(2, new FaceTargetGoal(this, 4));
+        this.goalSelector.addGoal(2, new FaceTargetGoal(this, 40));
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
 
         super.registerGoals();

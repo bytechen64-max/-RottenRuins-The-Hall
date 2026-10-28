@@ -67,7 +67,8 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
     @Override
     public void tick() {
         super.tick();
-        if (!level().isClientSide()) {
+        // 爆体期间只播缩放与 idle，不再走飞行调度。
+        if (!level().isClientSide() && !isFakeDying()) {
             tickFlightBehavior();
         }
     }
@@ -231,7 +232,7 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
         if (!defaultControllersEnabled) return;
         // 只有 idle 动画
         registrar.add(new AnimationController<>(this, "idle_controller", 3, state -> {
-            if (isDeadOrDying() || isFakeDying()) return PlayState.STOP;
+            if (isDeadOrDying() || isBurstAnimating()) return PlayState.STOP;
             state.setControllerSpeed(getIdleAnimSpeed());
             return state.setAndContinue(ANIM_IDLE);
         }));

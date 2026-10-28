@@ -25,9 +25,15 @@ import java.util.UUID;
  * 绯红誓约背板的<b>姿态</b>（位置 + 朝向）与动画状态机。
  *
  * <h3>它是什么</h3>
- * <p>主手拿着 {@code hall:crimson_vow} 时，玩家身后浮出一圈三层誓约纹章。
+ * <p>主手拿着 {@code hall:crimson_vow} 时，玩家身后浮出一枚<b>血月誓约纹章</b>：
+ * 中央是暗红的月蚀盘，盘缘一圈日蚀亮环，环外是冠冕射线与余烬，盘面里有
+ * 慢转的符文带与刻度环，纹章会按心跳脉冲（格挡时加快加重）。
  * 板面<b>永远正对镜头</b>（billboard），位置<b>永远在玩家的"相对镜头后方"</b>：
  * 从镜头看过去，它始终落在玩家背后，不会转到侧面、更不会跑到身前。</p>
+ *
+ * <p>设计上刻意让"被玩家身体挡住"成为构图的一部分：玩家剪影正好压在血月盘
+ * 中心，露出来的是<b>亮环 + 头顶冠冕 + 两侧符文</b>，被挡住的核心本来就不承载
+ * 信息（详见 {@code rendertype_crimson_backplate.fsh} 的头部注释）。</p>
  *
  * <h3>坐标空间：整个功能的命门（前面几版全栽在这里）</h3>
  * <p>顶点着色器算的是 {@code ProjMat × ModelViewMat × vec4(Position, 1)}，
@@ -72,15 +78,17 @@ public final class CrimsonVowBackplateRig {
     // ──────────────────────────────────────────────────────────────
 
     /**
-     * 着色器里"图案半径的上限"，单位是几何的 UV 径向值。
+     * 着色器里"图案可见半径的上限"，单位是几何的 UV 径向值。
      *
-     * <p>几何烘在单位平面上（见 {@link CrimsonVowBackplateMesh}），片元最后有一句
-     * {@code if (r > RingRadius.x + 0.06) discard;}，其中 {@code RingRadius.x = 0.80}，
-     * 所以肉眼看到的圆盘半径 = {@code 0.86 × 矩阵缩放}。</p>
+     * <p>几何烘在单位平面上（见 {@link CrimsonVowBackplateMesh}），片元把
+     * {@code r / (0.86 × 展开倍率)} 归一化成 {@code u}，{@code u = 1} 就是
+     * 纹章外缘（冠冕射线尖端）。片元最后有一句 {@code if (u > 1.02) discard;}，
+     * 那 2% 是给抗锯齿留的余量，不是内容。所以肉眼看到的半径 =
+     * {@code 0.86 × 矩阵缩放}。</p>
      *
-     * <p>把它显式写出来，是为了让 config 里的 {@code Scale} 就是<b>看得见的半径（格）</b>
-     * —— 否则用户调 1.3 却得到 1.84 格，谁也说不清该填多少。
-     * <b>改 fsh 里的 {@code RingRadius} 时记得同步这里。</b></p>
+     * <p>把它显式写出来，是为了让 config 里的 {@code Scale} 就是<b>看得见的
+     * 外缘半径（格）</b> —— 否则用户调 1.5 却得到 2.6 格，谁也说不清该填多少。
+     * <b>改 fsh 里的 {@code R_OUT} 时记得同步这里。</b></p>
      */
     private static final float SHADER_VISIBLE_RADIUS = 0.86F;
 

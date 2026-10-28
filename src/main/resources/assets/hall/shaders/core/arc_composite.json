@@ -1,0 +1,28 @@
+{
+  "vertex": "hall:outline_ring",
+  "fragment": "hall:arc_composite",
+  "attributes": [
+    "Position",
+    "UV0"
+  ],
+  "samplers": [
+    { "name": "Edge" }
+  ],
+  "uniforms": [
+    { "name": "ScreenSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "ArcNoiseOrigin", "type": "float", "count": 2, "values": [ 0.5, 0.5 ] },
+    { "name": "ArcColorA", "type": "float", "count": 3, "values": [ 1.0, 0.31, 0.72 ] },
+    { "name": "ArcColorB", "type": "float", "count": 3, "values": [ 0.62, 0.42, 1.0 ] },
+    { "name": "Time", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "ArcScale", "type": "float", "count": 1, "values": [ 26.0 ] },
+    { "name": "ArcLine", "type": "float", "count": 1, "values": [ 0.0016 ] },
+    { "name": "ArcThreshold", "type": "float", "count": 1, "values": [ 0.5 ] },
+    { "name": "ArcGain", "type": "float", "count": 1, "values": [ 2.0 ] },
+    { "name": "ArcSpeed", "type": "float", "count": 1, "values": [ 1.6 ] },
+    { "name": "ArcBand", "type": "float", "count": 1, "values": [ 0.60 ] },
+    { "name": "ArcSub", "type": "float", "count": 1, "values": [ 0.12 ] },
+    { "name": "ArcAniso", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "ArcTonemap", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "ArcDebug", "type": "float", "count": 1, "values": [ 0.0 ] }
+  ]
+}

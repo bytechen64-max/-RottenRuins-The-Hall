@@ -1,106 +1,80 @@
 #version 150 core
 
 // ─────────────────────────────────────────────────────────────────────────
-//  绯红誓约背板（片元阶段）—— 纯程序化，不采样任何贴图
+//  绯红誓约背板（片元阶段）—— 血月 · 誓约之冠
 //
-//  三层结构，全部用「距离场」画，几何本身只是一个扇形：
+//  设计目标（用户反馈：上一版"形状莫名其妙"）：
+//  上一版把正五边形、六芒星、外圈条带三种彼此无关的图形叠在一起，而
+//  线宽又被 PixelWidth 托底成 0.13~0.2 UV（比图案本身还粗），实际画面
+//  只剩一团粉白甜甜圈。这一版改成**一个连贯的纹章**，所有元素共用同轴
+//  同心结构，且每一层都为下一层让位：
 //
-//    RingRadius.x = 0.80  之外            →  第 3 层：绕圈移动的条带 + 外发光
-//    RingRadius.y = 0.60 ~ 0.80           →  第 2 层：六芒星（两个正三角形交叠）
-//    中心 ~ 0.60                          →  第 1 层：正五边形 + Voronoi 方块纹
+//        u = 0.00 ~ 0.22   誓约之心（被玩家头部挡住，只留柔光）
+//        u = 0.33          内封印环（正好框住玩家头颈的一圈光环）
+//        u = 0.37 ~ 0.41   刻度环（24 枚细刻，与外环反向自转）
+//        u = 0.34 ~ 0.50   八根封印辐条（把内环与符文带连起来，避免中间空）
+//        u = 0.50 ~ 0.66   符文带（20 格"誓约文字"，主细节层）
+//        u = 0.70          轨环（72 枚细刻）
+//        u = 0.78          日蚀边缘（一条亮环 = 血月的轮廓）
+//        u = 0.78 ~ 1.00   冠冕：56 条细射线 + 头顶五瓣冠 + 七根长刺 + 余烬
 //
-//  为什么用距离场而不是把顶点摆成五边形/星形：图案的边界与几何的边界解耦。
-//  改形状只动这个文件，改尺寸只动 Rig 里的两个常数，两边互不影响。
+//  为什么是日蚀：背板在第三人称下会被玩家剪影挡住中下部约 1/3，
+//  "完整的圆"永远看不清。日蚀的读法天然成立 —— 玩家正好站在暗盘中心，
+//  露出来的是**亮边 + 头顶的冠冕**，被挡住的部分本来就不承载信息。
+//  头顶的冠是整块板唯一的非对称元素，把"誓约之冠"点在玩家头上。
 //
-//  线宽统一用 fwidth() 归一化（屏幕空间恒定粗细），并用 PixelWidth 托底 ——
-//  极细的线上 fwidth 会趋于 0，只靠它会让线在远处整体消失。
+//  两遍绘制（Java 侧每帧画两次，靠 GlowPass 分支）：
+//    GlowPass = 0  底遍：普通 alpha 混合 + 写深度。只画血月盘体（暗红、
+//                  带月海与血纹的暗面）和符文/环的蚀刻暗纹。它负责
+//                  "挡住身后世界"的实体感与对比度。
+//    GlowPass = 1  亮遍：加法混合、不写深度。只输出自发光：日蚀边、封印环、
+//                  符文、冠冕、余烬、心誓脉冲波。加法才有"在发亮"。
+//
+//  心誓（心跳）：Time 是 tick（20 tick/s）。每 mix(19, 11.5, Block) tick 一个
+//  脉冲 —— 平时约 0.95 Hz 的缓慢心跳，举剑格挡时加快加重。脉冲驱动边缘、
+//  冠冕、符文、内环与一圈从中心向外推的誓约波。
+//
+//  ⚠ 线宽不要再写 PixelWidth * 常数。屏幕恒定线宽用 fwidth() 就够：
+//    SDF 的 fwidth 天然等于一个像素在图案空间里的跨度，线再细它也不会归零
+//    （上一版把这个前提搞反了，才加了那个致命的 *260 托底）。
 // ─────────────────────────────────────────────────────────────────────────
 
-in float vRadial;
-in float vTheta;
+in vec2 vLocal;   // 单位平面局部坐标（见 .vsh 说明）
 
-uniform vec2  RingRadius;
 uniform vec3  Spin;
 uniform float Time;
 uniform float Reveal;
 uniform float Block;
 uniform float Intensity;
-uniform float PixelWidth;
-uniform vec3  VowColor;      // 内圈的深绯红
-uniform vec3  AccentColor;   // 外圈的雾粉紫
+uniform vec3  VowColor;      // 深绯红（誓约）
+uniform vec3  AccentColor;   // 雾粉紫（高光）
+/** 0 = 底遍（暗部结构），1 = 亮遍（自发光）。Java 侧两遍之间会 flush。 */
+uniform float GlowPass;
 
 out vec4 fragColor;
 
-const float PI = 3.14159265;
+#define TAU 6.28318530718
+#define PI  3.141592654
+
+// ── 半径（归一化：1.0 = 整块背板的可见外缘）──
+const float R_OUT      = 0.86;   // 与 CrimsonVowBackplateRig.SHADER_VISIBLE_RADIUS 同步
+const float U_LIMB     = 0.780;  // 日蚀边缘
+const float U_ORBIT    = 0.700;  // 轨环
+const float U_RUNE_C   = 0.580;  // 符文带中心
+const float U_RUNE_H   = 0.085;  // 符文带半高
+const float U_SEAL     = 0.330;  // 内封印环
+const float U_TICK_IN  = 0.372;  // 刻度环内缘
+const float U_TICK_OUT = 0.406;  // 刻度环外缘
+
+const float RUNE_CELLS = 20.0;
+const float TICK_CELLS = 24.0;
+const float ORBIT_TICKS = 72.0;
+const float RAY_CELLS  = 56.0;
 
 // ══════════════════════════════════════════════════════════════════════════
-//  各层强度旋钮（改这里就能压掉/加强某一层，不必动结构）
+//  工具
 // ══════════════════════════════════════════════════════════════════════════
 
-/** 内饼里 Voronoi 方块纹的强度（D）。设 0 就退回纯暗底。 */
-const float FILL_BLOCK_STRENGTH = 0.42;
-/** 方块纹的格子密度（越大格子越小）。 */
-const float FILL_BLOCK_FREQ     = 3.1;
-/** 方块纹的流动速度：很慢，只求"活着"，不求被注意到。 */
-const float FILL_BLOCK_SPIN     = 0.004;
-
-/** 外发光的强度与厚度（E）。半径范围 1.0 → GLOW_OUTER。 */
-const float GLOW_STRENGTH       = 0.30;
-const float GLOW_OUTER          = 1.16;
-const float GLOW_INNER          = 0.94;
-/** 外发光的呼吸速度。 */
-const float GLOW_PULSE_SPEED    = 0.030;
-
-/**
- * 中圈那两道环的半径（乘 RingRadius.y）。
- *
- * <p>之前中圈只有一圈"12 段白色刻度"，看起来像警告标；而且刻度是**等距切块**，
- * 与外圈、内圈都没有任何连接 —— 整块读起来是"三个各自独立的零件"，也就是"碎"。
- * 现在中圈改成<b>双环 + 六根辐条</b>（辐条落在六芒星的六个星尖方向上），
- * 六芒星的星尖又正好顶在中环内侧：三层被串成一张连续的图。</p> */
-const float MID_RING_INNER_MUL  = 1.010;
-const float MID_RING_OUTER_MUL  = 1.155;
-
-/** 辐条条数 = 6（与六芒星尖数一致，于是"星尖 → 辐条 → 外环"是一条连续的线）。 */
-const float SPOKE_COUNT         = 6.0;
-/** 辐条的角向半宽（弧度）。太大就糊成一整圈，太小会读成刻度。 */
-const float SPOKE_HALF_WIDTH    = 0.055;
-/** 辐条在半径方向的延伸量（相对中环内侧），让它从环上一直连到外环附近。 */
-const float SPOKE_SPAN          = 0.100;
-
-/** 六芒星内部填充强度 —— 不填的话星形只是个空壳，中心那圈会读成"空的"。 */
-const float HEX_FILL_STRENGTH   = 0.13;
-
-// ══════════════════════════════════════════════════════════════════════════
-
-/**
- * 正多边形的有符号距离（内切圆半径 = apothemR）。
- * @param n        边数
- * @param rotation 整体旋转（弧度）
- */
-float polygonSdf(float theta, float r, float n, float rotation, float apothemR) {
-    float seg = 2.0 * PI / n;
-    float a = mod(theta + rotation, seg) - seg * 0.5;   // 折到一个扇区内、以中线为 0
-    return r * cos(a) - apothemR;
-}
-
-/**
- * 正多边形的<b>顶点半径</b> → 内切半径。
- *
- * <p>想要"星尖刚好落在半径 R 上"，传的就是这个函数。
- * 之前直接用 {@code (midR*2)*0.5*0.62} 拍脑袋取 apothem，
- * 结果星尖只到 0.43、缩在内圈里，读不出六芒星。</p>
- */
-float apothemForVertexRadius(float vertexRadius, float n) {
-    return vertexRadius * cos(PI / n);
-}
-
-/** 抗锯齿线宽：fwidth 归一化 + 像素托底。 */
-float lineAA(float sdf) {
-    return fwidth(sdf) * 1.6 + PixelWidth * 260.0 + 0.004;
-}
-
-/** 稳定的 1 维哈希（与 DifficultySigilMesh 同构）。 */
 float hash11(float p) {
     float v = fract(p * 0.1031);
     v *= v + 33.33;
@@ -114,214 +88,311 @@ float hash21(vec2 p) {
     return fract((p3.x + p3.y) * p3.z);
 }
 
-/**
- * Voronoi 的**三角形度量** —— 与本体那把剑的 cosmic 图案同源
- * （见 cosmic.fsh 的 blockDist / blockCell / blockShade）。
- * 取 L∞ 而不是欧氏距离，格子才会是"方块"而不是"圆斑"。
- */
-float blockDist(vec2 cellOffset) {
-    vec2 v = cellOffset - 2.0 * floor(cellOffset * 0.5) - 1.0;   // → [-1, 1)
-    vec2 a = abs(v);
-    return max(a.x, a.y);
+float vnoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash21(i), hash21(i + vec2(1.0, 0.0)), f.x),
+               mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), f.x), f.y);
 }
 
-vec2 blockCell(vec2 p) {
-    return mod(floor(p), 6.0);   // 绕回 6，避免大坐标上的哈希精度丢失
+/** 两层 fBm：月海只需要低频起伏，三层以上在屏幕上看不出差别。 */
+float fbm2(vec2 p) {
+    return 0.64 * vnoise(p) + 0.36 * vnoise(p * 2.07 + vec2(11.3, 7.7));
 }
 
-/** 径向色带（F）：内圈深绯红 → 外圈雾粉紫。 */
-vec3 palette(float r, float outerRadius) {
-    return mix(VowColor, AccentColor, smoothstep(0.10, outerRadius * 1.05, r));
+/** 高斯线：w 越小越细。所有环/线统一用它，边缘是平滑衰减而不是硬台阶。 */
+float gauss(float d, float w) {
+    float v = d / max(w, 1.0e-5);
+    return exp(-v * v);
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-//  第 1 层：正五边形 + Voronoi 方块纹（D）
-// ══════════════════════════════════════════════════════════════════════════
-vec4 layerPentagon(float theta, float r, float motion, float outerRadius) {
-    // 五边形"外接"半径取 0.42 → 顶点刚好与六芒星尖（0.43）相邻，
-    // 两层不是各缩各的、而是相接的。
-    float vertR = 0.42;
-    float rot = -PI * 0.5 + Time * Spin.x * 0.012 * motion;
-    float sdf = polygonSdf(theta, r, 5.0, rot, apothemForVertexRadius(vertR, 5.0));
+/** 硬一点的线（符文笔画用）。w 也是半宽。 */
+float line(float d, float w) {
+    return 1.0 - smoothstep(0.0, max(w, 1.0e-5), abs(d));
+}
 
-    float lw = lineAA(sdf);
-    float outline = 1.0 - smoothstep(0.0, lw, abs(sdf));
-    // 注意：sdf < 0 才是**内部**（cos(a) 项随半径增大而增大）。
-    // 旧代码的 `inner = smoothstep(0, lw, sdf)` 其实是"外部"，
-    // 与它下面那行 `inner * 0.055` 的意图正好相反 —— 一并纠正。
-    float inside2 = 1.0 - smoothstep(-lw, 0.0, sdf);
-
-    vec3 tint = palette(r, outerRadius);
-
-    // ── D：内饼填充 Voronoi 方块纹 ──
-    //    alpha 上限压在 0.30，保证它是"底色质感"而不是"一块板"。
-    float blockSpin = Time * FILL_BLOCK_SPIN * motion;
-    float cs = cos(blockSpin);
-    float sn = sin(blockSpin);
-    vec2 bc = vec2(cs * r * cos(theta) - sn * r * sin(theta),
-                   sn * r * cos(theta) + cs * r * sin(theta));
-    vec2 cell = blockCell(bc * FILL_BLOCK_FREQ);
-    vec2 cellCenter = (cell + 0.5) / FILL_BLOCK_FREQ;
-    float cd = blockDist((bc - cellCenter) * FILL_BLOCK_FREQ * 2.0);
-    float cellTone = 0.35 + 0.65 * hash21(cell * 1.37);
-    float blockFill = inside2 * (0.35 + 0.65 * cd) * cellTone;
-
-    // ── 中心不再空 ──
-    //    之前内饼只有一层极淡的方块纹（0.055 底色 + 0.30 alpha 的纹路），
-    //    在夜里的亮外圈衬托下就是"一个空框"。补两样：
-    //    · 一圈核心光环（把"中心"这个位置明确下来）
-    //    · 抬高的底色，让内饼整体有实处
-    float core = 1.0 - smoothstep(0.0, 0.018 + PixelWidth * 200.0, abs(r - 0.115));
-    core *= 1.0 - 0.55 * smoothstep(vertR * 0.80, vertR, r);
-
-    vec3 col = AccentColor * outline * 1.10
-             + tint * (inside2 * 0.16)
-             + VowColor * blockFill * FILL_BLOCK_STRENGTH
-             + AccentColor * core * (0.65 + 0.35 * Block);
-
-    // 五个顶点上各点一颗亮点
-    float seg = 2.0 * PI / 5.0;
-    float va = mod(theta + rot + PI * 0.5, seg) - seg * 0.5;
-    float vertexGlow = exp(-abs(va) * 16.0) * smoothstep(0.36, 0.10, abs(sdf));
-    col += AccentColor * vertexGlow * (0.40 + 0.45 * Block);
-
-    float a = max(max(outline * 0.95, blockFill * 0.32), core * 0.80);
-    return vec4(col, a);
+/** 把角度折回 [-PI, PI]，用于算到某个方向的角度差。 */
+float angDelta(float a, float center) {
+    return abs(mod(a - center + PI, TAU) - PI);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-//  第 2 层：六芒星 + 中圈双环 + 六根辐条
-// ══════════════════════════════════════════════════════════════════════════
+//  "誓约文字"：一格里的程序化符文
 //
-//  <b>这一层是"碎"的主要修复点。</b>原来中圈只有一圈 12 段等距白色刻度，
-//  与外圈、内圈都没有连接，读起来像"警告标"；而且六芒星被算小了
-//  （apothem 拍脑袋取 0.62×midR，星尖只到 0.43），缩在内圈里读不出星形。
-//
-//  现在：星尖半径直接钉在"中环内侧"上 → 星形撑满它那一环、六个尖顶到环上；
-//  六根辐条落在**同样的六个角度**上，把中环与外环串起来。
-//  于是"中心 → 五边形 → 星形六尖 → 辐条 → 中环 → 外环"是一条连续的路。
-vec4 layerHexagram(float theta, float r, float midR, float motion, float outerRadius) {
-    float rot = Time * Spin.y * 0.03 * motion;
+//  一格 = 3 笔 + 一点。竖笔一定存在，其余笔画由 hash 决定长短/位置/方向。
+//  只求"像字"：有笔画穿插、有疏密，远看是一条符文带，近看每一格都不同。
+//  笔画宽度是"格单位"的常量（0.07）而不是屏幕空间 —— 格宽本身已经按半径
+//  固定，再乘屏幕比例会让远看糊成一团（上一版的教训）。
+// ══════════════════════════════════════════════════════════════════════════
+float runeGlyph(float fx, float fy, float h1, float h2, float h3) {
+    float g = 0.0;
 
-    float ringInner = midR * MID_RING_INNER_MUL;
-    float ringOuter = midR * MID_RING_OUTER_MUL;
+    // ① 竖笔：位置与高度随机
+    float x1 = mix(-0.26, 0.26, h1);
+    float hY = mix(0.30, 0.56, h2);
+    g += line(fx - x1, 0.070) * step(abs(fy), hY);
 
-    // 星尖落在中环内侧稍微往里一点，视觉上"顶住"环
-    float starR   = ringInner * 0.995;
-    float apothem = apothemForVertexRadius(starR, 3.0);
+    // ② 横笔：从竖笔中途伸出
+    float y1 = mix(-0.36, 0.36, h3);
+    float wX = mix(0.10, 0.30, hash11(h1 * 7.3 + h2 * 3.1));
+    g += line(fy - y1, 0.070) * step(abs(fx - x1 * 0.6), wX);
 
-    // 星形的自转要把"外环 + 辐条"一起带上，否则星尖会与辐条错开、又变回零碎
-    float triUp   = polygonSdf(theta, r, 3.0, rot - PI * 0.5, apothem);
-    float triDown = polygonSdf(theta, r, 3.0, rot + PI * 0.5, apothem);
+    // ③ 底笔：一半的格子有，一条短横压在下缘
+    g += line(fy + 0.46, 0.070) * step(abs(fx - x1 * 0.3), 0.22) * step(0.5, h1);
 
-    float sdf = min(abs(triUp), abs(triDown));
-    float lw = lineAA(sdf);
-    float stroke = 1.0 - smoothstep(0.0, lw * 1.45, sdf);
+    // ④ 斜笔：四分之一的格子有，方向由 h2 决定
+    float dir = h2 > 0.5 ? 1.0 : -1.0;
+    g += line((fx - x1 * 0.4) - (fy + 0.06) * dir * 0.40, 0.055)
+       * step(abs(fy + 0.12), 0.22) * step(0.72, h3);
 
-    // 星形内部填充：不填的话中心那圈是空的（"中心空"的另一半原因）
-    float bothInside = 1.0 - smoothstep(-lw * 3.0, lw * 3.0, max(triUp, triDown));
-    float fill = bothInside * HEX_FILL_STRENGTH;
+    // ⑤ 星点：约 1/3 的格子顶点一颗
+    float dot = gauss(length(vec2(fx - x1, fy - (0.44 + 0.08 * h3))), 0.085);
+    g += dot * step(0.62, hash11(h3 * 5.7 + h1));
 
-    // ── 中圈双环：给这一层一个明确的边界，而不是靠散落的刻度去暗示 ──
-    float bandIn  = 1.0 - smoothstep(0.0, lineAA(r - ringInner), abs(r - ringInner));
-    float bandOut = 1.0 - smoothstep(0.0, lineAA(r - ringOuter), abs(r - ringOuter));
-
-    // ── 六根辐条：把星尖、中环与外环串成一条线 ──
-    //    角度与星尖一致（星尖在 θ + rot ≡ ±π/2 + k·2π/3，即每 π/3 一根），
-    //    半径方向从 midR 一直伸到 midR + SPOKE_SPAN —— 起点正好压在星尖上，
-    //    终点搭到外环内缘。于是"星尖 → 辐条 → 外环"是连续的，不再是三段散件。
-    float seg6 = PI / 3.0;
-    float ra = mod(theta + rot, seg6) - seg6 * 0.5;
-    float angDist = abs(ra) * max(midR, 0.001);                   // 角向距离换算成弧长
-    float spokeShape = 1.0 - smoothstep(SPOKE_HALF_WIDTH * 0.45, SPOKE_HALF_WIDTH, angDist);
-    float spokeRadial = smoothstep(midR - 0.012, midR + 0.004, r)
-                      * (1.0 - smoothstep(midR + SPOKE_SPAN,
-                                          midR + SPOKE_SPAN + 0.014, r));
-    float spoke = spokeShape * spokeRadial;
-
-    vec3 col = AccentColor * (stroke * (1.05 + 0.35 * Block) + (bandIn + bandOut) * 0.85)
-             + AccentColor * spoke * (0.75 + 0.35 * Block)
-             + palette(r, outerRadius) * fill;
-
-    float a = max(max(stroke * 0.92, (bandIn + bandOut) * 0.85),
-                  max(spoke * 0.80, fill));
-    return vec4(col, a);
+    return clamp(g, 0.0, 2.0);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-//  第 3 层：绕圈移动的条带
+//  主函数
 // ══════════════════════════════════════════════════════════════════════════
-vec4 layerStrip(float theta, float r, float outerRadius, float midR, float motion) {
-    float d = r - outerRadius;
-    float lw = lineAA(d);
-    float band = 1.0 - smoothstep(0.0, lw, abs(d));
-
-    float phase = theta + Time * Spin.z * 0.06 * motion;
-    float head = 0.5 + 0.5 * cos(phase);
-    float brightness = 0.30 + 0.70 * head * head;
-
-    float notch = smoothstep(0.55, 1.0, abs(cos(theta * 12.0)));
-
-    vec3 col = AccentColor * (brightness * 1.25 + notch * 0.18)
-             + VowColor * 0.35;
-
-    float web = (1.0 - smoothstep(0.0, lw * 1.5, abs(mod(r * 16.0, 1.0) - 0.5) - 0.42))
-              * smoothstep(midR, midR + 0.05, r) * band * 0.16;
-    col += VowColor * web;
-
-    return vec4(col, band * (0.80 + 0.20 * head) + web);
-}
-
-// ══════════════════════════════════════════════════════════════════════════
-//  外发光（E）—— 条带之外的一圈柔晕
-// ══════════════════════════════════════════════════════════════════════════
-vec4 layerOuterGlow(float r, float outerRadius, float motion) {
-    // 内外两端都做软过渡，避免出现硬边（硬边会读成"又一个圆环"而不是光晕）
-    float fadeOut = 1.0 - smoothstep(outerRadius, GLOW_OUTER, r);
-    float fadeIn  = smoothstep(GLOW_INNER, outerRadius, r);
-    float halo = fadeOut * fadeIn;
-    halo *= halo;                                   // 二次衰减，边缘更柔
-
-    float pulse = 0.75 + 0.25 * sin(Time * GLOW_PULSE_SPEED * motion * 6.2831);
-    float a = halo * GLOW_STRENGTH * pulse;
-    return vec4(AccentColor * 1.15, a);
-}
-
-// ══════════════════════════════════════════════════════════════════════════
-
 void main() {
-    float r = vRadial;
-    float theta = vTheta;
+    float reveal = clamp(Reveal, 0.0, 1.0);
+    float block  = clamp(Block, 0.0, 1.0);
+    float t      = Time;
 
-    float motion = (0.45 + 0.55 * clamp(Reveal, 0.0, 1.0)) * (1.0 + 0.80 * Block);
+    // ── 展开：整块纹章从 0.55 倍长到 1 倍，亮度同时点亮 ──
+    float ease = reveal * reveal * (3.0 - 2.0 * reveal);
+    float grow = mix(0.55, 1.0, ease);
+    float dim  = mix(0.0, 1.0, reveal);
 
-    float outerRadius = RingRadius.x;
-    float midR        = RingRadius.y;
+    // 归一化半径：u = 1 就是这一帧的可见外缘。
+    // 角度必须在这里现算：扇形几何的顶点 θ 线性插值不是真角度（见 .vsh 的警告）。
+    float r  = length(vLocal);
+    float th = atan(vLocal.y, vLocal.x);
+    float u = r / (R_OUT * grow);
+    if (u > 1.02) discard;
 
-    // 三个区域用软过渡拼接，避免圆环上出现锯齿状的硬接缝
-    float cross2 = smoothstep(midR - 0.02, midR + 0.02, r);           // 内 → 中
-    float cross3 = smoothstep(outerRadius - 0.02, outerRadius + 0.02, r); // 中 → 外
+    // ── 心誓脉冲 ──
+    //  周期在 19 tick（~0.95 Hz）→ 11.5 tick（~1.74 Hz）之间随格挡变化。
+    float period = mix(19.0, 11.5, block);
+    float bp     = t / period;
+    float beat   = pow(0.5 + 0.5 * sin(bp * TAU), 7.0);   // 尖脉冲
+    float beatAmp = 0.30 + 0.90 * block;
+    float pulse  = 1.0 + beat * beatAmp;
 
-    vec4 pent = layerPentagon(theta, r, motion, outerRadius);
-    vec4 hex  = layerHexagram(theta, r, midR, motion, outerRadius);
-    vec4 str  = layerStrip(theta, r, outerRadius, midR, motion);
-    vec4 glow = layerOuterGlow(r, outerRadius, motion);
+    // 三层各自的自转（Spin 由 Java 每帧给 (0.55, 1.0, 2.4)）
+    float thRune  = th + t * 0.0022 * Spin.x * (1.0 + 0.9 * block);
+    float thTick  = th - t * 0.0060 * Spin.y * (1.0 + 0.9 * block);
+    float thOrbit = th + t * 0.0028 * Spin.z;
 
-    // 层叠规则：外圈压中圈、中圈压内圈（先取内层，再被外层覆盖）
-    vec4 col = mix(pent, hex, cross2);
-    col = mix(col, str, cross3);
+    // 屏幕恒定线宽：一个像素在 u 空间里的跨度
+    float lw = max(fwidth(u) * 1.35, 0.0016);
 
-    // 外发光是叠加项，但它的 alpha 也要走同一条混合，所以单独加在颜色上、
-    // alpha 取两者的较大值 —— 否则柔晕那一圈会因为 alpha=0 被整体丢掉。
-    col.rgb += glow.rgb * glow.a;
-    col.a = max(col.a, glow.a);
+    // 单位盘坐标（y 向上：theta = PI/2 是头顶方向）
+    vec2 p = vec2(cos(th), sin(th)) * u;
 
-    // 展开时的亮度：没展开就是一块几乎看不见的暗影
-    col.rgb *= Intensity * mix(0.30, 1.0, clamp(Reveal, 0.0, 1.0));
+    // ══════════════════════════════════════════════════════════════════
+    //  共用的形状量
+    // ══════════════════════════════════════════════════════════════════
 
-    // 超出光晕之外的角落完全丢弃 —— 几何是方框，图案是圆的，
-    // 不丢的话四角会露出方形的边。
-    if (r > GLOW_OUTER + 0.02 || col.a <= 0.004) discard;
+    // ── 日蚀边缘：轮廓略有心跳般的起伏，不是一条数学圆 ──
+    float limbD = u - U_LIMB - 0.0045 * sin(th * 5.0 + t * 0.02)
+                              - 0.0018 * sin(th * 13.0 - t * 0.05);
+    float limb     = gauss(limbD, lw * 1.15);
+    float limbHalo = gauss(limbD, 0.030);
+    // 绕圈奔跑的一段亮弧：像有能量沿边缘走
+    float sweep = pow(0.5 + 0.5 * cos(th - t * 0.030), 14.0);
 
-    fragColor = vec4(col.rgb, clamp(col.a, 0.0, 1.0));
+    // ── 内封印环：玩家头颈后方那一圈光环 ──
+    float sealD = u - U_SEAL - 0.0022 * sin(th * 6.0 - t * 0.03);
+    float seal  = gauss(sealD, lw * 1.25);
+
+    // ── 刻度环：24 枚细刻 ──
+    float tickBand = smoothstep(U_TICK_IN, U_TICK_IN + 0.010, u)
+                   * (1.0 - smoothstep(U_TICK_OUT - 0.010, U_TICK_OUT, u));
+    float tickCell = fract(thTick * TICK_CELLS / TAU);
+    float tickShape = 1.0 - smoothstep(0.10, 0.19, abs(tickCell - 0.5) * 2.0);
+    float ticks = tickBand * tickShape;
+
+    // ── 内轨环 + 40 枚细刻：填住"内环 → 符文带"之间那一圈 ──
+    //    这一段原来试过 8 根粗辐条，读起来像钟表指针、把同心结构打断了；
+    //    改成又一条细轨环 + 密刻，与 u=0.70 的轨环是同一套语言。
+    float innerOrbitD = u - 0.462;
+    float innerOrbit  = gauss(innerOrbitD, lw * 0.90);
+    float innerTickBand = smoothstep(0.470, 0.476, u)
+                        * (1.0 - smoothstep(0.492, 0.498, u));
+    float innerCell = fract((th - t * 0.0038) * 40.0 / TAU);
+    float innerTicks = innerTickBand
+                     * (1.0 - smoothstep(0.13, 0.22, abs(innerCell - 0.5) * 2.0));
+
+    // ── 轨环 + 72 枚向外的小刻 ──
+    float orbitD = u - U_ORBIT;
+    float orbit  = gauss(orbitD, lw * 0.95);
+    float orbitTickBand = smoothstep(U_ORBIT + 0.004, U_ORBIT + 0.010, u)
+                        * (1.0 - smoothstep(U_ORBIT + 0.026, U_ORBIT + 0.032, u));
+    float orbitCell = fract(thOrbit * ORBIT_TICKS / TAU);
+    float orbitTicks = orbitTickBand
+                     * (1.0 - smoothstep(0.14, 0.24, abs(orbitCell - 0.5) * 2.0));
+
+    // ── 符文带 ──
+    float cf   = thRune * RUNE_CELLS / TAU;
+    float cell = floor(cf);
+    float fx   = fract(cf) - 0.5;
+    float fy   = (u - U_RUNE_C) / U_RUNE_H;
+    float bandSoft = 1.0 - smoothstep(0.84, 1.0, abs(fy));
+    float h1 = hash11(cell * 1.37 + 2.7);
+    float h2 = hash11(cell * 2.71 + 8.1);
+    float h3 = hash11(cell * 0.73 + 4.3);
+    float glyph = 0.0;
+    if (bandSoft > 0.001) {
+        glyph = runeGlyph(fx, fy, h1, h2, h3) * bandSoft;
+    }
+    // 每格亮度有差异 + 极慢的明灭，读起来像"被逐字点亮"
+    float glyphFlicker = 0.58 + 0.42 * pow(0.5 + 0.5 * sin(t * (0.30 + 0.45 * h1) + h2 * TAU), 3.0);
+    glyph *= glyphFlicker;
+
+    // ── 盘体：血月表面 ──
+    float discMask = 1.0 - smoothstep(U_LIMB - 0.006, U_LIMB + 0.006, u);
+    float maria = fbm2(p * 3.2 + vec2(t * 0.0020, -t * 0.0013));
+    float mariaFine = fbm2(p * 9.0 - vec2(t * 0.0035, 0.0));
+    // 血纹：ridged fBm（1-|2f-1| 的尖脊）→ 细长的脉络，给暗盘一点"活着"的质感
+    float ridge = 1.0 - abs(2.0 * fbm2(p * 2.4 + vec2(-t * 0.0015, t * 0.0022)) - 1.0);
+    float veins = pow(ridge, 7.0) * discMask;
+    float innerLift = smoothstep(0.12, U_LIMB, u);
+    // 中心柔光：被玩家头挡住大半，只从头顶溢出一点 —— 让"誓约之心"有个位置
+    float coreGlow = gauss(u, 0.205) * (0.30 + 0.85 * beat * beatAmp);
+
+    // ── 心誓波：每一拍从中心向外推一圈，被盘体压住 ──
+    float wavePhase = fract(bp);
+    float waveR = 0.14 + (U_LIMB - 0.14) * wavePhase;
+    float wave = gauss(u - waveR, 0.020) * (1.0 - wavePhase) * (1.0 - wavePhase)
+               * (0.55 + 0.90 * block);
+
+    // ══════════════════════════════════════════════════════════════════
+    //  底遍：暗部结构（普通 alpha 混合 + 写深度）
+    // ══════════════════════════════════════════════════════════════════
+    if (GlowPass < 0.5) {
+        // 盘体本身：深绯红到近黑，靠月海/血纹的明暗给出"有质量的暗"
+        vec3 discCol = VowColor * (0.12 + 0.24 * maria)
+                     + VowColor * (0.05 * mariaFine)
+                     + VowColor * (0.30 * veins)
+                     + vec3(0.022, 0.003, 0.009);
+        // 靠近边缘的一圈暗红抬升 + 心跳时整盘微微透出血色
+        discCol += VowColor * (0.16 + 0.40 * beat * beatAmp) * innerLift * innerLift;
+        // 蚀刻暗纹：符文与环在底遍里以暗红蚀刻出现，保证不发光时也有结构
+        discCol += VowColor * glyph * 0.85;
+        discCol += VowColor * (ticks * 0.55 + innerTicks * 0.40
+                             + innerOrbit * 0.35
+                             + orbitTicks * 0.45 + orbit * 0.35);
+        discCol += VowColor * seal * 0.55;
+        discCol += VowColor * coreGlow * 0.55;
+
+        float alpha = discMask * (0.76 + 0.10 * (1.0 - u / U_LIMB));
+        alpha *= dim;
+        if (alpha <= 0.004) discard;
+        fragColor = vec4(discCol * Intensity, clamp(alpha, 0.0, 1.0));
+        return;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  亮遍：自发光（加法混合、不写深度）
+    // ══════════════════════════════════════════════════════════════════
+    vec3 hot  = mix(AccentColor, vec3(1.0, 0.90, 0.95), 0.40);
+    vec3 pale = mix(VowColor, vec3(1.0, 0.82, 0.90), 0.72);
+    vec3 crownCol = mix(pale, AccentColor, 0.30);   // 冠偏粉紫，别烤成纯白
+
+    float corona = 0.0;
+    float crown  = 0.0;
+    float ember  = 0.0;
+
+    if (u > U_LIMB - 0.02) {
+        float du = max(u - U_LIMB, 0.0);
+
+        // ① 紧贴边缘的柔光晕：整块纹章在外圈的"亮度底座"，
+        //    没有它时射线只是几根细线、远看会散掉。
+        corona += exp(-du * 20.0) * 0.58 * pulse;
+
+        // ② 56 条细射线：长度/亮度每格不同，头顶方向自动更长
+        float rf = th * RAY_CELLS / TAU;
+        float rcell = floor(rf);
+        float rfx = fract(rf) - 0.5;
+        float rh1 = hash11(rcell * 1.91 + 5.0);
+        float rh2 = hash11(rcell * 2.73 + 1.0);
+        float up = max(sin(th), 0.0);
+        float rlen = (0.035 + 0.155 * rh1) * (1.0 + 1.75 * pow(up, 5.0));
+        float rt = du / max(rlen, 1.0e-3);
+        float rprof = (1.0 - smoothstep(0.0, 1.0, rt)) * smoothstep(-0.004, 0.020, du);
+        float rwidth = 0.17 + 0.13 * rh2;
+        float rshape = 1.0 - smoothstep(0.0, rwidth, abs(rfx));
+        float rflick = 0.68 + 0.32 * sin(t * (0.55 + 0.9 * rh1) + rh2 * TAU);
+        corona += rshape * rprof * rflick * (0.55 + 0.85 * rh2) * pulse;
+
+        // ③ 头顶五瓣冠：宽底、尖顶的火舌状长瓣（主体）。
+        //    中间那瓣最高、且钉死在正上方，左右两瓣对称收短 —— 这样"冠"
+        //    在剪影里读得出对称的皇冠轮廓，而不是一撮乱刺。
+        for (int i = 0; i < 5; i++) {
+            float fi = float(i);
+            float ang = PI * 0.5 + (fi - 2.0) * 0.250;
+            float ad = angDelta(th, ang);
+            float len = (0.140 + 0.170 * (1.0 - abs(fi - 2.0) / 2.4))
+                      * (0.85 + 0.26 * pulse);
+            float tt = du / max(len, 1.0e-3);
+            if (tt < 1.0) {
+                // 底部宽、尖端收成一点；根部压在日蚀边上
+                float halfW = mix(0.078, 0.0016, pow(tt, 0.70));
+                float prof = (1.0 - smoothstep(0.34, 1.0, tt)) * smoothstep(-0.01, 0.03, du);
+                crown += (1.0 - smoothstep(0.0, max(halfW, 1.0e-4), ad)) * prof;
+            }
+        }
+
+        // ④ 七根细长刺：穿过五瓣冠之间的缝隙，拉出"冠"的剪影
+        for (int i = 0; i < 7; i++) {
+            float fi = float(i);
+            float ang = PI * 0.5 + (fi - 3.0) * 0.185;
+            float ad = angDelta(th, ang);
+            float len = (0.100 + 0.170 * (1.0 - abs(fi - 3.0) / 3.5))
+                      * (0.85 + 0.30 * pulse);
+            float tt = du / max(len, 1.0e-3);
+            if (tt < 1.0) {
+                float prof = 1.0 - smoothstep(0.35, 1.0, tt);
+                float halfW = mix(0.018, 0.0012, tt);
+                crown += (1.0 - smoothstep(0.0, max(halfW, 1.0e-4), ad)) * prof * 0.52;
+            }
+        }
+
+        // ⑤ 余烬：一圈缓慢外漂的星点（一格里一颗，相位错开）
+        float ef = th * 48.0 / TAU;
+        float ecell = floor(ef);
+        float efx = fract(ef) - 0.5;
+        float eh1 = hash11(ecell * 1.31 + 9.0);
+        float eh2 = hash11(ecell * 2.17 + 3.0);
+        float drift = fract(t * 0.010 * (0.5 + eh1) + eh2);
+        float eu = U_LIMB + 0.012 + 0.16 * eh1 + 0.05 * drift;
+        ember = gauss(u - eu, 0.0125) * gauss(efx, 0.13)
+              * (1.0 - drift) * (1.0 - drift) * (0.40 + 0.60 * eh2);
+    }
+
+    // ── 合成发射 ──
+    vec3 col = vec3(0.0);
+    col += pale * limb * (1.55 + 0.55 * sweep);                    // 日蚀边（最亮的连续线）
+    col += hot  * limbHalo * (0.28 + 0.28 * beat * beatAmp);       // 边的外晕
+    col += hot  * seal * (1.00 + 0.55 * beat * beatAmp);           // 内封印环
+    col += hot  * (ticks * 0.90 + innerTicks * 0.60 + innerOrbit * 0.50
+                 + orbitTicks * 0.70 + orbit * 0.50);
+    col += mix(AccentColor, hot, 0.45) * glyph * 1.25;             // 符文
+    col += VowColor * veins * 0.55;                                // 血纹（暗亮）
+    col += mix(AccentColor, hot, 0.20) * corona * 1.00;            // 冠冕射线
+    col += crownCol * crown * 1.30;                                // 冠
+    col += hot  * ember * 1.90;                                    // 余烬
+    col += VowColor * wave * 1.60;                                 // 心誓波
+    col += VowColor * coreGlow * 0.95;                             // 誓约之心
+
+    col *= pulse * 0.30 + 0.70;   // 全体呼吸（幅度小，只求"活着"）
+    col *= dim * Intensity;
+
+    // 加法遍用 alpha = 1：颜色自己就是强度（SRC_ALPHA/ONE 下等于直接相加）。
+    // 亮度低于可见阈值的像素直接丢，省填充也避免把远处糊成一片。
+    if (max(col.r, max(col.g, col.b)) < 0.003) discard;
+    fragColor = vec4(col, 1.0);
 }

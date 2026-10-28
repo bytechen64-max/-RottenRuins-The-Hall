@@ -43,3 +43,7 @@ src/generated/resources/.cache/
 *.zip
 *.rar
 *.bak
+
+# LWJGL natives cache (合并前基线忽略)
+.lwjgl/
+.dsh-vision-toolkit/

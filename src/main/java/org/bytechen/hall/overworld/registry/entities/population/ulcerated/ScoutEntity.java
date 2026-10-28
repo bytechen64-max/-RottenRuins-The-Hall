@@ -18,6 +18,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import org.bytechen.hall.overworld.difficulty.HallDifficultyAttributes;
+import org.bytechen.hall.overworld.registry.entities.ai.ChaseLockGoal;
 import org.bytechen.hall.overworld.registry.EntityTypeRegistry;
 import org.bytechen.hall.overworld.registry.entities.ai.FaceTargetGoal;
 import org.bytechen.hall.overworld.registry.entities.base.AbstractHallEntity;
@@ -101,6 +102,8 @@ public class ScoutEntity extends BaseUlceratedEntity {
     private static final double GATHER_STUCK_SPEED_SQR = 1.0E-4D;
     /** 聚团中心点超出该距离（格）才重新寻路 */
     private static final double GATHER_REPATH_DISTANCE = 3.0D;
+    /** 聚集寻路的常规重算间隔（tick）。 */
+    private static final int GATHER_REPATH_COOLDOWN = 10;
 
     /** 搜索半径平方（避免重复相乘） */
     private static final double GATHER_SEARCH_RADIUS_SQR = GATHER_SEARCH_RADIUS * GATHER_SEARCH_RADIUS;
@@ -121,6 +124,10 @@ public class ScoutEntity extends BaseUlceratedEntity {
     private boolean hasGatherCenter;
     /** 已加入一次合体：防止同一 tick 被两只斥候重复计入 */
     private boolean merging;
+    /** 聚集寻路的冷却（tick）——见 {@link #tickGather()} 里的说明。 */
+    private int gatherRepathCooldown;
+    /** 聚集寻路连续失败次数（指数退避）。 */
+    private int gatherRepathFailures;
 
     public ScoutEntity(EntityType<? extends BaseInfectedEntity> entityType, Level level,
                        Consumer<AbstractHallEntity> consumer) {
@@ -149,6 +156,9 @@ public class ScoutEntity extends BaseUlceratedEntity {
     // ---------- 目标与行为 ----------
     @Override
     protected void registerGoals() {
+        // 追击占位（只占 MOVE）：有目标时压住 RandomStrollGoal，
+        // 免得"追击路径"被随机散步顶掉（位移本身仍由 AbstractHallEntity#tickChase 发起）
+        this.goalSelector.addGoal(1, new ChaseLockGoal(this));
         // 索敌：与其它王庭生物一致 —— goalSelector 优先级 2，40 格内无需视线
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .range(40.0)
@@ -179,6 +189,8 @@ public class ScoutEntity extends BaseUlceratedEntity {
     public void tick() {
         super.tick();
         if (this.level().isClientSide()) return;
+        // 爆体期间只播缩放与 idle：停止爬行/聚集逻辑。
+        if (this.isFakeDying()) return;
         tickClimb();
         tickGatherIdle();
     }
@@ -265,13 +277,25 @@ public class ScoutEntity extends BaseUlceratedEntity {
             return;
         }
 
-        if (this.getNavigation().isDone()
-                || this.distanceToSqr(this.lastGatherPathX, this.lastGatherPathY, this.lastGatherPathZ)
-                        > GATHER_REPATH_SQR) {
-            this.getNavigation().moveTo(this.gatherCenterX, this.getY(), this.gatherCenterZ, GATHER_PATH_SPEED);
+        // 寻路节流：moveTo 找不到路时 isDone() 恒为 true，原来的写法等于每 tick 跑一次 A*，
+        // 聚团中心点一旦不可达（隔着沟 / 在墙里）就是 5 只斥候 × 20 次/秒。
+        if (this.gatherRepathCooldown > 0) this.gatherRepathCooldown--;
+        if (this.gatherRepathCooldown <= 0
+                && (this.getNavigation().isDone()
+                    || this.distanceToSqr(this.lastGatherPathX, this.lastGatherPathY, this.lastGatherPathZ)
+                            > GATHER_REPATH_SQR)) {
+            boolean found = this.getNavigation()
+                    .moveTo(this.gatherCenterX, this.getY(), this.gatherCenterZ, GATHER_PATH_SPEED);
             this.lastGatherPathX = this.gatherCenterX;
             this.lastGatherPathY = this.getY();
             this.lastGatherPathZ = this.gatherCenterZ;
+            if (found) {
+                this.gatherRepathFailures = 0;
+                this.gatherRepathCooldown = GATHER_REPATH_COOLDOWN;
+            } else {
+                this.gatherRepathFailures = Math.min(this.gatherRepathFailures + 1, 4);
+                this.gatherRepathCooldown = GATHER_REPATH_COOLDOWN << this.gatherRepathFailures;
+            }
         }
 
         // 寻路没让它动起来 → 直接朝中心点推一把（撞墙时不推，交给寻路绕）

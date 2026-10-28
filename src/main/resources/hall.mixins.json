@@ -13,6 +13,7 @@
     "GameRendererAccessor",
     "GameRendererMixin",
     "GameRendererOculusMixin",
+    "ScreenShakeMixin",
     "ItemInHandRendererMixin",
     "LevelRendererEmbeddiumMixin",
     "ItemRendererMixin",

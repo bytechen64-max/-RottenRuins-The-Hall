@@ -21,6 +21,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.hall.HallMod;
+import org.bytechen.hall.event.impl.HeavyBombDeathEffect;
 import org.bytechen.hall.overworld.registry.entities.ai.FaceTargetGoal;
 import org.bytechen.hall.overworld.registry.entities.base.AbstractHallEntity;
 import org.bytechen.hall.overworld.registry.entities.population.skills.BlackHoleEntity;
@@ -71,7 +72,8 @@ public class HeavyBombEntity extends BaseEcologicalEntity {
     @Override
     public void tick() {
         super.tick();
-        if (!level().isClientSide()) {
+        // 爆体期间只播缩放与 idle，不再飞行/投弹调度；结束时再触发死亡爆炸。
+        if (!level().isClientSide() && !isFakeDying()) {
             tickFlightBehavior();
         }
     }
@@ -144,10 +146,14 @@ public class HeavyBombEntity extends BaseEcologicalEntity {
         // 飞行生物不受到摔落伤害
     }
 
-    // 死亡效果（冲击波 + 黑洞）不在这里实现 ——
-    // AbstractHallEntity 的 hurt()/die() 都有假死拦截分支，从实体内部挂钩
-    // 会被绕过。改由 ForgeEventHelpers.handleLivingDeath 调用
-    // HeavyBombDeathEffect.trigger()，见该类的说明。
+    // 死亡效果（冲击波 + 黑洞）由 LivingDeathEvent → HeavyBombDeathEffect.trigger 处理。
+    // 但爆体（fake death）不走 die()，40% 概率下不会触发 LivingDeathEvent，
+    // 所以在爆体结束时补一次 —— trigger 内部有持久化幂等标记，两条路径不会重复。
+    @Override
+    protected void onBurstEnd() {
+        super.onBurstEnd();                 // 基类：肉屑爆发
+        HeavyBombDeathEffect.trigger(this); // 爆体路径补上招牌死亡效果
+    }
 
 
     @Override
@@ -169,7 +175,7 @@ public class HeavyBombEntity extends BaseEcologicalEntity {
     public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
         if (!defaultControllersEnabled) return;
         registrar.add(new AnimationController<>(this, "idle_controller", 3, state -> {
-            if (isDeadOrDying() || isFakeDying()) return PlayState.STOP;
+            if (isDeadOrDying() || isBurstAnimating()) return PlayState.STOP;
             state.setControllerSpeed(getIdleAnimSpeed());
             return state.setAndContinue(ANIM_IDLE);
         }));

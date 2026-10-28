@@ -388,6 +388,9 @@ float v = texture(Sampler0, MaskMin + (local + offset) * MaskSize).r;
    （项目里 `HeldItemOutlineRenderer` 的 `applyBlurChain` / `compositeBloom` 已有实现，
    但那条 held-item 管线目前是停用状态）。`MaskEffectPass` 是留好的替换点：将来把
    某个效果换成多 pass 不需要动物品侧 JSON。
+   > 已经有一条现成的替代路径：外溢的那圈交给 `ICustomOutline`
+   > （剪影描边 + 光雾，见 `item-shader-outline.md`），它<b>只</b>画在轮廓外侧，
+   > 与这一层的表面泛光互不抢像素。光明法力板就是两者叠加的实例。
 2. **遮罩与本体贴图必须同画布**（第 4 节 ②）—— 位置是用 local UV 映射过去的，不是各自独立对齐。
 3. **一层一个 draw call。** 这是 uniform 正确性的要求（见第 8 节），换层数不要换安全性。
 4. **`mask_layers` 只在两个 loader 下被解析**（`hall:cosmic` / `hall:mask_layers`）。

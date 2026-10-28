@@ -1,0 +1,28 @@
+{
+  "vertex": "hall:outline_ring",
+  "fragment": "hall:fracture_composite",
+  "attributes": [
+    "Position",
+    "UV0"
+  ],
+  "samplers": [
+    { "name": "Mask" },
+    { "name": "Edge" }
+  ],
+  "uniforms": [
+    { "name": "ScreenSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "NoiseOrigin", "type": "float", "count": 2, "values": [ 0.5, 0.5 ] },
+    { "name": "ItemOrigin", "type": "float", "count": 2, "values": [ 0.5, 0.5 ] },
+    { "name": "ItemBasisX", "type": "float", "count": 2, "values": [ 0.1, 0.0 ] },
+    { "name": "ItemBasisY", "type": "float", "count": 2, "values": [ 0.0, 0.1 ] },
+    { "name": "CrackColor", "type": "float", "count": 3, "values": [ 1.0, 0.85, 0.95 ] },
+    { "name": "Time", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "CrackScale", "type": "float", "count": 1, "values": [ 14.0 ] },
+    { "name": "CrackWidth", "type": "float", "count": 1, "values": [ 0.0012 ] },
+    { "name": "CrackGlow", "type": "float", "count": 1, "values": [ 0.55 ] },
+    { "name": "CrackGlowWidth", "type": "float", "count": 1, "values": [ 3.5 ] },
+    { "name": "CrackReach", "type": "float", "count": 1, "values": [ 0.55 ] },
+    { "name": "CrackProgress", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "CrackSeed", "type": "float", "count": 1, "values": [ 0.0 ] }
+  ]
+}

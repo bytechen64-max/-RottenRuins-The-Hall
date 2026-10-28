@@ -11,6 +11,7 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.level.Level;
 import org.bytechen.hall.overworld.difficulty.HallDifficultyAttributes;
+import org.bytechen.hall.overworld.registry.entities.ai.ChaseLockGoal;
 import org.bytechen.hall.overworld.registry.entities.base.AbstractHallEntity;
 import org.bytechen.hall.overworld.registry.entities.population.skills.SwordAuraEntity;
 import org.bytechen.hall.utils.TickUtils;
@@ -42,18 +43,28 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
 
     @Override
     public void tick() {
-        if (this.level() instanceof ClientLevel) {
-            clientTick();
-        } else {
-            serverTick();
+        // 爆体（假死）期间只播缩放：停掉破坏方块 / 冲撞，避免爆体还在拆地形。
+        if (!this.isFakeDying()) {
+            if (this.level() instanceof ClientLevel) {
+                clientTick();
+            } else {
+                serverTick();
+            }
         }
         super.tick();
     }
 
     // ------------------ 服务端逻辑 ------------------
     private void serverTick() {
-        // 原有：每 20 tick 破坏方块
-        if (TickUtils.tickCountTimer(tickCount, 5)) {
+        // 破坏方块：常态每 5 tick 扫一次；冲撞中每 3 tick 扫一次。
+        //
+        // 冲撞期间以前是「每 tick 扫一遍膨胀后的碰撞箱并逐块 destroyBlock」——
+        // 一次扫描是 7×7×7 的方块查询 + 每个可破坏方块一次 destroyBlock
+        // （含邻块更新、onRemove、gameEvent），40 tick 的冲撞就是 40 次，
+        // 和爆炸 / 其它方块更新叠在一起时非常贵。降到每 3 tick 少扫 3 倍，
+        // 撞墙效果不变（破掉的方块会变空气，不会重复破坏；碰撞箱 5×5 也不会漏格）。
+        int breakInterval = this.chargeDuration > 0 ? 3 : 5;
+        if (TickUtils.tickCountTimer(tickCount, breakInterval)) {
             EntityBreakUtils.breakBlocksInRange(this, 1, 2f, false);
         }
 
@@ -67,12 +78,13 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
         // ========== 冲撞逻辑 ==========
         LivingEntity target = this.getTarget();
         if (chargeDuration > 0) {
-            // 冲撞中：每 tick 破坏方块
-            EntityBreakUtils.breakBlocksInRange(this, 1, 2f, false);
-
             // 向目标快速移动（速度倍率 1.5）
             if (target != null && target.isAlive()) {
-                this.getNavigation().moveTo(target, 1.5D);
+                // 冲撞期间不必每 tick 重算路径：A* 一次够走好几格；目标不可达时
+                // 每 tick 一次寻路是纯粹的浪费（同 AbstractHallEntity#tickChase 的原因）。
+                if (chargeDuration % 10 == 0 && this.getNavigation().isDone()) {
+                    this.getNavigation().moveTo(target, 1.5D);
+                }
             } else {
                 // 目标无效，立即结束冲撞并进入冷却
                 chargeDuration = 0;
@@ -113,6 +125,9 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
     // ------------------ AI 目标 ------------------
     @Override
     protected void registerGoals() {
+        // 追击占位（只占 MOVE）：有目标时压住 RandomStrollGoal，
+        // 免得"追击路径"被随机散步顶掉（位移本身仍由 AbstractHallEntity#tickChase 发起）
+        this.goalSelector.addGoal(1, new ChaseLockGoal(this));
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .range(40.0)
                 // 威胁点数过滤器：玩家威胁 < 5 不主动索敌；非玩家生物照常索敌
@@ -150,7 +165,7 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
         if (!defaultControllersEnabled) return;
         AnimationController<AbstractHallEntity> movementController =
                 new AnimationController<>(this, "movement_controller", 3, state -> {
-                    if (isDeadOrDying() || isFakeDying()) return PlayState.STOP;
+                    if (isDeadOrDying() || isBurstAnimating()) return PlayState.STOP;
                     if (isActuallyMoving) {
                         if (hasWalkAnimation()) {
                             if (isWalking()) {
@@ -168,7 +183,7 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
         registrar.add(movementController);
         AnimationController<AbstractHallEntity> dieController =
                 new AnimationController<>(this, "die_controller", 3, state ->
-                        isFakeDying() ? state.setAndContinue(ANIM_DIE) : PlayState.STOP);
+                        isBurstAnimating() ? state.setAndContinue(ANIM_DIE) : PlayState.STOP);
         AnimationController<AbstractHallEntity> idleController =
                 new AnimationController<>(this, "idle_controller", 3, state ->
                         isAlive() ? state.setAndContinue(ANIM_IDLE) : PlayState.STOP);

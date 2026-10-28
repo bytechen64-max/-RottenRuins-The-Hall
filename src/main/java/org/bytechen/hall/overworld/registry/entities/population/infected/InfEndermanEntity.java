@@ -6,12 +6,12 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.hall.overworld.difficulty.HallDifficultyAttributes;
+import org.bytechen.hall.overworld.registry.entities.ai.ChaseLockGoal;
 import org.bytechen.hall.overworld.registry.entities.ai.FaceTargetGoal;
 import org.bytechen.hall.overworld.registry.entities.base.AbstractHallEntity;
 import org.bytechen.infcore.api.goal.InfectedTargetGoal;
@@ -40,6 +40,8 @@ public class InfEndermanEntity extends BaseInfectedEntity {
     // ---------- 动画定义 ----------
     private static final RawAnimation ANIM_ATTACK = RawAnimation.begin().thenPlay("attack");
     private static final RawAnimation ANIM_CRAWL  = RawAnimation.begin().thenLoop("crawl");
+    /** 爬行且静止时的待机动画（资源文件 inf_enderman.animation.json 中的 idle_crawl） */
+    private static final RawAnimation ANIM_CRAWL_IDLE = RawAnimation.begin().thenLoop("idle_crawl");
 
     // ---------- 构造函数 ----------
     public InfEndermanEntity(EntityType<? extends BaseInfectedEntity> entityType, Level level, Consumer<AbstractHallEntity> consumer) {
@@ -48,6 +50,9 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         this.setHasWalkAnim(false);
         this.setWalkSpeed(0.22F);
         this.setDoHurtTime(30);
+        // 原来由 MeleeAttackGoal(this, 1.2, true) 提供的追击速度倍率，
+        // 现在追击统一由 AbstractHallEntity#tickChase 发起，倍率在这里声明
+        this.setChaseSpeed(1.2F);
     }
 
     // ---------- 属性 ----------
@@ -66,7 +71,10 @@ public class InfEndermanEntity extends BaseInfectedEntity {
     protected void registerGoals() {
         // === 目标选择器（targetSelector）===
         // 使用 InfectedTargetGoal 选择最近的玩家或指定目标
-        this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.2, true));
+        // 追击占位（只占 MOVE）：位移与出手由 AbstractHallEntity#tickChase 统一负责。
+        // 原来的 MeleeAttackGoal 在这里是重复劳动 —— 它会再算一份路径，
+        // 而它的 doHurtTarget 在基类里被写死为 false，攻击部分一直空转。
+        this.goalSelector.addGoal(1, new ChaseLockGoal(this));
         this.targetSelector.addGoal(1, new InfectedTargetGoal.Builder(this)
                 .range(40.0)          // 搜索范围
                 .mustSee(false)       // 无需视线
@@ -76,7 +84,7 @@ public class InfEndermanEntity extends BaseInfectedEntity {
 
         // === 行为选择器（goalSelector）===
         // 面向目标（辅助）
-        this.goalSelector.addGoal(2, new FaceTargetGoal(this, 4));
+        this.goalSelector.addGoal(2, new FaceTargetGoal(this, 40));
         // 随机游走
         this.goalSelector.addGoal(5, new RandomStrollGoal(this, 1.0D));
         // 随机环顾
@@ -146,6 +154,8 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         super.tick(); // 父类 tick 会处理普通攻击的距离检测并调用 doHurtGoal
 
         if (this.level().isClientSide()) return;
+        // 爆体（假死）期间不再结算延迟攻击 / 爬行状态，只播缩放与 idle。
+        if (this.isFakeDying()) return;
 
         // 攻击动画计时器递减，归零时造成伤害
         if (attackKeyTimer > 0) {
@@ -181,19 +191,21 @@ public class InfEndermanEntity extends BaseInfectedEntity {
             noTargetTime = 0;
         }
 
-        // ---- 爬行状态（持续高频攻击 + 强制追目标 + 每 tick 覆盖速度）----
+        // ---- 爬行状态（持续高频攻击）----
         if (isCrawling()) {
             LivingEntity crawlTarget = this.getTarget();
             if (crawlTarget != null && crawlTarget.isAlive()) {
+                // 先看无敌帧再看距离/视线：invulnerableTime > 0 时这一下本来就打不进去，
+                // 没必要每 tick 做一次射线检测 + 完整伤害结算
                 double dist = this.distanceToSqr(crawlTarget);
-                if (dist <= doHurtDistance * doHurtDistance && this.hasLineOfSight(crawlTarget)) {
+                if (crawlTarget.invulnerableTime <= 0
+                        && dist <= doHurtDistance * doHurtDistance
+                        && this.hasLineOfSight(crawlTarget)) {
                     getAttack(crawlTarget);
                 }
-                // 强制覆盖寻路速度：父类 moveTo(target, 1.0) 是硬编码的，必须自行覆盖
-                // 每 10 tick 或路径结束后重新寻路，避免每 tick 重算路径的开销
-                if (this.getNavigation().isDone() || this.tickCount % 10 == 0) {
-                    this.getNavigation().moveTo(crawlTarget, 2.0D);
-                }
+                // 追击寻路交给 AbstractHallEntity#tickChase（已带节流 + 失败退避）。
+                // 这里原来写的是 `isDone() || tickCount % 10 == 0` —— 但寻路失败时
+                // isDone() 恒为 true，等于每 tick 跑一次 A*，目标卡在墙里时直接把 TPS 打穿。
             }
         }
     }
@@ -227,9 +239,16 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         // 移动/待机/爬行控制器
         AnimationController<InfEndermanEntity> movementController =
                 new AnimationController<>(this, "movement_controller", 5, state -> {
-                    if (isDeadOrDying() || isFakeDying()) return PlayState.STOP;
+                    if (isDeadOrDying() || isBurstAnimating()) return PlayState.STOP;
 
                     if (isCrawling()) {
+                        // 爬行模式：移动时播放爬行动画，静止时播放爬行待机动画。
+                        // isActuallyMoving 由基类每 tick 在客户端按水平位移更新（带 5 tick 缓冲，
+                        // 避免刚停下 / 起步的瞬间来回抖动）。
+                        if (!isActuallyMoving) {
+                            state.setControllerSpeed(getIdleAnimSpeed());
+                            return state.setAndContinue(ANIM_CRAWL_IDLE);
+                        }
                         state.setControllerSpeed(1.0f);
                         return state.setAndContinue(ANIM_CRAWL);
                     }
@@ -261,7 +280,7 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         // 死亡控制器
         AnimationController<AbstractHallEntity> dieController =
                 new AnimationController<>(this, "die_controller", 3, state ->
-                        (isFakeDying() && shouldBurstPlayAnim()) ? state.setAndContinue(ANIM_DIE) : PlayState.STOP);
+                        isBurstAnimating() ? state.setAndContinue(ANIM_DIE) : PlayState.STOP);
         dieController.setAnimationSpeed(getDieAnimSpeed());
         registrar.add(dieController.triggerableAnim("die_trigger", ANIM_DIE));
     }

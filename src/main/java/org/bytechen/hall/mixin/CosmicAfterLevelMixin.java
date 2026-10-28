@@ -6,6 +6,7 @@ import org.bytechen.hall.client.mask.compat.MaskLayerLateRenderQueue;
 import org.bytechen.hall.client.entity.render.impl.ApostleSlashWarpQueue;
 import org.bytechen.hall.client.entity.render.impl.BlackHoleLateRenderQueue;
 import org.bytechen.hall.client.entity.render.impl.CollapsarHaloLateRenderQueue;
+import org.bytechen.hall.client.entity.render.impl.CrimsonVowLateRenderQueue;
 import org.bytechen.hall.client.entity.render.impl.ShockwaveLateRenderQueue;
 import org.bytechen.hall.client.entity.render.impl.VerdictBeamLateRenderQueue;
 import org.bytechen.hall.client.entity.render.impl.VerdictFieldLateRenderQueue;
@@ -72,5 +73,7 @@ public abstract class CosmicAfterLevelMixin {
         // 否则在光影包下会被写进 GBuffer 而被 pack 当材质重新光照。
         VerdictBeamLateRenderQueue.renderAll();
         VerdictFieldLateRenderQueue.renderAll();
+        // 绯红誓约「起誓」：蓄力法阵 / 巨型法阵 / 扭曲柱 / 终末光柱。
+        CrimsonVowLateRenderQueue.renderAll();
     }
 }

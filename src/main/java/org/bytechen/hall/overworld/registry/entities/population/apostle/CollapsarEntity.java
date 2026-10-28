@@ -398,7 +398,7 @@ public class CollapsarEntity extends BaseApostleEntity {
     public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
         if (!defaultControllersEnabled) return;
         registrar.add(new AnimationController<>(this, "idle_controller", 5, state -> {
-            if (isDeadOrDying() || isFakeDying()) return PlayState.STOP;
+            if (isDeadOrDying() || isBurstAnimating()) return PlayState.STOP;
             state.setControllerSpeed(getIdleAnimSpeed());
             return state.setAndContinue(ANIM_IDLE);
         }));
@@ -559,6 +559,10 @@ public class CollapsarEntity extends BaseApostleEntity {
         this.hurtMarked = true;                                   // 让客户端刷新速度/位置
         this.level().broadcastEntityEvent(this, (byte) 2);        // 客户端播受击音效 + 播放受击动画
         this.getCombatTracker().recordDamage(source, finalDamage);
+
+        // 受击溅血（基类钩子）：本类完整接管了 hurt、不经过 AbstractHallEntity#hurt，
+        // 所以这里显式补一次，保证这个 boss 挨打时也会触发"只有王庭生物才有的"血花。
+        this.onHurtBlood(source, finalDamage);
 
         // 记仇：基类的索敌依赖它，击杀归属也依赖它
         if (source.getEntity() instanceof LivingEntity attacker) {
