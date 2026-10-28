@@ -1,7 +1,7 @@
 # 构建 → 校验 → 装进 PCL 测试实例
 #
 # 为什么需要这个脚本：`gradlew jar` / `gradlew jarJar` 单独跑**都不够**。
-#   - `jar`          → 只产出 hall-<ver>.jar（不含 cloth-config / geckolib）
+#   - `jar`          → 只产出 rotten_ruins-<ver>.jar（不含 cloth-config / geckolib）
 #   - `jarJar`       → 产出 -all.jar，但**不会重新混淆**
 #   - `build`        → jar → reobfJar → jarJar → reobfJarJar，这才是能进游戏的产物
 #
@@ -12,7 +12,7 @@
 
 param(
     [string]$Instance = "C:\Users\chy20\Desktop\desktop\pcl\.minecraft\versions\优化底包",
-    [string]$ModJarName = "hall-0.3.0-all.jar"
+    [string]$ModJarName = "rotten_ruins-1.0.0-all.jar"
 )
 
 $ErrorActionPreference = "Stop"
@@ -29,8 +29,8 @@ if (-not (Test-Path $built)) { throw "找不到产物: $built" }
 Write-Host "== 2/4 校验是否已混淆（SRG 名字） ==" -ForegroundColor Cyan
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $z = [System.IO.Compression.ZipFile]::OpenRead($built)
-$entry = $z.Entries | Where-Object { $_.FullName -eq "org/bytechen/hall/client/rend/glint/ItemOutlinePipeline.class" }
-if (-not $entry) { $entry = $z.Entries | Where-Object { $_.FullName -like "org/bytechen/hall/*.class" } | Select-Object -First 1 }
+$entry = $z.Entries | Where-Object { $_.FullName -eq "org/bytechen/rottenruins/client/rend/glint/ItemOutlinePipeline.class" }
+if (-not $entry) { $entry = $z.Entries | Where-Object { $_.FullName -like "org/bytechen/rottenruins/*.class" } | Select-Object -First 1 }
 $s = $entry.Open(); $ms = New-Object System.IO.MemoryStream; $s.CopyTo($ms); $s.Close(); $z.Dispose()
 $text = -join ($ms.ToArray() | ForEach-Object { if ($_ -ge 32 -and $_ -lt 127) { [char]$_ } else { "`0" } })
 $srg = ([regex]::Matches($text, "m_\d+_")).Count

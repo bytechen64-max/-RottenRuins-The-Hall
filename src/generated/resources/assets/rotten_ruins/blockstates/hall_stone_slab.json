@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "rotten_ruins:block/hall_stone_slab"
+    },
+    "type=double": {
+      "model": "rotten_ruins:block/hall_stone"
+    },
+    "type=top": {
+      "model": "rotten_ruins:block/hall_stone_slab_top"
+    }
+  }
+}

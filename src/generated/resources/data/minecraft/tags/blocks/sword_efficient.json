@@ -1,7 +1,7 @@
 {
   "values": [
-    "hall:hall_grass",
-    "hall:hall_flower",
-    "hall:hall_ash_dead_bush"
+    "rotten_ruins:hall_grass",
+    "rotten_ruins:hall_flower",
+    "rotten_ruins:hall_ash_dead_bush"
   ]
 }

@@ -138,14 +138,14 @@ dependencies {
     // cloth-config + geckolib: compileOnly (compile-time) +
     // patchModuleInfo (for stripping module-info). The patched jars
     // are added to --module-path at launch so FML discovers them.
-    compileOnly fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.7.1")
-    patchModuleInfo fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.7.1")
+    compileOnly fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.4")
+    patchModuleInfo fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.4")
 
     compileOnly fg.deobf("me.shedaniel.cloth:cloth-config-forge:12.0.109")
     patchModuleInfo fg.deobf("me.shedaniel.cloth:cloth-config-forge:12.0.109")
 
     jarJar(group: 'me.shedaniel.cloth', name: 'cloth-config-forge', version: '[12.0.109,13)')
-    jarJar(group: 'software.bernie.geckolib', name: 'geckolib-forge-1.20.1', version: '[4.7.1,4.8)')
+    jarJar(group: 'software.bernie.geckolib', name: 'geckolib-forge-1.20.1', version: '[4.8.4,4.9)')
 
     // JEI (optional)
     compileOnly fg.deobf("mezz.jei:jei-1.20.1-forge:15.2.0.27")
@@ -319,9 +319,9 @@ def infcoreM2Dir = new File(System.getProperty('user.home'),
         ".m2/repository/org/bytechen/infcore/${infcoreVersion}")
 
 tasks.register('syncInfcore', Exec) {
-    group = 'hall'
+    group = 'rotten_ruins'
     description = '重新构建 InfectionCoreFramework 并把产物同步进工程内 libs/ 镜像（升级前置时才需要）'
-    workingDir = file('InfectionCoreFramework')
+    workingDir = file('../InfectionCoreFramework')
     commandLine 'cmd', '/c', 'gradlew.bat', 'publishToMavenLocal'
     doLast {
         if (!infcoreM2Dir.exists()) {

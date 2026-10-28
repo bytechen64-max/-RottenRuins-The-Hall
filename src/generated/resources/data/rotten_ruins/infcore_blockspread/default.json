@@ -1,0 +1,478 @@
+{
+  "entries": [
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_grass_block",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:grass_block"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_dirt",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:dirt"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:oak_log"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:spruce_log"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:birch_log"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:jungle_log"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:acacia_log"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:dark_oak_log"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:mangrove_log"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:cherry_log"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:oak_leaves"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:spruce_leaves"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:birch_leaves"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:jungle_leaves"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:acacia_leaves"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:dark_oak_leaves"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:mangrove_leaves"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:cherry_leaves"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:azalea_leaves"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:flowering_azalea_leaves"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:dandelion"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:poppy"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:blue_orchid"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:allium"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:azure_bluet"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:red_tulip"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:orange_tulip"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:white_tulip"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:pink_tulip"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:oxeye_daisy"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:cornflower"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_flower",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:lily_of_the_valley"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_grass",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:grass"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_grass",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:tall_grass"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:oak_planks"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:spruce_planks"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:birch_planks"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:jungle_planks"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:acacia_planks"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:dark_oak_planks"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:mangrove_planks"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_planks",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:cherry_planks"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_stone",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:stone"
+    }
+  ],
+  "replace": false
+}

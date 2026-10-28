@@ -1,0 +1,11 @@
+{
+  "type": "rotten_ruins:heall",
+  "generator": {
+    "type": "minecraft:noise",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "rotten_ruins:flesh_marrow"
+    },
+    "settings": "rotten_ruins:flesh_marrow"
+  }
+}

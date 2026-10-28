@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "hall:item/heavy_bomb_spawn_egg"
-  }
-}

@@ -1,16 +1,16 @@
 {
   "values": [
-    "hall:hall_planks",
-    "hall:hall_stairs",
-    "hall:hall_slab",
-    "hall:hall_fence",
-    "hall:hall_fence_gate",
-    "hall:hall_door",
-    "hall:hall_trapdoor",
-    "hall:hall_button",
-    "hall:hall_pressure_plate",
-    "hall:hall_log",
-    "hall:hall_leaves",
-    "hall:hall_vine"
+    "rotten_ruins:hall_planks",
+    "rotten_ruins:hall_stairs",
+    "rotten_ruins:hall_slab",
+    "rotten_ruins:hall_fence",
+    "rotten_ruins:hall_fence_gate",
+    "rotten_ruins:hall_door",
+    "rotten_ruins:hall_trapdoor",
+    "rotten_ruins:hall_button",
+    "rotten_ruins:hall_pressure_plate",
+    "rotten_ruins:hall_log",
+    "rotten_ruins:hall_leaves",
+    "rotten_ruins:hall_vine"
   ]
 }

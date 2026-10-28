@@ -1,7 +1,7 @@
 {
   "values": [
-    "hall:hall_grass_block",
-    "hall:hall_dirt",
-    "hall:hall_ash_sand"
+    "rotten_ruins:hall_grass_block",
+    "rotten_ruins:hall_dirt",
+    "rotten_ruins:hall_ash_sand"
   ]
 }

@@ -1,0 +1,34 @@
+﻿{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.bytechen.rottenruins.mixin",
+  "plugin": "org.bytechen.rottenruins.mixin.ItemGlintMixinPlugin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "rotten_ruins.refmap.json",
+  "mixins": [
+    "MixinAnimationController"
+  ],
+  "client": [
+    "CosmicAfterLevelMixin",
+    "GameRendererAccessor",
+    "GameRendererMixin",
+    "GameRendererOculusMixin",
+    "ScreenShakeMixin",
+    "ItemInHandRendererMixin",
+    "LevelRendererEmbeddiumMixin",
+    "ItemRendererMixin",
+    "MixinItemRendererCosmic",
+    "MixinItemRendererTwitch",
+    "OutlineReplayMixin",
+    "CrimsonVowBlockMixin",
+    "CreativeModeInventoryScreenMixin",
+    "accessor.AccessorAbstractContainerScreen",
+    "accessor.AccessorRenderStateShard"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

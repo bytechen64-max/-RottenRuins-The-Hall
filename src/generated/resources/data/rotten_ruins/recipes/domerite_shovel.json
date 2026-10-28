@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "C": {
+      "item": "rotten_ruins:domite_crystal"
+    },
+    "I": {
+      "item": "rotten_ruins:domerite_ingot"
+    }
+  },
+  "pattern": [
+    " I ",
+    " C ",
+    " C "
+  ],
+  "result": {
+    "item": "rotten_ruins:domerite_shovel"
+  },
+  "show_notification": true
+}

@@ -1,0 +1,53 @@
+{
+  "entries": [
+    {
+      "type": "rotten_ruins:inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:inf_player",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:player"
+    },
+    {
+      "type": "rotten_ruins:inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:inf_skeleton",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:skeleton"
+    },
+    {
+      "type": "rotten_ruins:evo",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:bonecrusher",
+          "weight": 50
+        }
+      ],
+      "source": "rotten_ruins:monolith"
+    },
+    {
+      "type": "rotten_ruins:evo",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:heavy_bomb",
+          "weight": 50
+        }
+      ],
+      "source": "rotten_ruins:monolith"
+    }
+  ],
+  "replace": false
+}

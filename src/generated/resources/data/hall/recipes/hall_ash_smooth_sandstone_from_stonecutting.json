@@ -1,8 +1,0 @@
-{
-  "type": "minecraft:stonecutting",
-  "count": 1,
-  "ingredient": {
-    "item": "hall:hall_sandstone"
-  },
-  "result": "hall:hall_ash_smooth_sandstone"
-}

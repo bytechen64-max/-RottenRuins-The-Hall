@@ -1,8 +1,0 @@
-{
-  "type": "minecraft:stonecutting",
-  "count": 1,
-  "ingredient": {
-    "item": "hall:hall_stone"
-  },
-  "result": "hall:hall_stone_stairs"
-}

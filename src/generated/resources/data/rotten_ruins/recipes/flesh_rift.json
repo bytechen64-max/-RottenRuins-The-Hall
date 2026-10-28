@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "rotten_ruins:hall_bone_fragments"
+    },
+    "C": {
+      "item": "rotten_ruins:domite_crystal"
+    }
+  },
+  "pattern": [
+    "B B",
+    " C ",
+    "B B"
+  ],
+  "result": {
+    "item": "rotten_ruins:flesh_rift"
+  },
+  "show_notification": true
+}

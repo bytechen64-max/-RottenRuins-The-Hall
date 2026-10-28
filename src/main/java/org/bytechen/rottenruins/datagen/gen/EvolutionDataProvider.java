@@ -1,0 +1,34 @@
+package org.bytechen.rottenruins.datagen.gen;
+
+import net.minecraft.data.PackOutput;
+import net.minecraft.world.entity.EntityType;
+import org.bytechen.rottenruins.HallMod;
+import org.bytechen.rottenruins.overworld.registry.EntityTypeRegistry;
+import org.bytechen.infcore.core.evolution.EvolutionEntry;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class EvolutionDataProvider extends org.bytechen.infcore.core.datagen.EvolutionDataProvider {
+    public EvolutionDataProvider(PackOutput packOutput) {
+        super(packOutput, HallMod.MODID, "default");
+    }
+
+    @Override
+    public List<EvolutionEntry> buildEntries() {
+        List<EvolutionEntry> entries = new ArrayList<>();
+
+        entries.add(entry("inf", EntityType.PLAYER, false, false,
+                List.of(target(EntityTypeRegistry.INF_PLAYER.get(), 100))));
+
+        entries.add(entry("inf", EntityType.SKELETON, false, false,
+                List.of(target(EntityTypeRegistry.INF_SKELETON.get(), 100))));
+
+        entries.add(entry("evo", EntityTypeRegistry.MONOLITH.get(), false, false,
+                List.of(target(EntityTypeRegistry.BONECRUSHER.get(), 50))));
+        entries.add(entry("evo", EntityTypeRegistry.MONOLITH.get(), false, false,
+                List.of(target(EntityTypeRegistry.HEAVY_BOMB.get(), 50))));
+
+        return entries;
+    }
+}
