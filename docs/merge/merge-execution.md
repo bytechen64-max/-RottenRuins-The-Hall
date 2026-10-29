@@ -110,6 +110,17 @@
 - **附带修复**：`InfPlayerEntity` / `BonecrusherEntity` 的通用 tick 里用 `this.level() instanceof ClientLevel` 判断客户端，
   在 dedicated server 上会触发 `RuntimeDistCleaner` 崩溃，已改为 `this.level().isClientSide()`。
 
+### 1.9 技能补齐 阶段 0：基础设施与资源（2026-10-29）
+- [x] 移植技能基础设施（编译通过）：
+  | 文件 | 位置 | 说明 |
+  |---|---|---|
+  | `CorruptionSkillFx` | `.../population/corruption/skill/` | 技能视觉反馈（dust/烟/冲击环/粒子柱/吐息/血雾），纯服务端广播，原样移植 |
+  | `CorruptionDamageUtil` | `.../utils/combat/` | 统一伤害入口（盾牌/不死图腾/无视无敌帧/分级伤害）；`ModUtils.setDataHealthID` 用 `setHealth` 替代 |
+  | `CorruptionSkillUtil` | `.../population/corruption/skill/` | 51 个技能工具方法（先兆/范围伤害/拉拽/突进/效果/吸血/友军增益…）；目标筛选排除本模组两派感染生物，友军判定只认腐化阵营；`spawnPoolAt` 留待腐化池实体移植后接回 |
+- [x] 技能实体资源已复制（8 文件，SHA-256 一致）：geo `acid_ball/bone_spike/poison_arrow`、动画 3、实体贴图 2；`textures/item/acid_ball.png` 已存在。
+- [x] 渲染方式已确认：`CorruptionDart`/`CorruptionPoolEntity` 空渲染器 + 粒子；`CuboidEntity`/`ShieldEntity` 自绘 POSITION_COLOR；`AcidBall/BoneSpike/PoisonArrow` 走 Geo 弹射物（可复用 `AbstractHallProjectile` + `GeoProjectileRenderer`）。
+- [ ] 后续批次：`SkillProjectileRenderer`、`CuboidRenderer`、`ShieldRenderer` 与 7 个技能实体类；4 个家族生物的技能逻辑；6 个腐化粒子 + 9 个自定义音效。
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）
