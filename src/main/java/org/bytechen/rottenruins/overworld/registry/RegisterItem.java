@@ -192,6 +192,10 @@ public class RegisterItem {
     public static final RegistryObject<Item> MAGIC_CATA = registerSimpleItem("magic_cata");
     public static final RegistryObject<Item> VOID_RUNE = registerSimpleItem("void_rune");
 
+
+    //死亡
+    public static final RegistryObject<Item> DEATH_STAR = registerSimpleItem("death_star");
+
     // ---- 法杖 ----
     // 走 StaffBase（纯转发层），所以它们已经"能被魔法系统识别"：
     // 右键会走进 MagicHandle。但魔法槽里目前一件法术都没有，

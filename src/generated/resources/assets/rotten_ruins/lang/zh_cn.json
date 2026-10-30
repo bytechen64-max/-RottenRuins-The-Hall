@@ -1,4 +1,8 @@
 {
+  "advancements.rotten_ruins.death.description": "获得死亡之星",
+  "advancements.rotten_ruins.death.title": "死亡",
+  "advancements.rotten_ruins.root.description": "身为神，体验作为人的自己",
+  "advancements.rotten_ruins.root.title": "腐朽之疫",
   "attribute.name.rotten_ruins.magic_slots": "魔法槽位",
   "attribute.name.rotten_ruins.mana_regeneration": "法力回复速度",
   "attribute.name.rotten_ruins.mana_restore": "法力回复量",
@@ -143,6 +147,7 @@
   "item.rotten_ruins.crude_shovel": "粗制铲",
   "item.rotten_ruins.crude_sword": "粗制剑",
   "item.rotten_ruins.death_mana_plate": "死亡魔法版材",
+  "item.rotten_ruins.death_star": "死亡之星",
   "item.rotten_ruins.degenerate_cow_spawn_egg": "腐化牛刷怪蛋",
   "item.rotten_ruins.degenerate_heart": "腐化之心",
   "item.rotten_ruins.degenerate_pig_spawn_egg": "腐化猪刷怪蛋",

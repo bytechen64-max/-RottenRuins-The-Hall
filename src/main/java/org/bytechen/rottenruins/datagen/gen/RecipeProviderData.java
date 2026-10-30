@@ -56,6 +56,9 @@ public class RecipeProviderData extends RecipeProvider {
 
         // ── 血肉裂隙：通往血肉庭园的门 ──
         addFleshRiftRecipe(consumer);
+
+        // ── 死亡之星：下界之星 + 一圈凋零玫瑰 ──
+        addDeathStarRecipe(consumer);
     }
 
     /**
@@ -450,5 +453,21 @@ public class RecipeProviderData extends RecipeProvider {
                 )
                 .unlockedBy("has_" + inputName, has(input))
                 .save(consumer, "rotten_ruins:" + outputName + "_from_blasting");
+    }
+
+    /**
+     * 死亡之星配方。
+     * <p>
+     * 中心一颗下界之星，四周八朵凋零玫瑰（3×3 全包）。
+     */
+    private void addDeathStarRecipe(Consumer<FinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, RegisterItem.DEATH_STAR.get())
+                .define('W', Items.WITHER_ROSE)
+                .define('N', Items.NETHER_STAR)
+                .pattern("WWW")
+                .pattern("WNW")
+                .pattern("WWW")
+                .unlockedBy("has_nether_star", has(Items.NETHER_STAR))
+                .save(consumer);
     }
 }

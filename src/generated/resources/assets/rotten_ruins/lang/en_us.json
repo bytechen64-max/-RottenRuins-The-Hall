@@ -1,4 +1,8 @@
 {
+  "advancements.rotten_ruins.death.description": "Obtain the Death Star",
+  "advancements.rotten_ruins.death.title": "Death",
+  "advancements.rotten_ruins.root.description": "As a god, experience yourself as a human",
+  "advancements.rotten_ruins.root.title": "Rotten Ruins",
   "attribute.name.rotten_ruins.magic_slots": "Magic Slots",
   "attribute.name.rotten_ruins.mana_regeneration": "Mana Regeneration",
   "attribute.name.rotten_ruins.mana_restore": "Mana Restored",
@@ -143,6 +147,7 @@
   "item.rotten_ruins.crude_shovel": "Crude Shovel",
   "item.rotten_ruins.crude_sword": "Crude Sword",
   "item.rotten_ruins.death_mana_plate": "Death Mana Plate",
+  "item.rotten_ruins.death_star": "Death Star",
   "item.rotten_ruins.degenerate_cow_spawn_egg": "Degenerate Cow Spawn Egg",
   "item.rotten_ruins.degenerate_heart": "Degenerate Heart",
   "item.rotten_ruins.degenerate_pig_spawn_egg": "Degenerate Pig Spawn Egg",

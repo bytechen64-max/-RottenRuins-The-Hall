@@ -30,6 +30,8 @@ public class DataGenEvent {
         event.getGenerator().addProvider(event.includeClient(), new BlockSpreadDataProvider(out));
 
         event.getGenerator().addProvider(event.includeServer(), new HallWorldGenData(out, lp));
+        // 成就树（根节点 = 首次进入世界；见 AdvancementProviderData）
+        event.getGenerator().addProvider(event.includeServer(), new AdvancementProviderData(out, lp, efh));
 
         // 方块标签与物品标签是两张独立的表 —— 物品标签必须由 BlockTagsProvider
         // 的 contentsGetter() 喂给 ItemTagsProvider，否则王庭木/石在原版配方里认不出来。

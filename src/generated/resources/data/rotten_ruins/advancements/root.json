@@ -1,0 +1,29 @@
+{
+  "criteria": {
+    "first_join": {
+      "trigger": "rotten_ruins:first_join"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "background": "rotten_ruins:textures/block/infection_cobblestone_block.png",
+    "description": {
+      "translate": "advancements.rotten_ruins.root.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "item": "rotten_ruins:hall_bone_fragments"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancements.rotten_ruins.root.title"
+    }
+  },
+  "requirements": [
+    [
+      "first_join"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

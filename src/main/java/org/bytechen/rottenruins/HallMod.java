@@ -3,6 +3,7 @@ package org.bytechen.rottenruins;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import net.minecraft.resources.ResourceLocation;
+import org.bytechen.rottenruins.advancement.RotAdvancementTriggers;
 import org.bytechen.rottenruins.config.ConfigHelper;
 import org.bytechen.rottenruins.api.magic.MagicAttributeProvider;
 import org.bytechen.rottenruins.api.magic.MagicStatRegistry;
@@ -75,6 +76,10 @@ public class HallMod {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(SplendidingSpawnPlacements::register);
+        // 自定义成就判据（首次进入世界等）：同样排到主线程执行，避免在并行 commonSetup 里
+        // 改 CriteriaTriggers 的静态判据表；enqueueWork 会在 commonSetup 完成前跑完，
+        // 仍早于服务端解析进度数据包。
+        event.enqueueWork(RotAdvancementTriggers::registerAll);
 
         NetworkHelper.register();
         ConfigHelper.registry();
