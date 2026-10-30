@@ -45,7 +45,7 @@ public class CapabilityRegistry {
             CapabilityManager.get(new CapabilityToken<>(){});
 
     /**
-     * 玩家的魔法物品槽（{@code PlayerMagicPool}，默认 10 格，可被属性修饰器扩容）。
+     * 玩家的魔法物品槽（{@code PlayerMagicPool}，默认 5 格，可被属性修饰器扩容）。
      * <p>这是旧的无类型入口，仅用于兼容；新代码请用 {@link #MAGIC_POOL_CAP}。</p>
      */
     public static final Capability<ByteItemHandle> ITEM_HANDLE_CAP =

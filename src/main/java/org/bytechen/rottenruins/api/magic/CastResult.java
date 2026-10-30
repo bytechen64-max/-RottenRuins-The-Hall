@@ -18,6 +18,14 @@ public enum CastResult {
     /** 当前选中的槽位没有法术。 */
     NO_SPELL,
 
+    /**
+     * 选中的槽位是<b>被动法术</b>。
+     *
+     * <p>被动法术不经过释放路径 —— 它放在魔法槽里就持续生效，没有耗蓝 / 冷却 / 蓄力，
+     * 因此不能由法杖右键放出去。见 {@code SpellKind#PASSIVE}。</p>
+     */
+    PASSIVE_SPELL,
+
     /** 该法术正在冷却中（同名物品共享这个冷却）。 */
     ON_COOLDOWN,
 

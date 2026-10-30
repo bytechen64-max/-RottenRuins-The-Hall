@@ -192,6 +192,20 @@ public class LangDataCN extends LanguageProvider {
         // 死亡之星：下界之星 + 凋零玫瑰
         add(RegisterItem.DEATH_STAR.get(), "死亡之星");
 
+        // ---- 魔法星图 GUI / 按键 ----
+        add("key.categories." + HallMod.MODID, "腐朽之疫");
+        add("key." + HallMod.MODID + ".open_magic", "打开魔法星图");
+        add("rotten_ruins.gui.magic.title", "魔法星图");
+        add("rotten_ruins.gui.magic.inventory", "背包中的法术");
+        add("rotten_ruins.gui.magic.empty", "背包里没有法术");
+        add("rotten_ruins.gui.magic.hint", "拖动法术放入槽位 · 点击槽位选中");
+        add("rotten_ruins.gui.magic.slots", "法术槽 %s / %s");
+        add("rotten_ruins.gui.magic.kind.active", "主动法术");
+        add("rotten_ruins.gui.magic.kind.passive", "被动法术");
+        add("rotten_ruins.gui.magic.mana", "耗蓝 %s");
+        add("rotten_ruins.gui.magic.cooldown", "冷却 %s 秒");
+        add("rotten_ruins.gui.magic.charge", "蓄力 %s 秒");
+
         // ---- 音效字幕（见 SoundData）----
         // 爆体音效：与 corruption 的 rip_body 同一条字幕文案，只是命名空间换成 hall。
         add("subtitles." + HallMod.MODID + ".rip_body", "躯体爆裂");

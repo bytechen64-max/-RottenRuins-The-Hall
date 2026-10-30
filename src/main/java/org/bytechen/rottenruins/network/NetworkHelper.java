@@ -3,6 +3,7 @@ package org.bytechen.rottenruins.network;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.network.all.UniversalPacket;
 import org.bytechen.rottenruins.network.c2s.C2SDifficultySelectPacket;
+import org.bytechen.rottenruins.network.c2s.MagicPoolActionPacket;
 import org.bytechen.rottenruins.network.c2s.PacketSyncKeyframe;
 import org.bytechen.rottenruins.network.s2c.AnomalySyncPacket;
 import org.bytechen.rottenruins.network.s2c.EffectSyncPacket;
@@ -32,6 +33,10 @@ public class NetworkHelper {
         // ── C2S 处理器（服务端侧的业务逻辑，包序号不变）──
         // UniversalPacket 只需要一个 action 处理器注册，不用新增 registerMessage
         org.bytechen.rottenruins.network.c2s.VoidSwordStrikePacket.register();
+
+        // 魔法星图 GUI 的槽位操作（放入 / 取出 / 槽间移动 / 选中 / 请求同步）。
+        // 走同一套 UniversalPacket + action 分发，不新增包序号。
+        MagicPoolActionPacket.register();
 
         NETWORK.registerMessage(packetId++, UniversalPacket.class,
                 UniversalPacket::encode, UniversalPacket::decode, UniversalPacket::handle);

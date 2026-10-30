@@ -2,6 +2,7 @@ package org.bytechen.rottenruins.event;
 
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.client.ClientPacketHandlers;
+import org.bytechen.rottenruins.client.MagicClientHandler;
 import org.bytechen.rottenruins.client.entity.render.impl.BlackHoleRenderer;
 import org.bytechen.rottenruins.client.entity.render.impl.CollapseRenderer;
 import org.bytechen.rottenruins.client.entity.render.impl.CrimsonVowChargeRenderer;
@@ -43,6 +44,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -184,6 +186,16 @@ public class ClientModEventHandler {
     @SubscribeEvent
     public static void onRegisterClientTooltipComponents(RegisterClientTooltipComponentFactoriesEvent event) {
         event.register(BlockBarTooltip.class, ClientBlockBarTooltip::new);
+    }
+
+    /**
+     * 注册按键。必须挂在 <b>mod 总线</b>的 {@link RegisterKeyMappingsEvent} 上
+     * （不是 Forge 总线的 {@code InputEvent}）—— 这是 1.20.1 唯一正确的时机，
+     * 早了 {@code Options} 还没建好，晚了键位不会出现在「控制」里。
+     */
+    @SubscribeEvent
+    public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
+        event.register(MagicClientHandler.OPEN_MAGIC);
     }
 
     @SubscribeEvent

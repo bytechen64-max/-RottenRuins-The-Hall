@@ -30,7 +30,8 @@ import java.util.function.Supplier;
  * （见 {@code PlayerMagicPool#tickCooldowns()} —— 它在客户端也会跑，
  * 但不标脏、也不会驱逐物品）。判定能不能施法始终以服务端为准，客户端那份只是显示用。</p>
  *
- * <p>槽位选择（"当前第几格"）也在这个包里，所以以后做选择界面时，客户端能立刻看到结果。</p>
+ * <p>槽位选择（"当前第几格"）也在这个包里，所以魔法星图界面（{@code MagicScreen}）
+ * 一选中，客户端立刻能看到结果。</p>
  */
 public class MagicPoolSyncPacket {
 

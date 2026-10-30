@@ -1,7 +1,11 @@
 package org.bytechen.rottenruins.overworld.registry.items.magic.bases;
 
 /**
- * 法术的<b>使用方式</b>。每个法术<b>必须</b>声明一种 —— 它决定这次释放的整条时间轴。
+ * 法术的<b>使用方式</b>。每个<b>主动</b>法术必须声明一种 —— 它决定这次释放的整条时间轴。
+ *
+ * <p><b>只描述主动法术。</b>被动法术（{@link SpellKind#PASSIVE}）不经过释放流程，
+ * 它构造器里声明的 {@code UsingType} 只是一个不会被读取的占位值 ——
+ * "要不要主动放"由独立的 {@link SpellKind} 回答，不塞进本枚举。</p>
  *
  * <p>三种模式的时间轴由 {@code MagicHandle} 统一驱动，法术自己不用数 tick：</p>
  *

@@ -239,5 +239,26 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 
 > 局限：没有真实地形/粒子/屏幕抖动，只验证光柱本身的几何、分层与图案。
 
+---
 
+## 魔法星图预览：`magic.ps1`（不启动游戏）
 
+```powershell
+.\tools\shader-preview\magic.ps1                 # 编译 + 渲染一帧 → build\magic-preview\magic-gui.png
+.\tools\shader-preview\magic.ps1 -Time 9         # 换一帧看动画相位
+```
+
+`MagicPreview.java` 按 `MagicScreen` 的约定复现两件事：
+
+- **背景**：整屏四边形 + `magic_starfield`（流动星云 + 三层视差星点），
+  用 `uSize` 拿像素坐标，所以星点尺寸不随分辨率变；
+- **连接光带**：5 个槽位按"∧∨∧"折线摆好，每段一个四边形 + `magic_constellation`
+  （发丝级亮芯 + 极淡薄雾 + 很慢的明暗呼吸；**没有**沿轨道滚动的小光点），
+  加法混合与 json 的 `srcalpha / one` 同语义；`UV0.x = 长度 / 64`，所以长短段的节奏一致。
+
+产物只有一张 `magic-gui.png`。它**不验证** MC 的 `ShaderInstance` 状态簿记与
+`GuiGraphics` 批处理顺序（那部分靠 `MagicGuiShaders` 里"先 flush、后还原"的写法），
+但能提前抓到 GLSL 编译错误与"这颜色/密度到底好不好看"。
+
+> 注意：预览里背景是**不透明**的（与游戏里一致）；`magic_starfield.json` 故意不写
+> `"blend"`，靠 `RenderSystem.disableBlend()` 直接覆盖整屏，避免和世界画面叠加。

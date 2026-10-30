@@ -47,6 +47,9 @@ public final class ClientPacketHandlers {
         // 挂在同一个 Forge 总线上，所以和上面的 tooltip 钩子一样走 addListener。
         org.bytechen.rottenruins.client.VoidSwordClientHandler.register();
 
+        // 魔法星图：M 键打开界面（按键映射在 ClientModEventHandler 里注册）。
+        org.bytechen.rottenruins.client.MagicClientHandler.register();
+
         PacketActionRegistry.register(HeartLosePacket.ACTION, (data, ctx) -> {
             if (!(data.getValue() instanceof CompoundTag tag)) return;
             spawnHeartLose(tag);

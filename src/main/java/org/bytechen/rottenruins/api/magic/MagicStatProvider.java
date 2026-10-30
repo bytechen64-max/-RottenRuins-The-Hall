@@ -58,7 +58,7 @@ public interface MagicStatProvider {
         return base;
     }
 
-    /** 可用的魔法槽位数，基值是 {@link MagicStats#BASE_SLOT_COUNT}（10）。 */
+    /** 可用的魔法槽位数，基值是 {@link MagicStats#BASE_SLOT_COUNT}。 */
     default int modifySlotCount(Player player, int base) {
         return base;
     }

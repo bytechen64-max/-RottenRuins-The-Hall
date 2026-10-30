@@ -22,7 +22,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * 玩家的魔法池：<b>10 格法术槽</b> + <b>同名共享冷却</b> + 当前选中格。
+ * 玩家的魔法池：<b>5 格法术槽</b>（默认，属性 {@code magic_slots} 可扩容） + <b>同名共享冷却</b> + 当前选中格。
  *
  * <h3>三条规则，以及它们各自在哪实现</h3>
  * <table border="1">
@@ -42,7 +42,7 @@ import java.util.Map;
  *       {@code CMagicBaseItem.coolcount} —— 那是<b>注册表单例</b>的字段，
  *       结果甲放完法术乙也不能放。现在冷却按玩家存在这里。</li>
  *   <li><b>{@code getSlots()} 不再越界。</b> 原来返回 {@code handler.getSlots() + addition}，
- *       底层却是固定 10 格；{@code addition > 0} 时任何遍历到 {@code getSlots()} 的代码
+ *       底层却是固定槽位数；{@code addition > 0} 时任何遍历到 {@code getSlots()} 的代码
  *       都会读越界。现在底层数组按 {@link MagicStats#MAX_SLOT_COUNT} 分配，
  *       {@code getSlots()} 由 {@link MagicStats#slotCount} 决定并做钳制。</li>
  *   <li><b>{@code changeSlot} 不再能选出非法下标。</b> 原来的环绕算式会算出负数、
@@ -52,9 +52,10 @@ import java.util.Map;
  * </ol>
  *
  * <h3>关于槽位选择</h3>
- * <p>按需求，<b>选择本身先放着</b>：这里只有"选中第几格"的存储与几个安全的移动方法，
- * 没有按键绑定、没有选择界面、也没有把选中格同步到客户端。外部（命令、以后的 GUI）
- * 直接调 {@link #setSelectedSlot(int)} 即可。</p>
+ * <p>选中格由客户端界面 {@code MagicScreen}（默认 {@code M} 键）通过
+ * {@code MagicPoolActionPacket} 写入，服务端只负责校验与存储；选中的下标会随
+ * {@code MagicPoolSyncPacket} 一起同步给客户端。外部（命令、别的界面）也可以直接调
+ * {@link #setSelectedSlot(int)}。</p>
  */
 public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<CompoundTag> {
 

@@ -208,6 +208,20 @@ public class LangDataEN extends LanguageProvider {
         // Death Star: nether star + wither roses
         add(RegisterItem.DEATH_STAR.get(), "Death Star");
 
+        // ---- Spell constellation GUI / key bind ----
+        add("key.categories." + HallMod.MODID, "Rotten Ruins");
+        add("key." + HallMod.MODID + ".open_magic", "Open Spell Constellation");
+        add("rotten_ruins.gui.magic.title", "Spell Constellation");
+        add("rotten_ruins.gui.magic.inventory", "Spells in Inventory");
+        add("rotten_ruins.gui.magic.empty", "No spells");
+        add("rotten_ruins.gui.magic.hint", "Drag a spell into a slot · Click a slot to select");
+        add("rotten_ruins.gui.magic.slots", "Slots %s / %s");
+        add("rotten_ruins.gui.magic.kind.active", "Active spell");
+        add("rotten_ruins.gui.magic.kind.passive", "Passive spell");
+        add("rotten_ruins.gui.magic.mana", "Mana %s");
+        add("rotten_ruins.gui.magic.cooldown", "Cooldown %ss");
+        add("rotten_ruins.gui.magic.charge", "Charge %ss");
+
         // ---- Sound subtitles (see SoundData) ----
         // Body-explosion sound: same subtitle text as corruption's rip_body, hall namespace.
         add("subtitles." + HallMod.MODID + ".rip_body", "Body rips apart");

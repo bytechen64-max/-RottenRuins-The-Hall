@@ -78,6 +78,10 @@ public class SplendidingShaders {
     public static ShaderInstance guiTabDividerShader;
     /** 难度选择界面的四档「印记」（程序化多边形几何 + 逐 profile 图案）。 */
     public static ShaderInstance difficultySigilShader;
+    /** 魔法星图的深空背景（流动星云 + 三层视差星点，纯程序化全屏一次绘制）。 */
+    public static ShaderInstance magicStarfieldShader;
+    /** 魔法星图槽位之间的连接光带（每段一个四边形，沿线流动 + 运行的光点）。 */
+    public static ShaderInstance magicConstellationShader;
     /** 坍缩使徒 boss 血条的「血量内容」着色器（纯黑底 + 彩色星尘，mask 红通道定形状）。 */
     public static ShaderInstance collapsarBarShader;
     /** 坍缩使徒的背部六芒星光环（参考 glorb/field 彩虹噪声 + 六芒星 SDF）。 */
@@ -370,6 +374,32 @@ public class SplendidingShaders {
                     shader -> difficultySigilShader = shader);
         } catch (Throwable t) {
             HallMod.LOGGER.error("[Shaders] 加载 rendertype_difficulty_sigil 失败，难度印记将退化为旧的发光效果", t);
+        }
+
+        // 魔法星图的深空背景（全屏程序化：流动星云 + 视差星点）
+        try {
+            event.registerShader(
+                    new ShaderInstance(event.getResourceProvider(),
+                            new ResourceLocation(HallMod.MODID, "magic_starfield"),
+                            DefaultVertexFormat.POSITION_TEX),
+                    shader -> magicStarfieldShader = shader);
+        } catch (Throwable t) {
+            // 加载失败只是没有流动星空：MagicScreen 会退回静态星点背景。
+            HallMod.LOGGER.error("[Shaders] 加载 magic_starfield 失败，"
+                    + "魔法星图将退回静态星空", t);
+        }
+
+        // 魔法星图槽位之间的连接光带（每段一个四边形，沿线流动）
+        try {
+            event.registerShader(
+                    new ShaderInstance(event.getResourceProvider(),
+                            new ResourceLocation(HallMod.MODID, "magic_constellation"),
+                            DefaultVertexFormat.POSITION_TEX),
+                    shader -> magicConstellationShader = shader);
+        } catch (Throwable t) {
+            // 加载失败只是没有流动光带：MagicScreen 会退回金色星点连线。
+            HallMod.LOGGER.error("[Shaders] 加载 magic_constellation 失败，"
+                    + "魔法星图的槽位连线将退回星点虚线", t);
         }
 
         // black hole (raymarched gravitational lensing, view-space billboard)

@@ -201,8 +201,8 @@ public class RegisterItem {
 
     // ---- 法杖 ----
     // 走 StaffBase（纯转发层），所以它们已经"能被魔法系统识别"：
-    // 右键会走进 MagicHandle。但魔法槽里目前一件法术都没有，
-    // 于是每次右键都只会拿到 CastResult.NO_SPELL —— 表现为"什么都没发生"。
+    // 右键会走进 MagicHandle。法术槽默认 5 格，用「魔法星图」（默认 M 键）把法术拖进槽里；
+    // 槽里为空时右键只会拿到 CastResult.NO_SPELL —— 表现为"什么都没发生"。
     // 模型用 minecraft:item/handheld，由 ItemGenData 的 isHandheld 判定。
     public static final RegistryObject<Item> WAND = ITEMS.register("wand",
             () -> new WandItem(new Item.Properties().stacksTo(1), MagicType.MAGIC));
@@ -211,7 +211,8 @@ public class RegisterItem {
 
     // ---- 法术 ----
     // 法术物品只声明基值，效果写在 cast() 里，投射物在 entities/magic/ 下。
-    // 放进魔法槽（PlayerMagicPool）里、拿法杖右键才会释放 —— 直接拿在手上右键是没反应的。
+    // 放进魔法槽（PlayerMagicPool，按 M 打开魔法星图装配）里、拿法杖右键才会释放
+    // —— 直接拿在手上右键是没反应的。
     public static final RegistryObject<Item> FIRE_BALL =
             ITEMS.register("fire_ball", FireBall::new);
 

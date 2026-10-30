@@ -47,6 +47,11 @@ import java.util.concurrent.ConcurrentHashMap;
  *          → 抛 MagicCastEvent.Post
  * </pre>
  *
+ * <p><b>被动法术不在这条路径上</b>：{@link SpellKind#PASSIVE} 的法术放进魔法槽就生效，
+ * 不消耗法力也不进冷却。{@code handleUseStart} 选中它时会以
+ * {@code CastResult.PASSIVE_SPELL} 直接结束，不会调用 {@link IMagicBaseItem#cast}。
+ * 被动效果的实际驱动（槽位 tick / 放入取出时的 equip / unequip）不在这里。</p>
+ *
  * <h3>目标是怎么来的</h3>
  * <p>只有法术声明 {@code needsTarget()} 为 {@code true} 时才解析，时机是<b>真正释放的那一刻</b>
  * —— {@code IMMEDIATELY} / {@code KEEP} 是按下时，{@code CHARGE} 是松手时（所以蓄力期间瞄准有用）。
@@ -172,7 +177,8 @@ public final class MagicHandle {
             return new UseStartOutcome(CastResult.INVALID_SLOT, false);
         }
 
-        // 槽位选择目前只有存储与取用，"怎么选"（按键 / GUI）按需求先放着
+        // 槽位选择由客户端界面 MagicScreen（默认 M 键）写入；
+        // 这里只读取当前选中格，不负责"怎么选"。
         int slot = pool.getSelectedSlot();
         if (!pool.isValidSlot(slot)) {
             return new UseStartOutcome(CastResult.INVALID_SLOT, false);
@@ -182,6 +188,12 @@ public final class MagicHandle {
         IMagicBaseItem spell = MagicStats.spellOf(spellStack);
         if (spell == null) {
             return new UseStartOutcome(CastResult.NO_SPELL, false);
+        }
+
+        // 被动法术不走释放路径：放进槽里就持续生效，由后续的槽位框架驱动。
+        // 没有这一条的话，被动法术会被它那个占位的 UsingType 当成主动法术放出去。
+        if (spell.isPassive()) {
+            return new UseStartOutcome(CastResult.PASSIVE_SPELL, false);
         }
 
         // 法杖流派是否接受这件法术

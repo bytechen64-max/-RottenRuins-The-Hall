@@ -5,6 +5,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.IMagicBaseItem;
+import org.bytechen.rottenruins.overworld.registry.items.magic.bases.SpellKind;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,8 +32,8 @@ public final class MagicStats {
     /** 每秒回蓝基值。 */
     public static final double BASE_REGEN_PER_SECOND = 1.0d;
 
-    /** 魔法槽位基值 —— 玩家初始 10 格。 */
-    public static final int BASE_SLOT_COUNT = 10;
+    /** 魔法槽位基值 —— 玩家初始 5 格（可用属性 {@code magic_slots} 往上加）。 */
+    public static final int BASE_SLOT_COUNT = 5;
 
     /** 槽位数硬上限：底层数组按这个长度分配，属性修饰器不能超过它。 */
     public static final int MAX_SLOT_COUNT = 64;
@@ -122,6 +123,22 @@ public final class MagicStats {
     @Nullable
     public static IMagicBaseItem spellOf(@Nullable ItemStack stack) {
         return isSpell(stack) ? (IMagicBaseItem) stack.getItem() : null;
+    }
+
+    /**
+     * 法术的<b>分类轴</b>：主动 / 被动。
+     *
+     * <p>不是法术时按 {@link SpellKind#ACTIVE} 处理，调用方不需要先判空。</p>
+     */
+    @NotNull
+    public static SpellKind spellKind(@Nullable ItemStack stack) {
+        IMagicBaseItem item = spellOf(stack);
+        return item == null ? SpellKind.ACTIVE : item.spellKind();
+    }
+
+    /** 这件物品是不是<b>被动</b>法术（放在魔法槽里生效、不能由法杖释放）。 */
+    public static boolean isPassive(@Nullable ItemStack stack) {
+        return spellKind(stack) == SpellKind.PASSIVE;
     }
 
     /**

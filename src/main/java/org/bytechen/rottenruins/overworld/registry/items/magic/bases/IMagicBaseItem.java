@@ -71,9 +71,50 @@ public interface IMagicBaseItem {
     @NotNull
     MagicType getMagicType();
 
-    /** 释放模式：立刻 / 蓄力 / 按住。 */
+    /**
+     * 释放模式：立刻 / 蓄力 / 按住。
+     *
+     * <p><b>只对主动法术有意义</b>：被动法术（{@link SpellKind#PASSIVE}）不经过释放流程，
+     * 这里返回的值只是一个占位，不会被读取。</p>
+     */
     @NotNull
     UsingType getUsingType();
+
+    // ──────────────────────────────────────────────────────────────
+    // 分类轴（主动 / 被动）
+    // ──────────────────────────────────────────────────────────────
+
+    /**
+     * 法术的<b>分类轴</b>：主动 / 被动。默认 {@link SpellKind#ACTIVE}。
+     *
+     * <p>它和另外两个维度正交，回答的是不同问题：</p>
+     * <ul>
+     *   <li>{@link #getMagicType()} —— <b>流派</b>（火 / 死亡 / 虚空……）；</li>
+     *   <li>{@link #getUsingType()} —— <b>主动法术的释放时间轴</b>（立刻 / 蓄力 / 按住）；</li>
+     *   <li>{@code spellKind()} —— <b>要不要靠法杖主动放</b>（主动 / 被动）。</li>
+     * </ul>
+     *
+     * <p><b>主动</b>：现有三件法术（火球术 / 审判之矛 / 抑制场）都是这类。必须放进魔法槽、
+     * 由法杖右键走 {@code MagicHandle} 的释放流程，消耗法力、进冷却。</p>
+     *
+     * <p><b>被动</b>：不释放。放进魔法槽后持续生效，没有耗蓝 / 冷却 / 蓄力语义；
+     * {@code MagicHandle.handleUseStart} 选中它会直接以 {@code CastResult.PASSIVE_SPELL}
+     * 结束，不会调 {@link #cast}。被动效果的驱动（槽位 tick / 放入取出时的
+     * equip / unequip）由后续框架负责，本方法只负责"分类"。</p>
+     *
+     * <p>做成默认方法而不是构造器参数，理由同 {@link #needsTarget()} 那一组设计属性：
+     * {@code CMagicBaseItem} 的构造器已经是一串位置参数，再塞一个枚举只会让"填错位置"
+     * 更难发现。现有法术与外部实现不需要改动，默认就是主动。</p>
+     */
+    @NotNull
+    default SpellKind spellKind() {
+        return SpellKind.ACTIVE;
+    }
+
+    /** 是不是被动法术。等价于 {@code spellKind() == SpellKind.PASSIVE}。 */
+    default boolean isPassive() {
+        return spellKind() == SpellKind.PASSIVE;
+    }
 
     /** 单次释放的启动耗蓝。{@code KEEP} 模式下这是"启动消耗"。 */
     int baseManaCost();
