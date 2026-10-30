@@ -1,8 +1,10 @@
 package org.bytechen.rottenruins.overworld.registry.items.magic.bases;
 
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * 单个玩家的「当前释放状态」。
@@ -40,6 +42,19 @@ public final class State {
     private InteractionHand hand = InteractionHand.MAIN_HAND;
     private int heldTicks;
     private int keepBillingTicks;
+    /** KEEP 效果触发计时器（与按秒扣蓝的 {@link #keepBillingTicks} 是两套）。 */
+    private int keepPulseTicks;
+    /** 是否"待触发第一次"（进入维持后的第一 tick 立刻触发一次）。 */
+    private boolean keepPulsePending = true;
+    /**
+     * {@code KEEP} 维持期间<b>锁定</b>的目标。
+     *
+     * <p>在开始维持的那一刻（也就是启动扣蓝、进冷却的那一次）沿准星解析出来，
+     * 之后整段维持都用它 —— 这就是"锁定"的含义：按住期间目标不会因为准星
+     * 划过去而换成别人。没声明需要目标的法术恒为 {@code null}。</p>
+     */
+    @Nullable
+    private LivingEntity lockedTarget;
 
     @NotNull
     public UsingPhase getPhase() {
@@ -84,6 +99,17 @@ public final class State {
         this.heldTicks = Math.max(0, heldTicks);
     }
 
+    /**
+     * 本次维持锁定的目标；不需要目标的法术、或不在维持中时返回 {@code null}。
+     *
+     * <p>调用方要注意它<b>可能已经死了或已卸载</b>（玩家一直按着不放的时候会发生）——
+     * 用之前请自己看一眼 {@code isAlive()} / {@code isRemoved()}。</p>
+     */
+    @Nullable
+    public LivingEntity getLockedTarget() {
+        return lockedTarget;
+    }
+
     /** 进入蓄力。 */
     public void beginCharging(@NotNull ItemStack spell, int slot, @NotNull InteractionHand hand) {
         this.phase = UsingPhase.CHARGING;
@@ -92,16 +118,33 @@ public final class State {
         this.hand = hand;
         this.heldTicks = 0;
         this.keepBillingTicks = 0;
+        this.keepPulseTicks = 0;
+        this.keepPulsePending = true;
+        // 蓄力的目标是在松手那一刻才解析的，所以蓄力期间没有"锁定目标"
+        this.lockedTarget = null;
     }
 
-    /** 进入维持。 */
+    /** 进入维持（不带锁定目标）。 */
     public void beginChanneling(@NotNull ItemStack spell, int slot, @NotNull InteractionHand hand) {
+        beginChanneling(spell, slot, hand, null);
+    }
+
+    /**
+     * 进入维持，并记下这一段维持锁定的目标。
+     *
+     * @param lockedTarget 需要目标的法术在启动那一刻解析出的目标；不需要时为 {@code null}
+     */
+    public void beginChanneling(@NotNull ItemStack spell, int slot, @NotNull InteractionHand hand,
+                               @Nullable LivingEntity lockedTarget) {
         this.phase = UsingPhase.CHANNELING;
         this.spell = spell;
         this.slot = slot;
         this.hand = hand;
         this.heldTicks = 0;
         this.keepBillingTicks = 0;
+        this.keepPulseTicks = 0;
+        this.keepPulsePending = true;
+        this.lockedTarget = lockedTarget;
     }
 
     /**
@@ -117,6 +160,41 @@ public final class State {
         return true;
     }
 
+    /**
+     * 推进 KEEP 的<b>效果触发</b>计时器。
+     *
+     * <p>与 {@link #tickKeepBilling()}（按秒扣蓝）是两套独立的计时器。框架里因此有两条
+     * 互不影响的耗蓝线：一条按<b>秒</b>扣（跟触发快慢无关），一条按<b>触发次数</b>扣
+     * （这个计时器每返回一次 {@code true} 就扣一次）。法术只声明其中一条时，另一条为 0。</p>
+     *
+     * <p><b>相位</b>：进入维持后的第 1 tick 就返回 {@code true}（立刻触发一次），
+     * 之后每 {@code interval} tick 一次。也就是"触发速度 2"命中的是第 1、3、5…… tick，
+     * <b>不是</b> 1、2、3 —— 第一次立刻触发，但不会因此把间隔缩短成 1。</p>
+     *
+     * @param interval 触发速度（tick）；{@code <= 1} 表示每 tick 触发
+     * @return 本 tick 是否应该触发一次效果
+     */
+    public boolean tickKeepPulse(int interval) {
+        if (interval <= 1) {
+            // 每 tick 触发：计时器没有意义，顺手清零免得下次换速度时相位错乱
+            keepPulseTicks = 0;
+            keepPulsePending = false;
+            return true;
+        }
+        // 进入维持后的第一 tick：立刻来一次
+        if (keepPulsePending) {
+            keepPulsePending = false;
+            keepPulseTicks = 0;
+            return true;
+        }
+        // 之后每隔 interval 个 tick 一次
+        if (++keepPulseTicks >= interval) {
+            keepPulseTicks = 0;
+            return true;
+        }
+        return false;
+    }
+
     /** 回到 IDLE 并清掉所有引用。 */
     public void reset() {
         phase = UsingPhase.IDLE;
@@ -125,5 +203,8 @@ public final class State {
         hand = InteractionHand.MAIN_HAND;
         heldTicks = 0;
         keepBillingTicks = 0;
+        keepPulseTicks = 0;
+        keepPulsePending = true;
+        lockedTarget = null;
     }
 }

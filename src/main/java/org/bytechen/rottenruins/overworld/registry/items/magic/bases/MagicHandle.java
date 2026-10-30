@@ -3,7 +3,13 @@ package org.bytechen.rottenruins.overworld.registry.items.magic.bases;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import org.bytechen.rottenruins.api.magic.CastResult;
 import org.bytechen.rottenruins.api.magic.MagicCastEvent;
@@ -33,12 +39,23 @@ import java.util.concurrent.ConcurrentHashMap;
  *   ├─ CHARGE     ：进入蓄力，等松手；松手时若已蓄满才往下走
  *   └─ KEEP       ：往下走，成功后进入"维持"
  *
- *   往下走 = 抛 MagicCastEvent（可取消/可改耗蓝）
+ *   往下走 = 【需要目标就跑一次准星射线，解不到就 CastResult.NO_TARGET（不扣费、不进 CD）】
+ *          → 抛 MagicCastEvent（可取消/可改耗蓝）
  *          → 校验并扣除法力（不够就 CastResult.NOT_ENOUGH_MANA，不扣、不进冷却）
  *          → 写入冷却（按物品注册名）
  *          → 调 IMagicBaseItem#cast 出效果
  *          → 抛 MagicCastEvent.Post
  * </pre>
+ *
+ * <h3>目标是怎么来的</h3>
+ * <p>只有法术声明 {@code needsTarget()} 为 {@code true} 时才解析，时机是<b>真正释放的那一刻</b>
+ * —— {@code IMMEDIATELY} / {@code KEEP} 是按下时，{@code CHARGE} 是松手时（所以蓄力期间瞄准有用）。
+ * 解法见 {@link #resolveTarget}：从眼睛沿准星射线，<b>被方块挡住就打不到</b>，
+ * 距离上限由法术声明并可被属性/附魔改。解不到目标时，{@code allowSelfCast()} 为
+ * {@code true} 就退化成对自己释放，否则返回 {@code NO_TARGET}。</p>
+ *
+ * <p>{@code KEEP} 模式的目标在开始维持时解析一次并<b>锁定</b>整段维持
+ * （见 {@link State#getLockedTarget()}），不会跟着准星换人。</p>
  *
  * <h3>为什么"检查"要在"扣费"之前分两处做</h3>
  * <p>冷却 / {@code canCast} / 法力余额都在<b>按下时</b>就先查一遍，
@@ -193,7 +210,7 @@ public final class MagicHandle {
         State state = getState(player);
         return switch (spell.getUsingType()) {
             case IMMEDIATELY -> new UseStartOutcome(
-                    castNow(player, hand, slot, spellStack, spell, 1.0f, 0), false);
+                    castNow(player, hand, slot, spellStack, spell, 1.0f, 0).result(), false);
 
             case CHARGE -> {
                 state.beginCharging(spellStack, slot, hand);
@@ -201,12 +218,13 @@ public final class MagicHandle {
             }
 
             case KEEP -> {
-                CastResult result = castNow(player, hand, slot, spellStack, spell, 1.0f, 0);
-                if (result.isSuccess()) {
-                    state.beginChanneling(spellStack, slot, hand);
+                CastOutcome outcome = castNow(player, hand, slot, spellStack, spell, 1.0f, 0);
+                if (outcome.result().isSuccess()) {
+                    // 需要目标的法术：把启动那一刻锁定的目标带进维持，整段维持都用它
+                    state.beginChanneling(spellStack, slot, hand, outcome.target());
                     yield new UseStartOutcome(CastResult.SUCCESS, true);
                 }
-                yield new UseStartOutcome(result, false);
+                yield new UseStartOutcome(outcome.result(), false);
             }
         };
     }
@@ -226,7 +244,11 @@ public final class MagicHandle {
      *
      * <ul>
      *   <li>{@code CHARGING}：累加 tick 并回调法术的 {@code onChargeTick}；<b>不扣蓝</b>。</li>
-     *   <li>{@code CHANNELING}：每秒结算一次维持耗蓝；法力不足或法术自己喊停就结束维持。</li>
+     *   <li>{@code CHANNELING}：这里有<b>两套互相独立</b>的计时器与两条独立的耗蓝线 ——
+     *       <b>按秒</b>结算 {@code baseKeepCostPerSecond()}（法力不足就结束维持），
+     *       以及<b>按触发速度</b>回调 {@code onKeepTick} 并按次数结算
+     *       {@code baseKeepCostPerTrigger()}（"生效有间隔，扣费也就有间隔"）。
+     *       两条线各自独立，法术通常只用其中一条。</li>
      * </ul>
      */
     public static void handleUseTick(@NotNull ServerPlayer player, @NotNull InteractionHand hand,
@@ -258,7 +280,8 @@ public final class MagicHandle {
         if (state.isChanneling()) {
             state.setHeldTicks(heldTicks);
 
-            // 维持耗蓝：每秒一次
+            // 维持耗蓝：每秒一次。**与触发速度无关** —— 这一条只管"维持本身要付的代价"。
+            // 另一条（每次生效扣一次）在下面跟着触发节奏走，两者刻意解耦。
             if (state.tickKeepBilling()) {
                 int perSecond = MagicStats.keepCostPerSecond(player, spellStack);
                 if (perSecond > 0) {
@@ -271,8 +294,33 @@ public final class MagicHandle {
                 }
             }
 
-            if (spell != null && !spell.onKeepTick(player, spellStack, heldTicks)) {
-                stopChannel(player, state);
+            // 效果触发：**按法术声明的触发速度**走，不是每 tick。
+            // 1 = 每 tick（默认）、2 = 每 2 tick…… 见 IMagicBaseItem#baseKeepTriggerInterval。
+            if (spell != null) {
+                int interval = MagicStats.keepTriggerInterval(player, spellStack);
+                if (state.tickKeepPulse(interval)) {
+                    // 这一段维持锁定的目标（不需要目标的法术为 null）。
+                    // 可能在维持期间死了 —— 交给法术自己判断要不要收手。
+                    LivingEntity target = state.getLockedTarget();
+
+                    // 1) 先出效果。允许返回 false 主动收手。
+                    boolean keepGoing = spell.onKeepTick(player, spellStack, heldTicks, interval, target);
+
+                    // 2) 再扣"这一次生效"的法力 —— 生效有间隔，扣费也就有间隔。
+                    int perTrigger = MagicStats.keepCostPerTrigger(player, spellStack);
+                    if (perTrigger > 0) {
+                        TwistedPoint mana = getMana(player);
+                        if (mana != null && !mana.spend(perTrigger)) {
+                            // 扣不动了 → 维持结束。这一发已经打出去了，从下一发起不再发生。
+                            stopChannel(player, state);
+                            return;
+                        }
+                    }
+
+                    if (!keepGoing) {
+                        stopChannel(player, state);
+                    }
+                }
             }
         }
     }
@@ -320,7 +368,8 @@ public final class MagicHandle {
             // 到门槛了 → 照常放出去。威力由法术自己按 ctx.chargeRatio() 缩放：
             // 蓄满 = 1.0 全额；提前放 = 同比例减弱。耗蓝仍按全额收
             // —— 和原版弓一样（提前松手伤害低，但箭照样消耗）。
-            return castNow(player, usedHand, slot, spellStack, spell, ratio, heldTicks);
+            // 需要目标的法术在这里才解析目标（松手那一刻），所以蓄力期间可以瞄准。
+            return castNow(player, usedHand, slot, spellStack, spell, ratio, heldTicks).result();
         }
 
         // CHANNELING
@@ -329,8 +378,108 @@ public final class MagicHandle {
     }
 
     // ══════════════════════════════════════════════════════════════
+    // 目标解析
+    // ══════════════════════════════════════════════════════════════
+
+    /**
+     * 沿施法者<b>准星</b>解算本次要锁定的目标；解不到时按法术的
+     * {@code allowSelfCast()} 决定是返回施法者自己还是 {@code null}。
+     *
+     * <p>规则：</p>
+     * <ul>
+     *   <li>射线从<b>眼睛</b>出发，长度 = {@code MagicStats.targetRange(...)}（法术声明，
+     *       可被属性/附魔折叠，钳在 {@code [0, 128]}）。</li>
+     *   <li>会被<b>方块阻挡</b>：瞄准墙后的生物锁不上（用的是原版
+     *       {@code ProjectileUtil.getHitResultOnViewVector}，和弓箭的判定同一套）。</li>
+     *   <li>只考虑<b>活着的、可被选中的、不是旁观者</b>的生物，且永远<b>不含施法者自己</b>
+     *       —— 否则开启自我释放的法术会永远锁到自己身上，准星就没意义了。</li>
+     *   <li>没锁到时：{@code allowSelfCast()} 为 {@code true} → 返回施法者；
+     *       为 {@code false} → 返回 {@code null}（调用方应该以
+     *       {@link CastResult#NO_TARGET} 结束，不扣蓝不进冷却）。</li>
+     * </ul>
+     *
+     * <p><b>公开</b>这个方法是有意的：{@code KEEP} 模式的目标在开始维持时就锁定了，
+     * 法术若想做"光束跟着准星走"，可以在每次 {@code onKeepTick} 里自己调一次它重新解，
+     * 而不用重新实现一套射线。</p>
+     *
+     * @param spellStack 法术堆（提供射程与 {@code allowSelfCast} 策略）
+     * @return 锁定到的目标；解不到且不允许自我释放时为 {@code null}
+     */
+    @Nullable
+    public static LivingEntity resolveTarget(@NotNull ServerPlayer caster,
+                                             @NotNull ItemStack spellStack) {
+        IMagicBaseItem spell = MagicStats.spellOf(spellStack);
+        if (spell == null) {
+            return null;
+        }
+        boolean selfCast = spell.allowSelfCast();
+
+        double range = MagicStats.targetRange(caster, spellStack);
+        if (range <= 0.0d) {
+            // 射程为 0（或被修饰器减到 0）→ 射线长度为 0，必然什么都打不到
+            return selfCast ? caster : null;
+        }
+
+        HitResult hit = ProjectileUtil.getHitResultOnViewVector(caster,
+                entity -> isTargetable(caster, entity), range);
+        if (hit instanceof EntityHitResult entityHit
+                && entityHit.getEntity() instanceof LivingEntity living
+                && living.isAlive()) {
+            return living;
+        }
+        return selfCast ? caster : null;
+    }
+
+    /** 某个实体能不能被锁定：活着的生物、可被选中、非旁观者、不是施法者本人。 */
+    private static boolean isTargetable(@NotNull ServerPlayer caster, @NotNull Entity entity) {
+        if (entity == caster || entity.isSpectator() || !entity.isPickable()) {
+            return false;
+        }
+        return entity instanceof LivingEntity living && living.isAlive();
+    }
+
+    /**
+     * 沿施法者<b>准星</b>解算"指定的那个<b>位置</b>" —— 给需要落点的法术用
+     * （天降之物、地面 AoE、传送落点…）。
+     *
+     * <p>和 {@link #resolveTarget} 的区别只有一点：那个返回"锁定的<b>目标</b>"（没有就是
+     * {@code null} 或自己），这个返回"准星射线打到的<b>坐标</b>"，永远有值。</p>
+     *
+     * <p>取值规则：</p>
+     * <ul>
+     *   <li>准星先打生物（活着的、非旁观、非施法者本人）→ 返回那个生物身上的命中点；</li>
+     *   <li>否则走方块射线（会被墙挡住）→ 返回方块受击面；</li>
+     *   <li>两者都没打到（对着天）→ 返回射线上距离 {@code range} 的那一点。
+     *       所以"对着天上放"是有意义的：落点就在空中。</li>
+     * </ul>
+     *
+     * <p>{@code range} 一般传 {@code MagicStats.targetRange(caster, spellStack)}
+     * —— 那样射程就能被属性/附魔改；法术也可以在 {@code baseTargetRange()} 里给个更大的默认值。</p>
+     *
+     * @return 准星指定的位置；{@code range <= 0} 时返回施法者眼睛的位置
+     */
+    @NotNull
+    public static Vec3 resolveAimPoint(@NotNull ServerPlayer caster, double range) {
+        if (range <= 0.0d) {
+            return caster.getEyePosition();
+        }
+        HitResult hit = ProjectileUtil.getHitResultOnViewVector(caster,
+                entity -> isTargetable(caster, entity), range);
+        return hit.getLocation();
+    }
+
+    // ══════════════════════════════════════════════════════════════
     // 内部
     // ══════════════════════════════════════════════════════════════
+
+    /**
+     * 一次释放的结果：除了结果码，还要把<b>锁定的目标</b>带出来。
+     *
+     * <p>只为了 {@code KEEP} 模式需要 —— 它要把这次解析到的目标记进
+     * {@link State} 供整段维持使用。其它模式只看 {@code result()}。</p>
+     */
+    private record CastOutcome(@NotNull CastResult result, @Nullable LivingEntity target) {
+    }
 
     /**
      * 结束维持：<b>无条件</b>回调法术的 {@code onKeepStop}，再清状态。
@@ -351,22 +500,32 @@ public final class MagicHandle {
     }
 
     /**
-     * 真正的一次释放：事件 → 扣蓝 → 进冷却 → 出效果 → Post 事件。
+     * 真正的一次释放：解目标 → 事件 → 扣蓝 → 进冷却 → 出效果 → Post 事件。
      *
      * <p>走到这里说明冷却、{@code canCast} 已经过了（蓄力型的"蓄满"也过了）。</p>
      */
     @NotNull
-    private static CastResult castNow(@NotNull ServerPlayer player, @NotNull InteractionHand hand,
-                                      int slot, @NotNull ItemStack spellStack,
-                                      @NotNull IMagicBaseItem spell,
-                                      float chargeRatio, int heldTicks) {
+    private static CastOutcome castNow(@NotNull ServerPlayer player, @NotNull InteractionHand hand,
+                                       int slot, @NotNull ItemStack spellStack,
+                                       @NotNull IMagicBaseItem spell,
+                                       float chargeRatio, int heldTicks) {
+        // ---- 0. 目标解析（只对声明了 needsTarget 的法术做）----
+        // 放在最前面：瞄空时连事件都不该抛、法力冷却都不该动。
+        LivingEntity target = null;
+        if (spell.needsTarget()) {
+            target = resolveTarget(player, spellStack);
+            if (target == null) {
+                return new CastOutcome(CastResult.NO_TARGET, null);
+            }
+        }
+
         int cost = MagicStats.manaCost(player, spellStack);
 
         // ---- 1. 释放前事件：可取消、可改耗蓝。取消时法力与冷却都不动 ----
         MagicCastEvent event = new MagicCastEvent(player, spellStack, spell.getUsingType(),
-                hand, slot, chargeRatio, cost);
+                hand, slot, chargeRatio, target, cost);
         if (MinecraftForge.EVENT_BUS.post(event) || event.isCanceled()) {
-            return CastResult.CANCELLED;
+            return new CastOutcome(CastResult.CANCELLED, target);
         }
         cost = event.getManaCost();
 
@@ -383,7 +542,7 @@ public final class MagicHandle {
                             CapabilityRegistry.MANA_CAP.getName());
                 }
             } else if (!mana.spend(cost)) {
-                return CastResult.NOT_ENOUGH_MANA;
+                return new CastOutcome(CastResult.NOT_ENOUGH_MANA, target);
             }
         }
 
@@ -400,12 +559,13 @@ public final class MagicHandle {
         }
 
         // ---- 4. 出效果 ----
-        spell.cast(player, spellStack, new MagicCastContext(slot, hand, heldTicks, chargeRatio));
+        spell.cast(player, spellStack,
+                new MagicCastContext(slot, hand, heldTicks, chargeRatio, target));
 
         // ---- 5. 释放后事件：不可取消，用来挂后续逻辑 ----
         MinecraftForge.EVENT_BUS.post(new MagicCastEvent.Post(player, spellStack,
-                spell.getUsingType(), cost, chargeRatio, CastResult.SUCCESS));
+                spell.getUsingType(), cost, chargeRatio, target, CastResult.SUCCESS));
 
-        return CastResult.SUCCESS;
+        return new CastOutcome(CastResult.SUCCESS, target);
     }
 }

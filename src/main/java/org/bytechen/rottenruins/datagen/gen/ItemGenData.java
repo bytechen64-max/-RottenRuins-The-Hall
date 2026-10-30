@@ -15,8 +15,33 @@ import java.util.Set;
 public class ItemGenData extends ItemModelProvider {
     public ItemGenData(PackOutput output, ExistingFileHelper efh) { super(output, HallMod.MODID, efh); }
 
+    /**
+     * 不自动生成模型的物品 —— 它们的模型由<b>手写</b>维护，放在
+     * {@code src/main/resources/assets/hall/models/item/<名字>.json}。
+     *
+     * <h3>加进来意味着什么</h3>
+     * <p>下面的 {@link #registerModels()} 会遍历整个 {@code hall} 命名空间自动生成
+     * {@code minecraft:item/generated} 模型。而在生成模型的同时，Forge 的
+     * {@code ExistingFileHelper} 会<b>校验它引用的贴图存在</b> —— 贴图没画好就会直接抛
+     * {@code IllegalArgumentException: Texture hall:item/xxx does not exist in any known
+     * resource pack}，整个 {@code runData} 失败。所以"代码先写、贴图后补"的物品
+     * 必须放进这个名单。</p>
+     *
+     * <h3>贴图画好之后怎么办</h3>
+     * <ul>
+     *   <li>想让模型<b>回到自动生成</b>：把名字从本名单里删掉，把手写的那份 json 删掉，
+     *       跑一次 {@code runData} 即可；</li>
+     *   <li>想<b>继续手写</b>（例如要 handheld、要特殊显示）：保持在本名单里，只补贴图。</li>
+     * </ul>
+     *
+     * <p>下面三个是魔法法术（火球术 / 审判之矛 / 抑制场）：物品与逻辑都已完工，
+     * 占位贴图按需求删掉了，所以先把模型手写在这里占着位置 ——
+     * 补上 {@code textures/item/<名字>.png} 就能正常显示。</p>
+     */
     private static final Set<String> MANUAL_WHITELIST = Set.of(
-            "domerite_sword", "domerite_pickaxe", "domerite_axe", "domerite_shovel", "domerite_hoe","domerite_longsword","crimson_vow","silent_daylight"
+            "domerite_sword", "domerite_pickaxe", "domerite_axe", "domerite_shovel", "domerite_hoe","domerite_longsword","crimson_vow","silent_daylight",
+            // 魔法更新：贴图待补，先用手写模型
+            "fire_ball", "spear_of_judgment", "suppression_field"
     );
 
     @Override

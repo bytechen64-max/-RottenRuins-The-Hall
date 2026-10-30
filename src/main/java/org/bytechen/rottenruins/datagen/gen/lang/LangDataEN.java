@@ -201,6 +201,10 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterItem.VOID_RUNE.get(), "Void Rune");
         add(RegisterItem.WAND.get(), "Wand");
         add(RegisterItem.WAND_NATURE.get(), "Nature Wand");
+        // Spells (upstream 1.20.1forge "magic update")
+        add(RegisterItem.FIRE_BALL.get(), "Fireball");
+        add(RegisterItem.SPEAR_OF_JUDGMENT.get(), "Spear of Judgment");
+        add(RegisterItem.SUPPRESSION_FIELD.get(), "Suppression Field");
         // Death Star: nether star + wither roses
         add(RegisterItem.DEATH_STAR.get(), "Death Star");
 

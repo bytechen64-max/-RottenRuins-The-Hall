@@ -185,6 +185,10 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.VOID_RUNE.get(), "虚空符文");
         add(RegisterItem.WAND.get(), "法杖");
         add(RegisterItem.WAND_NATURE.get(), "自然法杖");
+        // 法术（上游 1.20.1forge「魔法更新」）
+        add(RegisterItem.FIRE_BALL.get(), "火球术");
+        add(RegisterItem.SPEAR_OF_JUDGMENT.get(), "审判之矛");
+        add(RegisterItem.SUPPRESSION_FIELD.get(), "抑制场");
         // 死亡之星：下界之星 + 凋零玫瑰
         add(RegisterItem.DEATH_STAR.get(), "死亡之星");
 

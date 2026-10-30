@@ -30,6 +30,8 @@ import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skil
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ulcerated.MonolithEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ulcerated.PursuerEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ulcerated.ScoutEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.magic.FireBallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.magic.SpearOfJudgmentEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -292,6 +294,27 @@ public class EntityTypeRegistry {
     public static final RegistryObject<EntityType<BlackHoleEntity>> BLACK_HOLE =
             registerNoopEntity("black_hole", 0.5f, 0.5f,
                     (type, level) -> new BlackHoleEntity(type, level));
+
+    // ────────── 法术投射物 —— 火球 ──────────
+    //  没有走 registerProjectile / registerSkill：那两条分别要求
+    //  GeckoLib 的 IAutoRenderableProjectile / IAutoRenderableEntity，而火球是
+    //  原版 Fireball 的子类，渲染交给原版 ThrownItemRenderer（在 ClientModEventHandler 里注册）。
+    //  碰撞箱照抄原版恶魂火球的 1.0 × 1.0。
+    public static final RegistryObject<EntityType<FireBallEntity>> FIRE_BALL =
+            registerNoopEntity("fire_ball", 1.0f, 1.0f, FireBallEntity::new);
+
+    // ────────── 法术投射物 —— 审判之矛 ──────────
+    //  这里没有复用 registerNoopEntity，唯一的原因是<b>需要 updateInterval(1)</b>：
+    //  普通实体没有客户端预测（位置的推进是服务端算的），而矛一秒飞 32 格，
+    //  按默认的每 3 tick 同步一次会看出明显的跳格。每 tick 同步则完全顺滑。
+    //  clientTrackingRange 给 10（原版投射物是 4~5）：它经常在几十格外被看到。
+    public static final RegistryObject<EntityType<SpearOfJudgmentEntity>> SPEAR_OF_JUDGMENT =
+            ENTITY_TYPES.register("spear_of_judgment", () -> EntityType.Builder
+                    .of(SpearOfJudgmentEntity::new, MobCategory.MISC)
+                    .sized(0.6f, 0.6f)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("spear_of_judgment"));
 
     // ────────── 使徒 —— 坍缩使徒（飞行 / 坍缩黑洞 / 斩击风暴） ──────────
     //  碰撞箱按 geo 网格实测值给（宽 2.38 / 高 2.51），不要用 Blockbench 的

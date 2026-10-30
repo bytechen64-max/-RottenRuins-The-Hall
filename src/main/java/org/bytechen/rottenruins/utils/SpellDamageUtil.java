@@ -225,6 +225,34 @@ public final class SpellDamageUtil {
     }
 
     // ══════════════════════════════════════════════════════════════
+    // 高频命中的准备
+    // ══════════════════════════════════════════════════════════════
+
+    /**
+     * 准备一次<b>必须真的落下去</b>的命中：清空无敌帧 + 拉满受击红闪。
+     *
+     * <p>凡是"同一个目标在 20 tick 内要挨第二下"的效果，<b>每次结算前</b>都要调它
+     * —— 每 N tick 结算一次的范围场、穿透连打、多段打击都属于这一类。
+     * 不调的话，第二下会被原版 {@code LivingEntity.hurt} 的
+     * {@code invulnerableTime > 10} 分支当成"重复伤害"，只补
+     * {@code amount - lastHurt} 的差值 —— 伤害数值相同就等于 0，
+     * 表现为"只有第一下掉了血，后面全穿过去了"。</p>
+     *
+     * <p>为什么还要拉满红闪：{@code SpellDamageUtil} 在有 BCCore 时走的是
+     * <b>直接写血</b>那条路，压根不经过 {@code LivingEntity.hurt}，红闪不会被自动触发；
+     * 而清无敌帧用的 {@link BCCoreCompat#clearHurtGuard} 顺手把
+     * {@code hurtTime} 也清成了 0 —— 两者叠加会让连打看起来像完全没打中。
+     * 退回原版 {@code hurt} 时这一步是多余的（那边自己会把 {@code hurtTime}
+     * 拉到 {@code hurtDuration}），所以两种路径下都不会出问题。</p>
+     *
+     * <p>只在服务端调用。</p>
+     */
+    public static void prepareRepeatHit(@NotNull LivingEntity target) {
+        BCCoreCompat.clearHurtGuard(target);
+        target.hurtTime = Math.max(target.hurtTime, target.hurtDuration);
+    }
+
+    // ══════════════════════════════════════════════════════════════
     // 击杀归因 / 死亡流程
     // ══════════════════════════════════════════════════════════════
 

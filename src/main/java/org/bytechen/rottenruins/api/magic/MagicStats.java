@@ -45,6 +45,23 @@ public final class MagicStats {
      */
     public static final float BASE_KILL_MANA_PER_HP = 1.0f;
 
+    /**
+     * {@code KEEP} 触发速度的上限（tick）。
+     *
+     * <p>取 200（约 10 秒）纯粹是防呆：填一个离谱的大数会让"持续施法"看起来完全没反应，
+     * 排查起来很费劲。要更慢的效果请换设计，而不是把触发间隔拉到几分钟。</p>
+     */
+    public static final int MAX_KEEP_TRIGGER_INTERVAL = 200;
+
+    /**
+     * 锁定目标的距离硬上限（格）。
+     *
+     * <p>和触发间隔那个上限一样是防呆用的：法术射程填到几百格意味着
+     * 玩家能隔着地形点到看不见的东西，而且射线本身会变得很贵。
+     * 真要远程打击请做投射物，而不是把锁定距离拉长。</p>
+     */
+    public static final double MAX_TARGET_RANGE = 128.0d;
+
     private MagicStats() {
     }
 
@@ -152,6 +169,77 @@ public final class MagicStats {
         int value = MagicStatRegistry.foldInt(base,
                 (provider, current) -> provider.modifyKeepCostPerSecond(player, spell, current));
         return Math.max(0, value);
+    }
+
+    /**
+     * {@code KEEP} 模式的<b>触发速度</b>：效果每多少 tick 触发一次。
+     *
+     * <p>钳在 {@code [1, }{@link #MAX_KEEP_TRIGGER_INTERVAL}{@code ]}。
+     * 下限刻意是 1 而不是 0 —— 0 在"每 N tick 触发一次"里没有意义，
+     * 而且会让计数逻辑退化成每 tick。</p>
+     */
+    public static int keepTriggerInterval(@Nullable Player player, ItemStack spell) {
+        IMagicBaseItem item = spellOf(spell);
+        if (item == null) {
+            return 1;
+        }
+        int base = Math.max(1, item.baseKeepTriggerInterval());
+        if (player == null) {
+            return Math.min(MAX_KEEP_TRIGGER_INTERVAL, base);
+        }
+        int value = MagicStatRegistry.foldInt(base,
+                (provider, current) -> provider.modifyKeepTriggerInterval(player, spell, current));
+        return Math.max(1, Math.min(MAX_KEEP_TRIGGER_INTERVAL, value));
+    }
+
+    /**
+     * {@code KEEP} 模式<b>每生效一次</b>的额外耗蓝。
+     *
+     * <p>与 {@link #keepCostPerSecond} 并存且互不代替：这一项跟着触发节奏走，
+     * 触发间隔是 20 tick 就每 20 tick 扣一次，是 1 tick 就每 tick 扣一次 ——
+     * 也就是"每次生效都付钱，生效有间隔则扣费也有间隔"。
+     * 想要"维持就要付出代价，跟触发快慢无关"的效果，请用 {@code keepCostPerSecond}。</p>
+     */
+    public static int keepCostPerTrigger(@Nullable Player player, ItemStack spell) {
+        IMagicBaseItem item = spellOf(spell);
+        if (item == null) {
+            return 0;
+        }
+        int base = Math.max(0, item.baseKeepCostPerTrigger());
+        if (player == null) {
+            return base;
+        }
+        int value = MagicStatRegistry.foldInt(base,
+                (provider, current) -> provider.modifyKeepCostPerTrigger(player, spell, current));
+        return Math.max(0, value);
+    }
+
+    /**
+     * 锁定目标的<b>最大距离</b>（格），钳在
+     * {@code [0, }{@link #MAX_TARGET_RANGE}{@code ]}。
+     *
+     * <p>只对声明了 {@code needsTarget()} 的法术有意义。射线会在"撞到方块"或
+     * "超过这个距离"里先到的那一处停下，所以它既是射程也是穿透深度。</p>
+     */
+    public static double targetRange(@Nullable Player player, ItemStack spell) {
+        IMagicBaseItem item = spellOf(spell);
+        if (item == null) {
+            return 0.0d;
+        }
+        double base = clampRange(item.baseTargetRange());
+        if (player == null) {
+            return base;
+        }
+        return clampRange(MagicStatRegistry.foldDouble(base,
+                (provider, current) -> provider.modifyTargetRange(player, spell, current)));
+    }
+
+    /** 把射程钳到 {@code [0, MAX_TARGET_RANGE]}；{@code NaN} 视为 0。 */
+    private static double clampRange(double value) {
+        if (Double.isNaN(value)) {
+            return 0.0d;
+        }
+        return Math.max(0.0d, Math.min(MAX_TARGET_RANGE, value));
     }
 
     /** 释放后的冷却 tick。同名物品共享这个值。 */

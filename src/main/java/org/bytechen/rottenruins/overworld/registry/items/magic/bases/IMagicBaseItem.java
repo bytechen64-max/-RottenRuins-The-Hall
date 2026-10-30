@@ -1,8 +1,10 @@
 package org.bytechen.rottenruins.overworld.registry.items.magic.bases;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * 法术物品的行为接口。
@@ -41,13 +43,20 @@ import org.jetbrains.annotations.NotNull;
  *     }
  *
  *     @Override
- *     protected boolean cast(ServerPlayer caster, ItemStack stack, MagicCastContext ctx) {
- *         // ctx.chargeRatio() 就是蓄力完成度，可以拿来缩放威力
- *         LivingEntity target = findTarget(caster);
+ *     public boolean cast(ServerPlayer caster, ItemStack stack, MagicCastContext ctx) {
+ *         // ctx.target() 就是准星锁定的目标（前提是本法术 needsTarget() 返回 true）
+ *         LivingEntity target = ctx.target();
  *         if (target == null) return false;      // 返回 false 表示"这次没打出去"
+ *         // ctx.chargeRatio() 就是蓄力完成度，可以拿来缩放威力
  *         return SpellDamageUtil.hurt(target, stack, caster, 12.0f * ctx.chargeRatio());
  *     }
  * }
+ * }</pre>
+ *
+ * <p>需要目标的法术再加两行声明，框架就会在释放那一刻替你解析准星目标：</p>
+ * <pre>{@code
+ * @Override public boolean needsTarget() { return true; }
+ * @Override public boolean allowSelfCast() { return true; }  // 瞄空时打自己（增益类法术）
  * }</pre>
  */
 public interface IMagicBaseItem {
@@ -130,6 +139,105 @@ public interface IMagicBaseItem {
     boolean cast(@NotNull ServerPlayer caster, @NotNull ItemStack stack, @NotNull MagicCastContext ctx);
 
     /**
+     * {@code KEEP} 模式的<b>触发速度</b>：效果每多少 tick 触发一次。
+     *
+     * <ul>
+     *   <li>{@code 1} = 每 tick 触发（默认，也就是"一直执行"）；</li>
+     *   <li>{@code 2} = 每 2 tick 触发一次；</li>
+     *   <li>{@code 20} = 每秒触发一次；以此类推。</li>
+     * </ul>
+     *
+     * <p>用它把"表现层每 tick 都在动"和"结算每 N tick 才发生一次"分开：例如一束持续光束
+     * 每 tick 都要更新几何，但伤害每 5 tick 结算一次。以前只能自己在 {@code onKeepTick}
+     * 里数 tick，现在声明一个数就行。</p>
+     *
+     * <p><b>触发相位</b>：按下后的<b>第 1 tick 立刻触发一次</b>，之后每 {@code N} tick 一次
+     * （不是"先空等 N tick 才第一次触发"）—— 按住右键立刻就有反馈。
+     * 等于 {@code 1} 时就是每 tick。</p>
+     *
+     * <p><b>与耗蓝无关</b>：维持耗蓝（{@link #baseKeepCostPerSecond()}）永远按<b>每秒</b>结算，
+     * 不受这个值影响。</p>
+     *
+     * <p>非 {@code KEEP} 模式忽略这个值。返回值小于 1 会被钳到 1。</p>
+     *
+     * <p>想在构造器里给就传给 {@code CMagicBaseItem} 的 10 参构造器；
+     * 或者直接覆写本方法。</p>
+     */
+    default int baseKeepTriggerInterval() {
+        return 1;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // 设计属性（用覆写声明，不走构造器）
+    // ══════════════════════════════════════════════════════════════
+    // 下面这几项是"这个法术是什么样"的设计决定，不是可调的数值。做成覆写而不是构造器参数，
+    // 是因为 CMagicBaseItem 的构造器已经有 6 个连续的 int —— 再往里塞只会变成
+    // "位置参数汤"：把 keepCostPerSecond 和 keepTriggerInterval 填反了照样编译通过，
+    // 而且要到实测才发现。覆写写法在子类里一眼就能看到自己声明了什么。
+
+    /**
+     * 这个法术是否<b>必须锁定一个目标</b>才能释放。默认 {@code false}。
+     *
+     * <p>为 {@code true} 时，框架会在<b>真正释放的那一刻</b>沿玩家准星射线解算目标
+     * （见 {@code MagicHandle#resolveTarget}），并把结果放进
+     * {@link MagicCastContext#target()} 与 {@code MagicCastEvent#getTarget()}。</p>
+     *
+     * <p>解不到目标时的行为由 {@link #allowSelfCast()} 决定：</p>
+     * <ul>
+     *   <li>{@code false}（默认）→ 本次释放失败，返回 {@code CastResult.NO_TARGET}，
+     *       <b>不扣蓝、不进冷却</b>；</li>
+     *   <li>{@code true} → 目标改为施法者自己（"没瞄到人就打自己"）。</li>
+     * </ul>
+     *
+     * <p>蓄力型（{@code CHARGE}）注意：目标是在<b>松手释放的那一刻</b>算的，
+     * 不是按下时算的 —— 所以蓄力期间瞄准是有效的。</p>
+     */
+    default boolean needsTarget() {
+        return false;
+    }
+
+    /**
+     * 没有锁定到目标时，是否允许<b>对自己释放</b>。默认 {@code false}。
+     *
+     * <p>只有 {@link #needsTarget()} 为 {@code true} 时才有意义。</p>
+     *
+     * <p>默认 false 是刻意的：把"需要目标"打开的同时默认允许自伤，
+     * 会让一个伤害法术在瞄空时反手打死自己 —— 那是很难排查的事故。
+     * 自身增益类法术（治疗、护盾、加速）请显式声明 {@code true}。</p>
+     */
+    default boolean allowSelfCast() {
+        return false;
+    }
+
+    /**
+     * 锁定目标的最大距离（方块）。默认 {@code 32}。
+     *
+     * <p>射线会被<b>方块阻挡</b>：瞄准墙后的生物不会锁上。实际可用的距离取
+     * "本值" 与 "方块命中点" 的较小者。</p>
+     */
+    default double baseTargetRange() {
+        return 32.0d;
+    }
+
+    /**
+     * {@code KEEP} 模式<b>每次触发效果</b>时扣除的法力。默认 {@code 0}。
+     *
+     * <p>与 {@link #baseKeepTriggerInterval()} 配合使用，让耗蓝跟着效果走：
+     * 触发速度 5 + 每触发 8 点 = 每 5 tick 扣 8 点，也就是平均 32 点/秒。
+     * 这样"效果多久发生一次"和"法力多久扣一次"天然是同一个节奏。</p>
+     *
+     * <p><b>与每秒耗蓝的关系</b>：{@link #baseKeepCostPerSecond()} 是更早的按秒模型，
+     * 仍然有效。两者<b>互相独立</b>，同时非 0 就都会扣（不建议，容易算不清）。
+     * 新法术请用这个，把 {@code keepCostPerSecond} 留 0。</p>
+     *
+     * <p>扣费发生在效果触发<b>之后</b>：法力不够时本次触发照常发生，
+     * 但维持会在扣费失败时立即结束（不会出现"效果还在、蓝已经透支"）。</p>
+     */
+    default int baseKeepCostPerTrigger() {
+        return 0;
+    }
+
+    /**
      * {@code CHARGE} 模式蓄力过程中每 tick 调用（服务端）。
      *
      * @param heldTicks 已经按住了多少 tick
@@ -138,12 +246,50 @@ public interface IMagicBaseItem {
     }
 
     /**
-     * {@code KEEP} 模式维持过程中每 tick 调用（服务端）。
+     * {@code KEEP} 模式维持过程中的效果回调（服务端），<b>按触发速度调用</b>。
      *
-     * <p>持续耗蓝由框架按秒结算，不需要自己扣。</p>
+     * <p>不是每 tick 都调 —— 频率由 {@link #baseKeepTriggerInterval()} 决定
+     * （1 = 每 tick，2 = 每 2 tick……）。耗蓝不用在这里扣：框架会按
+     * {@link #baseKeepCostPerTrigger()} / {@link #baseKeepCostPerSecond()} 自己结算。</p>
      *
+     * <p>这是<b>带锁定目标</b>的版本，框架调用的就是它。默认实现逐级转发到四参、三参版本，
+     * 所以<b>只覆写旧版本的代码照常工作</b>；想读到触发速度或目标就覆写这个五参版本。</p>
+     *
+     * @param heldTicks       从按下到现在多少 tick
+     * @param triggerInterval 本次的触发速度（{@code baseKeepTriggerInterval()} 经
+     *                        {@code MagicStats} 折叠后的最终值，可能被属性/附魔改过）
+     * @param target          本次维持<b>锁定</b>的目标；法术不需要目标时为 {@code null}。
+     *                        在开始维持那一刻解析一次并沿用整段维持，期间<b>不会</b>跟着
+     *                        准星换人 —— 想做成"光束跟准星走"的话，在每个触发里自己调
+     *                        {@code MagicHandle.resolveTarget(caster, stack)} 重新解一个。
+     *                        注意它可能已经死了（玩家一直按着不放），用之前看一眼
+     *                        {@code isAlive()}。
      * @return {@code false} 表示"主动停止维持"（例如目标死了、玩家移动了）。
      *         返回 {@code false} 后框架会结束这次维持并进冷却。
+     */
+    default boolean onKeepTick(@NotNull ServerPlayer caster, @NotNull ItemStack stack,
+                               int heldTicks, int triggerInterval,
+                               @Nullable LivingEntity target) {
+        return onKeepTick(caster, stack, heldTicks, triggerInterval);
+    }
+
+    /**
+     * {@code KEEP} 模式维持过程中的效果回调 —— <b>四参兼容版本</b>。
+     *
+     * <p>框架调用的是 {@link #onKeepTick(ServerPlayer, ItemStack, int, int, LivingEntity)}，
+     * 它的默认实现会转发到这里。所以覆写本方法拿不到目标，但行为完全不变。</p>
+     *
+     * <p>新代码建议直接覆写五参版本（需要目标时）。</p>
+     */
+    default boolean onKeepTick(@NotNull ServerPlayer caster, @NotNull ItemStack stack,
+                               int heldTicks, int triggerInterval) {
+        return onKeepTick(caster, stack, heldTicks);
+    }
+
+    /**
+     * {@code KEEP} 模式维持过程中的效果回调 —— <b>三参兼容版本</b>。
+     *
+     * <p>转发链的最底层，覆写它会终结整条转发。拿不到触发速度与目标。</p>
      */
     default boolean onKeepTick(@NotNull ServerPlayer caster, @NotNull ItemStack stack, int heldTicks) {
         return true;

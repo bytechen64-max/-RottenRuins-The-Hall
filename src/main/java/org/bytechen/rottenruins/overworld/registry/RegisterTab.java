@@ -128,7 +128,7 @@ public class RegisterTab {
 
                     })
 
-                    // ─────────────────────────── 魔法（10） ───────────────────────────
+                    // ─────────────────────────── 魔法（13） ───────────────────────────
                     .section(section("magic"), (params, output) -> {
                         // 法力板（六系）
                         items(output,
@@ -144,6 +144,11 @@ public class RegisterTab {
                         RegisterItem.VOID_RUNE.get(),
                         RegisterItem.WAND.get(),
                         RegisterItem.WAND_NATURE.get());
+                        // 法术（上游 1.20.1forge「魔法更新」：火球术 / 审判之矛 / 抑制场）
+                        items(output,
+                        RegisterItem.FIRE_BALL.get(),
+                        RegisterItem.SPEAR_OF_JUDGMENT.get(),
+                        RegisterItem.SUPPRESSION_FIELD.get());
                     })
 
                     // ─────────────────────── 武器与工具（16） ───────────────────────
