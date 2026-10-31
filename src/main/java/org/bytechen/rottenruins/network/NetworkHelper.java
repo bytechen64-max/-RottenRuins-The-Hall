@@ -38,6 +38,9 @@ public class NetworkHelper {
         // 走同一套 UniversalPacket + action 分发，不新增包序号。
         MagicPoolActionPacket.register();
 
+        // 轮盘施法界面的配置保存 + 手势协议（同样走 action 分发，不新增包序号）
+        org.bytechen.rottenruins.network.c2s.WheelActionPacket.register();
+
         NETWORK.registerMessage(packetId++, UniversalPacket.class,
                 UniversalPacket::encode, UniversalPacket::decode, UniversalPacket::handle);
         NETWORK.registerMessage(packetId++, PacketSyncKeyframe.class,

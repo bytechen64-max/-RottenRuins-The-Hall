@@ -122,17 +122,19 @@ public abstract class StaffBase extends Item {
         }
 
         MagicHandle.UseStartOutcome outcome = useMagic(serverPlayer, hand);
+        // MagicHandle may replace a depleted wand with the empty wand.
+        ItemStack current = player.getItemInHand(hand);
 
         if (outcome.keepUsing()) {
             // 蓄力 / 维持：进入使用态，后续靠 onUseTick 与 releaseUsing 推进
             player.startUsingItem(hand);
-            return InteractionResultHolder.consume(stack);
+            return InteractionResultHolder.consume(current);
         }
 
         // 立刻释放型：已经打完了（或失败），不需要维持使用态
         return outcome.result().isSuccess()
-                ? InteractionResultHolder.consume(stack)
-                : InteractionResultHolder.fail(stack);
+                ? InteractionResultHolder.consume(current)
+                : InteractionResultHolder.fail(current);
     }
 
     /** 必须返回 true —— 否则蓄力到顶后松手不会触发 {@code releaseUsing}。 */

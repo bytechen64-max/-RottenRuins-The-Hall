@@ -10,6 +10,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import org.bytechen.rottenruins.overworld.registry.RegisterBlock;
 import org.bytechen.rottenruins.overworld.registry.RegisterItem;
+import org.bytechen.rottenruins.overworld.registry.WandRecipes;
+import org.bytechen.rottenruins.HallMod;
 
 import java.util.function.Consumer;
 
@@ -28,6 +30,7 @@ public class RecipeProviderData extends RecipeProvider {
 
     @Override
     protected void buildRecipes(Consumer<FinishedRecipe> consumer) {
+        addWandRecipes(consumer);
         // 原木 -> 4 个木板
         addPlanksRecipe(consumer, RegisterBlock.HALL_LOG.get(), Item.byBlock(RegisterBlock.HALL_PLANKS.get()));
 
@@ -59,6 +62,22 @@ public class RecipeProviderData extends RecipeProvider {
 
         // ── 死亡之星：下界之星 + 一圈凋零玫瑰 ──
         addDeathStarRecipe(consumer);
+    }
+
+    private void addWandRecipes(Consumer<FinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, RegisterItem.WAND.get())
+                .define('I', Items.IRON_INGOT).define('N', Items.NETHER_STAR)
+                .pattern(" I ").pattern(" N ").pattern(" I ")
+                .unlockedBy("has_nether_star", has(Items.NETHER_STAR))
+                .save(consumer);
+
+        for (String id : new String[]{"wand_fire", "wand_death", "wand_light",
+                "wand_nature", "wand_void", "wand_water", "wand_mysterious", "wand_common"}) {
+            SpecialRecipeBuilder.special(WandRecipes.WAND_CRAFTING.get())
+                    .save(consumer, HallMod.MODID + ":" + id);
+            SpecialRecipeBuilder.special(WandRecipes.WAND_CRAFTING.get())
+                    .save(consumer, HallMod.MODID + ":" + id + "_recharge");
+        }
     }
 
     /**

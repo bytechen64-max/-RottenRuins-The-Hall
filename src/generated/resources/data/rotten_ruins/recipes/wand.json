@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "N": {
+      "item": "minecraft:nether_star"
+    }
+  },
+  "pattern": [
+    " I ",
+    " N ",
+    " I "
+  ],
+  "result": {
+    "item": "rotten_ruins:wand"
+  },
+  "show_notification": true
+}

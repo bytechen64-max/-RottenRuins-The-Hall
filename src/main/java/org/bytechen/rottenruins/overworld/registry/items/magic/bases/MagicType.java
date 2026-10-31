@@ -13,8 +13,8 @@ package org.bytechen.rottenruins.overworld.registry.items.magic.bases;
  */
 public enum MagicType {
 
-    /** 寒冰：{@code #8AD8FF}。 */
-    ICE(0x8AD8FF),
+    /** 水：{@code #4CB8E8}。 */
+    WATER(0x4CB8E8),
     /** 火焰：{@code #FF6B3D}。 */
     FIRE(0xFF6B3D),
     /** 死亡：{@code #9C5BD1}。 */

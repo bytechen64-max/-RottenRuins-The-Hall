@@ -2,6 +2,7 @@ package org.bytechen.rottenruins.mixin;
 
 import org.bytechen.rottenruins.api.CosmicStyle;
 import org.bytechen.rottenruins.api.ICosmicLayer;
+import org.bytechen.rottenruins.api.mask.BlockMaskLayerItem;
 import org.bytechen.rottenruins.api.mask.MaskLayerSpec;
 import org.bytechen.rottenruins.client.cosmic.BakedModelCosmic;
 import org.bytechen.rottenruins.client.cosmic.CosmicLayerRegistry;
@@ -11,6 +12,7 @@ import org.bytechen.rottenruins.client.cosmic.render.CosmicRenderType;
 import org.bytechen.rottenruins.client.cosmic.render.CosmicRenderUtils;
 import org.bytechen.rottenruins.client.cosmic.render.CosmicShaders;
 import org.bytechen.rottenruins.client.mask.IMaskLayerCarrier;
+import org.bytechen.rottenruins.client.mask.block.BlockMaskOverlayRenderer;
 import org.bytechen.rottenruins.client.mask.MaskLayerRenderer;
 import org.bytechen.rottenruins.client.mask.MaskLayerResolver;
 import org.bytechen.rottenruins.client.mask.compat.MaskLayerLateRenderQueue;
@@ -124,13 +126,23 @@ public abstract class MixinItemRendererCosmic {
         List<MaskLayerResolver.Resolved> maskLayers =
                 MaskLayerResolver.resolve(stack, context, jsonLayers);
 
+        // ── Resolve block-item mask layers（方块物品的整面表面层）──
+        // 这类物品的显示模型就是方块模型（cube），所以走的是方块侧那套
+        // 「按模型 quad + UV 重映射」的渲染，而不是物品贴图平面那条路。
+        List<MaskLayerSpec> blockItemLayers = stack.getItem() instanceof BlockMaskLayerItem carrier
+                ? carrier.maskLayers(stack)
+                : List.of();
+
         // ── Neither cosmic nor corruption nor mask layers → nothing to do ──
         // 这里刻意用「降级」而不是「整段 return」：原来 cosmic 着色器一加载失败就会
         // 直接返回，把跟它毫无关系的崩坏层和效果层一起吞掉 —— 症状是「改了个泛光
         // 层，星空和崩坏一起不见了」，因果完全对不上。
         if (cosmicMask != null && CosmicShaders.cosmicShader == null) cosmicMask = null;
         if (hasCorruption && CosmicShaders.corruptionShader == null) hasCorruption = false;
-        if (cosmicMask == null && !hasCorruption && maskLayers.isEmpty()) return;
+        if (cosmicMask == null && !hasCorruption && maskLayers.isEmpty()
+                && blockItemLayers.isEmpty()) {
+            return;
+        }
 
         // ── Flush base item so depth is in the GPU depth buffer ──
         if (buffer instanceof MultiBufferSource.BufferSource bs) {
@@ -190,6 +202,14 @@ public abstract class MixinItemRendererCosmic {
 
         Minecraft mc = Minecraft.getInstance();
         TextureAtlas blockAtlas = mc.getModelManager().getAtlas(InventoryMenu.BLOCK_ATLAS);
+
+        // ── 方块物品的整面表面层（death_core 等）──
+        // 放在 cosmic 之前：这是 REPLACE 层，会覆盖方块物品的表面；若该物品还有
+        // 星空层，星空仍会画在它上面（EQUAL 深度，与既有层序一致）。
+        if (!blockItemLayers.isEmpty()) {
+            BlockMaskOverlayRenderer.renderItem(poseStack, buffer, light, overlay, model,
+                    blockItemLayers, context, stack);
+        }
 
         // ── Cosmic layer ──
         if (cosmicMask != null) {

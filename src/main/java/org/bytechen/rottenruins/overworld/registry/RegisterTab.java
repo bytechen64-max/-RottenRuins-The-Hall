@@ -130,25 +130,37 @@ public class RegisterTab {
 
                     // ─────────────────────────── 魔法（13） ───────────────────────────
                     .section(section("magic"), (params, output) -> {
-                        // 法力板（六系）
+                        // 法力板（七系）
                         items(output,
                         RegisterItem.LIGHT_MANA_PLATE.get(),
                         RegisterItem.FIRE_MANA_PLATE.get(),
                         RegisterItem.WATER_MANA_PLATE.get(),
                         RegisterItem.NATURE_MANA_PLATE.get(),
                         RegisterItem.VOID_MANA_PLATE.get(),
-                        RegisterItem.DEATH_MANA_PLATE.get());
+                        RegisterItem.DEATH_MANA_PLATE.get(),
+                        RegisterItem.MYSTERIOUS_MANA_PLATE.get());
                         // 施法媒介 / 催化剂
                         items(output,
                         RegisterItem.MAGIC_CATA.get(),
                         RegisterItem.VOID_RUNE.get(),
                         RegisterItem.WAND.get(),
-                        RegisterItem.WAND_NATURE.get());
-                        // 法术（上游 1.20.1forge「魔法更新」：火球术 / 审判之矛 / 抑制场）
+                        RegisterItem.WAND_NATURE.get(),
+                        RegisterItem.WAND_FIRE.get(),
+                        RegisterItem.WAND_DEATH.get(),
+                        RegisterItem.WAND_LIGHT.get(),
+                        RegisterItem.WAND_VOID.get(),
+                        RegisterItem.WAND_WATER.get(),
+                        RegisterItem.WAND_MYSTERIOUS.get(),
+                        RegisterItem.WAND_COMMON.get());
+                        // 每种魔法类型至少一个主动法术
                         items(output,
                         RegisterItem.FIRE_BALL.get(),
                         RegisterItem.SPEAR_OF_JUDGMENT.get(),
-                        RegisterItem.SUPPRESSION_FIELD.get());
+                        RegisterItem.SUPPRESSION_FIELD.get(),
+                        RegisterItem.TIDAL_PULSE.get(),
+                        RegisterItem.BRIAR_SNARE.get(),
+                        RegisterItem.PURIFYING_LIGHT.get(),
+                        RegisterItem.ARCANE_STEP.get());
                     })
 
                     // ─────────────────────── 武器与工具（16） ───────────────────────
@@ -213,7 +225,8 @@ public class RegisterTab {
                         Item.byBlock(RegisterBlock.HALL_FLOWER.get()),
                         Item.byBlock(RegisterBlock.DOMITE_MINERAL.get()),
                         Item.byBlock(RegisterBlock.DOMERITE_MINERAL.get()),
-                        Item.byBlock(RegisterBlock.FLESH_RIFT.get()));
+                        Item.byBlock(RegisterBlock.FLESH_RIFT.get()),
+                        Item.byBlock(RegisterBlock.DEATH_CORE.get()));
                         // 腐化：地表 / 组织
                         items(output,
                         Item.byBlock(CorruptionBlocks.SPREAD_DIRT.get()),

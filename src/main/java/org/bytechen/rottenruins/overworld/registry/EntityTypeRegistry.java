@@ -31,8 +31,8 @@ import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skil
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ulcerated.MonolithEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ulcerated.PursuerEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ulcerated.ScoutEntity;
-import org.bytechen.rottenruins.overworld.registry.entities.magic.FireBallEntity;
-import org.bytechen.rottenruins.overworld.registry.entities.magic.SpearOfJudgmentEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.magic.FireBallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.magic.SpearOfJudgmentEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;

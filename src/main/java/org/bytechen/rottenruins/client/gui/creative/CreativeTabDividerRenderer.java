@@ -11,13 +11,13 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ContainerScreenEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
+import org.bytechen.rottenruins.api.text.TextEffectText;
 import org.bytechen.rottenruins.client.rend.SplendidingShaders;
 import org.joml.Matrix4f;
 
@@ -84,10 +84,6 @@ public final class CreativeTabDividerRenderer {
     private static final float INTENSITY = 1.0F;
     private static final float GLOW = 0.6F;
 
-    /** 标题的流动速度（圈/秒）与沿条的色相梯度（圈/像素）。 */
-    private static final float TEXT_FLOW_SPEED = 0.16F;
-    private static final float TEXT_FLOW_GRADIENT = 0.0055F;
-
     /** 降级填充色（着色器没加载时那一整行的暗金底）。 */
     private static final int FALLBACK_FILL = 0x70C9A227;
 
@@ -140,8 +136,8 @@ public final class CreativeTabDividerRenderer {
                 continue;
             }
             int y = GRID_Y + local * ROW_H;
-            drawFlowingText(gui, font, title.getString(),
-                    GRID_X + GRID_W / 2, y + (ROW_H - font.lineHeight) / 2, time);
+            drawFlowingTitle(gui, font, title,
+                    GRID_X + GRID_W / 2, y + (ROW_H - font.lineHeight) / 2);
         }
     }
 
@@ -208,8 +204,14 @@ public final class CreativeTabDividerRenderer {
     // ──────────────────────────────────────────────────────────────
 
     /**
-     * 逐字画标题，每个字一个随时间流动的色相 —— 于是标题本身也在"流淌"，
-     * 和底下那条色带是同一套节奏。
+     * 画分区标题：用 § 分节符的 {@code rainbow} 效果让整行标题随时间流动。
+     *
+     * <h3>为什么从"自己逐字算 HSV"改成文本特效标记</h3>
+     * <p>旧实现是逐字 {@code gui.drawString} + 每字一次色相计算，等于把"彩虹文字"
+     * 在渲染器里又私有实现了一遍：色相速度/饱和度是写死的常量，和新的
+     * {@code §[rrs:rainbow]} 形成两套调参入口；而且每字一次 draw 调用会打断 GUI 批处理。
+     * 改成一次 {@code drawString(Component)} 之后：颜色/速度走统一配置，批处理少 ~15 次切分，
+     * 标题与 tooltip/聊天里的彩虹文字用的是同一套实现。</p>
      *
      * <p><b>{@code centerX / y} 是"相对面板左上角"的坐标，不是屏幕绝对坐标。</b>
      * {@code GuiGraphics.drawString} 会把当前 PoseStack 烘进顶点，而 Foreground 事件
@@ -218,30 +220,21 @@ public final class CreativeTabDividerRenderer {
      * （第一次做这个功能时就是这么翻的，截图里"畸骸与王庭生物"跑到了世界渲染区）。
      * 同一屏里的 {@code renderLabels}（标签标题画在 8, 6）也是这个相对口径。</p>
      *
-     * <p>用 {@code font.width(String)} 量总宽来居中，逐字用 {@code font.width(单字)}
-     * 推进 x。原版字体对普通字符的宽度是可加的，累计误差不会超过一像素。</p>
+     * <p><b>开头垫一个原版 {@code §6}</b>：特效总开关关掉时标记会被剥离、正文按普通文本渲染，
+     * 那时标题仍应是金色而不是退成白色。宽度仍由 {@code Font.width(Component)} 计算，
+     * 标记零宽不会改变居中位置。</p>
      */
-    private static void drawFlowingText(GuiGraphics gui, Font font, String text,
-                                        int centerX, int y, float time) {
+    private static void drawFlowingTitle(GuiGraphics gui, Font font, Component title,
+                                         int centerX, int y) {
+        String text = title.getString();
         if (text.isEmpty()) {
             return;
         }
-        int x = centerX - font.width(text) / 2;
-        for (int i = 0; i < text.length(); ) {
-            int cp = text.codePointAt(i);
-            String glyph = new String(Character.toChars(cp));
-            int advance = font.width(glyph);
-            // 沿条的横向位置给一点相位差，让色相是"扫过去"而不是"整条一起闪"
-            float hue = (time * TEXT_FLOW_SPEED + (x - centerX) * TEXT_FLOW_GRADIENT) % 1.0F;
-            if (hue < 0.0F) {
-                hue += 1.0F;
-            }
-            int rgb = Mth.hsvToRgb(hue, 0.45F, 1.0F);
-            // 带投影：色带本身很花，不加一层暗描边会读不清
-            gui.drawString(font, glyph, x, y, 0xFF000000 | rgb, true);
-            x += advance;
-            i += Character.charCount(cp);
-        }
+        Component flowing = Component.literal(
+                "§6" + TextEffectText.open("rainbow:sat=0.45:speed=2.2") + text + TextEffectText.close());
+        int x = centerX - font.width(flowing) / 2;
+        // 带投影：色带本身很花，不加一层暗描边会读不清
+        gui.drawString(font, flowing, x, y, 0xFFFFFFFF, true);
     }
 
     // ──────────────────────────────────────────────────────────────

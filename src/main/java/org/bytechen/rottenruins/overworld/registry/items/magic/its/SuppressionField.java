@@ -1,5 +1,7 @@
 package org.bytechen.rottenruins.overworld.registry.items.magic.its;
 
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -19,10 +21,11 @@ import org.bytechen.rottenruins.overworld.registry.items.magic.bases.UsingType;
 import org.bytechen.rottenruins.utils.EntityChooseUtil;
 import org.bytechen.rottenruins.utils.SpellDamageUtil;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector3f;
 
 /**
  * <b>抑制场</b> —— 按住持续型法术：以施法者为中心铺开一个压制领域，
- * <b>每 5 tick</b> 结算一次，三个效果同时发生：
+ * <b>每 10 tick</b> 结算一次，三个效果同时发生：
  *
  * <ol>
  *   <li><b>范围伤害</b>：半径内所有目标各挨一次法术伤害（基值 {@code baseDamage()}）；</li>
@@ -32,10 +35,8 @@ import org.jetbrains.annotations.NotNull;
  * </ol>
  *
  * <h3>节奏是怎么来的</h3>
- * <p>"每 5 tick"不是自己数 tick，而是构造器最后一个参数
- * {@code keepTriggerInterval = 5} —— {@code KEEP} 模式的触发速度。框架只在该触发时
- * 回调 {@link #onKeepTick}，第一次就在进入维持后的第 1 tick，之后 1、6、11……。
- * 想改成每 10 tick 一次，只改那一个数。</p>
+ * <p>脉冲间隔由构造器的 {@code keepTriggerInterval = 10} 决定，
+ * 框架在维持期间回调 {@link #onKeepTick}。</p>
  *
  * <h3>半径与法术强度</h3>
  * <p>{@link #radiusFor}：{@code 5 × (1 + 强度加成/4)}，其中"强度加成"是
@@ -56,18 +57,21 @@ import org.jetbrains.annotations.NotNull;
  * 用自由落体 {@code v² = 2gh} 反推"等效下落高度"，再套原版的摔落规则
  * （前 {@value #FALL_IMMUNE_BLOCKS} 格免伤、每格 {@value #FALL_DAMAGE_PER_BLOCK} 点）：</p>
  * <pre>
- *   h = 1.2² / (2 × 0.08) = 9 格   →   (9 - 3) × 1 = 6 点
+ *   h = 0.8² / (2 × 0.08) = 4 格   →   (4 - 3) × 1 = 1 点
  * </pre>
  * <p>伤害类型用的是原版的 {@code fall}（{@code IS_FALL} 标签，羽落/防摔类效果能正确识别），
  * 但把主人挂在 {@code causingEntity} 上 —— 所以<b>击杀仍然算在施法者头上</b>
  * （掉落归属、成就、本模组的击杀回蓝都认得出）。</p>
  *
  * <h3>为什么每次都清无敌帧</h3>
- * <p>5 tick 一次 &lt; 原版 20 tick 的无敌帧，不清的话第二下之后全都会被
+ * <p>10 tick 一次 &lt; 原版 20 tick 的无敌帧，不清的话第二下之后全都会被
  * {@code LivingEntity.hurt} 当成"重复伤害"吃掉，表现为"只有第一下掉了血"。
  * 见 {@link SpellDamageUtil#prepareRepeatHit}。</p>
  */
 public class SuppressionField extends CMagicBaseItem {
+
+    private static final DustParticleOptions FIELD_DUST =
+            new DustParticleOptions(new Vector3f(0.36f, 0.18f, 0.65f), 1.1f);
 
     // ══════════════════════════════════════════════════════════════
     // 可调数值
@@ -83,13 +87,13 @@ public class SuppressionField extends CMagicBaseItem {
     public static final double MAX_RADIUS = 24.0d;
 
     /** 每次脉冲给空中目标的向下冲击速度（格/tick）—— 这就是"动量"的来源。 */
-    public static final double SUPPRESS_PUSH = 1.2d;
+    public static final double SUPPRESS_PUSH = 0.8d;
 
     /**
      * 每次脉冲额外把身体直接向下压的距离（格）。
      * <p>只对<b>非玩家、非乘客</b>生效，原因见 {@link #applySuppression}。</p>
      */
-    public static final double SUPPRESS_DROP = 2.0d;
+    public static final double SUPPRESS_DROP = 1.0d;
 
     /** 原版重力加速度（格/tick²）—— 把冲量换算成"等效下落高度"要用它。 */
     private static final double GRAVITY = 0.08d;
@@ -109,13 +113,13 @@ public class SuppressionField extends CMagicBaseItem {
     public SuppressionField() {
         //               属性       流派        使用方式        蓝   CD   蓄力 每秒 伤害 比例 触发间隔
         super(new Properties().stacksTo(1), MagicType.VOID, UsingType.KEEP,
-                80,     // 启动耗蓝
-                240,    // 冷却 tick（12 秒，同名物品共享）
+                60,     // 启动耗蓝
+                200,    // 冷却 tick（10 秒，同名物品共享）
                 0,      // 蓄力 tick —— 非 CHARGE，基类会归零
-                50,     // 维持耗蓝 / 秒（1000 法力最多撑 20 秒左右）
-                20,     // 每次脉冲的伤害基值（可被属性/附魔折叠）
+                35,     // 维持耗蓝 / 秒
+                6,      // 每次脉冲的伤害基值（可被属性/附魔折叠）
                 0,      // 最低蓄力比例 —— 非 CHARGE，无意义
-                5);     // ★ 触发速度：每 5 tick 结算一次
+                10);    // 每 10 tick 结算一次
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -146,7 +150,7 @@ public class SuppressionField extends CMagicBaseItem {
      * <p>真正的脉冲由框架按触发速度回调 {@link #onKeepTick}，第一次在进入维持后的第 1 tick
      * —— 所以这里<b>不</b>需要自己补一次结算，否则第一下会打两次。</p>
      *
-     * <p>粒子已按要求去掉，本类不做任何粒子表现。</p>
+     * <p>领域边界在维持脉冲时绘制，开场只播放音效。</p>
      */
     @Override
     public boolean cast(@NotNull ServerPlayer caster, @NotNull ItemStack stack,
@@ -157,9 +161,9 @@ public class SuppressionField extends CMagicBaseItem {
     }
 
     /**
-     * 维持期间的每一次脉冲（每 {@code interval} tick 一次，默认 5）。
+     * 维持期间的每一次脉冲（每 {@code interval} tick 一次，默认 10）。
      *
-     * @param interval 本次的触发速度，也就是构造器里那个 5（经属性/附魔折叠后的值）
+     * @param interval 本次的触发速度，也就是构造器里那个 10（经属性/附魔折叠后的值）
      * @return 恒 {@code true}：只要还有蓝、玩家还按着，就继续压制
      */
     @Override
@@ -172,10 +176,23 @@ public class SuppressionField extends CMagicBaseItem {
         double radius = radiusFor(caster, stack);
         Vec3 center = caster.getBoundingBox().getCenter();
 
-        // 选目标走 EntityChooseUtil：它是"以任意坐标为中心的球"，
-        // 判定用的是"目标碰撞箱到中心的最近距离"（大体积擦边也算进场），
-        // 并且已经把主人自己、旁观者、尸体筛掉了。
-        // 这里再叠一层 canAffect，留给子类加"排除自己的宠物/队友"之类的自定义条件。
+        // A sparse perimeter makes the otherwise invisible area readable to everyone nearby.
+        for (int i = 0; i < 12; i++) {
+            double angle = i * (Math.PI * 2.0d / 12.0d) + heldTicks * 0.035d;
+            level.sendParticles(FIELD_DUST,
+                    caster.getX() + Math.cos(angle) * radius, caster.getY() + 0.12d,
+                    caster.getZ() + Math.sin(angle) * radius,
+                    1, 0.04d, 0.04d, 0.04d, 0.0d);
+        }
+        level.sendParticles(ParticleTypes.REVERSE_PORTAL,
+                center.x, center.y, center.z, 5, radius * 0.45d, 0.5d,
+                radius * 0.45d, 0.01d);
+        if (heldTicks % 40 < interval) {
+            level.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+                    SoundEvents.SCULK_CATALYST_BLOOM, SoundSource.PLAYERS, 0.35f, 0.55f);
+        }
+
+        // Use the upstream sphere query, then apply this spell's own target filter.
         for (LivingEntity victim : EntityChooseUtil.sphereAt(level, caster, center, radius)) {
             if (!canAffect(caster, victim)) {
                 continue;
@@ -190,8 +207,8 @@ public class SuppressionField extends CMagicBaseItem {
      */
     private void pulse(@NotNull ServerLevel level, @NotNull ServerPlayer caster,
                        @NotNull ItemStack stack, @NotNull LivingEntity victim) {
-        // ── ① 每 5 tick 一次的常规伤害 ──
-        // 无敌帧清零：5 tick 一次 < 原版 20 tick 的无敌帧，不清的话从第二下起
+        // ── ① 每 10 tick 一次的常规伤害 ──
+        // 无敌帧清零：10 tick 一次 < 原版 20 tick 的无敌帧，不清的话从第二下起
         // 全都会被 LivingEntity.hurt 当成"重复伤害"吃掉（同数值只补差值 = 0 伤害）。
         // 这一步是硬要求，和粒子/音效无关。
         SpellDamageUtil.prepareRepeatHit(victim);

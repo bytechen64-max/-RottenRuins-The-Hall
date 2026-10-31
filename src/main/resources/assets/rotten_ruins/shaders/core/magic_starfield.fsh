@@ -9,6 +9,7 @@
 
 uniform float uTime;
 uniform vec2  uSize;
+uniform vec2  uMouse;
 uniform float uIntensity;
 
 in vec2 vUv;
@@ -81,7 +82,10 @@ void main() {
     vec3 col = mix(top, bottom, vUv.y);
 
     // Slowly drifting nebula (two scales + a faint gold dust layer).
-    vec2 q = vUv * vec2(2.4, 1.4) + vec2(uTime * 0.006, -uTime * 0.004);
+    // uMouse tilts the whole sky by a few pixels, so the background has parallax.
+    vec2 q = vUv * vec2(2.4, 1.4)
+           + vec2(uTime * 0.006, -uTime * 0.004)
+           + uMouse * 0.012;
     float n1 = fbm(q);
     float n2 = fbm(q * 1.9 + vec2(3.1, -uTime * 0.012));
     col += vec3(0.10, 0.16, 0.34) * pow(n1, 2.0) * 0.85;
@@ -89,10 +93,11 @@ void main() {
     col += vec3(0.18, 0.13, 0.05)
             * pow(fbm(q * 3.1 + vec2(uTime * 0.004, 2.4)), 3.5) * 1.4;
 
-    // Three star layers at different sizes / drift speeds.
-    col += starLayer(px,  44.0, 0.020, 0.84, 0.95);
-    col += starLayer(px,  76.0, 0.012, 0.78, 0.70);
-    col += starLayer(px, 120.0, 0.007, 0.86, 1.00);
+    // Three star layers at different sizes / drift speeds / parallax depths.
+    vec2 parallax = uMouse * 26.0;
+    col += starLayer(px + parallax * 0.35,  44.0, 0.020, 0.84, 0.95);
+    col += starLayer(px + parallax * 0.65,  76.0, 0.012, 0.78, 0.70);
+    col += starLayer(px + parallax * 1.00, 120.0, 0.007, 0.86, 1.00);
 
     // Vignette: pull attention towards the constellation in the centre.
     vec2 v = (vUv - 0.5) * vec2(1.15, 1.0);

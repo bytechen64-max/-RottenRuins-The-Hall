@@ -50,6 +50,10 @@ public final class ClientPacketHandlers {
         // 魔法星图：M 键打开界面（按键映射在 ClientModEventHandler 里注册）。
         org.bytechen.rottenruins.client.MagicClientHandler.register();
 
+        // 轮盘：服务端手势回执（蓄力/维持/失败提示，更新 WheelClientState）
+        org.bytechen.rottenruins.network.s2c.WheelFeedbackPacket.registerClient();
+
+
         PacketActionRegistry.register(HeartLosePacket.ACTION, (data, ctx) -> {
             if (!(data.getValue() instanceof CompoundTag tag)) return;
             spawnHeartLose(tag);

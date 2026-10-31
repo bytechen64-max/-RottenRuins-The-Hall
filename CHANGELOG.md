@@ -130,6 +130,39 @@
   - 王庭草、花、仙人掌等方块特性修复
   - 模型加载崩溃修复
 
+## [未发布] — § 分节符文本特效系统（第一版）
+> 给文本加一套带命名空间的自定义分节符：`§[rrs:<效果>:<参数>]…§[/]`。
+> 只影响客户端渲染，不改变文本内容/宽度/折行；标记在原版解析里天然零宽。
+> 第一版包含颜色类（渐变/纯色/彩虹/呼吸）与位移类（抖动/波浪/故障），
+> 演示入口 `/rrsfx`，配置项追加在 `SplendidingConfig` 末尾。
+
+### 新增 (Added)
+- **三处客户端 mixin**：`StringDecomposer`（标记解析/测量）、`ClientLanguage#getVisualOrder`（缓存 FCS 的逐帧 overlay）、`Font$StringRenderOutput#accept`（只对绘制坐标加临时偏移，不碰 `renderChar`）。
+- **纯 Java 引擎**（可脱离游戏单测）：`TextEffectParser` / `EffectPlan` / `EffectColor`（线性光渐变、HSV）/ `EffectMotion`（确定性抖动/波浪/故障）/ `TextEffectPlanCache`（LRU）。
+- **公共构建器** `api/text/TextEffectText`：`gradient/solid/rainbow/pulse/shake/wave/glitch` 与 `open/close`，供物品/命令/演示代码生成带标记文本。
+- **演示**：客户端命令 `/rrsfx`（`screen` 预览屏 / `chat` 本地聊天测试 / `on|off` 运行时开关 / `stats` / `reset` / `help`），`chat` 支持用 `&` 代替 `§` 手打。
+- **实机测试文本**：`INF_ENDER_PEAR`（畸骸末影珍珠 / Infected Ender Pearl）的显示名改为 `§[rrs:glitch:amp=2.0]…§[/]`，用于验证崩坏文本渲染。
+- **配置**：`textEffectsEnabled`、`textEffectsFontHooksEnabled`（安全旁路）、`textEffectIntensity`、`textEffectSpeed`、`textEffectUseGameTime`、`textEffectMaxAnimatedGlyphs`。
+- **方案文档**：`docs/proposals/custom-section-code-text-effects.md` 与 `docs/proposals/text-effects-preview/`（动画预览/交互游乐场）。
+
+### 变更 (Changed)
+- **`grad` 支持流动**：新增参数 `speed=`（`§[rrs:grad:#a:#b:speed=0.4]`），`speed>0` 时颜色沿文字随时间流动（首尾闭环无缝）；默认 `0` 保持旧内容/预览 GIF 的静止观感。`TextEffectText.gradient(text, from, to, speed)` 同步提供。
+- **已迁移的显示文本改为流动**：魔法星图标题（`speed=0.5`）、`/anomaly` 状态头与 `/collapse types` 标题（`speed=0.5`）、成就「腐朽之疫」标题（`speed=0.5`）、创造栏标签页/面板标题 `itemGroup.rotten_ruins.main`（"腐朽之疫" / "Rotten Ruins"，`speed=0.6`）；创造栏分区标题继续用 `rainbow`（速度提到 2.2）。
+- **流动速度口径**：`grad` 的 `speed` 直接表示"每秒走完多少个周期"（`speed=0.5` ≈ 2 秒一圈），比初版映射快 4 倍，肉眼可辨。
+- **创造栏分区标题**：删掉 `CreativeTabDividerRenderer` 里逐字算 HSV 的私有实现（`drawFlowingText` 与两个常量），改为一次 `drawString(Component)` + `§[rrs:rainbow:sat=0.45:speed=1.3]`，与其它彩虹文字共用同一套实现/配置；前缀 `§6` 保证特效关闭时仍是金色。
+- **难度「无法理解」档**：`HallDifficultyEventHandler.resolveDisplayName` 的 `§c§k!!` 假乱码改为 `§4§[rrs:glitch:amp=2.0]无法理解§[/]`（垫 `§4` 做降级）。
+- **命令反馈标题**：`/anomaly` 状态头与 `/collapse types` 的 `═══ … ═══` 改为金字渐变（`§6` 垫底降级）。
+- **魔法星图标题**：`MagicScreen#drawHeader` 改为亮金→暗金渐变（`§6` 垫底降级）。
+- **datagen 文案**：难度名「无法理解」/难度提示（困难=抖动、无法理解=故障）、成就「腐朽之疫」标题（渐变）与「获得死亡之星」说明（故障）改用分节符标记。
+  - **注意**：走 `FlowingNameColors` / `TooltipLines` 逐字拍平的 lore/风味行**没有**加标记 —— 逐字重建会把标记拆散到不同组件里，反而显示成原文。
+
+### 已知问题 (Known Issues)
+- 效果 span 不跨 `Component` 子段与 `Font.split` 的换行（每行从自身段落重新计算）。
+- 含 RTL 字符的文本放弃逐帧 overlay（bidi 重排后逐字序号会错位），只保留静态颜色。
+- `drawInBatch8xOutline`（发光告示牌描边）的 halo 颜色由原版覆盖，核心 pass 正常显示渐变。
+- `glitch` 的颜色通道偏移在纯白字上不可见（位移仍生效）。
+- 短别名（`§g` 之类）尚未开放，仅命名空间语法。
+
 ## [未发布] — 天穹裁决：特效与手感重做
 > 面向「技能特效更帅、操作手感更强」，不改动已有的三条设计原则
 > （伤害定死、覆盖吃高度、三技共享冷却池）。

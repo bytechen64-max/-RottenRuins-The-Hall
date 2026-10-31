@@ -11,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import org.bytechen.rottenruins.api.text.TextEffectText;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.CollapseEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.CollapseEntity.CollapseType;
 
@@ -136,9 +137,10 @@ public final class CollapseCommand {
     }
 
     private static int listTypes(CommandContext<CommandSourceStack> ctx) {
+        // 标题走流动的金字渐变；§6 垫底，特效关闭时退回原版金色。
         ctx.getSource().sendSuccess(
                 () -> Component.literal(
-                        "§6═══ 坍缩渲染类型 ═══\n"
+                        "§6" + TextEffectText.gradient("═══ 坍缩渲染类型 ═══", 0x6B4A0A, 0xFFD700, 0.5F) + "\n"
                                 + "§e0 §fender_dragon  §7- 末影龙死亡式光芒四射，光束旋转\n"
                                 + "§e1 §fhypercube     §7- 四维超立方体在三维空间的投影\n"
                                 + "§e2 §ficosahedron   §7- 二十面体（线框+半透明面片）\n"

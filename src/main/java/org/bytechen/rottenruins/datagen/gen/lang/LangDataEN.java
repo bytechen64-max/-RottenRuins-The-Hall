@@ -21,7 +21,9 @@ public class LangDataEN extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
-        add("itemGroup." + HallMod.MODID + ".main", "Rotten Ruins");
+        // Creative tab label / panel title: flowing gradient (§6 fallback keeps it gold when effects are off).
+        add("itemGroup." + HallMod.MODID + ".main",
+                "§6§[rrs:grad:#6FBF4A:#8B1E2D:speed=0.6]Rotten Ruins§[/]");
         // Section header rows inside the creative tab (see SectionedCreativeModeTab / RegisterTab)
         add("itemGroup." + HallMod.MODID + ".main.section.creatures", "Spawn Eggs");
         add("itemGroup." + HallMod.MODID + ".main.section.materials", "Materials");
@@ -36,7 +38,7 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterItem.HALL_BONE_FRAGMENTS.get(), "Hall Bone Fragments");
         add(RegisterItem.HALL_TENDON.get(), "Hall Tendon");
         // 补充缺失条目：畸骸末影珍珠
-        add(RegisterItem.INF_ENDER_PEAR.get(), "Infected Ender Pearl");
+        add(RegisterItem.INF_ENDER_PEAR.get(), "§[rrs:glitch:amp=2.0]Infected Ender Pearl§[/]");
         add(RegisterItem.DOMITE_ORE.get(), "Domite Ore");
         add(RegisterItem.DOMERITE_ORE.get(), "Domerite Ore");
         add(RegisterItem.DOMITE_CRYSTAL.get(), "Domite Crystal");
@@ -138,11 +140,16 @@ public class LangDataEN extends LanguageProvider {
         add(TranslateUtils.DIFFICULTY_EASY, "Easy");
         add(TranslateUtils.DIFFICULTY_NORMAL, "Normal");
         add(TranslateUtils.DIFFICULTY_HARD, "Hard");
-        add(TranslateUtils.DIFFICULTY_INCOMPREHENSIBLE, "Incomprehensible");
+        // The "Incomprehensible" tier name is drawn as a single Component by
+        // DifficultySelectScreen, so effect markers are safe here (and degrade to plain text).
+        add(TranslateUtils.DIFFICULTY_INCOMPREHENSIBLE, "§[rrs:glitch:amp=1.4]Incomprehensible§[/]");
         add(TranslateUtils.DIFFICULTY_EASY_TOOLTIP, "For new players — weaker anomalous creatures, abundant resources");
         add(TranslateUtils.DIFFICULTY_NORMAL_TOOLTIP, "Standard experience — balanced anomaly threats and resource distribution");
-        add(TranslateUtils.DIFFICULTY_HARD_TOOLTIP, "Higher damage, faster spread — for those who seek a real challenge");
-        add(TranslateUtils.DIFFICULTY_INCOMPREHENSIBLE_TOOLTIP, "All laws collapse, all order dissolves. Are you sure you can comprehend this?");
+        // Difficulty tooltip lines are drawn as a single Component (DifficultySelectScreen), so they may
+        // carry markers. Do NOT add markers to lore lines that go through FlowingNameColors / TooltipLines:
+        // their per-character rebuild would split the markers across sibling components and show them raw.
+        add(TranslateUtils.DIFFICULTY_HARD_TOOLTIP, "§[rrs:shake:amp=1.0]Higher damage, faster spread — for those who seek a real challenge§[/]");
+        add(TranslateUtils.DIFFICULTY_INCOMPREHENSIBLE_TOOLTIP, "§[rrs:glitch:amp=2.0]All laws collapse, all order dissolves. Are you sure you can comprehend this?§[/]");
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_TITLE, "Select Difficulty");
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_HINT, "Choose the world difficulty (can be changed later via commands)");
 
@@ -177,13 +184,15 @@ public class LangDataEN extends LanguageProvider {
         // 血肉庭园维度 (hall:heall)
         // 地形复用现有王庭方块，因此这里只有通道方块的译名
         add(RegisterBlock.FLESH_RIFT.get(), "Flesh Rift");
+        // Death core: the first block that renders a mask shader layer via a BER
+        add(RegisterBlock.DEATH_CORE.get(), "Death Core");
         add("dimension." + HallMod.MODID + ".heall", "Carrion Marrow");
         add("biome." + HallMod.MODID + ".flesh_marrow", "Carrion Marrow");
         add(RegisterBlock.FLESH_RIFT.get().getDescriptionId() + ".no_dimension", "The other end of the rift has not yet formed...");
 
         // ---- Magic attributes (see RegisterAttributes) ----
         // ---- Magic: school names + item tooltips (see MagicType / MagicTooltips) ----
-        add("magic_type." + HallMod.MODID + ".ice", "Ice");
+        add("magic_type." + HallMod.MODID + ".water", "Water");
         add("magic_type." + HallMod.MODID + ".fire", "Fire");
         add("magic_type." + HallMod.MODID + ".death", "Death");
         add("magic_type." + HallMod.MODID + ".nature", "Nature");
@@ -205,7 +214,7 @@ public class LangDataEN extends LanguageProvider {
         add("attribute.name." + HallMod.MODID + ".cooldown_reduction", "Cooldown Reduction");
         // Per-school spell power: ADDS to the general spell power (default 0).
         // Keys must match RegisterAttributes.spellPowerOf(String) exactly.
-        add("attribute.name." + HallMod.MODID + ".spell_power_ice", "Ice Spell Power");
+        add("attribute.name." + HallMod.MODID + ".spell_power_water", "Water Spell Power");
         add("attribute.name." + HallMod.MODID + ".spell_power_fire", "Fire Spell Power");
         add("attribute.name." + HallMod.MODID + ".spell_power_death", "Death Spell Power");
         add("attribute.name." + HallMod.MODID + ".spell_power_nature", "Nature Spell Power");
@@ -214,22 +223,39 @@ public class LangDataEN extends LanguageProvider {
         add("attribute.name." + HallMod.MODID + ".spell_power_mysterious", "Mysterious Spell Power");
 
         // ---- Magic system · items ----
-        // Mana plates: one per school, plain materials for now (see RegisterItem —
-        // the texture is "water" while MagicType has ACE in that slot; no mapping yet).
+        // Mana plates: one per school.
         add(RegisterItem.DEATH_MANA_PLATE.get(), "Death Mana Plate");
         add(RegisterItem.FIRE_MANA_PLATE.get(), "Fire Mana Plate");
         add(RegisterItem.LIGHT_MANA_PLATE.get(), "Light Mana Plate");
         add(RegisterItem.NATURE_MANA_PLATE.get(), "Nature Mana Plate");
         add(RegisterItem.VOID_MANA_PLATE.get(), "Void Mana Plate");
         add(RegisterItem.WATER_MANA_PLATE.get(), "Water Mana Plate");
+        add(RegisterItem.MYSTERIOUS_MANA_PLATE.get(), "Mysterious Mana Plate");
         add(RegisterItem.MAGIC_CATA.get(), "Magic Catalyst");
         add(RegisterItem.VOID_RUNE.get(), "Void Rune");
-        add(RegisterItem.WAND.get(), "Wand");
+        add(RegisterItem.WAND.get(), "Empty Wand");
         add(RegisterItem.WAND_NATURE.get(), "Nature Wand");
+        add(RegisterItem.WAND_FIRE.get(), "Fire Wand");
+        add(RegisterItem.WAND_DEATH.get(), "Death Wand");
+        add(RegisterItem.WAND_LIGHT.get(), "Light Wand");
+        add(RegisterItem.WAND_VOID.get(), "Void Wand");
+        add(RegisterItem.WAND_WATER.get(), "Water Wand");
+        add(RegisterItem.WAND_MYSTERIOUS.get(), "Mysterious Wand");
+        add(RegisterItem.WAND_COMMON.get(), "Common Spell Wand");
+        add("enchantment.rotten_ruins.mana_efficiency", "Mana Efficiency");
+        add("tooltip.rotten_ruins.wand_mana", "Wand Mana: %s / %s");
         // Spells (upstream 1.20.1forge "magic update")
         add(RegisterItem.FIRE_BALL.get(), "Fireball");
         add(RegisterItem.SPEAR_OF_JUDGMENT.get(), "Spear of Judgment");
         add(RegisterItem.SUPPRESSION_FIELD.get(), "Suppression Field");
+        add(RegisterItem.TIDAL_PULSE.get(), "Tidal Pulse");
+        add(RegisterItem.BRIAR_SNARE.get(), "Briar Snare");
+        add(RegisterItem.PURIFYING_LIGHT.get(), "Purifying Light");
+        add(RegisterItem.ARCANE_STEP.get(), "Arcane Step");
+        add("item.rotten_ruins.tidal_pulse.desc", "Pushes creatures back; extinguishes you and grants fire and water protection");
+        add("item.rotten_ruins.briar_snare.desc", "Entangles creatures near your crosshair with weakness and poison");
+        add("item.rotten_ruins.purifying_light.desc", "Heals, cleanses and shields allies; harms hostiles, especially undead");
+        add("item.rotten_ruins.arcane_step.desc", "Blink to solid ground near your crosshair and gain a short speed boost");
         // Death Star: nether star + wither roses
         add(RegisterItem.DEATH_STAR.get(), "Death Star");
 
@@ -246,6 +272,127 @@ public class LangDataEN extends LanguageProvider {
         add("rotten_ruins.gui.magic.mana", "Mana %s");
         add("rotten_ruins.gui.magic.cooldown", "Cooldown %ss");
         add("rotten_ruins.gui.magic.charge", "Charge %ss");
+        // ---- Spell wheel HUD / loadout ----
+        add("key." + HallMod.MODID + ".cast_wheel", "Open/Close Spell Wheel");
+        add("key." + HallMod.MODID + ".open_loadout", "Spell Loadout");
+        add("rotten_ruins.gui.wheel.title", "Spell Wheel");
+        add("rotten_ruins.gui.wheel.loadout.title", "Spell Loadout");
+        add("rotten_ruins.wheel.hint.hold_staff", "Hold a staff to cast from the wheel");
+        add("rotten_ruins.wheel.hint.no_spells",
+                "No active spells on wheel I - press V to configure");
+        add("rotten_ruins.wheel.begin.sustaining", "SUSTAINING - RMB / R to end");
+        add("rotten_ruins.wheel.result.success", "Cast");
+        add("rotten_ruins.wheel.result.invalid_staff", "Hold a staff");
+        add("rotten_ruins.wheel.result.no_spell", "Empty socket");
+        add("rotten_ruins.wheel.result.passive_spell", "Passive spells cannot be cast");
+        add("rotten_ruins.wheel.result.on_cooldown", "On cooldown");
+        add("rotten_ruins.wheel.result.not_enough_mana", "Not enough mana");
+        add("rotten_ruins.wheel.result.not_charged", "Not charged");
+        add("rotten_ruins.wheel.result.no_target", "No target");
+        add("rotten_ruins.wheel.result.cancelled", "Cancelled");
+        add("rotten_ruins.wheel.result.rejected", "Rejected");
+        add("rotten_ruins.wheel.result.invalid_slot", "Invalid socket");
+        add("rotten_ruins.wheel.result.not_active", "No wheel session");
+        // 轮盘 HUD / 装载界面（datagen 生成 en_us/zh_cn；代码里全部走 WheelI18n.tr）
+        add("rotten_ruins.wheel.title", "ARCANE WHEEL");
+        add("rotten_ruins.wheel.subtitle", "%s: OPEN/CLOSE  |  CLICK A SIGIL TO CAST");
+        add("rotten_ruins.wheel.active_sigils", "ACTIVE SIGILS  %s / %s");
+        add("rotten_ruins.wheel.mana", "MANA  %s / %s");
+        add("rotten_ruins.wheel.release_to_cast", "CLICK A SIGIL TO CAST");
+        add("rotten_ruins.wheel.rmb_cancel", "RMB  CLOSE");
+        add("rotten_ruins.wheel.page", "WHEEL  %s");
+        add("rotten_ruins.wheel.ready", "READY");
+        add("rotten_ruins.wheel.maintain", "SUSTAINING %s s");
+        add("rotten_ruins.wheel.maintain_end", "RMB / R TO END");
+        add("rotten_ruins.wheel.center.wheel", "WHEEL");
+        add("rotten_ruins.wheel.center.aim", "AIM A SIGIL");
+        add("rotten_ruins.wheel.center.no_active", "NO ACTIVE SIGILS");
+        add("rotten_ruins.wheel.center.sockets", "8 SOCKETS");
+        add("rotten_ruins.wheel.center.release_hint", "click to cast");
+        add("rotten_ruins.wheel.center.bind_hint", "bind active spells in the loadout");
+        add("rotten_ruins.wheel.center.drag_hint", "drag spells onto sockets");
+        add("rotten_ruins.wheel.center.cooldown", "COOLDOWN %s");
+        add("rotten_ruins.wheel.center.not_enough_mana", "NOT ENOUGH MANA");
+        add("rotten_ruins.wheel.center.charging", "CHARGING %s s");
+        add("rotten_ruins.wheel.center.ready", "READY  |  %s MANA");
+        add("rotten_ruins.wheel.center.selected", "SELECTED");
+        add("rotten_ruins.wheel.school.water", "WATER");
+        add("rotten_ruins.wheel.school.fire", "FIRE");
+        add("rotten_ruins.wheel.school.death", "DEATH");
+        add("rotten_ruins.wheel.school.nature", "NATURE");
+        add("rotten_ruins.wheel.school.light", "LIGHT");
+        add("rotten_ruins.wheel.school.void", "VOID");
+        add("rotten_ruins.wheel.school.mysterious", "MYSTERIOUS");
+        add("rotten_ruins.wheel.using.instant", "INSTANT");
+        add("rotten_ruins.wheel.using.charge", "CHARGE");
+        add("rotten_ruins.wheel.using.channel", "CHANNEL");
+        add("rotten_ruins.wheel.loadout.subtitle", "WHEEL CONFIGURATION  -  PAGE %s");
+        add("rotten_ruins.wheel.loadout.close", "ESC  CLOSE");
+        add("rotten_ruins.wheel.loadout.preview", "WHEEL PREVIEW");
+        add("rotten_ruins.wheel.loadout.preview_summary",
+                "WHEEL %s  |  %s / %s SOCKETS");
+        add("rotten_ruins.wheel.loadout.drag_hint", "Drag a spell onto a socket");
+        add("rotten_ruins.wheel.loadout.unbind_hint", "Right-click a socket to unbind");
+        add("rotten_ruins.wheel.loadout.save_hint", "Changes apply when you press SAVE");
+        add("rotten_ruins.wheel.loadout.codex", "SPELL CODEX");
+        add("rotten_ruins.wheel.loadout.count_active", "%s ACTIVE");
+        add("rotten_ruins.wheel.loadout.count_passive", "%s PASSIVE");
+        add("rotten_ruins.wheel.loadout.tab.active", "ACTIVE");
+        add("rotten_ruins.wheel.loadout.tab.passive", "PASSIVE");
+        add("rotten_ruins.wheel.loadout.no_active", "NO ACTIVE SPELLS");
+        add("rotten_ruins.wheel.loadout.no_passive", "NO PASSIVE SPELLS");
+        add("rotten_ruins.wheel.loadout.passive_hint", "Passives appear here once learned");
+        add("rotten_ruins.wheel.loadout.equip_hint", "Equip spells in the magic constellation");
+        add("rotten_ruins.wheel.loadout.footer_readonly", "READ ONLY");
+        add("rotten_ruins.wheel.loadout.footer_active", "ACTIVE SPELLS");
+        add("rotten_ruins.wheel.loadout.total", "%s TOTAL");
+        add("rotten_ruins.wheel.loadout.scroll", "%s-%s / %s  -  SCROLL");
+        add("rotten_ruins.wheel.loadout.slot_badge", "SLOT %s");
+        add("rotten_ruins.wheel.loadout.passive_always", "PASSIVE  -  ALWAYS ON");
+        add("rotten_ruins.wheel.loadout.card_sub", "%s   %s MANA   %s");
+        add("rotten_ruins.wheel.loadout.details", "DETAILS");
+        add("rotten_ruins.wheel.loadout.type", "TYPE");
+        add("rotten_ruins.wheel.loadout.mana", "MANA");
+        add("rotten_ruins.wheel.loadout.cooldown", "COOLDOWN");
+        add("rotten_ruins.wheel.loadout.charge", "CHARGE");
+        add("rotten_ruins.wheel.loadout.sustain", "SUSTAIN");
+        add("rotten_ruins.wheel.loadout.assigned", "ASSIGNED");
+        add("rotten_ruins.wheel.loadout.always_on", "ALWAYS ON");
+        add("rotten_ruins.wheel.loadout.not_assigned", "NOT ASSIGNED");
+        add("rotten_ruins.wheel.loadout.assigned_at", "WHEEL %s - SLOT %s");
+        add("rotten_ruins.wheel.loadout.description", "DESCRIPTION");
+        add("rotten_ruins.wheel.loadout.passive_warn1", "PASSIVE SPELLS CANNOT");
+        add("rotten_ruins.wheel.loadout.passive_warn2", "BE PLACED ON THE WHEEL");
+        add("rotten_ruins.wheel.loadout.passive_lore",
+                "Passive spells are always active while equipped and can never be placed on the wheel.");
+        add("rotten_ruins.wheel.loadout.desc.instant",
+                "Releases the instant it is cast: no wind-up, the effect lands immediately.");
+        add("rotten_ruins.wheel.loadout.desc.charge",
+                "Hold to charge, then release. A longer charge means a stronger cast; releasing too early can fail.");
+        add("rotten_ruins.wheel.loadout.desc.keep",
+                "Starts on dwell and keeps running while held, draining mana over time. Release to end it.");
+        add("rotten_ruins.wheel.loadout.socket", "SOCKET %s");
+        add("rotten_ruins.wheel.loadout.empty_socket", "EMPTY SOCKET");
+        add("rotten_ruins.wheel.loadout.drag_here", "Drag a spell here");
+        add("rotten_ruins.wheel.loadout.no_selection", "NO SPELL SELECTED");
+        add("rotten_ruins.wheel.loadout.click_hint", "Click a spell or a socket");
+        add("rotten_ruins.wheel.loadout.wheel_page", "WHEEL PAGE");
+        add("rotten_ruins.wheel.loadout.button.clear", "CLEAR SLOT");
+        add("rotten_ruins.wheel.loadout.button.autofill", "AUTO FILL");
+        add("rotten_ruins.wheel.loadout.button.save", "SAVE");
+        add("rotten_ruins.wheel.loadout.hint",
+                "Drag a spell onto a socket   |   RMB unbinds   |   SAVE applies to WHEEL %s");
+        add("rotten_ruins.wheel.loadout.hint_short",
+                "Drag to bind   |   RMB unbind   |   SAVE applies to this page");
+        add("rotten_ruins.wheel.loadout.hint_tiny", "Drag to bind   |   SAVE applies");
+        add("rotten_ruins.wheel.loadout.per_second", "%s / s");
+        add("rotten_ruins.wheel.loadout.bind_to_slot", "BIND TO SLOT %s");
+        add("rotten_ruins.wheel.loadout.release_on_socket", "RELEASE ON A SOCKET");
+        // ---- Section-code text effects · preview screen / command ----
+        add("rotten_ruins.gui.textfx.title", "§[rrs:grad:#6FBF4A:#8B1E2D]Section-Code Text Effects§[/]");
+        add("rotten_ruins.gui.textfx.hint", "Each row animates live; press ESC to close; type /rrsfx for more");
+        add("rotten_ruins.command.rrsfx.enabled", "§aText effects: ON");
+        add("rotten_ruins.command.rrsfx.disabled", "§cText effects: OFF");
 
         // ---- Sound subtitles (see SoundData) ----
         // Body-explosion sound: same subtitle text as corruption's rip_body, hall namespace.
@@ -368,11 +515,15 @@ public class LangDataEN extends LanguageProvider {
 
         // ---- E. Advancements: advancements.rotten_ruins.<path> ----
         // Keys come from AdvancementProviderData so the display JSON and lang stay in sync.
-        add(AdvancementProviderData.titleKey(AdvancementProviderData.ROOT_PATH), "Rotten Ruins");
+        // Advancement titles/descriptions are drawn as single Components (advancement GUI / toast),
+        // so effect markers are safe here.
+        add(AdvancementProviderData.titleKey(AdvancementProviderData.ROOT_PATH),
+                "§[rrs:grad:#6FBF4A:#8B1E2D:speed=0.5]Rotten Ruins§[/]");
         add(AdvancementProviderData.descriptionKey(AdvancementProviderData.ROOT_PATH),
                 "As a god, experience yourself as a human");
         // Death branch: triggered when the player obtains the Death Star.
         add(AdvancementProviderData.titleKey(AdvancementProviderData.DEATH_PATH), "Death");
-        add(AdvancementProviderData.descriptionKey(AdvancementProviderData.DEATH_PATH), "Obtain the Death Star");
+        add(AdvancementProviderData.descriptionKey(AdvancementProviderData.DEATH_PATH),
+                "§[rrs:glitch:amp=1.5]Obtain the Death Star§[/]");
     }
 }

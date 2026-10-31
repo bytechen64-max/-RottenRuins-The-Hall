@@ -35,7 +35,7 @@ import java.util.List;
  * <pre>{@code
  * public class FrostBoltSpell extends CMagicBaseItem {
  *     public FrostBoltSpell() {
- *         super(defaultProperties(), MagicType.ACE, UsingType.CHARGE, 120, 40, 20, 0, 12.0f);
+ *         super(defaultProperties(), MagicType.WATER, UsingType.CHARGE, 120, 40, 20, 0, 12.0f);
  *     }
  *     @Override
  *     public boolean cast(ServerPlayer caster, ItemStack stack, MagicCastContext ctx) { ... }
@@ -273,6 +273,7 @@ public abstract class CMagicBaseItem extends Item implements IMagicBaseItem {
         if (this.usingType == UsingType.KEEP && this.baseKeepCostPerSecond() > 0) {
             tooltip.add(MagicTooltips.keepCostLine(this.baseKeepCostPerSecond(), this.magicType));
         }
+        appendSpellHoverText(stack, level, tooltip);
     }
 
     /** 子类追加自己的介绍（例如"命中额外造成 3 点真伤"）。 */

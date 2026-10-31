@@ -20,7 +20,9 @@ import net.minecraft.world.level.block.WallBlock;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import org.bytechen.rottenruins.overworld.registry.blocks.impl.DeathCoreBlock;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.FleshRiftBlock;
+import org.bytechen.rottenruins.overworld.registry.items.DeathCoreBlockItem;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.HallAshCactusBlock;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.HallDeadBushBlock;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.HallFlowerBlock;
@@ -60,6 +62,20 @@ public class RegisterBlock {
 
     public static <T extends Block> RegistryObject<T> registerBlockWithItem(String name, Supplier<T> block) {
         return registerBlock(name, block, new Item.Properties());
+    }
+
+    /**
+     * 注册方块 + 自定义方块物品（例如需要实现额外接口的 {@code DeathCoreBlockItem}）。
+     *
+     * <p>普通方块物品直接用 {@link #registerBlockWithItem(String, Supplier)}；只有
+     * 需要自定义 {@link BlockItem} 子类时才用这个重载。物品工厂在注册事件触发时
+     * 才求值，所以 {@code block} 可以安全地引用方块注册对象。</p>
+     */
+    public static <T extends Block> RegistryObject<T> registerBlockWithItem(
+            String name, Supplier<T> block, java.util.function.Function<T, Item> itemFactory) {
+        RegistryObject<T> toReturn = BLOCKS.register(name, block);
+        RegisterItem.ITEMS.register(name, () -> itemFactory.apply(toReturn.get()));
+        return toReturn;
     }
 
     /**
@@ -232,5 +248,22 @@ public class RegisterBlock {
             () -> new FleshRiftBlock(BlockBehaviour.Properties.copy(Blocks.NETHERRACK)
                     .strength(2.0F, 1200.0F)
                     .lightLevel(s -> 11)));
+
+    // ---- 方块版 mask 附加着色器层的示例方块 ----
+
+    /**
+     * 死亡核心：第一个走「方块版 mask 效果层」的方块。
+     *
+     * <p>本体是深色实心方块，渲染上只有 mask 白层窗口内会被替换成体积效果
+     * （{@code death_core} 效果：ShaderToy "Ghosts" 改造的 raymarch）。接入方式见
+     * {@link DeathCoreBlock} 的类注释；以后想给别的方块加层，照抄
+     * BlockEntity + BER 两个类即可。</p>
+     *
+     * <p>物品用 {@link DeathCoreBlockItem}：方块物品在手持/物品栏里也要显示同一层
+     * （走物品模型 quad，见 {@code BlockMaskLayerItem}）。</p>
+     */
+    public static RegistryObject<Block> DEATH_CORE = registerBlockWithItem("death_core",
+            DeathCoreBlock::new,
+            block -> new DeathCoreBlockItem(block, new Item.Properties()));
 
 }

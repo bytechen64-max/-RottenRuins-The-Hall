@@ -1,6 +1,7 @@
 package org.bytechen.rottenruins.overworld.registry;
 
 import org.bytechen.rottenruins.HallMod;
+import org.bytechen.rottenruins.overworld.registry.blockentity.DeathCoreBlockEntity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -23,5 +24,15 @@ public class RegisterBlockEntities {
                 BlockEntityType.Builder.of(factory, blocks).build(null));
     }
 
-    // Your block entities here
+    /**
+     * 死亡核心 —— 方块版 mask 效果层（{@code death_core}）的宿主。
+     *
+     * <p>用直接注册而不是 {@link #registerBlockEntityForBlocks}：后者要求调用时
+     * 就拿到 {@code Block[]}，而那会在静态初始化阶段提前 {@code .get()} 方块注册表。
+     * 这里的 lambda 在注册事件触发时才求值，顺序才是安全的。</p>
+     */
+    public static final RegistryObject<BlockEntityType<DeathCoreBlockEntity>> DEATH_CORE =
+            BLOCK_ENTITIES.register("death_core", () -> BlockEntityType.Builder
+                    .of(DeathCoreBlockEntity::new, RegisterBlock.DEATH_CORE.get())
+                    .build(null));
 }

@@ -73,6 +73,9 @@ public final class MagicEventHandlers {
             pool.tickCooldowns();
         }
 
+        // 轮盘会话：CHARGE 蓄力 / KEEP 维持（轮盘不走原版 useItem 生命周期）
+        MagicHandle.tickWheel(serverPlayer);
+
         // 同步：内部按间隔节流，脏才发
         MagicSync.tick(serverPlayer);
     }

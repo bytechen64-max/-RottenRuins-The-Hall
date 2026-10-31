@@ -31,6 +31,10 @@ public class BlockTagData extends BlockTagsProvider {
         tag(BlockTags.NEEDS_DIAMOND_TOOL)
                 .add(RegisterBlock.DOMERITE_MINERAL.get());
 
+        // 死亡核心：石质手感，用镐挖；不强制需要钻石工具（比黑曜石软）。
+        tag(BlockTags.MINEABLE_WITH_PICKAXE)
+                .add(RegisterBlock.DEATH_CORE.get());
+
         // ========== HALL_PLANKS 建筑方块 ==========
 
         // 工具类型：木板类方块使用斧

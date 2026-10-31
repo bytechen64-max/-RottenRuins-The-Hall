@@ -52,6 +52,17 @@ public record MaskLayerSpec(
 
     /** 内置泛光效果的 id。 */
     public static final String EFFECT_GLOW = "glow";
+
+    /**
+     * 方块版效果 {@code death_core} 的 id（遮罩窗口 + ShaderToy "Ghosts" 体积光）。
+     *
+     * <p>与 {@code glow} 不同，这个效果把 <b>mask 白层当窗口</b>：窗口内渲染 Ghosts
+     * 体积效果（alpha = 1，原像素不透出来），窗口外透明、方块本体贴图照常可见。它假设 quad
+     * 的 UV 已经被重映射到遮罩 sprite —— 世界里的方块（BER）和方块物品
+     * （{@code BlockMaskLayerItem} + 物品模型 quad）都满足这一点；普通物品那种
+     * 「本体贴图平面」的层不适用（需要先给 shader 补 {@code BaseMin/BaseSize} 换算）。</p>
+     */
+    public static final String EFFECT_DEATH_CORE = "death_core";
     public static final float DEFAULT_ORDER = 100.0f;
     public static final int DEFAULT_COLOR = 0xFFFFFFFF;
 

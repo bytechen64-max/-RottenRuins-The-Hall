@@ -47,7 +47,7 @@ import org.jetbrains.annotations.NotNull;
  *       <td>{@code MagicStats.spellPower} → 法术伤害 / 半径 ×（它 + 流派法强）</td></tr>
  *   <tr><td>{@code spell_power_&lt;流派&gt;}</td><td>0</td><td>加成（每个流派一个）</td>
  *       <td>同上，<b>与通用法强相加</b>。流派取 {@link MagicType}，共
- *           {@code ICE / FIRE / DEATH / NATURE / LIGHT / VOID / MYSTERIOUS} 七个</td></tr>
+ *           {@code WATER / FIRE / DEATH / NATURE / LIGHT / VOID / MYSTERIOUS} 七个</td></tr>
  *   <tr><td>{@code mana_restore}</td><td>1.0</td><td><b>倍率</b></td>
  *       <td>{@code ManaRestoreEvent} 监听器 → 一切法力回复 ×它</td></tr>
  * </table>
@@ -127,8 +127,8 @@ public class RegisterAttributes {
     // 也就是和通用法强<b>相加</b>：通用 1.0 + 火系 0.5 = 1.5 倍。
     // 见 MagicStats.spellPower(Player, ItemStack)。
 
-    /** {@link MagicType#ICE} 流派的法术强度加成。 */
-    public static final RegistryObject<Attribute> SPELL_POWER_ICE = spellPowerOf("ice");
+    /** {@link MagicType#WATER} 流派的法术强度加成。 */
+    public static final RegistryObject<Attribute> SPELL_POWER_WATER = spellPowerOf("water");
 
     /** {@link MagicType#FIRE} 流派的法术强度加成。 */
     public static final RegistryObject<Attribute> SPELL_POWER_FIRE = spellPowerOf("fire");
@@ -165,7 +165,7 @@ public class RegisterAttributes {
     @NotNull
     public static RegistryObject<Attribute> spellPowerOf(@NotNull MagicType type) {
         return switch (type) {
-            case ICE -> SPELL_POWER_ICE;
+            case WATER -> SPELL_POWER_WATER;
             case FIRE -> SPELL_POWER_FIRE;
             case DEATH -> SPELL_POWER_DEATH;
             case NATURE -> SPELL_POWER_NATURE;

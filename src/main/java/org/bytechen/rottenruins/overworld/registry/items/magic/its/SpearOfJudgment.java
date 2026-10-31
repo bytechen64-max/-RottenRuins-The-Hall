@@ -4,7 +4,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.api.magic.MagicStats;
-import org.bytechen.rottenruins.overworld.registry.entities.magic.SpearOfJudgmentEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.magic.SpearOfJudgmentEntity;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.CMagicBaseItem;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.MagicCastContext;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.MagicHandle;
@@ -50,10 +50,10 @@ public class SpearOfJudgment extends CMagicBaseItem {
     public SpearOfJudgment() {
         super(new Properties().stacksTo(1), MagicType.DEATH, UsingType.CHARGE,
                 100,    // 启动耗蓝
-                600,    // 冷却 tick —— 30 秒，大招该有的代价
+                400,    // 冷却 tick —— 20 秒
                 40,     // 蓄力 tick —— 要按住 2 秒
                 5,      // 每秒维持耗蓝（非 KEEP 模式，基类会归零，填着不影响）
-                50,     // 直接伤害基值
+                28,     // 每次穿透命中的伤害基值
                 1);     // 最低蓄力比例 1.0 = 必须蓄满
     }
 

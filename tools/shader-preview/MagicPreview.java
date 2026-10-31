@@ -15,11 +15,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * 离屏预览魔法星图的两支着色器（深空背景 + 槽位连接光带），导出 PNG。
+ * 离屏预览魔法星图的三支着色器（深空背景 + 槽位连接光带 + 放入法术的光点），导出 PNG。
  *
  * <p>不启动游戏：开一个隐藏窗口拿 OpenGL 3.2 core 上下文，编译/链接
- * {@code magic_starfield} 与 {@code magic_constellation}，按游戏里的
- * 混合语义画一遍，读回像素。用来同时做「编译检查」和「观感检查」。</p>
+ * {@code magic_starfield}、{@code magic_constellation} 与 {@code magic_pulse}，
+ * 按游戏里的混合语义画一遍，读回像素。用来同时做「编译检查」和「观感检查」。</p>
  *
  * <p>用法: {@code java MagicPreview <shaderDir> <outDir> [timeSeconds]}</p>
  */
@@ -49,6 +49,7 @@ public final class MagicPreview {
 
         int starProg = link(dir.resolve("magic_starfield.vsh"), dir.resolve("magic_starfield.fsh"));
         int conProg = link(dir.resolve("magic_constellation.vsh"), dir.resolve("magic_constellation.fsh"));
+        int pulseProg = link(dir.resolve("magic_pulse.vsh"), dir.resolve("magic_pulse.fsh"));
 
         int[] target = makeTarget(W, H);
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, target[1]);
@@ -64,6 +65,7 @@ public final class MagicPreview {
         matrices(starProg);
         flt(starProg, "uTime", time);
         vec2(starProg, "uSize", W, H);
+        vec2(starProg, "uMouse", 0F, 0F);
         flt(starProg, "uIntensity", 1F);
         GL30.glBindVertexArray(quadVao);
         GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
@@ -85,6 +87,17 @@ public final class MagicPreview {
         int[] ys = {500, 380, 500, 380, 500};
         uploadSegments(xs, ys, 7F);
         GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, (xs.length - 1) * 6);
+
+        // ---- one-shot placement pulses: an interior slot sends one dot each way ----
+        GL20.glUseProgram(pulseProg);
+        matrices(pulseProg);
+        flt(pulseProg, "uProgress", 0.45F);
+        vec4(pulseProg, "uColor", 1.0F, 0.86F, 0.52F, 1.0F);
+        flt(pulseProg, "uIntensity", 0.9F);
+        uploadSingleSegment(xs[2], ys[2], xs[1], ys[1], 9F);
+        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
+        uploadSingleSegment(xs[2], ys[2], xs[3], ys[3], 9F);
+        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
 
         GL11.glDisable(GL11.GL_BLEND);
 
@@ -147,6 +160,26 @@ public final class MagicPreview {
                 tri(buffer, x1 - nx, y1 - ny, 0F, 1F, x1 + nx, y1 + ny, 0F, 0F, x2 + nx, y2 + ny, uEnd, 0F);
                 tri(buffer, x1 - nx, y1 - ny, 0F, 1F, x2 + nx, y2 + ny, uEnd, 0F, x2 - nx, y2 - ny, uEnd, 1F);
             }
+            buffer.flip();
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, GL15.GL_DYNAMIC_DRAW);
+        }
+        GL20.glEnableVertexAttribArray(0);
+        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 5 * 4, 0L);
+        GL20.glEnableVertexAttribArray(1);
+        GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 5 * 4, 3L * 4);
+    }
+
+    /** Single segment with UV.x = 0..1 (the pulse shader maps uProgress over the whole link). */
+    private static void uploadSingleSegment(int x1, int y1, int x2, int y2, float halfWidth) {
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float len = (float) Math.sqrt(dx * dx + dy * dy);
+        float nx = -dy / len * halfWidth;
+        float ny = dx / len * halfWidth;
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            FloatBuffer buffer = stack.mallocFloat(6 * 5);
+            tri(buffer, x1 - nx, y1 - ny, 0F, 1F, x1 + nx, y1 + ny, 0F, 0F, x2 + nx, y2 + ny, 1F, 0F);
+            tri(buffer, x1 - nx, y1 - ny, 0F, 1F, x2 + nx, y2 + ny, 1F, 0F, x2 - nx, y2 - ny, 1F, 1F);
             buffer.flip();
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, GL15.GL_DYNAMIC_DRAW);
         }

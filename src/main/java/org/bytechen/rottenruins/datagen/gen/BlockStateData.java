@@ -90,6 +90,10 @@ public class BlockStateData extends BlockStateProvider {
         // 血肉庭园维度只需通道方块，地形全部复用现有王庭方块族
         simpleBlockWithItem(RegisterBlock.FLESH_RIFT.get());
 
+        // 死亡核心：本体是普通 cube_all（发光靠 BER 里的 death_core mask 层，
+        // 那张附加层不参与 blockstate/model 生成，只在运行时绘制）。
+        simpleBlockWithItem(RegisterBlock.DEATH_CORE.get());
+
         // 若要为原木生成，使用 logBlockWithItem(...)
         // 等等
     }

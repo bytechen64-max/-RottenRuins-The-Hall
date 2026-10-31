@@ -80,8 +80,25 @@ public class SplendidingShaders {
     public static ShaderInstance difficultySigilShader;
     /** 魔法星图的深空背景（流动星云 + 三层视差星点，纯程序化全屏一次绘制）。 */
     public static ShaderInstance magicStarfieldShader;
-    /** 魔法星图槽位之间的连接光带（每段一个四边形，沿线流动 + 运行的光点）。 */
+    /** 魔法星图槽位之间的连接光带（每段一个四边形，发丝级金线 + 极慢的明暗呼吸）。 */
     public static ShaderInstance magicConstellationShader;
+    /** 魔法星图放入法术时沿连接线滚动<b>一次</b>的光点（一次性反馈，不循环）。 */
+    public static ShaderInstance magicPulseShader;
+    /** 轮盘 HUD：单个花瓣扇区（学校色渐变 / hover / selected / 冷却 / 蓝不足锁定）。 */
+    @Nullable
+    public static ShaderInstance wheelSliceShader;
+    /** 轮盘 HUD：外圈光环（呼吸柔光 / 旋转光束 / 符文环 / hover 锥光）。 */
+    @Nullable
+    public static ShaderInstance wheelAuraShader;
+    /** 轮盘 HUD：中心法力核心（光球 / 法力弧 / 冷却弧 / 蓄力脉冲）。 */
+    @Nullable
+    public static ShaderInstance wheelCoreShader;
+    /**
+     * 逐物理像素抗锯齿的 UI 形状（圆/环/扇区/圆角矩形/胶囊/星形）。
+     * <p>轮盘与装载界面的所有曲线元素都走它；{@code uScale = GUI scale}。</p>
+     */
+    @Nullable
+    public static ShaderInstance wheelSdfShader;
     /** 坍缩使徒 boss 血条的「血量内容」着色器（纯黑底 + 彩色星尘，mask 红通道定形状）。 */
     public static ShaderInstance collapsarBarShader;
     /** 坍缩使徒的背部六芒星光环（参考 glorb/field 彩虹噪声 + 六芒星 SDF）。 */
@@ -400,6 +417,62 @@ public class SplendidingShaders {
             // 加载失败只是没有流动光带：MagicScreen 会退回金色星点连线。
             HallMod.LOGGER.error("[Shaders] 加载 magic_constellation 失败，"
                     + "魔法星图的槽位连线将退回星点虚线", t);
+        }
+
+        // 魔法星图「放入法术」时沿连接线滚一次的光点（一次性反馈）
+        try {
+            event.registerShader(
+                    new ShaderInstance(event.getResourceProvider(),
+                            new ResourceLocation(HallMod.MODID, "magic_pulse"),
+                            DefaultVertexFormat.POSITION_TEX),
+                    shader -> magicPulseShader = shader);
+        } catch (Throwable t) {
+            // 加载失败只是没有那颗光点：放入/移动本身照常工作。
+            HallMod.LOGGER.error("[Shaders] 加载 magic_pulse 失败，"
+                    + "魔法星图将没有放入法术时的光点反馈", t);
+        }
+
+        // 轮盘 HUD：花瓣扇区 / 外圈光环 / 中心核心 / SDF 平滑形状
+        try {
+            event.registerShader(
+                    new ShaderInstance(event.getResourceProvider(),
+                            new ResourceLocation(HallMod.MODID, "wheel_slice"),
+                            DefaultVertexFormat.POSITION_TEX),
+                    shader -> wheelSliceShader = shader);
+        } catch (Throwable t) {
+            // 退回 CPU 扇形/圆环绘制：轮盘功能不受影响，只是没有发光质感。
+            HallMod.LOGGER.error("[Shaders] 加载 wheel_slice 失败，"
+                    + "施法轮盘的扇区将退回纯色绘制", t);
+        }
+        try {
+            event.registerShader(
+                    new ShaderInstance(event.getResourceProvider(),
+                            new ResourceLocation(HallMod.MODID, "wheel_aura"),
+                            DefaultVertexFormat.POSITION_TEX),
+                    shader -> wheelAuraShader = shader);
+        } catch (Throwable t) {
+            HallMod.LOGGER.error("[Shaders] 加载 wheel_aura 失败，"
+                    + "施法轮盘将没有外圈光环", t);
+        }
+        try {
+            event.registerShader(
+                    new ShaderInstance(event.getResourceProvider(),
+                            new ResourceLocation(HallMod.MODID, "wheel_core"),
+                            DefaultVertexFormat.POSITION_TEX),
+                    shader -> wheelCoreShader = shader);
+        } catch (Throwable t) {
+            HallMod.LOGGER.error("[Shaders] 加载 wheel_core 失败，"
+                    + "施法轮盘中心将退回纯色圆盘", t);
+        }
+        try {
+            event.registerShader(
+                    new ShaderInstance(event.getResourceProvider(),
+                            new ResourceLocation(HallMod.MODID, "sdf_ui"),
+                            DefaultVertexFormat.POSITION_TEX),
+                    shader -> wheelSdfShader = shader);
+        } catch (Throwable t) {
+            HallMod.LOGGER.error("[Shaders] 加载 sdf_ui 失败，"
+                    + "轮盘/装载界面的圆环与圆角将退回方块绘制", t);
         }
 
         // black hole (raymarched gravitational lensing, view-space billboard)

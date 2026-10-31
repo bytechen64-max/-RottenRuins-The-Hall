@@ -25,6 +25,66 @@
 - Fixed block behaviors for Hall Grass, Hall Flower, Hall Ash Cactus, etc.
 - Fixed a model loading crash
 
+## [Unreleased] — Section-Code Text Effects (v1)
+> A namespaced custom formatting-code layer for text: `§[rrs:<effect>:<params>]…§[/]`.
+> Client-side rendering only; text content/width/wrapping are unchanged and the markers
+> are zero-width under the vanilla parser. v1 ships colour effects (gradient/solid/rainbow/pulse)
+> and motion effects (shake/wave/glitch), a `/rrsfx` demo command and config entries.
+
+### Added
+- **Three client mixins**: `StringDecomposer` (marker parsing/measurement),
+  `ClientLanguage#getVisualOrder` (per-frame overlay for cached `FormattedCharSequence`),
+  `Font$StringRenderOutput#accept` (temporary draw-coordinate offsets only; `renderChar` untouched).
+- **Pure-Java engine** (unit-testable without launching the game): `TextEffectParser`,
+  `EffectPlan`, `EffectColor` (linear-light gradients, HSV), `EffectMotion`
+  (deterministic shake/wave/glitch), `TextEffectPlanCache` (LRU).
+- **Builder API** `api/text/TextEffectText`: `gradient/solid/rainbow/pulse/shake/wave/glitch`
+  plus `open/close` for generating marked-up text from items, commands and demos.
+- **Demo**: client command `/rrsfx` (`screen` preview screen / `chat` local chat test /
+  `on|off` runtime switch / `stats` / `reset` / `help`); `chat` accepts `&` as a typed substitute for `§`.
+- **In-game test text**: `INF_ENDER_PEAR` display name is now
+  `§[rrs:glitch:amp=2.0]…§[/]` to verify the corrupted-text renderer.
+- **Config**: `textEffectsEnabled`, `textEffectsFontHooksEnabled` (safety bypass),
+  `textEffectIntensity`, `textEffectSpeed`, `textEffectUseGameTime`, `textEffectMaxAnimatedGlyphs`.
+- **Design docs**: `docs/proposals/custom-section-code-text-effects.md` and
+  `docs/proposals/text-effects-preview/` (animated previews / interactive playground).
+
+### Changed
+- **Flowing gradients**: `grad` now accepts `speed=` (`§[rrs:grad:#a:#b:speed=0.4]`); with `speed > 0`
+  the colours flow along the text over time (seamless cyclic wrap), while the default `0` keeps the old
+  static look used by existing content and the preview GIFs. `TextEffectText.gradient(text, from, to, speed)`
+  exposes the same option.
+- **Migrated display texts now flow**: Spell Constellation title (`speed=0.5`), the `/anomaly` status header
+  and `/collapse types` header (`speed=0.5`), the "Rotten Ruins" advancement title (`speed=0.5`), and the
+  creative-tab label / panel title `itemGroup.rotten_ruins.main` ("Rotten Ruins" / "腐朽之疫", `speed=0.6`);
+  the creative-tab section titles keep using `rainbow` (speed raised to 2.2).
+- **Flow speed semantics**: `grad`'s `speed` now means cycles per second (`speed=0.5` ≈ a 2 s loop), 4× faster
+  than the first revision so the motion is clearly visible.
+- **Creative-tab section titles**: removed the private per-glyph HSV implementation in
+  `CreativeTabDividerRenderer` (the `drawFlowingText` helper and its two constants) and replaced it
+  with a single `drawString(Component)` using `§[rrs:rainbow:sat=0.45:speed=1.3]`, sharing one
+  implementation/config with all other rainbow text; a leading `§6` keeps the title gold when effects are off.
+- **"Incomprehensible" difficulty tier**: `HallDifficultyEventHandler.resolveDisplayName` now uses
+  `§4§[rrs:glitch:amp=2.0]…§[/]` instead of the `§c§k!!` fake-obfuscation (the `§4` keeps the fallback red).
+- **Command feedback headers**: the `/anomaly` status header and `/collapse types` `═══ … ═══` line
+  now use a gold gradient (with `§6` as the degraded fallback).
+- **Spell Constellation title**: `MagicScreen#drawHeader` now uses a bright-gold → dark-gold gradient
+  (`§6` fallback).
+- **datagen copy**: the "Incomprehensible" difficulty name/tooltips (hard = shake, incomprehensible = glitch),
+  the "Rotten Ruins" advancement title (gradient) and the "Obtain the Death Star" description (glitch)
+  now carry section-code markers.
+  - **Note**: lore/flavour lines that go through `FlowingNameColors` / `TooltipLines` were deliberately
+    left untouched — their per-character rebuild would split the markers across sibling components and
+    render them literally.
+
+### Known Issues
+- An effect span does not continue across `Component` children or `Font.split` line wraps.
+- Text containing RTL characters skips the per-frame overlay (bidi reordering breaks glyph ordinals).
+- For `drawInBatch8xOutline` (glowing-sign outline) the halo colour is overridden by vanilla;
+  the core pass still shows the gradient.
+- The `glitch` colour-channel shift is invisible on pure-white text (positional offsets still apply).
+- Short single-letter aliases (`§g` etc.) are not enabled yet; only the namespaced syntax is supported.
+
 ## [Unreleased] — Skyfall Verdict: VFX & game-feel rework
 > Scoped to "make the skill effects cooler and the controls feel better". The three existing
 > design rules are unchanged: damage is fixed, coverage scales with height, and the three

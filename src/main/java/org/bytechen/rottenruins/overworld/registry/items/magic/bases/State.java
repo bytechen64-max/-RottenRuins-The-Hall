@@ -47,6 +47,13 @@ public final class State {
     /** 是否"待触发第一次"（进入维持后的第一 tick 立刻触发一次）。 */
     private boolean keepPulsePending = true;
     /**
+     * 本次释放是不是由<b>轮盘</b>发起的。
+     * <p>轮盘不走原版 useItem 生命周期，所以服务端需要自己每 tick 推进
+     * {@code CHARGE/KEEP}；这个标记让 {@code MagicHandle#tickWheel} 知道该不该代劳，
+     * 也避免和"右键法杖"的状态互相干扰。</p>
+     */
+    private boolean wheelSession;
+    /**
      * {@code KEEP} 维持期间<b>锁定</b>的目标。
      *
      * <p>在开始维持的那一刻（也就是启动扣蓝、进冷却的那一次）沿准星解析出来，
@@ -93,6 +100,14 @@ public final class State {
     /** 从按下到现在多少 tick。 */
     public int getHeldTicks() {
         return heldTicks;
+    }
+
+    public boolean isWheelSession() {
+        return wheelSession;
+    }
+
+    public void setWheelSession(boolean wheelSession) {
+        this.wheelSession = wheelSession;
     }
 
     public void setHeldTicks(int heldTicks) {
@@ -206,5 +221,6 @@ public final class State {
         keepPulseTicks = 0;
         keepPulsePending = true;
         lockedTarget = null;
+        wheelSession = false;
     }
 }

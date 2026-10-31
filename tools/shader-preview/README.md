@@ -1,5 +1,9 @@
 # 描边着色器离屏预览 / 编译检查
 
+> 想看 **GUI 组合**（tooltip / 坍缩使徒血条 / 创造栏隔断 / 难度选择界面）的离屏预览？
+> 见 [`tools/gui-preview`](../gui-preview/README.md)：那边用项目真实的 core shader +
+> MC 位图字体按 GUI 坐标渲染，本目录则专注单支着色器的算法/观感。
+
 **不启动游戏**，直接把 `outline_mask` + `outline_ring` 跑一遍并导出 PNG。
 用来做两件事：
 
@@ -248,15 +252,18 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 .\tools\shader-preview\magic.ps1 -Time 9         # 换一帧看动画相位
 ```
 
-`MagicPreview.java` 按 `MagicScreen` 的约定复现两件事：
+`MagicPreview.java` 按 `MagicScreen` 的约定复现三件事：
 
 - **背景**：整屏四边形 + `magic_starfield`（流动星云 + 三层视差星点），
   用 `uSize` 拿像素坐标，所以星点尺寸不随分辨率变；
 - **连接光带**：5 个槽位按"∧∨∧"折线摆好，每段一个四边形 + `magic_constellation`
   （发丝级亮芯 + 极淡薄雾 + 很慢的明暗呼吸；**没有**沿轨道滚动的小光点），
-  加法混合与 json 的 `srcalpha / one` 同语义；`UV0.x = 长度 / 64`，所以长短段的节奏一致。
+  加法混合与 json 的 `srcalpha / one` 同语义；`UV0.x = 长度 / 64`，所以长短段的节奏一致；
+- **放入光点**：`magic_pulse` 画一颗带尾焰的光点（`uProgress` 0..1），
+  游戏里只在放入/移动法术时播一次；中间槽位向左右各一颗。预览从中间槽位向左右各画一颗 45% 进度的光点。
 
-产物只有一张 `magic-gui.png`。它**不验证** MC 的 `ShaderInstance` 状态簿记与
+产物只有一张 `magic-gui.png`：在 5 格星座上画两颗 45% 进度的<b>一次性光点</b>（中间槽位左右各一），
+用来检查光点的亮芯、尾焰与端点淡出。它**不验证** MC 的 `ShaderInstance` 状态簿记与
 `GuiGraphics` 批处理顺序（那部分靠 `MagicGuiShaders` 里"先 flush、后还原"的写法），
 但能提前抓到 GLSL 编译错误与"这颜色/密度到底好不好看"。
 

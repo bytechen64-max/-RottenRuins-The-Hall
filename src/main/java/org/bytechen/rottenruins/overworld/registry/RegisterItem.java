@@ -20,6 +20,10 @@ import org.bytechen.rottenruins.overworld.registry.items.magic.bases.MagicType;
 import org.bytechen.rottenruins.overworld.registry.items.magic.its.FireBall;
 import org.bytechen.rottenruins.overworld.registry.items.magic.its.SpearOfJudgment;
 import org.bytechen.rottenruins.overworld.registry.items.magic.its.SuppressionField;
+import org.bytechen.rottenruins.overworld.registry.items.magic.its.TidalPulse;
+import org.bytechen.rottenruins.overworld.registry.items.magic.its.BriarSnare;
+import org.bytechen.rottenruins.overworld.registry.items.magic.its.PurifyingLight;
+import org.bytechen.rottenruins.overworld.registry.items.magic.its.ArcaneStep;
 
 import java.util.function.Supplier;
 
@@ -157,9 +161,7 @@ public class RegisterItem {
     // 想让别的板也描边：在上面的构造参数后追加一个 ManaPlateItem.GlowOutline，
     // 见下面光明法力板那一行。
     //
-    // 注意：贴图里是 water（水），而 bases/MagicType 里对应位置是 ACE。
-    // 这两者目前<b>没有建立任何映射</b>（板子还没有接进法术系统），
-    // 等做流派数值时再决定 ACE 与水的关系。
+    // 水板材对应 MagicType.WATER；各流派板材用于法杖合成与充能。
     public static final RegistryObject<Item> DEATH_MANA_PLATE = registerSimpleItem("death_mana_plate");
 
     /**
@@ -190,6 +192,7 @@ public class RegisterItem {
     public static final RegistryObject<Item> NATURE_MANA_PLATE = registerSimpleItem("nature_mana_plate");
     public static final RegistryObject<Item> VOID_MANA_PLATE = registerSimpleItem("void_mana_plate");
     public static final RegistryObject<Item> WATER_MANA_PLATE = registerSimpleItem("water_mana_plate");
+    public static final RegistryObject<Item> MYSTERIOUS_MANA_PLATE = registerSimpleItem("mysterious_mana_plate");
 
     // ---- 催化剂 / 符文：目前是纯材料 ----
     public static final RegistryObject<Item> MAGIC_CATA = registerSimpleItem("magic_cata");
@@ -200,14 +203,26 @@ public class RegisterItem {
     public static final RegistryObject<Item> DEATH_STAR = registerSimpleItem("death_star");
 
     // ---- 法杖 ----
-    // 走 StaffBase（纯转发层），所以它们已经"能被魔法系统识别"：
-    // 右键会走进 MagicHandle。法术槽默认 5 格，用「魔法星图」（默认 M 键）把法术拖进槽里；
-    // 槽里为空时右键只会拿到 CastResult.NO_SPELL —— 表现为"什么都没发生"。
+    // 空杖保留附魔作为合成基底；七系杖各储存 500 魔能，通用杖储存 2500。
     // 模型用 minecraft:item/handheld，由 ItemGenData 的 isHandheld 判定。
     public static final RegistryObject<Item> WAND = ITEMS.register("wand",
-            () -> new WandItem(new Item.Properties().stacksTo(1), MagicType.MYSTERIOUS));
+            () -> new WandItem(new Item.Properties().durability(512), MagicType.MYSTERIOUS, 0));
     public static final RegistryObject<Item> WAND_NATURE = ITEMS.register("wand_nature",
-            () -> new WandItem(new Item.Properties().stacksTo(1), MagicType.NATURE));
+            () -> new WandItem(new Item.Properties().durability(512), MagicType.NATURE, WandItem.NORMAL_CAPACITY));
+    public static final RegistryObject<Item> WAND_FIRE = ITEMS.register("wand_fire",
+            () -> new WandItem(new Item.Properties().durability(512), MagicType.FIRE, WandItem.NORMAL_CAPACITY));
+    public static final RegistryObject<Item> WAND_DEATH = ITEMS.register("wand_death",
+            () -> new WandItem(new Item.Properties().durability(512), MagicType.DEATH, WandItem.NORMAL_CAPACITY));
+    public static final RegistryObject<Item> WAND_LIGHT = ITEMS.register("wand_light",
+            () -> new WandItem(new Item.Properties().durability(512), MagicType.LIGHT, WandItem.NORMAL_CAPACITY));
+    public static final RegistryObject<Item> WAND_VOID = ITEMS.register("wand_void",
+            () -> new WandItem(new Item.Properties().durability(512), MagicType.VOID, WandItem.NORMAL_CAPACITY));
+    public static final RegistryObject<Item> WAND_WATER = ITEMS.register("wand_water",
+            () -> new WandItem(new Item.Properties().durability(512), MagicType.WATER, WandItem.NORMAL_CAPACITY));
+    public static final RegistryObject<Item> WAND_MYSTERIOUS = ITEMS.register("wand_mysterious",
+            () -> new WandItem(new Item.Properties().durability(512), MagicType.MYSTERIOUS, WandItem.NORMAL_CAPACITY));
+    public static final RegistryObject<Item> WAND_COMMON = ITEMS.register("wand_common",
+            () -> new WandItem(new Item.Properties().durability(512), MagicType.MYSTERIOUS, WandItem.COMMON_CAPACITY));
 
     // ---- 法术 ----
     // 法术物品只声明基值，效果写在 cast() 里，投射物在 entities/magic/ 下。
@@ -221,6 +236,18 @@ public class RegisterItem {
 
     public static final RegistryObject<Item> SUPPRESSION_FIELD =
             ITEMS.register("suppression_field", SuppressionField::new);
+
+    public static final RegistryObject<Item> TIDAL_PULSE =
+            ITEMS.register("tidal_pulse", TidalPulse::new);
+
+    public static final RegistryObject<Item> BRIAR_SNARE =
+            ITEMS.register("briar_snare", BriarSnare::new);
+
+    public static final RegistryObject<Item> PURIFYING_LIGHT =
+            ITEMS.register("purifying_light", PurifyingLight::new);
+
+    public static final RegistryObject<Item> ARCANE_STEP =
+            ITEMS.register("arcane_step", ArcaneStep::new);
 
     public static final RegistryObject<Item> INF_PLAYER_SPAWN_EGG = registerSpawnEgg("hall_player",EntityTypeRegistry.INF_PLAYER);
     public static final RegistryObject<Item> INF_ENDERMAN_SPAWN_EGG = registerSpawnEgg("hall_enderman",EntityTypeRegistry.INF_ENDERMAN);

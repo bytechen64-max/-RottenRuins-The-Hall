@@ -1,8 +1,10 @@
 package org.bytechen.rottenruins.client.mask;
 
 import org.bytechen.rottenruins.HallMod;
+import org.bytechen.rottenruins.client.mask.block.BlockMaskOverlayRenderer;
 import org.bytechen.rottenruins.client.mask.render.MaskLayerRenderUtils;
 import org.bytechen.rottenruins.client.mask.render.MaskLayerShaders;
+import org.bytechen.rottenruins.client.mask.render.pass.DeathCoreMaskPass;
 import org.bytechen.rottenruins.client.mask.render.pass.GlowMaskPass;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.client.event.RegisterShadersEvent;
@@ -33,9 +35,11 @@ public final class MaskLayerClient {
         // 之所以放在 init 而不是 FMLClientSetupEvent，是因为物品模型烘焙
         // （可能早于 client setup）解析层时就会去问「这个 effect id 存在吗」。
         MaskEffectRegistry.register(new GlowMaskPass());
+        // 方块侧效果：ShaderToy "Ghosts" 改造的 death_core（死亡核心用）。
+        MaskEffectRegistry.register(new DeathCoreMaskPass());
 
         HallMod.LOGGER.info("[MaskLayer] mask 效果层系统已就绪：内置效果 [{}]",
-                GlowMaskPass.ID);
+                GlowMaskPass.ID + ", " + DeathCoreMaskPass.ID);
     }
 
     private static void onRegisterGeometryLoaders(ModelEvent.RegisterGeometryLoaders event) {
@@ -52,6 +56,8 @@ public final class MaskLayerClient {
         MaskLayerRenderUtils.clear();
         // 允许重新警告一次：着色器改了之后如果还是失败，日志里要能看到新的那条。
         MaskLayerResolver.resetWarnings();
+        // 方块侧渲染器有自己的「只警告一次」表，同样在重载后复位。
+        BlockMaskOverlayRenderer.resetWarnings();
     }
 
     private MaskLayerClient() {}

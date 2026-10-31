@@ -1,6 +1,7 @@
-package org.bytechen.rottenruins.overworld.registry.entities.magic;
+package org.bytechen.rottenruins.overworld.registry.entities.population.magic;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,6 +17,8 @@ import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -70,7 +73,7 @@ public class FireBallEntity extends Fireball {
     private static final String TAG_BREAK_BLOCKS = "HallBreaksBlocks";
 
     /** 没走 {@link #spawn} 时的兜底爆炸半径（格）。 */
-    public static final double DEFAULT_EXPLOSION_RADIUS = 2.5d;
+    public static final double DEFAULT_EXPLOSION_RADIUS = 2.0d;
 
     /**
      * 命中生物时点燃的秒数。
@@ -137,7 +140,20 @@ public class FireBallEntity extends Fireball {
         ball.breaksBlocks = breaksBlocks;
 
         level.addFreshEntity(ball);
+        level.playSound(null, pos.x, pos.y, pos.z,
+                SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.8f, 0.72f);
         return ball;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (level() instanceof ServerLevel server && !exploded && tickCount % 2 == 0) {
+            server.sendParticles(ParticleTypes.FLAME, getX(), getY(), getZ(),
+                    5, 0.18d, 0.18d, 0.18d, 0.015d);
+            server.sendParticles(ParticleTypes.SMOKE, getX(), getY(), getZ(),
+                    2, 0.12d, 0.12d, 0.12d, 0.005d);
+        }
     }
 
     /** 本次爆炸半径（格）。 */
@@ -220,6 +236,9 @@ public class FireBallEntity extends Fireball {
             return;
         }
         exploded = true;
+
+        serverLevel.sendParticles(ParticleTypes.FLAME, getX(), getY(), getZ(),
+                24, 0.55d, 0.55d, 0.55d, 0.1d);
 
         DamageSource source = serverLevel.damageSources().explosion(this, getOwner());
 

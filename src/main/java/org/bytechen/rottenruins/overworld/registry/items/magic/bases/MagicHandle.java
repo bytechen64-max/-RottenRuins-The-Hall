@@ -7,6 +7,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -15,9 +16,11 @@ import org.bytechen.rottenruins.api.magic.CastResult;
 import org.bytechen.rottenruins.api.magic.MagicCastEvent;
 import org.bytechen.rottenruins.api.magic.MagicStats;
 import org.bytechen.rottenruins.overworld.registry.CapabilityRegistry;
+import org.bytechen.rottenruins.overworld.registry.RegisterItem;
+import org.bytechen.rottenruins.overworld.registry.WandEnchantments;
+import org.bytechen.rottenruins.overworld.registry.items.magic.WandItem;
 import org.bytechen.rottenruins.overworld.registry.capability.PlayerMagicPool;
 import org.bytechen.rottenruins.overworld.registry.capability.TwistedPoint;
-import org.bytechen.rottenruins.utils.ModUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -77,10 +80,46 @@ public final class MagicHandle {
     /** 每个玩家的释放状态。只有服务端线程会写，用并发容器只是为了读取端安全。 */
     private static final Map<UUID, State> STATES = new ConcurrentHashMap<>();
 
-    /** 法力 capability 缺失的告警只打一次，避免刷屏。 */
-    private static volatile boolean warnedMissingManaCap;
-
     private MagicHandle() {
+    }
+
+    private static int discountedCost(ServerPlayer player, InteractionHand hand, int base) {
+        ItemStack held = player.getItemInHand(hand);
+        if (!(held.getItem() instanceof StaffBase) || base <= 0) return Math.max(0, base);
+        int level = EnchantmentHelper.getItemEnchantmentLevel(WandEnchantments.EFFICIENCY.get(), held);
+        return Math.max(0, (int) Math.ceil(base * (1.0d - 0.05d * Math.min(5, level))));
+    }
+
+    private static boolean canPay(ServerPlayer player, InteractionHand hand,
+                                  IMagicBaseItem spell, int cost) {
+        if (cost <= 0) return true;
+        ItemStack held = player.getItemInHand(hand);
+        TwistedPoint mana = getMana(player);
+        if (held.getItem() instanceof WandItem wand && wand.usesReserve(spell)) {
+            int shortfall = Math.max(0, cost - wand.mana(held));
+            return shortfall == 0 || (mana != null && mana.getMana() >= shortfall);
+        }
+        return mana != null && mana.getMana() >= cost;
+    }
+
+    private static boolean pay(ServerPlayer player, InteractionHand hand,
+                               IMagicBaseItem spell, int cost) {
+        if (cost <= 0) return true;
+        ItemStack held = player.getItemInHand(hand);
+        if (held.getItem() instanceof WandItem wand && wand.usesReserve(spell)) {
+            int available = wand.mana(held);
+            int shortfall = Math.max(0, cost - available);
+            if (shortfall > 0) {
+                TwistedPoint mana = getMana(player);
+                if (mana == null || !mana.spend(shortfall)) return false;
+            }
+            int remaining = Math.max(0, available - cost);
+            wand.setMana(held, remaining);
+            if (remaining == 0) WandItem.empty(player, hand, held, RegisterItem.WAND.get());
+            return true;
+        }
+        TwistedPoint mana = getMana(player);
+        return mana != null && mana.spend(cost);
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -213,9 +252,8 @@ public final class MagicHandle {
         }
 
         // 法力余额"预检"：蓄力型法术也要立刻告诉玩家没蓝，而不是让他蓄两秒再失败
-        int previewCost = MagicStats.manaCost(player, spellStack);
-        TwistedPoint mana = getMana(player);
-        if (mana != null && previewCost > 0 && mana.getMana() < previewCost) {
+        int previewCost = discountedCost(player, hand, MagicStats.manaCost(player, spellStack));
+        if (!canPay(player, hand, spell, previewCost)) {
             return new UseStartOutcome(CastResult.NOT_ENOUGH_MANA, false);
         }
 
@@ -280,6 +318,12 @@ public final class MagicHandle {
 
         ItemStack spellStack = state.getSpell();
         IMagicBaseItem spell = MagicStats.spellOf(spellStack);
+        ItemStack currentFocus = player.getItemInHand(hand);
+        if (spell == null || !(currentFocus.getItem() instanceof StaffBase currentStaff)
+                || !currentStaff.accepts(currentFocus, spell)) {
+            stopChannel(player, state);
+            return;
+        }
 
         if (state.isCharging()) {
             state.setHeldTicks(heldTicks);
@@ -295,11 +339,16 @@ public final class MagicHandle {
             // 维持耗蓝：每秒一次。**与触发速度无关** —— 这一条只管"维持本身要付的代价"。
             // 另一条（每次生效扣一次）在下面跟着触发节奏走，两者刻意解耦。
             if (state.tickKeepBilling()) {
-                int perSecond = MagicStats.keepCostPerSecond(player, spellStack);
+                int perSecond = discountedCost(player, hand, MagicStats.keepCostPerSecond(player, spellStack));
                 if (perSecond > 0) {
-                    TwistedPoint mana = getMana(player);
-                    if (mana != null && !mana.spend(perSecond)) {
+                    if (spell != null && !pay(player, hand, spell, perSecond)) {
                         // 法力不够 → 维持到此为止（启动那笔已经扣过了，进冷却）
+                        stopChannel(player, state);
+                        return;
+                    }
+                    ItemStack billedFocus = player.getItemInHand(hand);
+                    if (!(billedFocus.getItem() instanceof StaffBase current)
+                            || (spell != null && !current.accepts(billedFocus, spell))) {
                         stopChannel(player, state);
                         return;
                     }
@@ -315,21 +364,21 @@ public final class MagicHandle {
                     // 可能在维持期间死了 —— 交给法术自己判断要不要收手。
                     LivingEntity target = state.getLockedTarget();
 
-                    // 1) 先出效果。允许返回 false 主动收手。
-                    boolean keepGoing = spell.onKeepTick(player, spellStack, heldTicks, interval, target);
-
-                    // 2) 再扣"这一次生效"的法力 —— 生效有间隔，扣费也就有间隔。
-                    int perTrigger = MagicStats.keepCostPerTrigger(player, spellStack);
+                    // Pay before applying a pulse so an empty reserve cannot grant a free hit.
+                    int perTrigger = discountedCost(player, hand,
+                            MagicStats.keepCostPerTrigger(player, spellStack));
                     if (perTrigger > 0) {
-                        TwistedPoint mana = getMana(player);
-                        if (mana != null && !mana.spend(perTrigger)) {
-                            // 扣不动了 → 维持结束。这一发已经打出去了，从下一发起不再发生。
+                        if (!pay(player, hand, spell, perTrigger)) {
                             stopChannel(player, state);
                             return;
                         }
                     }
 
-                    if (!keepGoing) {
+                    boolean keepGoing = spell.onKeepTick(player, spellStack, heldTicks, interval, target);
+
+                    ItemStack afterPulse = player.getItemInHand(hand);
+                    if (!keepGoing || !(afterPulse.getItem() instanceof StaffBase activeStaff)
+                            || !activeStaff.accepts(afterPulse, spell)) {
                         stopChannel(player, state);
                     }
                 }
@@ -387,6 +436,209 @@ public final class MagicHandle {
         // CHANNELING
         stopChannel(player, state);
         return CastResult.SUCCESS;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // 轮盘施法（Spell Wheel）
+    // ══════════════════════════════════════════════════════════════
+
+    /**
+     * 轮盘 CHARGE 的网络容差：客户端按"按住 R 的时长"算蓄力，而服务端只能按自己的
+     * tick 计数；两者差 1~2 tick 时审判之矛（{@code minChargeRatio = 1.0}）会莫名
+     * {@code NOT_CHARGED}。所以服务端在结算时补这么多 tick（≤100ms），同时不超过
+     * 法术实际需要的蓄力 tick。
+     */
+    public static final int WHEEL_CHARGE_TOLERANCE_TICKS = 2;
+
+    /** 校验通过的轮盘施法目标（内部用）。 */
+    private record WheelTarget(@NotNull PlayerMagicPool pool, int poolSlot,
+                               @NotNull ItemStack spellStack, @NotNull IMagicBaseItem spell,
+                               @NotNull InteractionHand hand) {
+    }
+
+    /** 最近一次 {@link #validateWheelTarget} 失败的原因。 */
+    private static CastResult lastWheelError = CastResult.NOT_ACTIVE;
+
+    /**
+     * 轮盘：开始蓄力 / 开始维持（客户端在选中扇区停留阈值后调用）。
+     *
+     * <p>只接受 {@code CHARGE} 与 {@code KEEP}；{@code IMMEDIATELY} 走
+     * {@link #handleWheelCast}（松手那一下）。</p>
+     *
+     * <p>不伪造原版"使用中"状态：状态记录在 {@link State#isWheelSession()} 上，
+     * 由服务端每 tick 的 {@link #tickWheel} 推进 —— 这样客户端不需要模拟右键，
+     * 也不会出现"两份 use 状态"。</p>
+     */
+    @NotNull
+    public static CastResult handleWheelBegin(@NotNull ServerPlayer player, int poolSlot) {
+        WheelTarget target = validateWheelTarget(player, poolSlot);
+        if (target == null) {
+            return lastWheelError;
+        }
+        State state = getState(player);
+        if (!state.isIdle() || player.isUsingItem()) {
+            return CastResult.NOT_ACTIVE;
+        }
+        target.pool().setSelectedSlot(poolSlot);
+
+        return switch (target.spell().getUsingType()) {
+            case IMMEDIATELY -> CastResult.REJECTED;
+            case CHARGE -> {
+                state.beginCharging(target.spellStack(), poolSlot, target.hand());
+                state.setWheelSession(true);
+                yield CastResult.SUCCESS;
+            }
+            case KEEP -> {
+                CastOutcome outcome = castNow(player, target.hand(), poolSlot,
+                        target.spellStack(), target.spell(), 1.0f, 0);
+                if (!outcome.result().isSuccess()) {
+                    yield outcome.result();
+                }
+                state.beginChanneling(target.spellStack(), poolSlot, target.hand(),
+                        outcome.target());
+                state.setWheelSession(true);
+                yield CastResult.SUCCESS;
+            }
+        };
+    }
+
+    /**
+     * 轮盘：松手瞬间释放 {@code IMMEDIATELY} 法术。
+     *
+     * <p>目标解析、扣蓝、进冷却、事件都复用 {@link #castNow}，和右键法杖完全同一条路径。</p>
+     */
+    @NotNull
+    public static CastResult handleWheelCast(@NotNull ServerPlayer player, int poolSlot) {
+        WheelTarget target = validateWheelTarget(player, poolSlot);
+        if (target == null) {
+            return lastWheelError;
+        }
+        if (target.spell().getUsingType() != UsingType.IMMEDIATELY) {
+            return CastResult.REJECTED;
+        }
+        State state = peekState(player);
+        if (state != null && !state.isIdle()) {
+            return CastResult.NOT_ACTIVE;
+        }
+        target.pool().setSelectedSlot(poolSlot);
+        return castNow(player, target.hand(), poolSlot, target.spellStack(),
+                target.spell(), 1.0f, 0).result();
+    }
+
+    /**
+     * 轮盘：松手 / 结束维持。
+     *
+     * <p>{@code CHARGE} 用服务端自己的 heldTicks 结算（加
+     * {@link #WHEEL_CHARGE_TOLERANCE_TICKS} 容差）；{@code KEEP} 结束维持。
+     * 没有轮盘会话时返回 {@code NOT_ACTIVE}，不会误伤普通右键。</p>
+     */
+    @NotNull
+    public static CastResult handleWheelEnd(@NotNull ServerPlayer player) {
+        State state = peekState(player);
+        if (state == null || state.isIdle() || !state.isWheelSession()) {
+            return CastResult.NOT_ACTIVE;
+        }
+        int held = state.getHeldTicks();
+        int chargeTicks = MagicStats.chargeTicks(player, state.getSpell());
+        if (chargeTicks > 0) {
+            held = Math.min(chargeTicks, held + WHEEL_CHARGE_TOLERANCE_TICKS);
+        }
+        // handleUseRelease 内部会 reset 状态（包括 wheelSession 标记）
+        return handleUseRelease(player, state.getHand(), held);
+    }
+
+    /**
+     * 轮盘：取消。蓄力作废零代价；维持结束但<b>不退还</b>起手的蓝与冷却。
+     */
+    @NotNull
+    public static CastResult handleWheelCancel(@NotNull ServerPlayer player) {
+        State state = peekState(player);
+        if (state == null || state.isIdle() || !state.isWheelSession()) {
+            return CastResult.NOT_ACTIVE;
+        }
+        if (state.isCharging()) {
+            state.reset();
+            return CastResult.CANCELLED;
+        }
+        handleUseRelease(player, state.getHand(), state.getHeldTicks());
+        return CastResult.CANCELLED;
+    }
+
+    /**
+     * 服务端每 tick 推进轮盘会话（CHARGE 蓄力、KEEP 维持）。
+     * <p>由 {@code MagicEventHandlers#onLivingTick} 在服务端分支调用。</p>
+     */
+    public static void tickWheel(@NotNull ServerPlayer player) {
+        State state = peekState(player);
+        if (state == null || state.isIdle() || !state.isWheelSession()) {
+            return;
+        }
+        // 会话安全：死了 / 法杖被换掉 → 走取消路径（维持会回调 onKeepStop）
+        if (!player.isAlive() || player.isRemoved()
+                || !(player.getItemInHand(state.getHand()).getItem() instanceof StaffBase)) {
+            handleWheelCancel(player);
+            return;
+        }
+        handleUseTick(player, state.getHand(), state.getHeldTicks() + 1);
+    }
+
+    /**
+     * 轮盘施法的统一前置校验：槽位合法、是主动法术、主手法杖接受、冷却与蓝量预检。
+     *
+     * @return 校验通过的目标；失败返回 {@code null}，原因写在 {@link #lastWheelError}
+     */
+    @Nullable
+    private static WheelTarget validateWheelTarget(@NotNull ServerPlayer player, int poolSlot) {
+        lastWheelError = CastResult.NOT_ACTIVE;
+        if (player.isSpectator()) {
+            lastWheelError = CastResult.REJECTED;
+            return null;
+        }
+        PlayerMagicPool pool = getPool(player);
+        if (pool == null) {
+            lastWheelError = CastResult.INVALID_SLOT;
+            return null;
+        }
+        if (!pool.isValidSlot(poolSlot)) {
+            lastWheelError = CastResult.INVALID_SLOT;
+            return null;
+        }
+        ItemStack spellStack = pool.getStackInSlot(poolSlot);
+        IMagicBaseItem spell = MagicStats.spellOf(spellStack);
+        if (spell == null) {
+            lastWheelError = CastResult.NO_SPELL;
+            return null;
+        }
+        if (spell.isPassive()) {
+            lastWheelError = CastResult.PASSIVE_SPELL;
+            return null;
+        }
+        // P0 与右键一致：只认主手法杖
+        InteractionHand hand = InteractionHand.MAIN_HAND;
+        ItemStack staffStack = player.getItemInHand(hand);
+        if (!(staffStack.getItem() instanceof StaffBase staff)) {
+            lastWheelError = CastResult.INVALID_STAFF;
+            return null;
+        }
+        if (!staff.accepts(staffStack, spell)) {
+            lastWheelError = CastResult.REJECTED;
+            return null;
+        }
+        ResourceLocation magicId = MagicStats.magicId(spellStack);
+        if (magicId != null && pool.onCooldown(magicId)) {
+            lastWheelError = CastResult.ON_COOLDOWN;
+            return null;
+        }
+        if (!spell.canCast(player, spellStack)) {
+            lastWheelError = CastResult.REJECTED;
+            return null;
+        }
+        int previewCost = discountedCost(player, hand, MagicStats.manaCost(player, spellStack));
+        if (!canPay(player, hand, spell, previewCost)) {
+            lastWheelError = CastResult.NOT_ENOUGH_MANA;
+            return null;
+        }
+        return new WheelTarget(pool, poolSlot, spellStack, spell, hand);
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -531,7 +783,7 @@ public final class MagicHandle {
             }
         }
 
-        int cost = MagicStats.manaCost(player, spellStack);
+        int cost = discountedCost(player, hand, MagicStats.manaCost(player, spellStack));
 
         // ---- 1. 释放前事件：可取消、可改耗蓝。取消时法力与冷却都不动 ----
         MagicCastEvent event = new MagicCastEvent(player, spellStack, spell.getUsingType(),
@@ -541,21 +793,12 @@ public final class MagicHandle {
         }
         cost = event.getManaCost();
 
+        // Capture the focus before charging it: the last cast can turn it into an empty wand.
+        boolean specialUse = MagicStats.isSpecialUse(player, player.getItemInHand(hand), spellStack);
+
         // ---- 2. 扣蓝（事件可能改过数值，所以这里才是权威判定）----
-        TwistedPoint mana = getMana(player);
-        if (cost > 0) {
-            if (mana == null) {
-                // 能力没挂上时**放行**而不是拒绝：宁可法术能放，也不要因为挂载出问题
-                // 让整个系统静默失效。这里警告一次，方便排查。
-                if (!warnedMissingManaCap) {
-                    warnedMissingManaCap = true;
-                    ModUtils.LOGGER.warn("[MagicHandle] 玩家缺少法力能力({}), 本次按 0 消耗放行；"
-                            + "请检查 ForgeEventHelpers.handleAttachCapabilities 是否给 Player 挂了 MANA_CAP",
-                            CapabilityRegistry.MANA_CAP.getName());
-                }
-            } else if (!mana.spend(cost)) {
-                return new CastOutcome(CastResult.NOT_ENOUGH_MANA, target);
-            }
+        if (!pay(player, hand, spell, cost)) {
+            return new CastOutcome(CastResult.NOT_ENOUGH_MANA, target);
         }
 
         // ---- 3. 冷却：键是物品注册名，所以同名物品天然共享 ----
@@ -571,12 +814,12 @@ public final class MagicHandle {
         }
 
         // ---- 4. 出效果 ----
-        // 特殊使用：法术流派 == 法杖流派（条件写在 IMagicBaseItem#isSpecialUse，可覆写）。
-        // 在"即将出效果"这一刻算，而不是按下时算 —— 蓄力型法术按下与松手之间
-        // 玩家是可以换手的，这里取的是真正生效那一瞬间手上那根杖。
-        boolean specialUse = MagicStats.isSpecialUse(player, player.getItemInHand(hand), spellStack);
         spell.cast(player, spellStack,
                 new MagicCastContext(slot, hand, heldTicks, chargeRatio, target, specialUse));
+        ItemStack usedStaff = player.getItemInHand(hand);
+        if (usedStaff.getItem() instanceof WandItem wand && wand.capacity() > 0) {
+            usedStaff.hurtAndBreak(1, player, holder -> holder.broadcastBreakEvent(hand));
+        }
 
         // ---- 5. 释放后事件：不可取消，用来挂后续逻辑 ----
         MinecraftForge.EVENT_BUS.post(new MagicCastEvent.Post(player, spellStack,

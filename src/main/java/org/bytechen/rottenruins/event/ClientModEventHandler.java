@@ -13,10 +13,12 @@ import org.bytechen.rottenruins.client.entity.render.GeoEntityRender;
 import org.bytechen.rottenruins.client.entity.render.GeoProjectileRenderer;
 import org.bytechen.rottenruins.client.entity.render.impl.MeteoriteRenderer;
 import org.bytechen.rottenruins.client.entity.render.impl.ShockwaveRenderer;
+import org.bytechen.rottenruins.client.entity.render.impl.SpearOfJudgmentRenderer;
 import org.bytechen.rottenruins.client.entity.render.impl.SwordAuraRenderer;
 import org.bytechen.rottenruins.client.entity.render.impl.VerdictBeamRenderer;
 import org.bytechen.rottenruins.client.entity.render.impl.VerdictFieldRenderer;
 import org.bytechen.rottenruins.client.entity.render.impl.VerdictSwordDropRenderer;
+import org.bytechen.rottenruins.client.mask.block.DeathCoreRenderer;
 import org.bytechen.rottenruins.client.particle.BloodParticle;
 import org.bytechen.rottenruins.client.particle.ExplosionBloodyParticle;
 import org.bytechen.rottenruins.client.particle.HeartLoseParticle;
@@ -30,6 +32,7 @@ import org.bytechen.rottenruins.client.rend.glint.GlintRenderManager;
 import org.bytechen.rottenruins.client.rend.glint.HeldItemGlintHelper;
 import org.bytechen.rottenruins.client.rend.glint.HeldItemOutlineSettings;
 import org.bytechen.rottenruins.overworld.registry.RegisterItem;
+import org.bytechen.rottenruins.overworld.registry.RegisterBlockEntities;
 import org.bytechen.rottenruins.overworld.registry.RegisterParticles;
 import org.bytechen.rottenruins.overworld.registry.entities.base.EntityManager;
 import org.bytechen.rottenruins.overworld.registry.entities.base.HallEntityManager;
@@ -98,6 +101,12 @@ public class ClientModEventHandler {
                 CrimsonVowFieldRenderer::new);
         event.registerEntityRenderer(EntityTypeRegistry.METEOR_EVENT.get(),
                 MeteorEventRenderer::new);
+
+        // 方块实体渲染器 —— 方块版 mask 效果层的唯一接入点。
+        // 想给新方块挂层：加一个 BlockEntity（实现 BlockMaskLayerProvider）+ 一个
+        // 同样三行的 BER，然后在这里注册即可，不需要新增 mixin。
+        event.registerBlockEntityRenderer(RegisterBlockEntities.DEATH_CORE.get(),
+                DeathCoreRenderer::new);
         // 法术投射物 —— 火球。
         // 用原版 ThrownItemRenderer：它把 Fireball#getItem() 的那张贴图billboard 出来，
         // 也就是"火球的贴图 = 火球法术物品的贴图"（见 FireBallEntity#spawn 里的 setItem）。
@@ -105,10 +114,9 @@ public class ClientModEventHandler {
         event.registerEntityRenderer(EntityTypeRegistry.FIRE_BALL.get(),
                 ctx -> new ThrownItemRenderer<>(ctx, 2.0F, true));
 
-        // 法术投射物 —— 审判之矛。同样用 ThrownItemRenderer（billboard 画物品贴图），
-        // 和原版箭/雪球/火球是同一种做法；放大到 2.5 倍才有一根长矛的存在感。
+        // 审判之矛使用沿飞行方向的立体光矛，不复用物品图标。
         event.registerEntityRenderer(EntityTypeRegistry.SPEAR_OF_JUDGMENT.get(),
-                ctx -> new ThrownItemRenderer<>(ctx, 2.5F, true));
+                SpearOfJudgmentRenderer::new);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -196,6 +204,8 @@ public class ClientModEventHandler {
     @SubscribeEvent
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(MagicClientHandler.OPEN_MAGIC);
+        event.register(MagicClientHandler.OPEN_WHEEL);
+        event.register(MagicClientHandler.OPEN_LOADOUT);
     }
 
     @SubscribeEvent

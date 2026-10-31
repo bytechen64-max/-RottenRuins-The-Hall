@@ -1,6 +1,8 @@
-package org.bytechen.rottenruins.overworld.registry.entities.magic;
+package org.bytechen.rottenruins.overworld.registry.entities.population.magic;
 
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.DustParticleOptions;
+import org.joml.Vector3f;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -66,8 +68,7 @@ import java.util.List;
  * 那些都在 {@code AbstractHurtingProjectile} 里，本类故意不碰。</p>
  *
  * <h3>渲染</h3>
- * <p>走原版 {@code ThrownItemRenderer}，画的是 {@link RegisterItem#SPEAR_OF_JUDGMENT}
- * 的贴图（正面朝相机的 billboard，和原版箭/雪球/火球同一种做法）。
+ * <p>客户端使用沿飞行方向的程序化光矛渲染器。
  * 因为普通实体没有客户端预测，{@code EntityType} 的 {@code updateInterval} 设成了
  * <b>1</b>（每 tick 同步位置），否则 1.6 格/tick 的速度会看出明显的跳格。</p>
  */
@@ -97,6 +98,9 @@ public class SpearOfJudgmentEntity extends Projectile implements ItemSupplier {
 
     /** 出生点：在主人<b>上方</b>多少格（相对主人脚下的坐标）。 */
     public static final double SPAWN_UP_OFFSET = 5.0d;
+
+    private static final DustParticleOptions JUDGMENT_DUST =
+            new DustParticleOptions(new Vector3f(0.30f, 0.72f, 1.0f), 1.25f);
 
     /** 单位飞行方向。生成时定死，中途不变。 */
     private Vec3 direction = Vec3.ZERO;
@@ -196,6 +200,10 @@ public class SpearOfJudgmentEntity extends Projectile implements ItemSupplier {
         // 出手音：三叉戟的投掷音，正好是"矛"的味道
         level.playSound(null, start.x, start.y, start.z,
                 SoundEvents.TRIDENT_THROW, SoundSource.PLAYERS, 1.0f, 0.9f);
+        if (level instanceof ServerLevel server) {
+            server.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z,
+                    22, 0.5d, 0.5d, 0.5d, 0.025d);
+        }
         return spear;
     }
 
@@ -306,6 +314,10 @@ public class SpearOfJudgmentEntity extends Projectile implements ItemSupplier {
         float base = item.baseDamage() * damageScale;
         float amount = MagicStats.spellDamage(caster, spellStack, target, null, base);
         SpellDamageUtil.hurt(target, spellStack, caster, amount);
+        if (level() instanceof ServerLevel server) {
+            server.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.5d,
+                    target.getZ(), 9, 0.3d, 0.35d, 0.3d, 0.08d);
+        }
     }
 
     /** 主人；不是玩家（读档后主人不在线）时返回 {@code null}，调用方需要能接受它。 */
@@ -318,11 +330,14 @@ public class SpearOfJudgmentEntity extends Projectile implements ItemSupplier {
     // 表现
     // ══════════════════════════════════════════════════════════════
 
-    /** 飞行拖尾：白色发光粒子，读作"从天而降的一道光"。 */
+    /** Cool light and short-lived motes trace the spear's actual path. */
     private void spawnTrail() {
         if (level() instanceof ServerLevel serverLevel) {
+            Vec3 wake = position().subtract(direction.scale(0.9d));
+            serverLevel.sendParticles(JUDGMENT_DUST,
+                    wake.x, wake.y, wake.z, 4, 0.16d, 0.16d, 0.16d, 0.015d);
             serverLevel.sendParticles(ParticleTypes.END_ROD,
-                    getX(), getY(), getZ(), 3, 0.12d, 0.12d, 0.12d, 0.01d);
+                    wake.x, wake.y, wake.z, 2, 0.08d, 0.08d, 0.08d, 0.005d);
         }
     }
 
@@ -348,8 +363,7 @@ public class SpearOfJudgmentEntity extends Projectile implements ItemSupplier {
     // ══════════════════════════════════════════════════════════════
 
     /**
-     * 渲染用的物品堆 —— 原版 {@code ThrownItemRenderer} 画的就是它。
-     * <p>固定返回法术物品本身（两端都能拿到，不需要同步）。</p>
+     * 兼容 ItemSupplier 的法术物品堆；实体视觉由专用渲染器负责。
      */
     @Override
     @NotNull

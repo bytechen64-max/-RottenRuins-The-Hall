@@ -1,11 +1,15 @@
 package org.bytechen.rottenruins.client.gui;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
@@ -21,7 +25,6 @@ import org.bytechen.rottenruins.overworld.registry.items.magic.bases.MagicHandle
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Random;
 
 /**
@@ -29,8 +32,8 @@ import java.util.Random;
  *
  * <h3>布局</h3>
  * <ul>
- *   <li><b>中间</b>：{@link #SLOT_TEX} 金框槽位按一条星座折线排布，槽位之间用
- *       流动的金色星点连线；默认 5 格（{@link MagicStats#BASE_SLOT_COUNT}），
+ *   <li><b>中间</b>：{@link #SLOT_TEX} 金框槽位按一条星座折线排布，槽位之间是
+ *       发丝级金色连线；默认 5 格（{@link MagicStats#BASE_SLOT_COUNT}），
  *       槽位数被属性抬高后按螺旋向外补点，不需要改界面。</li>
  *   <li><b>右侧</b>：一个半透明侧栏，只列出玩家背包里的<b>法术</b>
  *       （{@link MagicStats#isSpell}），不是整个背包。</li>
@@ -38,11 +41,16 @@ import java.util.Random;
  *
  * <h3>交互</h3>
  * <ul>
- *   <li>从右侧把法术<b>拖到</b>空槽 → 发 {@link MagicPoolActionPacket#sendPlace}；</li>
+ *   <li>从右侧把法术<b>拖到</b>空槽 → 发 {@link MagicPoolActionPacket#sendPlace}；
+ *       拖动时会预判目标：可放的空槽亮金边、悬停的非法槽铺红，ghost 靠近可放槽时吸附到格心；</li>
+ *   <li><b>双击</b>右侧法术 → 直接放进第一个能放的空槽；<b>右键</b>槽里的法术 → 退回背包；</li>
  *   <li>从槽里<b>拖出去</b>（拖到右侧或任意空白处）→ 还回背包；</li>
  *   <li>在槽之间拖动 → 交换位置；</li>
+ *   <li><b>放入 / 移动成功</b>时，会沿连接线向<b>所有相连的相邻槽位</b>各滚出一颗
+ *       <b>一次性</b>光点（中间槽位左右各一颗，两端的槽位只有一颗；
+ *       {@value #PLACEMENT_PULSE_MS} 毫秒后消失，不循环）；</li>
  *   <li><b>单击槽位</b>（按下后没拖走就松开）→ 选中该槽，之后法杖右键放的就是它；</li>
- *   <li>按 {@code M} / {@code ESC} 关闭。</li>
+ *   <li>按 {@code M} / {@code ESC} 关闭；打开时有短暂的入场亮起动画与音效。</li>
  * </ul>
  *
  * <h3>服务端权威</h3>
@@ -55,8 +63,10 @@ import java.util.Random;
  * 物品图标用 {@link GuiGraphics#renderItem} 自己画，拖动也是自绘的"手里那件"。</p>
  *
  * <h3>表现层</h3>
- * <p>背景与槽位之间的连接光带由 {@link MagicGuiShaders} 的两支 GUI 着色器绘制
- * （流动星云 / 发丝级金线，沿线只有极慢的明暗呼吸）。着色器加载失败时退回静态星点与金色虚线，
+ * <p>背景、槽位连接光带与「放入时的一次性光点」由 {@link MagicGuiShaders} 的三支
+ * GUI 着色器绘制（流动星云 + 鼠标视差 / 发丝级金线 / 沿线滚一次的光点）。
+ * 选中槽的连线更亮、有法术的槽连线略亮、悬停槽的连线高亮；打开界面时连线从中心向外
+ * 逐段亮起、槽位依次 pop 出现。着色器加载失败时退回静态星点、金色虚线与没有光点，
  * 功能不受影响。</p>
  */
 @OnlyIn(Dist.CLIENT)
@@ -84,6 +94,12 @@ public final class MagicScreen extends Screen {
 
     /** 星图区域左边界。 */
     private static final int MAP_LEFT = 16;
+
+    /** 放入法术时，光点从起点滚到相邻槽位所需时间（毫秒）。 */
+    private static final long PLACEMENT_PULSE_MS = 650L;
+
+    /** 打开界面时，连线与槽位的入场动画时长（毫秒）。 */
+    private static final long OPEN_ANIMATION_MS = 500L;
 
     // ── 配色 ──
     private static final int COL_GOLD = 0xFFE7C46A;
@@ -138,6 +154,19 @@ public final class MagicScreen extends Screen {
     private ItemStack dragStack = ItemStack.EMPTY;
     private int pressedPoolSlot = -1;
 
+    // 放入法术的一次性光点：每次放入最多两颗（左右各一），播完即止
+    private final List<PlacementPulse> placementPulses = new ArrayList<>(2);
+
+    // 入场动画 / 音效 / 视差
+    private long openAnimationStartMs;
+    private boolean openSoundPlayed;
+    private int frameMouseX;
+    private int frameMouseY;
+
+    // 双击右侧法术 → 快速放入第一个空槽
+    private long lastInvClickMs;
+    private int lastInvClickSlot = -1;
+
     // 上一帧悬停的背包法术（供 tooltip 用）
     private int hoverInvSlot = -1;
     private ItemStack hoverInvStack = ItemStack.EMPTY;
@@ -148,6 +177,10 @@ public final class MagicScreen extends Screen {
 
     /** 右侧列表里的一条：背包下标 + 那一堆法术。 */
     private record InvSpell(int slot, ItemStack stack) {
+    }
+
+    /** 一颗在播的一次性光点：从 {@code fromSlot} 滚向 {@code toSlot}。 */
+    private record PlacementPulse(int fromSlot, int toSlot, long startMs) {
     }
 
     public MagicScreen() {
@@ -164,6 +197,21 @@ public final class MagicScreen extends Screen {
         buildStars();
         // 强制下一帧重算布局（窗口尺寸可能变了）
         cachedWidth = -1;
+
+        // 入场动画只在第一次打开时播；窗口 resize 也会走 init()，不重播
+        if (openAnimationStartMs == 0L) {
+            openAnimationStartMs = Util.getMillis();
+        }
+        if (!openSoundPlayed) {
+            openSoundPlayed = true;
+            playUiSound(SoundEvents.AMETHYST_BLOCK_CHIME, 1.6F, 0.35F);
+        }
+    }
+
+    @Override
+    public void onClose() {
+        playUiSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.9F, 0.35F);
+        super.onClose();
     }
 
     @Override
@@ -264,30 +312,42 @@ public final class MagicScreen extends Screen {
     // ══════════════════════════════════════════════════════════════
 
     @Override
-    public void renderBackground(GuiGraphics guiGraphics) {
-        if (MagicGuiShaders.drawStarfield(guiGraphics, width, height, timeSeconds())) {
-            return;
-        }
-        // 着色器不可用时的静态兜底：分层渐变 + 固定星点
-        guiGraphics.fillGradient(0, 0, width, height, 0xFF07101D, 0xFF02040A);
-        guiGraphics.fillGradient(0, 0, width, height / 2, 0x33213A5E, 0x00000000);
-        guiGraphics.fillGradient(0, height / 2, width, height, 0x00000000, 0x55000000);
-        drawStars(guiGraphics);
-    }
-
-    @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        frameMouseX = mouseX;
+        frameMouseY = mouseY;
+
+        // 背景按轮盘/装载界面同一套顺序画在 render() 里：不再 override renderBackground，
+        // 也不再让这个 Screen 走和别的界面不同的入口路径。
+        guiGraphics.fill(0, 0, width, height, 0xB602040A);
+        float mouseNormX = width <= 0 ? 0.0F : mouseX / (float) width * 2.0F - 1.0F;
+        float mouseNormY = height <= 0 ? 0.0F : mouseY / (float) height * 2.0F - 1.0F;
+        if (MagicGuiShaders.drawStarfield(guiGraphics, width, height, timeSeconds(),
+                mouseNormX, mouseNormY)) {
+            guiGraphics.fill(0, 0, width, height, 0x6E000000);
+        } else {
+            // 着色器不可用时的静态兜底：分层渐变 + 固定星点
+            guiGraphics.fillGradient(0, 0, width, height, 0xFF07101D, 0xFF02040A);
+            guiGraphics.fillGradient(0, 0, width, height / 2, 0x33213A5E, 0x00000000);
+            guiGraphics.fillGradient(0, height / 2, width, height, 0x00000000, 0x55000000);
+            drawStars(guiGraphics);
+        }
+
         ensureLayout();
 
-        long time = Util.getMillis();
-        // 连接光带走着色器；不可用时退回星点虚线
-        if (!MagicGuiShaders.drawConstellation(guiGraphics, slotX, slotY, timeSeconds(), 7.0F)) {
-            drawDottedConstellation(guiGraphics, time);
-        }
-
+        long now = Util.getMillis();
+        float openT = openProgress(now);
         int hoveredPool = hoveredPoolSlot(mouseX, mouseY);
-        drawSlots(guiGraphics, hoveredPool, time);
+
+        // 连接光带：入场时从中心向外逐段亮起；选中 / 悬停 / 有法术的段更亮
+        float[] segmentIntensity = constellationIntensities(hoveredPool, openT);
+        if (!MagicGuiShaders.drawConstellation(guiGraphics, slotX, slotY,
+                timeSeconds(), 7.0F, segmentIntensity)) {
+            drawDottedConstellation(guiGraphics, now);
+        }
+        // 放入法术时的一次性光点：画在连线之上、槽位之下，看起来是"滚进"旁边的槽
+        drawPlacementPulse(guiGraphics);
+
+        drawSlots(guiGraphics, hoveredPool, now, openT);
         drawHeader(guiGraphics);
         drawInventoryPanel(guiGraphics, mouseX, mouseY);
         drawHint(guiGraphics);
@@ -296,6 +356,51 @@ public final class MagicScreen extends Screen {
         if (!dragging) {
             drawTooltips(guiGraphics, mouseX, mouseY, hoveredPool);
         }
+    }
+
+    /** 入场动画进度 0..1。 */
+    private float openProgress(long now) {
+        if (openAnimationStartMs <= 0L) {
+            return 1.0F;
+        }
+        return Mth.clamp((now - openAnimationStartMs) / (float) OPEN_ANIMATION_MS, 0.0F, 1.0F);
+    }
+
+    /**
+     * 每段连线的亮度倍率。
+     * <ul>
+     *   <li>入场动画：按"到星图中心的距离"延迟亮起，看起来是从中心画出来的；</li>
+     *   <li>选中槽的两条连线 ×1.9，有法术的槽 ×1.25；</li>
+     *   <li>鼠标悬停槽的连线 ×1.35。</li>
+     * </ul>
+     */
+    private float[] constellationIntensities(int hoveredPool, float openT) {
+        int segments = Math.max(0, slotX.length - 1);
+        float[] out = new float[segments];
+        if (segments == 0) {
+            return out;
+        }
+        int selected = selectedSlot();
+        float maxDist = 1.0F;
+        for (int i = 0; i < slotX.length; i++) {
+            maxDist = Math.max(maxDist, Math.abs(slotX[i] - mapCenterX));
+        }
+        for (int i = 0; i < segments; i++) {
+            float midX = (slotX[i] + slotX[i + 1]) * 0.5F;
+            float distNorm = Math.abs(midX - mapCenterX) / maxDist;
+            float appear = Mth.clamp((openT - distNorm * 0.22F) / 0.55F, 0.0F, 1.0F);
+            float factor = 1.0F;
+            if (selected == i || selected == i + 1) {
+                factor *= 1.9F;
+            } else if (!slotStack(i).isEmpty() || !slotStack(i + 1).isEmpty()) {
+                factor *= 1.25F;
+            }
+            if (hoveredPool == i || hoveredPool == i + 1) {
+                factor *= 1.35F;
+            }
+            out[i] = factor * appear;
+        }
+        return out;
     }
 
     /** 秒级时间；取模避免 float 精度随开机时长变差。 */
@@ -339,6 +444,7 @@ public final class MagicScreen extends Screen {
     }
 
     private void drawHeader(GuiGraphics guiGraphics) {
+        // 和其它可用的界面保持一致：标题走普通字体绘制，不接文本特效系统。
         guiGraphics.drawCenteredString(font, title, mapCenterX, 10, COL_GOLD);
         guiGraphics.drawCenteredString(font,
                 Component.translatable("rotten_ruins.gui.magic.slots", countFilledSlots(), slotX.length),
@@ -351,11 +457,31 @@ public final class MagicScreen extends Screen {
                 mapCenterX, height - 16, COL_GOLD_DIM);
     }
 
-    private void drawSlots(GuiGraphics guiGraphics, int hoveredPool, long time) {
+    private void drawSlots(GuiGraphics guiGraphics, int hoveredPool, long time, float openT) {
         int selected = selectedSlot();
-        for (int i = 0; i < slotX.length; i++) {
-            int x = slotX[i] - SLOT_TEX / 2;
-            int y = slotY[i] - SLOT_TEX / 2;
+        int count = slotX.length;
+        float maxDist = 1.0F;
+        for (int i = 0; i < count; i++) {
+            maxDist = Math.max(maxDist, Math.abs(slotX[i] - mapCenterX));
+        }
+
+        for (int i = 0; i < count; i++) {
+            // 入场：离星图中心越远亮起越晚，同时从 0.72 倍 pop 到 1.0 倍
+            float distNorm = Math.abs(slotX[i] - mapCenterX) / maxDist;
+            float appear = Mth.clamp((openT - distNorm * 0.22F) / 0.55F, 0.0F, 1.0F);
+            if (appear <= 0.001F) {
+                continue;
+            }
+            float inv = 1.0F - appear;
+            float scale = 0.72F + 0.28F * (1.0F - inv * inv * inv);
+
+            PoseStack pose = guiGraphics.pose();
+            pose.pushPose();
+            pose.translate(slotX[i], slotY[i], 0.0F);
+            pose.scale(scale, scale, 1.0F);
+
+            int x = -SLOT_TEX / 2;
+            int y = -SLOT_TEX / 2;
             boolean hovered = i == hoveredPool;
             boolean isSelected = i == selected;
 
@@ -365,6 +491,19 @@ public final class MagicScreen extends Screen {
                 int alpha = (int) (0x55 + 0x55 * pulse);
                 guiGraphics.fill(x - 4, y - 4, x + SLOT_TEX + 4, y + SLOT_TEX + 4,
                         (alpha << 24) | 0xDDAA44);
+            }
+
+            // 拖拽预判：可放的空槽亮金边，悬停的非法目标铺红
+            if (dragging) {
+                boolean valid = canDropInto(i);
+                if (valid) {
+                    guiGraphics.fill(x - 5, y - 5, x + SLOT_TEX + 5, y + SLOT_TEX + 5, 0x16FFD27A);
+                    guiGraphics.renderOutline(x - 3, y - 3, SLOT_TEX + 6, SLOT_TEX + 6,
+                            hovered ? 0xCCFFE08A : 0x66FFD27A);
+                } else if (hovered) {
+                    guiGraphics.fill(x - 3, y - 3, x + SLOT_TEX + 3, y + SLOT_TEX + 3, 0x22FF5555);
+                    guiGraphics.renderOutline(x - 2, y - 2, SLOT_TEX + 4, SLOT_TEX + 4, 0xAAFF5555);
+                }
             }
 
             // 悬浮槽：先铺一层柔光，再压金框
@@ -386,6 +525,8 @@ public final class MagicScreen extends Screen {
             // 序号往框内收一点，不再贴着金边
             guiGraphics.drawString(font, String.valueOf(i + 1), x + 4, y + 4,
                     isSelected ? COL_GOLD : COL_GOLD_DIM, false);
+
+            pose.popPose();
         }
     }
 
@@ -444,8 +585,16 @@ public final class MagicScreen extends Screen {
         if (!dragging || dragStack.isEmpty() || (dragInvSlot < 0 && dragPoolSlot < 0)) {
             return;
         }
-        guiGraphics.renderItem(dragStack, mouseX - 8, mouseY - 8);
-        guiGraphics.renderOutline(mouseX - 9, mouseY - 9, 18, 18, 0x99E7C46A);
+        int drawX = mouseX - 8;
+        int drawY = mouseY - 8;
+        // 靠近可放的空槽时吸附到格心，抬手前就能看出会落在哪里
+        int snapSlot = hoveredPoolSlot(mouseX, mouseY);
+        if (snapSlot >= 0 && canDropInto(snapSlot)) {
+            drawX = slotX[snapSlot] - 8;
+            drawY = slotY[snapSlot] - 8;
+        }
+        guiGraphics.renderItem(dragStack, drawX, drawY);
+        guiGraphics.renderOutline(drawX - 1, drawY - 1, 18, 18, 0x99E7C46A);
     }
 
     private void drawTooltips(GuiGraphics guiGraphics, int mouseX, int mouseY, int hoveredPool) {
@@ -459,7 +608,32 @@ public final class MagicScreen extends Screen {
         if (stack.isEmpty()) {
             return;
         }
-        guiGraphics.renderTooltip(font, spellTooltip(stack), Optional.empty(), mouseX, mouseY);
+        // 不用 vanilla renderTooltip：别的正常界面都不走这条路径，这里改成和它们一致的
+        // 简单面板（fill + drawString），避免 tooltip 自绘 shader 把状态留到关闭之后。
+        List<FormattedCharSequence> rows = new ArrayList<>();
+        for (Component line : spellTooltip(stack)) {
+            rows.addAll(font.split(line, 220));
+        }
+        int lineH = font.lineHeight + 2;
+        int maxW = 0;
+        for (FormattedCharSequence row : rows) {
+            maxW = Math.max(maxW, font.width(row));
+        }
+        int pad = 5;
+        int w = maxW + pad * 2;
+        int h = rows.size() * lineH + pad * 2 - 2;
+        int x = Math.min(mouseX + 10, width - w - 4);
+        int y = Math.min(mouseY + 10, height - h - 4);
+        x = Math.max(4, x);
+        y = Math.max(4, y);
+        guiGraphics.fill(x - 1, y - 1, x + w + 1, y + h + 1, 0xCC000000);
+        guiGraphics.fill(x, y, x + w, y + h, 0xE60A0F1A);
+        guiGraphics.renderOutline(x, y, w, h, 0x66C9A227);
+        int textY = y + pad;
+        for (int i = 0; i < rows.size(); i++) {
+            guiGraphics.drawString(font, rows.get(i), x + pad, textY, i == 0 ? COL_GOLD : 0xFFB8B8B8, false);
+            textY += lineH;
+        }
     }
 
     /**
@@ -509,14 +683,29 @@ public final class MagicScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        ensureLayout();
+
+        // 右键：把槽里的法术退回背包（快速卸下）；拖拽中忽略
+        if (button == 1) {
+            if (dragging) {
+                return true;
+            }
+            int poolSlot = hoveredPoolSlot(mouseX, mouseY);
+            if (poolSlot >= 0 && !slotStack(poolSlot).isEmpty()) {
+                MagicPoolActionPacket.sendTake(poolSlot);
+                playUiSound(SoundEvents.ITEM_PICKUP, 0.9F, 0.35F);
+                return true;
+            }
+            return super.mouseClicked(mouseX, mouseY, button);
+        }
         if (button != 0) {
             return super.mouseClicked(mouseX, mouseY, button);
         }
-        ensureLayout();
-        resetDrag();
 
+        resetDrag();
         int poolSlot = hoveredPoolSlot(mouseX, mouseY);
         if (poolSlot >= 0) {
+            lastInvClickSlot = -1;
             pressedPoolSlot = poolSlot;
             dragStartX = mouseX;
             dragStartY = mouseY;
@@ -524,19 +713,31 @@ public final class MagicScreen extends Screen {
             if (!stack.isEmpty()) {
                 dragPoolSlot = poolSlot;
                 dragStack = stack.copy();
+                playUiSound(SoundEvents.ITEM_PICKUP, 1.6F, 0.3F);
             }
             return true;
         }
 
         int invSlot = hoveredInventorySlot(mouseX, mouseY);
         if (invSlot >= 0) {
+            long now = Util.getMillis();
+            boolean doubleClick = invSlot == lastInvClickSlot && now - lastInvClickMs <= 350L;
+            lastInvClickSlot = doubleClick ? -1 : invSlot;
+            lastInvClickMs = now;
+            if (doubleClick) {
+                // 双击右侧法术 = 直接放进第一个空槽
+                quickPlace(invSlot);
+                return true;
+            }
             dragInvSlot = invSlot;
             dragStack = inventoryStack(invSlot);
             dragStartX = mouseX;
             dragStartY = mouseY;
+            playUiSound(SoundEvents.ITEM_PICKUP, 1.6F, 0.3F);
             return true;
         }
 
+        lastInvClickSlot = -1;
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
@@ -563,22 +764,83 @@ public final class MagicScreen extends Screen {
 
         if (dragging) {
             int target = hoveredPoolSlot(mouseX, mouseY);
-            if (target >= 0) {
+            boolean droppedBack = target >= 0 && dragInvSlot < 0 && dragPoolSlot == target;
+            if (droppedBack) {
+                // 拖起来又放回原槽：什么都不做
+            } else if (target >= 0 && canDropInto(target)) {
                 if (dragInvSlot >= 0) {
                     MagicPoolActionPacket.sendPlace(dragInvSlot, target);
-                } else if (dragPoolSlot >= 0 && dragPoolSlot != target) {
+                } else if (dragPoolSlot >= 0) {
                     MagicPoolActionPacket.sendMove(dragPoolSlot, target);
                 }
+                startPlacementPulse(target);
+                playUiSound(SoundEvents.AMETHYST_BLOCK_CHIME, 1.9F, 0.45F);
+            } else if (target >= 0) {
+                // 占用 / 重复 / 不可放：不发包，只给一次失败音
+                playUiSound(SoundEvents.NOTE_BLOCK_BASS.value(), 0.6F, 0.5F);
             } else if (dragPoolSlot >= 0) {
                 MagicPoolActionPacket.sendTake(dragPoolSlot);
+                playUiSound(SoundEvents.ITEM_PICKUP, 0.9F, 0.35F);
             }
         } else if (pressedPoolSlot >= 0 && hoveredPoolSlot(mouseX, mouseY) == pressedPoolSlot) {
             // 按下没拖动就松开 = 选中这一格
             MagicPoolActionPacket.sendSelect(pressedPoolSlot);
+            playUiSound(SoundEvents.UI_BUTTON_CLICK.value(), 1.35F, 0.35F);
         }
 
         resetDrag();
         return handled;
+    }
+
+    /**
+     * 当前拖拽的法术能否放进这一格。
+     *
+     * <p>只做<b>客户端预判</b>（高亮 / 吸附 / 过滤发包用）：槽位空 + 没有重复法术；
+     * 真正能不能放仍由服务端重新校验、以服务端为准。</p>
+     */
+    private boolean canDropInto(int slot) {
+        if (!dragging || dragStack.isEmpty()) {
+            return false;
+        }
+        PlayerMagicPool pool = pool();
+        if (pool == null || !pool.isValidSlot(slot) || !slotStack(slot).isEmpty()) {
+            return false;
+        }
+        if (dragInvSlot >= 0) {
+            return pool.isItemValid(slot, dragStack);
+        }
+        return dragPoolSlot >= 0 && dragPoolSlot != slot;
+    }
+
+    /**
+     * 双击右侧法术：放进第一个能放的空槽。
+     *
+     * <p>槽位规则（重复法术 / 槽已满）先由 {@link PlayerMagicPool#isItemValid}
+     * 在客户端预判一遍；服务端仍会再校验一次。</p>
+     */
+    private void quickPlace(int inventorySlot) {
+        ItemStack stack = inventoryStack(inventorySlot);
+        PlayerMagicPool pool = pool();
+        if (stack.isEmpty() || pool == null) {
+            return;
+        }
+        for (int i = 0; i < slotX.length; i++) {
+            if (pool.isValidSlot(i) && slotStack(i).isEmpty() && pool.isItemValid(i, stack)) {
+                MagicPoolActionPacket.sendPlace(inventorySlot, i);
+                startPlacementPulse(i);
+                playUiSound(SoundEvents.AMETHYST_BLOCK_CHIME, 1.9F, 0.45F);
+                return;
+            }
+        }
+        playUiSound(SoundEvents.NOTE_BLOCK_BASS.value(), 0.6F, 0.5F);
+    }
+
+    /** 客户端 UI 音效；不依赖世界里的声源位置。 */
+    private void playUiSound(SoundEvent sound, float pitch, float volume) {
+        if (minecraft == null) {
+            return;
+        }
+        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(sound, pitch, volume));
     }
 
     private void resetDrag() {
@@ -588,6 +850,63 @@ public final class MagicScreen extends Screen {
         dragPoolSlot = -1;
         dragStack = ItemStack.EMPTY;
         pressedPoolSlot = -1;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // 放入法术的一次性光点
+    // ══════════════════════════════════════════════════════════════
+
+    /**
+     * 放入 / 槽间移动成功后：从目标槽沿连线向<b>所有相连的相邻槽位</b>各发一颗
+     * <b>一次性</b>光点。
+     *
+     * <p>中间槽位左右都有连线 → 左右各一颗（同时出发、各自只走一次）；
+     * 两端槽位只有一条连线 → 只有一颗；槽位数只有 1 时没有连线可走，直接不发。
+     * 这些光点只是"放进去了"的空间反馈，不表示任何数值关系。</p>
+     */
+    private void startPlacementPulse(int slot) {
+        int count = slotX.length;
+        if (count < 2 || slot < 0 || slot >= count) {
+            return;
+        }
+        long now = Util.getMillis();
+        placementPulses.clear();
+        if (slot - 1 >= 0) {
+            placementPulses.add(new PlacementPulse(slot, slot - 1, now));
+        }
+        if (slot + 1 < count) {
+            placementPulses.add(new PlacementPulse(slot, slot + 1, now));
+        }
+    }
+
+    /**
+     * 画所有在播的光点；进度走完的自动移除。
+     *
+     * <p>时间用 {@link Util#getMillis()}（墙钟），与界面其它动画一致；
+     * 位置用 smoothstep 缓动，起步/收尾都慢一点，不会像被弹出去。</p>
+     */
+    private void drawPlacementPulse(GuiGraphics guiGraphics) {
+        if (placementPulses.isEmpty()) {
+            return;
+        }
+        long now = Util.getMillis();
+        placementPulses.removeIf(pulse -> now - pulse.startMs() >= PLACEMENT_PULSE_MS
+                || pulse.fromSlot() < 0 || pulse.toSlot() < 0
+                || pulse.fromSlot() >= slotX.length || pulse.toSlot() >= slotX.length);
+        for (PlacementPulse pulse : placementPulses) {
+            float progress = (now - pulse.startMs()) / (float) PLACEMENT_PULSE_MS;
+            if (progress < 0.0F) {
+                progress = 0.0F;
+            }
+            float eased = progress * progress * (3.0F - 2.0F * progress);
+            if (!MagicGuiShaders.drawPlacementPulse(guiGraphics,
+                    slotX[pulse.fromSlot()], slotY[pulse.fromSlot()],
+                    slotX[pulse.toSlot()], slotY[pulse.toSlot()], eased, 9.0F)) {
+                // 着色器不可用 / 线段长度为 0：这一帧之后不再画
+                placementPulses.clear();
+                return;
+            }
+        }
     }
 
     // ══════════════════════════════════════════════════════════════

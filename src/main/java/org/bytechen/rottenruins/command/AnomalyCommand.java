@@ -13,6 +13,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import org.bytechen.rottenruins.api.anomaly.AnomalyType;
+import org.bytechen.rottenruins.api.text.TextEffectText;
 import org.bytechen.rottenruins.overworld.registry.CapabilityRegistry;
 import org.bytechen.rottenruins.overworld.registry.capability.anomaly.AnomalyCapability;
 
@@ -347,7 +348,9 @@ public final class AnomalyCommand {
     }
 
     private static Component formatAll(ServerPlayer target, AnomalyCapability cap) {
-        StringBuilder sb = new StringBuilder("§6═══ §e" + target.getName().getString() + " 异常状态 §6═══\n");
+        // 标题里的「═══」用一个流动的金字渐变（§6 垫底：特效关闭时退回原版金色）。
+        String rule = "§6" + TextEffectText.gradient("═══", 0x6B4A0A, 0xFFD700, 0.5F);
+        StringBuilder sb = new StringBuilder(rule + " §e" + target.getName().getString() + " 异常状态 " + rule + "\n");
         for (AnomalyType t : AnomalyType.values()) {
             int p = cap.getProgress(t);
             String bar = progressBar(p, t.getMaxProgress());

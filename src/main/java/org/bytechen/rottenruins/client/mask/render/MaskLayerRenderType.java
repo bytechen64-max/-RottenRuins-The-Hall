@@ -86,6 +86,7 @@ public abstract class MaskLayerRenderType extends RenderType {
     private static final Map<String, Cached> IMMEDIATE = new HashMap<>();
     private static final Map<String, Cached> AFTER_LEVEL = new HashMap<>();
     private static final Map<String, Cached> HAND_AFTER_LEVEL = new HashMap<>();
+    private static final Map<String, Cached> SURFACE = new HashMap<>();
 
     public MaskLayerRenderType(String name, VertexFormat format, VertexFormat.Mode mode,
                                int bufferSize, boolean affectsCrumbling, boolean sortOnUpload,
@@ -122,6 +123,42 @@ public abstract class MaskLayerRenderType extends RenderType {
                         .setWriteMaskState(COLOR_WRITE)
                         .createCompositeState(true));
         IMMEDIATE.put(effectId, new Cached(shader, type));
+        return type;
+    }
+
+    /**
+     * 「遮罩窗口」表面变体：{@code LEQUAL + polygon offset}、<b>半透明混合</b>
+     * （{@code SRC_ALPHA / ONE_MINUS_SRC_ALPHA}）、只写颜色。
+     *
+     * <p>用于 {@code death_core} 这种「只有 mask 白层里才是着色器内容」的层：
+     * 窗口内 alpha = 1 → 替换成着色器内容（death_core 的 Ghosts 体积光）；窗口外
+     * alpha = 0 → 原方块贴图照常可见。
+     * 和 {@link #immediate}（ADDITIVE）的区别是：那个是黑区不可见的加法叠加，
+     * 这个是带 alpha 的覆盖。</p>
+     *
+     * <p>⚠️ 混合必须两边一致：本类的 {@code TRANSLUCENT_TRANSPARENCY} 和着色器
+     * json 的 {@code "blend": add/srcalpha/one_minus_srcalpha} 是同一组状态。
+     * json 缺省会关混合（REPLACE），那时窗口外会变成黑色而不是透明。</p>
+     */
+    public static RenderType surface(String effectId, ShaderInstance shader) {
+        if (shader == null) return null;
+        Cached c = SURFACE.get(effectId);
+        if (c != null && c.shader() == shader) return c.type();
+
+        RenderType type = RenderType.create(
+                HallMod.MODID + ":mask_layer_surface_" + effectId,
+                DefaultVertexFormat.BLOCK, VertexFormat.Mode.QUADS, BUFFER_BYTES,
+                true, false,
+                CompositeState.builder()
+                        .setShaderState(new ShaderStateShard(() -> shader))
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setLayeringState(DEPTH_BIAS)
+                        .setLightmapState(LIGHTMAP)
+                        .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                        .setTextureState(BLOCK_SHEET)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(true));
+        SURFACE.put(effectId, new Cached(shader, type));
         return type;
     }
 

@@ -3,6 +3,7 @@ package org.bytechen.rottenruins.overworld.registry.items.magic.bases;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import org.bytechen.rottenruins.overworld.registry.items.magic.WandItem;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -311,6 +312,7 @@ public interface IMagicBaseItem {
      */
     default boolean isSpecialUse(@NotNull ItemStack staffStack, @NotNull ItemStack spellStack) {
         return staffStack.getItem() instanceof StaffBase staff
+                && (!(staff instanceof WandItem wand) || wand.capacity() > 0)
                 && staff.getMagicType() == getMagicType();
     }
 

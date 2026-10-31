@@ -36,7 +36,7 @@ package org.bytechen.rottenruins.overworld.registry.items.magic.bases;
  * <pre>{@code
  * public class ManaWellSpell extends CMagicBaseItem {
  *     public ManaWellSpell() {
- *         super(defaultProperties(), MagicType.ACE, UsingType.IMMEDIATELY,
+ *         super(defaultProperties(), MagicType.WATER, UsingType.IMMEDIATELY,
  *                 0, 0, 0, 0, 0f);   // 被动法术这些数值都是占位
  *     }
  *     @Override public SpellKind spellKind() { return SpellKind.PASSIVE; }

@@ -4,7 +4,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import org.bytechen.rottenruins.api.magic.MagicStats;
-import org.bytechen.rottenruins.overworld.registry.entities.magic.FireBallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.magic.FireBallEntity;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.CMagicBaseItem;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.MagicCastContext;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.MagicType;
@@ -47,7 +47,7 @@ import org.jetbrains.annotations.NotNull;
 public class FireBall extends CMagicBaseItem {
 
     /** 爆炸半径基值（格）。实际半径 = 它 × 法术强度。 */
-    public static final double BASE_EXPLOSION_RADIUS = 2.5d;
+    public static final double BASE_EXPLOSION_RADIUS = 2.0d;
 
     /** 半径下限：法术强度被减到 0 时也不至于变成"没有爆炸"。 */
     public static final double MIN_EXPLOSION_RADIUS = 0.5d;
@@ -63,10 +63,10 @@ public class FireBall extends CMagicBaseItem {
         //               属性            流派        使用方式            蓝   CD  蓄力 每秒 伤害
         super(new Properties().stacksTo(1), MagicType.FIRE, UsingType.IMMEDIATELY,
                 40,     // 启动耗蓝
-                30,     // 冷却 tick（同名物品共享）
+                40,     // 冷却 tick（同名物品共享）
                 0,      // 蓄力 tick —— 非 CHARGE，基类会归零
                 0,      // 每秒维持耗蓝 —— 非 KEEP，基类会归零
-                6.0f);  // 直接命中的伤害基值
+                4.0f);  // 直接命中的伤害基值
     }
 
     /**

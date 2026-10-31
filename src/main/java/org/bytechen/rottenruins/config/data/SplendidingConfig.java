@@ -480,4 +480,36 @@ public class SplendidingConfig implements ConfigData {
             + "调到 0 会与身体糊在一起，调大则更远更小。必须 > 0 才能保证纹章永远在玩家身后。")
     @ConfigEntry.Gui.Tooltip
     public float crimsonBackplateHeadOffset = 0.65f;
+
+    // ──────────────────────────────────────────────────────────────
+    //  § 分节符文本特效（渐变 / 彩色 / 抖动 / 波浪 / 故障）
+    //  这些是"新键"：老配置文件里不存在时由 Jankson 保留类内默认值，不需要迁移；
+    //  只有以后修改这里已经发布过的默认值，才需要 bump CONFIG_VERSION + 写迁移。
+    // ──────────────────────────────────────────────────────────────
+
+    @Comment("§ 文本特效总开关。false = 标记被剥离、按普通文本渲染（不会露出 rrs:… 字样），"
+            + "但不上色、不位移。")
+    @ConfigEntry.Gui.Tooltip
+    public boolean textEffectsEnabled = true;
+
+    @Comment("【安全旁路】false = 三个文本 mixin 全部不接管，等价于没装本功能。"
+            + "遇到与其它文本 mod 冲突时先关这个排查。")
+    @ConfigEntry.Gui.Tooltip
+    public boolean textEffectsFontHooksEnabled = true;
+
+    @Comment("全局强度倍率（0~2）。作用在位移幅度上：1.0 = 默认；0 = 只剩颜色类效果。")
+    @ConfigEntry.Gui.Tooltip
+    public float textEffectIntensity = 1.0f;
+
+    @Comment("全局速度倍率（0.05~8）。作用在彩虹/抖动/波浪/故障的动画速度上。1.0 = 默认。")
+    @ConfigEntry.Gui.Tooltip
+    public float textEffectSpeed = 1.0f;
+
+    @Comment("时间源。false = 墙钟（暂停时也继续流动，推荐）；true = 游戏时间（暂停即冻结）。")
+    @ConfigEntry.Gui.Tooltip
+    public boolean textEffectUseGameTime = false;
+
+    @Comment("每帧参与动画的字形预算。超出后自动退化为静态，防止超长文本卡帧。")
+    @ConfigEntry.Gui.Tooltip
+    public int textEffectMaxAnimatedGlyphs = 512;
 }

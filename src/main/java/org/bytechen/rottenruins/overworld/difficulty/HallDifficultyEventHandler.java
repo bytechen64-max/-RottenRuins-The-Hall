@@ -98,7 +98,10 @@ public final class HallDifficultyEventHandler {
         if (HallDifficulty.EASY.equals(id)) return "§a简单";
         if (HallDifficulty.NORMAL.equals(id)) return "§e普通";
         if (HallDifficulty.HARD.equals(id)) return "§6困难";
-        if (HallDifficulty.INCOMPREHENSIBLE.equals(id)) return "§c§k!!§r §4无法理解 §c§k!!";
+        // 「无法理解」档：用文本特效的 glitch 代替原来的 §c§k!! 假乱码 ——
+        // 位移是逐帧随机的，比"整段乱码字母"更像"这行字本身坏了"；
+        // 垫 §4 是为了特效关闭时仍保持暗红（标记会被剥离，只剩原版色码）。
+        if (HallDifficulty.INCOMPREHENSIBLE.equals(id)) return "§4§[rrs:glitch:amp=2.0]无法理解§[/]";
         return "§7" + id.toString();
     }
 }

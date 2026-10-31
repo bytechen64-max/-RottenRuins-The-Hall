@@ -1,4 +1,4 @@
-﻿{
+{
   "required": true,
   "minVersion": "0.8",
   "package": "org.bytechen.rottenruins.mixin",
@@ -23,7 +23,10 @@
     "CrimsonVowBlockMixin",
     "CreativeModeInventoryScreenMixin",
     "accessor.AccessorAbstractContainerScreen",
-    "accessor.AccessorRenderStateShard"
+    "accessor.AccessorRenderStateShard",
+    "TextEffectStringDecomposerMixin",
+    "TextEffectClientLanguageMixin",
+    "TextEffectStringRenderOutputMixin"
   ],
   "injectors": {
     "defaultRequire": 1

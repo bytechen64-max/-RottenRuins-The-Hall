@@ -45,6 +45,8 @@ public class HallMod {
         RegisterTab.CREATIVE_MODE_TABS.register(modEventBus);
         RegisterBlock.BLOCKS.register(modEventBus);
         RegisterItem.ITEMS.register(modEventBus);
+        WandEnchantments.ENCHANTMENTS.register(modEventBus);
+        WandRecipes.SERIALIZERS.register(modEventBus);
         RegisterEffect.EFFECTS.register(modEventBus);
         SoundEventRegistry.SOUND_EVENTS.register(modEventBus);
         EntityTypeRegistry.ENTITY_TYPES.register(modEventBus);

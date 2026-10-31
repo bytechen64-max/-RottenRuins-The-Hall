@@ -65,6 +65,15 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
     public static final String NBT_SELECTED = "HallMagicSelected";
     /** NBT：冷却表（键是物品注册名）。 */
     public static final String NBT_COOLDOWNS = "HallMagicCooldowns";
+    /** NBT：轮盘施法界面的"方位 → 魔法池槽位"映射（3 页 × 8 位，-1 = 空位）。 */
+    public static final String NBT_WHEEL_SLOTS = "HallMagicWheelSlots";
+
+    /** 轮盘页数（I / II / III）。 */
+    public static final int WHEEL_PAGES = 3;
+    /** 每页固定 8 个方位。 */
+    public static final int WHEEL_SLOTS_PER_PAGE = 8;
+    /** -1 = 该方位没有绑定法术。 */
+    public static final int WHEEL_EMPTY = -1;
 
     /**
      * 底层数组长度。按最大值分配，这样属性修饰器扩容时不需要重建数组；
@@ -76,6 +85,12 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
     private final NonNullList<ItemStack> slots;
     /** 冷却表：物品注册名 → 剩余 tick。 */
     private final Map<ResourceLocation, Integer> cooldowns = new HashMap<>();
+    /**
+     * 轮盘方位映射：{@code wheelSlots[page * 8 + index] = 魔法池槽位下标}，-1 = 空位。
+     * <p>轮盘只是"另一个入口"，法术本体仍存在魔法池里；这层映射让同一件法术可以
+     * 同时出现在魔法星图和轮盘的任意方位。</p>
+     */
+    private final int[] wheelSlots = new int[WHEEL_PAGES * WHEEL_SLOTS_PER_PAGE];
     private int selected;
 
     private final LazyOptional<PlayerMagicPool> self = LazyOptional.of(() -> this);
@@ -86,6 +101,7 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
     public PlayerMagicPool(@NotNull Player player) {
         this.player = player;
         this.slots = NonNullList.withSize(BACKING_SIZE, ItemStack.EMPTY);
+        java.util.Arrays.fill(wheelSlots, WHEEL_EMPTY);
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -115,6 +131,7 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         }
         if (!simulate) {
             slots.set(slot, stack.copyWithCount(1));
+            sanitizeWheelSlots();
             markDirty();
         }
         if (stack.getCount() <= 1) {
@@ -138,6 +155,7 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         ItemStack taken = existing.copyWithCount(Math.min(amount, existing.getCount()));
         if (!simulate) {
             slots.set(slot, ItemStack.EMPTY);
+            sanitizeWheelSlots();
             markDirty();
         }
         return taken;
@@ -379,6 +397,122 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
     }
 
     // ══════════════════════════════════════════════════════════════
+    // 轮盘方位映射
+    // ══════════════════════════════════════════════════════════════
+
+    public static boolean isValidWheelPage(int page) {
+        return page >= 0 && page < WHEEL_PAGES;
+    }
+
+    public static boolean isValidWheelIndex(int index) {
+        return index >= 0 && index < WHEEL_SLOTS_PER_PAGE;
+    }
+
+    public static boolean isValidWheelPosition(int page, int index) {
+        return isValidWheelPage(page) && isValidWheelIndex(index);
+    }
+
+    /** 读某个方位的魔法池槽位；空位 / 非法返回 {@link #WHEEL_EMPTY}。 */
+    public int getWheelSlot(int page, int index) {
+        if (!isValidWheelPosition(page, index)) {
+            return WHEEL_EMPTY;
+        }
+        int poolSlot = wheelSlots[page * WHEEL_SLOTS_PER_PAGE + index];
+        return isValidWheelTarget(poolSlot) ? poolSlot : WHEEL_EMPTY;
+    }
+
+    /** 某方位当前绑定的法术（空位返回空堆）。 */
+    @NotNull
+    public ItemStack getWheelStack(int page, int index) {
+        int poolSlot = getWheelSlot(page, index);
+        return poolSlot < 0 ? ItemStack.EMPTY : getStackInSlot(poolSlot);
+    }
+
+    /** 整页映射的副本（-1 = 空位），给界面绘制 / 发包用。 */
+    @NotNull
+    public int[] copyWheelPage(int page) {
+        int[] out = new int[WHEEL_SLOTS_PER_PAGE];
+        if (!isValidWheelPage(page)) {
+            java.util.Arrays.fill(out, WHEEL_EMPTY);
+            return out;
+        }
+        System.arraycopy(wheelSlots, page * WHEEL_SLOTS_PER_PAGE, out, 0, WHEEL_SLOTS_PER_PAGE);
+        return out;
+    }
+
+    /** 全部页的映射副本（长度 {@code WHEEL_PAGES * 8}）。 */
+    @NotNull
+    public int[] copyWheelSlots() {
+        return wheelSlots.clone();
+    }
+
+    /** 服务端调用：写入一整页映射（这里做兜底清洗）。 */
+    public void setWheelPage(int page, int @NotNull [] mapping) {
+        if (!isValidWheelPage(page) || mapping == null) {
+            return;
+        }
+        int base = page * WHEEL_SLOTS_PER_PAGE;
+        for (int i = 0; i < WHEEL_SLOTS_PER_PAGE; i++) {
+            wheelSlots[base + i] = i < mapping.length ? mapping[i] : WHEEL_EMPTY;
+        }
+        sanitizeWheelSlots();
+        markDirty();
+    }
+
+    /** 这个魔法池槽位能不能作为轮盘目标：合法、非空、主动法术。 */
+    public boolean isValidWheelTarget(int poolSlot) {
+        if (!isValidSlot(poolSlot)) {
+            return false;
+        }
+        ItemStack stack = slots.get(poolSlot);
+        return !stack.isEmpty()
+                && MagicStats.isSpell(stack)
+                && !MagicStats.isPassive(stack);
+    }
+
+    /** 把非法 / 重复的方位清空（物品被取走、槽位数缩水、法术变化时都会用到）。 */
+    public void sanitizeWheelSlots() {
+        boolean[] used = new boolean[Math.max(1, getSlots())];
+        for (int i = 0; i < wheelSlots.length; i++) {
+            int poolSlot = wheelSlots[i];
+            if (poolSlot == WHEEL_EMPTY) {
+                continue;
+            }
+            if (!isValidWheelTarget(poolSlot) || used[poolSlot]) {
+                wheelSlots[i] = WHEEL_EMPTY;
+                continue;
+            }
+            used[poolSlot] = true;
+        }
+    }
+
+    /** 某个魔法池槽位当前绑定在哪些方位（跨页）。 */
+    @NotNull
+    public java.util.List<int[]> wheelPositionsOf(int poolSlot) {
+        java.util.List<int[]> out = new java.util.ArrayList<>();
+        for (int page = 0; page < WHEEL_PAGES; page++) {
+            for (int index = 0; index < WHEEL_SLOTS_PER_PAGE; index++) {
+                if (getWheelSlot(page, index) == poolSlot) {
+                    out.add(new int[]{page, index});
+                }
+            }
+        }
+        return out;
+    }
+
+    /** 把魔法池里的主动法术按顺序填进第 I 页（只在第一次生成轮盘数据时调用）。 */
+    private void autoAssignWheelPage0() {
+        java.util.Arrays.fill(wheelSlots, 0, WHEEL_SLOTS_PER_PAGE, WHEEL_EMPTY);
+        int nextIndex = 0;
+        int count = getSlots();
+        for (int poolSlot = 0; poolSlot < count && nextIndex < WHEEL_SLOTS_PER_PAGE; poolSlot++) {
+            if (isValidWheelTarget(poolSlot)) {
+                wheelSlots[nextIndex++] = poolSlot;
+            }
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
     // 同步钩子
     // ══════════════════════════════════════════════════════════════
 
@@ -434,6 +568,8 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         });
         tag.put(NBT_COOLDOWNS, cooldownTag);
         tag.putInt(NBT_SELECTED, selected);
+        sanitizeWheelSlots();
+        tag.putIntArray(NBT_WHEEL_SLOTS, wheelSlots);
         return tag;
     }
 
@@ -458,6 +594,19 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         if (!isValidSlot(selected)) {
             selected = 0;
         }
+
+        java.util.Arrays.fill(wheelSlots, WHEEL_EMPTY);
+        boolean hadWheelData = tag.contains(NBT_WHEEL_SLOTS);
+        if (hadWheelData) {
+            int[] saved = tag.getIntArray(NBT_WHEEL_SLOTS);
+            int copy = Math.min(saved.length, wheelSlots.length);
+            System.arraycopy(saved, 0, wheelSlots, 0, copy);
+        } else {
+            // 老存档 / 新玩家：第一次拿到轮盘数据时，把魔法池里的主动法术按顺序填进第 I 页，
+            // 否则"按 R 没反应"会被当成 bug。之后玩家在装载界面里怎么改就怎么存。
+            autoAssignWheelPage0();
+        }
+        sanitizeWheelSlots();
         dirty = false;
     }
 }
