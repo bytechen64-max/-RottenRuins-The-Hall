@@ -1,11 +1,16 @@
 package org.bytechen.rottenruins.overworld.registry.items.magic.bases;
 
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * 魔法物品（法术）基类 —— 数据声明 + 默认行为，<b>不含</b>冷却与法力的存储。
@@ -240,6 +245,39 @@ public abstract class CMagicBaseItem extends Item implements IMagicBaseItem {
         return stack != null && !stack.isEmpty() && stack.getItem() instanceof IMagicBaseItem item
                 ? item
                 : null;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // 介绍（tooltip）
+    // ══════════════════════════════════════════════════════════════
+
+    /**
+     * 法术的介绍：<b>类型 / 冷却 / 消耗</b> 三行（{@code KEEP} 模式额外加一行维持耗蓝）。
+     *
+     * <p>每一项的数值用<b>该流派的颜色</b>（{@link MagicType#rgb()}），标签是深灰 ——
+     * 所以不同流派的法术在背包里一眼能分开。文案与颜色都集中在 {@link MagicTooltips}，
+     * 饰品那边用的是同一套，改一处两边一致。</p>
+     *
+     * <p>这里显示的是<b>基值</b>（{@link #baseCooldownTicks()} / {@link #baseManaCost()}），
+     * 不是带上玩家属性修饰器之后的实际值 —— 介绍是在没有玩家的上下文里画的。
+     * 想要"当前装备下的实际冷却"，得做客户端同步或 HUD，那是另一条路。</p>
+     */
+    @Override
+    public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level,
+                                @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
+        super.appendHoverText(stack, level, tooltip, flag);
+        tooltip.add(MagicTooltips.typeLine(this.magicType));
+        tooltip.add(MagicTooltips.cooldownLine(this.baseCooldownTicks(), this.magicType));
+        tooltip.add(MagicTooltips.manaLine(this.baseManaCost(), this.magicType));
+        // KEEP 模式才有维持耗蓝，其它模式显示出来只是噪音
+        if (this.usingType == UsingType.KEEP && this.baseKeepCostPerSecond() > 0) {
+            tooltip.add(MagicTooltips.keepCostLine(this.baseKeepCostPerSecond(), this.magicType));
+        }
+    }
+
+    /** 子类追加自己的介绍（例如"命中额外造成 3 点真伤"）。 */
+    protected void appendSpellHoverText(@NotNull ItemStack stack, @Nullable Level level,
+                                        @NotNull List<Component> tooltip) {
     }
 
     /**

@@ -8,6 +8,7 @@ import org.bytechen.rottenruins.overworld.registry.entities.base.EntityManager;
 import org.bytechen.rottenruins.overworld.registry.entities.base.HallEntityManager;
 import org.bytechen.rottenruins.overworld.registry.entities.base.HallProjectileManager;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.apostle.CollapsarEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.apostle.HearthstoneEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.defensive.WindingColumnEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ecological.BonecrusherEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ecological.HeavyBombEntity;
@@ -323,4 +324,14 @@ public class EntityTypeRegistry {
             registerMob("collapsar", 2.4f, 2.6f,
                     (type, level) -> new CollapsarEntity(type, level, CollapsarEntity.resources()),
                     CollapsarEntity::createAttributes);
+
+    // ────────── 使徒 —— 王庭炉石（支援型 boss：治疗 / 减伤光环 / 强化 / 王庭坍缩） ──────────
+    //  碰撞箱暂给 1.6 × 2.2（1.5 格宽、2 格高的方块状体量）。
+    //  模型资源路径是 geo/hearthstone.geo.json + textures/entity/hearthstone.png
+    //  + animations/hearthstone.animation.json —— 这三个文件由美术提供，
+    //  缺的时候 GeckoLib 只会在日志里报缺资源，不会崩。
+    public static final RegistryObject<EntityType<HearthstoneEntity>> HEARTHSTONE =
+            registerMob("hearthstone", 1.6f, 2.2f,
+                    (type, level) -> new HearthstoneEntity(type, level, HearthstoneEntity.resources()),
+                    HearthstoneEntity::createAttributes);
 }

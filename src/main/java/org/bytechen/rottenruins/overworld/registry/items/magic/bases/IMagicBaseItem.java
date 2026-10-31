@@ -279,6 +279,69 @@ public interface IMagicBaseItem {
     }
 
     /**
+     * 这次释放算不算<b>特殊使用</b>。
+     *
+     * <p><b>目前唯一的条件：法术的流派和手上法杖的流派相同。</b>
+     * 也就是"用火系法杖放火系法术"才算特殊使用 —— 反过来说，
+     * 拿自然法杖放火球照样能放（能不能放由 {@code StaffBase#accepts} 与
+     * {@link #canCast} 决定），只是不算特殊使用。</p>
+     *
+     * <h3>谁在什么时候问它</h3>
+     * <p>框架在<b>真正释放的那一刻</b>（{@code MagicHandle#castNow}，也就是扣蓝进冷却之后）
+     * 算一次，结果放进 {@link MagicCastContext#specialUse()}，法术在 {@code cast} 里直接读：</p>
+     * <pre>{@code
+     * @Override
+     * public boolean cast(ServerPlayer caster, ItemStack stack, MagicCastContext ctx) {
+     *     float dmg = baseDamage();
+     *     if (ctx.specialUse()) dmg *= 1.5f;   // 流派对上了，加成
+     *     ...
+     * }
+     * }</pre>
+     *
+     * <p>事件监听者、别的模组想在外面问，走 {@code MagicStats.isSpecialUse(法杖堆, 法术堆)}
+     * —— 那是统一入口，别自己抄这段比较逻辑，否则"什么算特殊使用"会散成好几份。</p>
+     *
+     * <h3>想改条件就覆写它</h3>
+     * <p>例如"必须流派相同<b>而且</b>玩家没在潜行"、"某件附魔可以无视流派限制"。
+     * 覆写会影响所有调用方（框架、法术、事件），这正是想要的效果。</p>
+     *
+     * @param staffStack 施法者手上那根法杖的物品堆；不是法杖（或为空）时默认返回 {@code false}
+     * @param spellStack 本次释放的法术堆 —— 默认实现用不到，
+     *                   留给需要读 NBT / 附魔 / 耐久的子类
+     */
+    default boolean isSpecialUse(@NotNull ItemStack staffStack, @NotNull ItemStack spellStack) {
+        return staffStack.getItem() instanceof StaffBase staff
+                && staff.getMagicType() == getMagicType();
+    }
+
+    /**
+     * 带施法者的版本 —— <b>特殊使用的完整判定</b>，框架实际调用的就是它。
+     *
+     * <p>两个来源，满足任一即为特殊使用：</p>
+     * <ol>
+     *   <li><b>法杖流派相同</b>：见 {@link #isSpecialUse(ItemStack, ItemStack)}；</li>
+     *   <li><b>装备了同流派饰品</b>：{@link org.bytechen.rottenruins.overworld.registry.items.magic.curios.ICuriosBase#isSchoolEquipped}。
+     *       这样"没有对应法杖、但戴着对应饰品"的玩家也能吃到特殊使用的加成。</li>
+     * </ol>
+     *
+     * <p>覆写时请<b>调 super</b> 再追加自己的条件，否则会顺手把上面两条判掉。</p>
+     *
+     * @param caster     施法者；为 {@code null}（没有玩家上下文）时等同于二参版本
+     * @param staffStack 手上的法杖
+     * @param spellStack 本次释放的法术
+     */
+    default boolean isSpecialUse(@Nullable ServerPlayer caster,
+                                 @NotNull ItemStack staffStack,
+                                 @NotNull ItemStack spellStack) {
+        if (isSpecialUse(staffStack, spellStack)) {
+            return true;
+        }
+        return caster != null
+                && org.bytechen.rottenruins.overworld.registry.items.magic.curios.ICuriosBase
+                        .isSchoolEquipped(caster, getMagicType());
+    }
+
+    /**
      * {@code CHARGE} 模式蓄力过程中每 tick 调用（服务端）。
      *
      * @param heldTicks 已经按住了多少 tick

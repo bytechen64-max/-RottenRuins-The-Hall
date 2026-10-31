@@ -10,14 +10,13 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.api.magic.MagicStats;
-import org.bytechen.rottenruins.overworld.registry.RegisterAttributes;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.CMagicBaseItem;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.MagicCastContext;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.MagicType;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.UsingType;
+import org.bytechen.rottenruins.utils.EntityChooseUtil;
 import org.bytechen.rottenruins.utils.SpellDamageUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -125,12 +124,13 @@ public class SuppressionField extends CMagicBaseItem {
 
     /**
      * 按法术强度算场的半径：{@code 5 × (1 + 强度加成/4)}，
-     * 其中"强度加成" = {@code rotten_ruins:spell_power} − 1.0。
+     * 其中"强度加成" = <b>有效法强 − 1.0</b>，有效法强 = 通用法强 + 虚空法强（相加，
+     * 见 {@link MagicStats#spellPower}）。
      *
      * <p>想做成"另一个形状的成长曲线"直接覆写它 —— 它只在一处被调用。</p>
      */
-    protected double radiusFor(@NotNull ServerPlayer caster) {
-        double spellPower = RegisterAttributes.valueOf(caster, RegisterAttributes.SPELL_POWER, 1.0d);
+    protected double radiusFor(@NotNull ServerPlayer caster, @NotNull ItemStack stack) {
+        double spellPower = MagicStats.spellPower(caster, stack);
         // 减 1.0 让"默认属性 = 基础半径 5 格"成立，见类注释里的表
         double bonus = spellPower - 1.0d;
         return Mth.clamp(BASE_RADIUS * (1.0d + bonus / 4.0d), 1.0d, MAX_RADIUS);
@@ -169,16 +169,15 @@ public class SuppressionField extends CMagicBaseItem {
             return true;
         }
 
-        double radius = radiusFor(caster);
+        double radius = radiusFor(caster, stack);
         Vec3 center = caster.getBoundingBox().getCenter();
 
-        double radiusSqr = radius * radius;
-        AABB search = caster.getBoundingBox().inflate(radius);
-        for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, search,
-                candidate -> canAffect(caster, candidate))) {
-            // 用"目标碰撞箱到中心的最近距离"判定，而不是中心点距离：
-            // 大体型生物擦到场地边缘时也该算进场，否则半径一大一小全看模型多大。
-            if (victim.getBoundingBox().distanceToSqr(center) > radiusSqr) {
+        // 选目标走 EntityChooseUtil：它是"以任意坐标为中心的球"，
+        // 判定用的是"目标碰撞箱到中心的最近距离"（大体积擦边也算进场），
+        // 并且已经把主人自己、旁观者、尸体筛掉了。
+        // 这里再叠一层 canAffect，留给子类加"排除自己的宠物/队友"之类的自定义条件。
+        for (LivingEntity victim : EntityChooseUtil.sphereAt(level, caster, center, radius)) {
+            if (!canAffect(caster, victim)) {
                 continue;
             }
             pulse(level, caster, stack, victim);

@@ -6,6 +6,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.api.magic.MagicDamageEvent;
+import org.bytechen.rottenruins.api.magic.MagicStats;
 import org.bytechen.rottenruins.api.magic.ManaRestoreEvent;
 import org.bytechen.rottenruins.overworld.registry.RegisterAttributes;
 
@@ -55,7 +56,12 @@ public final class MagicAttributeHandlers {
     }
 
     /**
-     * 法术伤害：乘以施法者的 {@code hall:spell_power}。
+     * 法术伤害：乘以施法者的<b>有效法术强度</b>。
+     *
+     * <p>有效法强 = {@code spell_power}（通用倍率）+ <b>该法术流派的法强</b>
+     * （{@code spell_power_fire} 之类，加成、默认 0）。相加这件事由
+     * {@link MagicStats#spellPower} 负责 —— 这里只乘结果，不自己算属性，
+     * 免得"相加"的规则散落到多个地方。</p>
      *
      * <p>施法者为 {@code null}（陷阱 / 环境法术）时不动 —— 那种情况没有"谁的法术强度"可言。</p>
      */
@@ -68,7 +74,7 @@ public final class MagicAttributeHandlers {
         if (caster == null) {
             return;
         }
-        double power = RegisterAttributes.valueOf(caster, RegisterAttributes.SPELL_POWER, 1.0d);
+        double power = MagicStats.spellPower(caster, event.getSpell());
         if (power == 1.0d) {
             return;
         }

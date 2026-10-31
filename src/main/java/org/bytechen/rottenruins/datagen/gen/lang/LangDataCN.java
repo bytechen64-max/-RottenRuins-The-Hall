@@ -97,6 +97,7 @@ public class LangDataCN extends LanguageProvider {
         add(EntityTypeRegistry.INF_SKELETON_ARROW.get(), "畸骸骷髅炸弹");
         add(EntityTypeRegistry.HEAVY_BOMB.get(), "王庭重型轰炸");
         add(EntityTypeRegistry.HEAVY_BOMB_TNT.get(), "重型炸弹TNT");
+        add(EntityTypeRegistry.HEARTHSTONE.get(), "王庭炉石");
         add(EntityTypeRegistry.BONECRUSHER.get(), "王庭碎骨");
         add(EntityTypeRegistry.COLLAPSAR.get(), "萨米使徒");
         add(EntityTypeRegistry.SCOUT.get(), "溃烂纠察");
@@ -163,14 +164,40 @@ public class LangDataCN extends LanguageProvider {
         add("biome." + HallMod.MODID + ".flesh_marrow", "血肉庭园");
         add(RegisterBlock.FLESH_RIFT.get().getDescriptionId() + ".no_dimension", "裂隙的另一端尚未形成……");
 
+        // ---- 魔法：流派名 + 物品介绍（见 MagicType / MagicTooltips） ----
+        // 流派名会被法术/饰品的介绍行用到；颜色由 MagicType#rgb() 提供，这里只管文字。
+        add("magic_type." + HallMod.MODID + ".ice", "寒冰");
+        add("magic_type." + HallMod.MODID + ".fire", "火焰");
+        add("magic_type." + HallMod.MODID + ".death", "死亡");
+        add("magic_type." + HallMod.MODID + ".nature", "自然");
+        add("magic_type." + HallMod.MODID + ".light", "光明");
+        add("magic_type." + HallMod.MODID + ".void", "虚空");
+        add("magic_type." + HallMod.MODID + ".mysterious", "神秘");
+        // 介绍行：参数统一 %s，数值部分在代码里按流派上色
+        add("tooltip." + HallMod.MODID + ".magic.type", "类型：%s");
+        add("tooltip." + HallMod.MODID + ".magic.cooldown", "冷却：%s 秒");
+        add("tooltip." + HallMod.MODID + ".magic.cooldown.none", "冷却：无");
+        add("tooltip." + HallMod.MODID + ".magic.mana", "消耗：%s 法力");
+        add("tooltip." + HallMod.MODID + ".magic.mana.none", "消耗：无");
+        add("tooltip." + HallMod.MODID + ".magic.keep_cost", "维持：%s 法力/秒");
+
         // ---- 魔法属性（见 RegisterAttributes） ----
         // 键名必须与 RangedAttribute 构造器里写死的那个字符串**完全一致**，
         // 对不上就会在属性界面里显示原始键名。
-        add("attribute.name." + HallMod.MODID + ".max_mana", "法力上限");
-        add("attribute.name." + HallMod.MODID + ".mana_regeneration", "法力回复速度");
+        add("attribute.name." + HallMod.MODID + ".max_mana", "法力上限");        add("attribute.name." + HallMod.MODID + ".mana_regeneration", "法力回复速度");
         add("attribute.name." + HallMod.MODID + ".mana_restore", "法力回复量");
         add("attribute.name." + HallMod.MODID + ".spell_power", "法术强度");
         add("attribute.name." + HallMod.MODID + ".magic_slots", "魔法槽位");
+        add("attribute.name." + HallMod.MODID + ".cooldown_reduction", "冷却缩减");
+        // 各流派的法术强度：与通用法强**相加**（默认 0），键名必须和
+        // RegisterAttributes.spellPowerOf(String) 拼出来的完全一致。
+        add("attribute.name." + HallMod.MODID + ".spell_power_ice", "寒冰法术强度");
+        add("attribute.name." + HallMod.MODID + ".spell_power_fire", "火焰法术强度");
+        add("attribute.name." + HallMod.MODID + ".spell_power_death", "死亡法术强度");
+        add("attribute.name." + HallMod.MODID + ".spell_power_nature", "自然法术强度");
+        add("attribute.name." + HallMod.MODID + ".spell_power_light", "光明法术强度");
+        add("attribute.name." + HallMod.MODID + ".spell_power_void", "虚空法术强度");
+        add("attribute.name." + HallMod.MODID + ".spell_power_mysterious", "神秘法术强度");
 
         // ---- 魔法体系 · 物品 ----
         // 法力板：六个流派各一块，目前都是纯材料（见 RegisterItem 里的说明，

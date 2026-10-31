@@ -571,8 +571,12 @@ public final class MagicHandle {
         }
 
         // ---- 4. 出效果 ----
+        // 特殊使用：法术流派 == 法杖流派（条件写在 IMagicBaseItem#isSpecialUse，可覆写）。
+        // 在"即将出效果"这一刻算，而不是按下时算 —— 蓄力型法术按下与松手之间
+        // 玩家是可以换手的，这里取的是真正生效那一瞬间手上那根杖。
+        boolean specialUse = MagicStats.isSpecialUse(player, player.getItemInHand(hand), spellStack);
         spell.cast(player, spellStack,
-                new MagicCastContext(slot, hand, heldTicks, chargeRatio, target));
+                new MagicCastContext(slot, hand, heldTicks, chargeRatio, target, specialUse));
 
         // ---- 5. 释放后事件：不可取消，用来挂后续逻辑 ----
         MinecraftForge.EVENT_BUS.post(new MagicCastEvent.Post(player, spellStack,

@@ -49,6 +49,29 @@ public class MagicAttributeProvider implements MagicStatProvider {
     }
 
     /**
+     * 冷却缩减：{@code 冷却 = 基值 × (1 − 缩减)}。
+     *
+     * <p>缩减量取自 {@code cooldown_reduction}，钳在
+     * {@code [0, }{@link MagicStats#MAX_COOLDOWN_REDUCTION}{@code ]} ——
+     * 属性自己的范围上限已经是 0.5 了，这里再钳一次是为了防"绕过属性直接塞值"。</p>
+     *
+     * <p>走 provider 链而不是写在 {@code MagicHandle} 里：冷却的求值入口是
+     * {@link MagicStats#cooldownTicks}，所有法术（含以后新增的）都从这里过，
+     * 写在这里面就自动对全部法术生效，而且和附魔/临时 buff 是同一套叠加顺序。</p>
+     */
+    @Override
+    public int modifyCooldownTicks(Player player, ItemStack spell, int base) {
+        double reduction = RegisterAttributes.valueOf(player,
+                RegisterAttributes.COOLDOWN_REDUCTION, 0.0d);
+        reduction = Math.max(0.0d, Math.min(MagicStats.MAX_COOLDOWN_REDUCTION, reduction));
+        if (reduction <= 0.0d) {
+            return base;
+        }
+        // 用 round 而不是截断：21 × 0.5 = 10.5 截断成 10 会让人觉得"少减了"
+        return Math.max(0, (int) Math.round(base * (1.0d - reduction)));
+    }
+
+    /**
      * 刻意留空 —— 见类注释。想按附魔改耗蓝请覆写这个钩子，
      * 但它与"属性"无关，所以不在这里做。
      */

@@ -111,6 +111,7 @@ public class LangDataEN extends LanguageProvider {
         add(EntityTypeRegistry.INF_SKELETON_ARROW.get(), "Infected Skeleton Arrow");
         add(EntityTypeRegistry.HEAVY_BOMB.get(), "Heavy Bomb");
         add(EntityTypeRegistry.HEAVY_BOMB_TNT.get(), "Heavy Bomb TNT");
+        add(EntityTypeRegistry.HEARTHSTONE.get(), "Hearthstone");
         add(EntityTypeRegistry.BONECRUSHER.get(), "Hall Shell");
         add(EntityTypeRegistry.SHOCKWAVE.get(), "Shockwave");
         add(EntityTypeRegistry.METEORITE.get(), "Meteorite");
@@ -181,12 +182,36 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterBlock.FLESH_RIFT.get().getDescriptionId() + ".no_dimension", "The other end of the rift has not yet formed...");
 
         // ---- Magic attributes (see RegisterAttributes) ----
+        // ---- Magic: school names + item tooltips (see MagicType / MagicTooltips) ----
+        add("magic_type." + HallMod.MODID + ".ice", "Ice");
+        add("magic_type." + HallMod.MODID + ".fire", "Fire");
+        add("magic_type." + HallMod.MODID + ".death", "Death");
+        add("magic_type." + HallMod.MODID + ".nature", "Nature");
+        add("magic_type." + HallMod.MODID + ".light", "Light");
+        add("magic_type." + HallMod.MODID + ".void", "Void");
+        add("magic_type." + HallMod.MODID + ".mysterious", "Mysterious");
+        add("tooltip." + HallMod.MODID + ".magic.type", "Type: %s");
+        add("tooltip." + HallMod.MODID + ".magic.cooldown", "Cooldown: %s s");
+        add("tooltip." + HallMod.MODID + ".magic.cooldown.none", "Cooldown: none");
+        add("tooltip." + HallMod.MODID + ".magic.mana", "Cost: %s mana");
+        add("tooltip." + HallMod.MODID + ".magic.mana.none", "Cost: none");
+        add("tooltip." + HallMod.MODID + ".magic.keep_cost", "Upkeep: %s mana/s");
+
         // Keys must match the strings hard-coded in the RangedAttribute constructors exactly.
-        add("attribute.name." + HallMod.MODID + ".max_mana", "Max Mana");
-        add("attribute.name." + HallMod.MODID + ".mana_regeneration", "Mana Regeneration");
+        add("attribute.name." + HallMod.MODID + ".max_mana", "Max Mana");        add("attribute.name." + HallMod.MODID + ".mana_regeneration", "Mana Regeneration");
         add("attribute.name." + HallMod.MODID + ".mana_restore", "Mana Restored");
         add("attribute.name." + HallMod.MODID + ".spell_power", "Spell Power");
         add("attribute.name." + HallMod.MODID + ".magic_slots", "Magic Slots");
+        add("attribute.name." + HallMod.MODID + ".cooldown_reduction", "Cooldown Reduction");
+        // Per-school spell power: ADDS to the general spell power (default 0).
+        // Keys must match RegisterAttributes.spellPowerOf(String) exactly.
+        add("attribute.name." + HallMod.MODID + ".spell_power_ice", "Ice Spell Power");
+        add("attribute.name." + HallMod.MODID + ".spell_power_fire", "Fire Spell Power");
+        add("attribute.name." + HallMod.MODID + ".spell_power_death", "Death Spell Power");
+        add("attribute.name." + HallMod.MODID + ".spell_power_nature", "Nature Spell Power");
+        add("attribute.name." + HallMod.MODID + ".spell_power_light", "Light Spell Power");
+        add("attribute.name." + HallMod.MODID + ".spell_power_void", "Void Spell Power");
+        add("attribute.name." + HallMod.MODID + ".spell_power_mysterious", "Mysterious Spell Power");
 
         // ---- Magic system · items ----
         // Mana plates: one per school, plain materials for now (see RegisterItem —

@@ -3,7 +3,7 @@ package org.bytechen.rottenruins.overworld.registry.items.magic.its;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import org.bytechen.rottenruins.overworld.registry.RegisterAttributes;
+import org.bytechen.rottenruins.api.magic.MagicStats;
 import org.bytechen.rottenruins.overworld.registry.entities.magic.FireBallEntity;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.CMagicBaseItem;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.MagicCastContext;
@@ -19,7 +19,9 @@ import org.jetbrains.annotations.NotNull;
  * 飞行、拖尾、被打偏都在 {@link FireBallEntity} 里（原版 {@code Fireball} 的子类）。</p>
  *
  * <h3>法术强度怎么作用到这颗火球上</h3>
- * <p>"法术强度"就是属性 {@code rotten_ruins:spell_power}（默认 1.0，<b>倍率</b>类）。它同时影响：</p>
+ * <p>"法术强度"取的是 {@code MagicStats.spellPower} ——
+ * <b>通用法强（{@code spell_power}，默认 1.0）加上火系法强
+ * （{@code spell_power_fire}，默认 0）</b>。它同时影响：</p>
  * <table border="1">
  *   <tr><th>作用对象</th><th>怎么生效</th></tr>
  *   <tr><td>爆炸半径</td>
@@ -77,9 +79,9 @@ public class FireBall extends CMagicBaseItem {
     @Override
     public boolean cast(@NotNull ServerPlayer player, @NotNull ItemStack stack,
                         @NotNull MagicCastContext castContext) {
-        // 法术强度：倍率属性，默认 1.0。属性还没挂上时会返回 fallback 1.0，
-        // 所以这里不会因为"属性缺失"把火球缩成 0 半径。
-        double spellPower = RegisterAttributes.valueOf(player, RegisterAttributes.SPELL_POWER, 1.0d);
+        // 有效法术强度 = 通用法强 + 火系法强（相加），见 MagicStats.spellPower。
+        // 属性还没挂上时它返回 fallback 1.0，所以不会因为"属性缺失"把火球缩成 0 半径。
+        double spellPower = MagicStats.spellPower(player, stack);
         double radius = Mth.clamp(baseExplosionRadius() * spellPower,
                 MIN_EXPLOSION_RADIUS, MAX_EXPLOSION_RADIUS);
 

@@ -13,43 +13,60 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.bytechen.rottenruins.HallMod;
+import org.bytechen.rottenruins.api.magic.MagicStats;
+import org.bytechen.rottenruins.overworld.registry.items.magic.bases.MagicType;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 本模组的<b>属性</b>。
  *
- * <p>这五个属性就是"用属性修饰器改魔法数值"的落点。装上之后可以直接用原版命令验证：</p>
+ * <p>这些属性就是"用属性修饰器改魔法数值"的落点。装上之后可以直接用原版命令验证：</p>
  * <pre>
- *   /attribute &#64;s hall:spell_power modifier add hall:test 0.5 multiply_total
- *   /attribute &#64;s hall:max_mana     modifier add hall:test 500 add
- *   /attribute &#64;s hall:mana_regeneration modifier add hall:test 4 add
- *   /attribute &#64;s hall:mana_restore modifier add hall:test 0.5 multiply_total
- *   /attribute &#64;s hall:magic_slots  modifier add hall:test 4 add
+ *   /attribute &#64;s rotten_ruins:spell_power modifier add test 0.5 multiply_total
+ *   /attribute &#64;s rotten_ruins:max_mana     modifier add test 500 add
+ *   /attribute &#64;s rotten_ruins:mana_regeneration modifier add test 4 add
+ *   /attribute &#64;s rotten_ruins:mana_restore modifier add test 0.5 multiply_total
+ *   /attribute &#64;s rotten_ruins:magic_slots  modifier add test 4 add
+ *   /attribute &#64;s rotten_ruins:cooldown_reduction modifier add test 0.25 add
+ *   /attribute &#64;s rotten_ruins:spell_power_fire   modifier add test 0.5 add
  * </pre>
  *
  * <h3>分成"加成"与"倍率"两类</h3>
  * <table border="1">
  *   <tr><th>属性</th><th>默认</th><th>类型</th><th>作用点</th></tr>
- *   <tr><td>{@code hall:max_mana}</td><td>0</td><td>加成</td>
+ *   <tr><td>{@code max_mana}</td><td>0</td><td>加成</td>
  *       <td>{@code MagicStats.maxMana} → 法力上限 = 1000 + 它</td></tr>
- *   <tr><td>{@code hall:mana_regeneration}</td><td>0</td><td>加成（点/秒）</td>
+ *   <tr><td>{@code mana_regeneration}</td><td>0</td><td>加成（点/秒）</td>
  *       <td>{@code MagicStats.manaRegenPerSecond} → 每秒 = 1 + 它</td></tr>
- *   <tr><td>{@code hall:magic_slots}</td><td>0</td><td>加成</td>
+ *   <tr><td>{@code magic_slots}</td><td>0</td><td>加成</td>
  *       <td>{@code MagicStats.slotCount} → 槽位 = 10 + 它（上限 64）</td></tr>
- *   <tr><td>{@code hall:spell_power}</td><td>1.0</td><td><b>倍率</b></td>
- *       <td>{@code MagicDamageEvent} 监听器 → 法术伤害 ×它</td></tr>
- *   <tr><td>{@code hall:mana_restore}</td><td>1.0</td><td><b>倍率</b></td>
+ *   <tr><td>{@code cooldown_reduction}</td><td>0</td><td>加成（比例，<b>上限 0.5</b>）</td>
+ *       <td>{@code MagicAttributeProvider#modifyCooldownTicks} →
+ *           冷却 = 基值 × (1 − 它)，对全部法术生效</td></tr>
+ *   <tr><td>{@code spell_power}</td><td>1.0</td><td><b>倍率</b>（通用）</td>
+ *       <td>{@code MagicStats.spellPower} → 法术伤害 / 半径 ×（它 + 流派法强）</td></tr>
+ *   <tr><td>{@code spell_power_&lt;流派&gt;}</td><td>0</td><td>加成（每个流派一个）</td>
+ *       <td>同上，<b>与通用法强相加</b>。流派取 {@link MagicType}，共
+ *           {@code ICE / FIRE / DEATH / NATURE / LIGHT / VOID / MYSTERIOUS} 七个</td></tr>
+ *   <tr><td>{@code mana_restore}</td><td>1.0</td><td><b>倍率</b></td>
  *       <td>{@code ManaRestoreEvent} 监听器 → 一切法力回复 ×它</td></tr>
  * </table>
  *
- * <p><b>为什么前三个走 {@code MagicStatProvider}、后两个走事件监听器？</b><br>
- * 因为前三个是"每次求值都现算"的量（法力上限、回速、槽位数），天然适合 provider 链；
- * 而后两个是"一次具体行为"的量（这一下打多少、这一次回多少），
- * 落在事件上才能拿到上下文（打的是谁、回复的来源是什么），也才能被别的监听器叠加/取消。
- * 你要求的也正是这两个事件。</p>
+ * <p><b>法术强度为什么要分"通用 + 流派"两个</b>：通用那份是"这个人是法师"，
+ * 流派那份是"这个人专精火系"。两者<b>相加</b>而不是相乘 —— 相乘会让双修玩家的收益
+ * 变成平方增长，而相加是线性的，数值好控。举例：通用 1.0、火系 +0.5、虚空 +0，
+ * 那么火球术的有效法强是 1.5，同一时刻放虚空法术还是 1.0。</p>
  *
- * <p><b>注意单位</b>：{@code RangedAttribute} 是 double，但 {@code /attribute} 与
- * 修饰器都用 double；两个"倍率"属性的默认值是 1.0，所以给修饰器加 0.5
- * （{@code multiply_total}）就是 ×1.5。</p>
+ * <p><b>为什么加成类的走 {@code MagicStatProvider}、两个倍率走事件监听器？</b><br>
+ * 因为前者是"每次求值都现算"的量（法力上限、回速、槽位、冷却），天然适合 provider 链；
+ * 而后者是"一次具体行为"的量（这一下打多少、这一次回多少），
+ * 落在事件上才能拿到上下文（打的是谁、回复的来源是什么），也才能被别的监听器叠加/取消。
+ * 法术强度两种都沾：它既能现算（火球半径），又要在伤害事件上用，所以
+ * {@code MagicStats.spellPower} 是唯一入口，两个场合都从那里取。</p>
+ *
+ * <p><b>注意单位</b>：{@code RangedAttribute} 是 double，{@code /attribute} 与修饰器
+ * 也都用 double。默认值 1.0 的是<b>倍率</b>（加 0.5 的 {@code multiply_total} 就是 ×1.5），
+ * 默认值 0.0 的是<b>加成</b>（{@code add 0.5} 就是 +0.5）。</p>
  */
 @Mod.EventBusSubscriber(modid = HallMod.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class RegisterAttributes {
@@ -85,6 +102,79 @@ public class RegisterAttributes {
             () -> new RangedAttribute("attribute.name.rotten_ruins.magic_slots", 0.0d, 0.0d, 54.0d)
                     .setSyncable(true));
 
+    /**
+     * <b>冷却缩减</b>（比例）。默认 {@code 0.0} = 不减。
+     *
+     * <p>属性的上限直接设成 {@code 0.5} —— 需求就是"最多叠加 50%"，
+     * 交给 {@link RangedAttribute} 自己钳最省事：无论多少条 {@code add} 修饰器叠上来，
+     * 读到的值都不会超过 0.5。{@code MagicAttributeProvider} 那边还会再钳一次，
+     * 防止有人绕过属性直接塞值。</p>
+     *
+     * <p>作用点：{@code MagicStats.cooldownTicks} —— 即
+     * {@code cooldown = 基值 × (1 − 本值)}，对<b>所有</b>法术生效
+     * （冷却键仍是物品注册名，同名物品照样共享缩短后的冷却）。</p>
+     */
+    public static final RegistryObject<Attribute> COOLDOWN_REDUCTION =
+            ATTRIBUTES.register("cooldown_reduction",
+                    () -> new RangedAttribute("attribute.name.rotten_ruins.cooldown_reduction",
+                            0.0d, 0.0d, MagicStats.MAX_COOLDOWN_REDUCTION).setSyncable(true));
+
+    // ══════════════════════════════════════════════════════════════
+    // 各流派的法术强度
+    // ══════════════════════════════════════════════════════════════
+    // 一个流派一个属性，默认 0.0，都是"加成"而不是倍率 —— 计算方式是
+    //   有效法强 = 通用法强(spell_power) + 该流派的法强
+    // 也就是和通用法强<b>相加</b>：通用 1.0 + 火系 0.5 = 1.5 倍。
+    // 见 MagicStats.spellPower(Player, ItemStack)。
+
+    /** {@link MagicType#ICE} 流派的法术强度加成。 */
+    public static final RegistryObject<Attribute> SPELL_POWER_ICE = spellPowerOf("ice");
+
+    /** {@link MagicType#FIRE} 流派的法术强度加成。 */
+    public static final RegistryObject<Attribute> SPELL_POWER_FIRE = spellPowerOf("fire");
+
+    /** {@link MagicType#DEATH} 流派的法术强度加成。 */
+    public static final RegistryObject<Attribute> SPELL_POWER_DEATH = spellPowerOf("death");
+
+    /** {@link MagicType#NATURE} 流派的法术强度加成。 */
+    public static final RegistryObject<Attribute> SPELL_POWER_NATURE = spellPowerOf("nature");
+
+    /** {@link MagicType#LIGHT} 流派的法术强度加成。 */
+    public static final RegistryObject<Attribute> SPELL_POWER_LIGHT = spellPowerOf("light");
+
+    /** {@link MagicType#VOID} 流派的法术强度加成。 */
+    public static final RegistryObject<Attribute> SPELL_POWER_VOID = spellPowerOf("void");
+
+    /** {@link MagicType#MYSTERIOUS} 流派的法术强度加成。 */
+    public static final RegistryObject<Attribute> SPELL_POWER_MYSTERIOUS = spellPowerOf("mysterious");
+
+    /** 注册一个流派法强属性：名字统一 {@code spell_power_<流派小写>}。 */
+    private static RegistryObject<Attribute> spellPowerOf(String school) {
+        return ATTRIBUTES.register("spell_power_" + school,
+                () -> new RangedAttribute("attribute.name.rotten_ruins.spell_power_" + school,
+                        0.0d, 0.0d, 100.0d).setSyncable(true));
+    }
+
+    /**
+     * 取某个流派对应的法强属性。
+     *
+     * <p>新增流派时<b>必须</b>在这里补一个 case，否则那个流派的法术只会吃通用法强
+     * —— 而且是静默的，不会有任何报错，所以 {@code switch} 不写 {@code default}
+     * 让编译器替我们盯着（枚举新增值时会编译失败）。</p>
+     */
+    @NotNull
+    public static RegistryObject<Attribute> spellPowerOf(@NotNull MagicType type) {
+        return switch (type) {
+            case ICE -> SPELL_POWER_ICE;
+            case FIRE -> SPELL_POWER_FIRE;
+            case DEATH -> SPELL_POWER_DEATH;
+            case NATURE -> SPELL_POWER_NATURE;
+            case LIGHT -> SPELL_POWER_LIGHT;
+            case VOID -> SPELL_POWER_VOID;
+            case MYSTERIOUS -> SPELL_POWER_MYSTERIOUS;
+        };
+    }
+
     private RegisterAttributes() {
     }
 
@@ -107,13 +197,20 @@ public class RegisterAttributes {
         addToPlayer(event, MANA_RESTORE.get());
         addToPlayer(event, SPELL_POWER.get());
         addToPlayer(event, MAGIC_SLOTS.get());
+        addToPlayer(event, COOLDOWN_REDUCTION.get());
+        // 各流派的法强：遍历枚举，新增流派时这里自动跟上（属性本身还是要手动注册）
+        for (MagicType type : MagicType.values()) {
+            addToPlayer(event, spellPowerOf(type).get());
+        }
 
         // 打一行日志是刻意的：这一步**失败时是静默的** ——
         // 事件没触发的话 player.getAttribute(...) 会一直返回 null，
         // /attribute 会说"没有这个属性"，但加载过程一点错都不报。
         // 有这一行就能一眼区分"属性挂上了"和"根本没挂"。
-        HallMod.LOGGER.info("[hall] 已把 5 个魔法属性挂到玩家身上"
-                + "（hall:max_mana / mana_regeneration / mana_restore / spell_power / magic_slots）");
+        HallMod.LOGGER.info("[rotten_ruins] 已把 {} 个魔法属性挂到玩家身上"
+                        + "（max_mana / mana_regeneration / mana_restore / spell_power / magic_slots"
+                        + " / cooldown_reduction / spell_power_<流派> x{}）",
+                6 + MagicType.values().length, MagicType.values().length);
     }
 
     private static void addToPlayer(EntityAttributeModificationEvent event, Attribute attribute) {

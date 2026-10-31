@@ -205,7 +205,7 @@ public class RegisterItem {
     // 槽里为空时右键只会拿到 CastResult.NO_SPELL —— 表现为"什么都没发生"。
     // 模型用 minecraft:item/handheld，由 ItemGenData 的 isHandheld 判定。
     public static final RegistryObject<Item> WAND = ITEMS.register("wand",
-            () -> new WandItem(new Item.Properties().stacksTo(1), MagicType.MAGIC));
+            () -> new WandItem(new Item.Properties().stacksTo(1), MagicType.MYSTERIOUS));
     public static final RegistryObject<Item> WAND_NATURE = ITEMS.register("wand_nature",
             () -> new WandItem(new Item.Properties().stacksTo(1), MagicType.NATURE));
 

@@ -1,9 +1,11 @@
 package org.bytechen.rottenruins.api.magic;
 
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import org.bytechen.rottenruins.overworld.registry.RegisterAttributes;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.IMagicBaseItem;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.SpellKind;
 import org.jetbrains.annotations.NotNull;
@@ -63,6 +65,18 @@ public final class MagicStats {
      */
     public static final double MAX_TARGET_RANGE = 128.0d;
 
+    /**
+     * <b>冷却缩减</b>的硬上限：{@code 0.5}（50%）。
+     *
+     * <p>需求就是"最多叠加 50%"。{@code cooldown_reduction} 属性的范围上限
+     * 也设成它，这里再钳一次是为了防"绕过属性直接塞值"
+     * （别的模组手动改 {@code AttributeInstance}，或者以后加了不走属性的来源）。</p>
+     */
+    public static final double MAX_COOLDOWN_REDUCTION = 0.5d;
+
+    /** 通用法术强度的基准值（{@code spell_power} 的默认值）。 */
+    public static final double BASE_SPELL_POWER = 1.0d;
+
     private MagicStats() {
     }
 
@@ -98,6 +112,70 @@ public final class MagicStats {
         int value = MagicStatRegistry.foldInt(BASE_SLOT_COUNT,
                 (provider, current) -> provider.modifySlotCount(player, current));
         return Math.max(1, Math.min(MAX_SLOT_COUNT, value));
+    }
+
+    /**
+     * <b>有效法术强度</b> —— 需求要的"和通用法强相加"就在这里。
+     *
+     * <pre>
+     *   有效法强 = spell_power（通用倍率，默认 1.0）
+     *            + spell_power_&lt;该法术的流派&gt;（加成，默认 0.0）
+     * </pre>
+     *
+     * <p>例：通用 1.0、火系 +0.5 → 火球术的有效法强 = 1.5 倍；
+     * 同一时刻放虚空法术则只有 1.0 倍（虚空那段是 0）。</p>
+     *
+     * <p>它是"一个法术物品"的量，所以要带上下文：不知道是哪个流派就无从相加。
+     * {@code spell} 为空或不是 {@link IMagicBaseItem} 时退化成通用法强。</p>
+     *
+     * @return 有效法强倍率，已钳到 {@code >= 0}
+     */
+    public static double spellPower(@Nullable Player player, @Nullable ItemStack spell) {
+        if (player == null) {
+            return BASE_SPELL_POWER;
+        }
+        double general = RegisterAttributes.valueOf(player, RegisterAttributes.SPELL_POWER,
+                BASE_SPELL_POWER);
+        IMagicBaseItem item = spellOf(spell);
+        if (item == null) {
+            return Math.max(0.0d, general);
+        }
+        // 流派法强：默认 0.0，和通用法强相加
+        double school = RegisterAttributes.valueOf(player,
+                RegisterAttributes.spellPowerOf(item.getMagicType()), 0.0d);
+        return Math.max(0.0d, general + school);
+    }
+
+    /**
+     * <b>特殊使用</b>的统一入口 —— 现在是两条：<b>法术流派 == 法杖流派</b>，
+     * 或者<b>装备了同流派饰品</b>（详见 {@link IMagicBaseItem#isSpecialUse(ServerPlayer, ItemStack, ItemStack)}）。
+     *
+     * @param caster     施法者；{@code null} 时只判法杖那条（查不了饰品栏）
+     * @param staffStack 法杖堆
+     * @param spellStack 法术堆
+     */
+    public static boolean isSpecialUse(@Nullable ServerPlayer caster,
+                                       @Nullable ItemStack staffStack,
+                                       @Nullable ItemStack spellStack) {
+        IMagicBaseItem spell = spellOf(spellStack);
+        if (spell == null) {
+            return false;
+        }
+        return spell.isSpecialUse(caster, staffStack == null ? ItemStack.EMPTY : staffStack, spellStack);
+    }
+
+    /**
+     * 不带施法者的版本：<b>只判"法杖流派 == 法术流派"</b>，查不到饰品栏。
+     *
+     * <p>只给"手上没有玩家"的场合用（例如命令、数据生成）。业务代码请用三参版本，
+     * 否则戴了饰品的玩家会拿不到特殊使用。</p>
+     */
+    public static boolean isSpecialUse(@Nullable ItemStack staffStack, @Nullable ItemStack spellStack) {
+        IMagicBaseItem spell = spellOf(spellStack);
+        if (spell == null) {
+            return false;
+        }
+        return spell.isSpecialUse(staffStack == null ? ItemStack.EMPTY : staffStack, spellStack);
     }
 
     /** 击杀某个生物时该玩家能回多少法力。 */
