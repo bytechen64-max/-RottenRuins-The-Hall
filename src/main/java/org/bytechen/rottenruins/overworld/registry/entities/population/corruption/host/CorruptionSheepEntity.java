@@ -10,15 +10,7 @@ import org.bytechen.rottenruins.overworld.registry.entities.population.corruptio
 
 import java.util.function.Consumer;
 
-/**
- * 同化羊（简化移植版，原 corruption 工程 {@code InfectionSheepEntity}）。
- *
- * <p>只有 walk 一段移动动画，没有 run —— 因此 {@link #setHasWalkAnim(boolean)} 传 false，
- * 基类会始终按 walk 速度 / walk 动画移动。索敌、追击、近战继承 {@link BaseHostEntity}，
- * 技能等留给后续机制层补齐。</p>
- *
- * <p>注册信息（由 {@code EntityTypeRegistry} 登记）：id {@code corruption_sheep}，碰撞箱 0.8 × 1.2。</p>
- */
+/** 同化羊：近战 + B10（12 根 / 3.0）+ B9 尸群践踏（4 只）。 */
 public class CorruptionSheepEntity extends BaseHostEntity {
 
     public CorruptionSheepEntity(EntityType<? extends CorruptionSheepEntity> entityType, Level level,
@@ -27,8 +19,11 @@ public class CorruptionSheepEntity extends BaseHostEntity {
         this.setHasWalkAnim(false);
         this.setWalkSpeed(0.23F);
         this.setRunSpeed(0.31F);
-        this.setFakeDeathChance(40);
-        this.setFakeDeathDuration(30);
+        this.setFakeDeathEnabled(true);
+        this.setFakeDeathChance(50);
+        this.setFakeDeathDuration(45);
+        this.enableBoneBurst(12, 3.0F);
+        this.enableHordeCharge(4, 12.0);
     }
 
     public static AttributeSupplier.Builder createAttributes() {

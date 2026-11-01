@@ -10,14 +10,7 @@ import org.bytechen.rottenruins.overworld.registry.entities.population.corruptio
 
 import java.util.function.Consumer;
 
-/**
- * 同化猪（简化移植版，原 corruption 工程 {@code InfectionPigEntity}）。
- *
- * <p>没有 run 动画，只有 walk —— {@link #setHasWalkAnim(boolean)} 传 false，始终用 walk 速度。
- * 索敌、追击、近战继承 {@link BaseHostEntity}，技能等留给后续机制层补齐。</p>
- *
- * <p>注册信息（由 {@code EntityTypeRegistry} 登记）：id {@code corruption_pig}，碰撞箱 0.8 × 1.2。</p>
- */
+/** 同化猪：近战 + B9 尸群践踏（3 只）+ B11 血肉牵引（0.8）+ B12 汲血（0.3）。 */
 public class CorruptionPigEntity extends BaseHostEntity {
 
     public CorruptionPigEntity(EntityType<? extends CorruptionPigEntity> entityType, Level level,
@@ -26,8 +19,12 @@ public class CorruptionPigEntity extends BaseHostEntity {
         this.setHasWalkAnim(false);
         this.setWalkSpeed(0.23F);
         this.setRunSpeed(0.31F);
-        this.setFakeDeathChance(40);
-        this.setFakeDeathDuration(30);
+        this.setFakeDeathEnabled(true);
+        this.setFakeDeathChance(50);
+        this.setFakeDeathDuration(45);
+        this.enableHordeCharge(3, 12.0);
+        this.enableFleshPull(0.8);
+        this.enableLifesteal(0.3F);
     }
 
     public static AttributeSupplier.Builder createAttributes() {

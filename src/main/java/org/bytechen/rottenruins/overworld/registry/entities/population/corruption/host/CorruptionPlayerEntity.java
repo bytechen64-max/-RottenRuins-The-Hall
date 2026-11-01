@@ -10,14 +10,7 @@ import org.bytechen.rottenruins.overworld.registry.entities.population.corruptio
 
 import java.util.function.Consumer;
 
-/**
- * 同化玩家（简化移植版，原 corruption 工程 {@code InfectionPlayerEntity}）。
- *
- * <p>只保留构造器里的资源 / 动画速度 / 假死配置与 {@link #createAttributes()}，
- * 索敌、追击、近战全部继承 {@link BaseHostEntity}；技能等留给后续机制层补齐。</p>
- *
- * <p>注册信息（由 {@code EntityTypeRegistry} 登记）：id {@code corruption_player}，碰撞箱 0.6 × 1.95。</p>
- */
+/** 同化玩家：近战 + B10（8 根 / 4.0）+ B11 血肉牵引（0.9）+ B12 汲血（0.35）。 */
 public class CorruptionPlayerEntity extends BaseHostEntity {
 
     public CorruptionPlayerEntity(EntityType<? extends CorruptionPlayerEntity> entityType, Level level,
@@ -26,8 +19,12 @@ public class CorruptionPlayerEntity extends BaseHostEntity {
         this.setHasWalkAnim(true);
         this.setWalkSpeed(0.23F);
         this.setRunSpeed(0.31F);
-        this.setFakeDeathChance(40);
-        this.setFakeDeathDuration(30);
+        this.setFakeDeathEnabled(true);
+        this.setFakeDeathChance(50);
+        this.setFakeDeathDuration(45);
+        this.enableBoneBurst(8, 4.0F);
+        this.enableFleshPull(0.9);
+        this.enableLifesteal(0.35F);
     }
 
     public static AttributeSupplier.Builder createAttributes() {

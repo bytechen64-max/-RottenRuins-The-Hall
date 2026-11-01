@@ -10,12 +10,7 @@ import org.bytechen.rottenruins.overworld.registry.entities.population.corruptio
 
 import java.util.function.Consumer;
 
-/**
- * 同化僵尸（简化版模板）。
- *
- * <p>这是 22 个腐化生物的迁移模板：只保留构造函数（资源 / 动画速度 / 假死概率）、
- * {@link #createAttributes()} 与父类默认索敌/近战；技能、特殊 AI 等留给后续机制层补齐。</p>
- */
+/** 同化僵尸：近战 + B10 濒死骨爆（10 根 / 3.5 伤害）。 */
 public class CorruptionZombieEntity extends BaseHostEntity {
 
     public CorruptionZombieEntity(EntityType<? extends CorruptionZombieEntity> entityType, Level level,
@@ -24,8 +19,10 @@ public class CorruptionZombieEntity extends BaseHostEntity {
         this.setHasWalkAnim(true);
         this.setWalkSpeed(0.23F);
         this.setRunSpeed(0.31F);
-        this.setFakeDeathChance(40);
-        this.setFakeDeathDuration(30);
+        this.setFakeDeathEnabled(true);
+        this.setFakeDeathChance(50);
+        this.setFakeDeathDuration(45);
+        this.enableBoneBurst(10, 3.5F);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
