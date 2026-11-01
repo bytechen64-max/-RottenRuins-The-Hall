@@ -19,6 +19,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import org.bytechen.infcore.api.IInfectedEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.base.RottenFaction;
+import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionEntityTypes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -492,7 +493,16 @@ public final class CorruptionSkillUtil {
     public static void spawnPoolAt(Level level, Vec3 pos, double radius,
                                    int lifetime, float damage, int interval,
                                    @Nullable LivingEntity owner) {
-        // TODO: port CorruptionPoolEntity in skill batch 2
+        if (!(level instanceof ServerLevel serverLevel)) return;
+        CorruptionPoolEntity pool = CorruptionEntityTypes.CORRUPTION_POOL.get().create(level);
+        if (pool == null) return;
+        pool.setOwner(owner);
+        pool.setRadius((float) radius);
+        pool.setLifetime(lifetime);
+        pool.setDamagePerInterval(damage);
+        pool.setDamageInterval(interval);
+        pool.moveTo(pos.x, pos.y, pos.z);
+        serverLevel.addFreshEntity(pool);
     }
 
     /** 半径内的同族腐蚀生物数量（不含自己） */

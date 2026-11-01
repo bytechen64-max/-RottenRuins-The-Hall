@@ -121,6 +121,45 @@
 - [x] 渲染方式已确认：`CorruptionDart`/`CorruptionPoolEntity` 空渲染器 + 粒子；`CuboidEntity`/`ShieldEntity` 自绘 POSITION_COLOR；`AcidBall/BoneSpike/PoisonArrow` 走 Geo 弹射物（可复用 `AbstractHallProjectile` + `GeoProjectileRenderer`）。
 - [ ] 后续批次：`SkillProjectileRenderer`、`CuboidRenderer`、`ShieldRenderer` 与 7 个技能实体类；4 个家族生物的技能逻辑；6 个腐化粒子 + 9 个自定义音效。
 
+### 1.10 技能补齐 阶段 1（2026-11-01）：技能实体层 + degenerate 技能 + 移动速度修复
+
+#### 移动速度问题（本轮修复）
+- **根因**：corruption 原工程的 `walkSpeed/runSpeed` 是 **moveTo 目标速度倍率**（0.8–2.0），
+  而合并工程 `AbstractRottenEntity` 把这两个值直接写进 `MOVEMENT_SPEED` 属性
+  （Hall 语义）。合并时把腐化猪/村民/僵尸等的 `runSpeed=0.9~1.0` 当属性写进去 →
+  追击时实际速度是玩家的 3.6–4 倍；未单独设置速度的家族则落到基类默认 `0.6/1.2`（4.8 倍）。
+- **修复**：基类默认值 `0.6/1.2 → 0.18/0.24`；`BaseCorruptionEntity` 默认 `0.20/0.26`；
+  20 个腐化生物按原工程 `Attributes.MOVEMENT_SPEED` 重设（walk≈0.9x、run≈1.2x）：
+  - 0.26 系（degenerate 4 / groveler / host 多数 / long_arm / original_bug / summoning）→ `0.23/0.31`
+  - 蝙蝠 → `0.18/0.24`；鸡 → `0.21/0.21`；骷髅 → `0.14/0.18`
+  - attacker → `0.16/0.22`；bearer → `0.14/0.18`；shocker → `0.22/0.29`
+  - 固定不动的（骨堆 / 腐植柱 / 召唤柱）保持 `0/0`
+
+#### 技能实体层（阶段 1，已编译）
+- 新增 `.../population/corruption/skill/`：`AbstractCorruptionProjectile`（基类）、
+  `BoneSpikeEntity`、`CorruptionDart`（通用腐蚀弹体：伤害/颜色/重力/落地池/命中效果运行时配置）、
+  `CorruptionPoolEntity`（持续腐蚀池）、`CuboidEntity`（方块墙）、`ShieldEntity`（护盾）、
+  `AcidBallProjectile`、`PoisonArrowProjectile`。
+- 实体注册（`CorruptionEntityTypes`）：`BONE_SPIKE / ACID_BALL / POISON_ARROW` 走
+  `EntityTypeRegistry.registerProjectile`（Geo 弹射物），`CORRUPTION_DART / CORRUPTION_POOL /
+  CUBOID / SHIELD` 走 noop 实体 + `ClientModEventHandler` 手动渲染。
+- 客户端渲染：新增 `SkillProjectileRenderer`（粒子弹体空渲染）、`CuboidRenderer`、`ShieldRenderer`。
+- `CorruptionSkillUtil.spawnPoolAt` 已接回 `CorruptionPoolEntity`。
+
+#### 生物技能（degenerate 家族 + 畸变种）
+- 腐化猪 **C3 蓄力冲锋**：蓄力 24t → 三段冲撞（速度/伤害递增），撞墙打断连段并长后摇。
+- 腐化牛 **C4 屠宰者暴冲**（半血血怒：增伤/提速/抗击退） + **C5 血肉偿还**
+  （割 40% 当前血量射出等比血爆弹，命中附加流血，落点留腐蚀池）。
+- 腐化村民 **C1 酸液瘴气弹**（抛物线酸弹 + 酸池 + 裂解） + **C2 硬化召唤**
+  （低血召唤 4 面血肉墙、墙会伤害触碰者、自身回血） + 保留 15t 酸球。
+- 匍匐者 **C10 地底突袭**：钻地不可选中 → 目标脚下预警 14t → 破土范围真伤 + 减速 + 流血。
+- 腐化僵尸：原工程无独立技能（纯近战），仅保留假死/属性。
+
+#### 后续待办
+- refactored 4（Attacker/Bearer/LongArmBeast/Shocker）、host 11、linked 2、original 1 的技能接入；
+- 技能动画通道（合并基类目前只有 idle/walk/run/die 控制器，原 `triggerAnim` 未接）；
+- 腐化粒子和自定义音效（缺口清单见 `corruption-skill-assets.md`）。
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）

@@ -26,6 +26,9 @@ public abstract class BaseCorruptionEntity extends AbstractRottenEntity {
     protected BaseCorruptionEntity(EntityType<? extends BaseCorruptionEntity> entityType, Level level,
                                    Consumer<AbstractRottenEntity> resources) {
         super(entityType, level);
+        // 腐化系默认速度（原工程 MOVEMENT_SPEED≈0.26，追击 1.2x）
+        this.setWalkSpeed(0.20F);
+        this.setRunSpeed(0.26F);
         resources.accept(this);
     }
 

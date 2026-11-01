@@ -34,6 +34,14 @@ import org.bytechen.rottenruins.overworld.registry.entities.population.corruptio
 import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.refactored.BearerEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.refactored.LongArmBeastEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.refactored.ShockerEntity;
+import org.bytechen.rottenruins.overworld.registry.EntityTypeRegistry;
+import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.skill.AcidBallProjectile;
+import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.skill.BoneSpikeEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.skill.CorruptionDart;
+import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.skill.CorruptionPoolEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.skill.CuboidEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.skill.PoisonArrowProjectile;
+import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.skill.ShieldEntity;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -170,4 +178,49 @@ public class CorruptionEntityTypes {
             registerMob("original_bug", 0.6f, 0.8f,
                     (t, l) -> new OriginalBugEntity(t, l, defaultResources("original_bug")),
                     OriginalBugEntity::createAttributes);
+
+    // ==================== 技能实体（腐化技能层，阶段 1） ====================
+
+    /** 骨刺：死亡/技能时弹射的骨制飞刺（GeckoLib 模型） */
+    public static final RegistryObject<EntityType<BoneSpikeEntity>> BONE_SPIKE =
+            EntityTypeRegistry.registerProjectile("bone_spike", 0.3f, 0.3f,
+                    (type, level) -> new BoneSpikeEntity(type, level, spike -> {
+                        spike.setModel(new ResourceLocation(HallMod.MODID, "geo/bone_spike.geo.json"));
+                        spike.setTexture(new ResourceLocation(HallMod.MODID, "textures/entity/bone_spike.png"));
+                        spike.setAnimation(new ResourceLocation(HallMod.MODID, "animations/bone_spike.animation.json"));
+                    }));
+
+    /** 酸球：腐化村民吐出的酸液弹（GeckoLib 模型） */
+    public static final RegistryObject<EntityType<AcidBallProjectile>> ACID_BALL =
+            EntityTypeRegistry.registerProjectile("acid_ball", 0.5f, 0.5f,
+                    (type, level) -> new AcidBallProjectile(type, level, ball -> {
+                        ball.setModel(new ResourceLocation(HallMod.MODID, "geo/acid_ball.geo.json"));
+                        ball.setTexture(new ResourceLocation(HallMod.MODID, "textures/item/acid_ball.png"));
+                        ball.setAnimation(new ResourceLocation(HallMod.MODID, "animations/acid_ball.animation.json"));
+                    }));
+
+    /** 毒箭：腐化骷髅的远程射击（GeckoLib 模型） */
+    public static final RegistryObject<EntityType<PoisonArrowProjectile>> POISON_ARROW =
+            EntityTypeRegistry.registerProjectile("poison_arrow", 0.5f, 0.5f,
+                    (type, level) -> new PoisonArrowProjectile(type, level, arrow -> {
+                        arrow.setModel(new ResourceLocation(HallMod.MODID, "geo/poison_arrow.geo.json"));
+                        arrow.setTexture(new ResourceLocation(HallMod.MODID, "textures/entity/poison_arrow.png"));
+                        arrow.setAnimation(new ResourceLocation(HallMod.MODID, "animations/poison_arrow.animation.json"));
+                    }));
+
+    /** 通用腐蚀弹体：吐息/箭雨/喷吐/酸弹共用（运行时配置伤害/颜色/重力/效果） */
+    public static final RegistryObject<EntityType<CorruptionDart>> CORRUPTION_DART =
+            EntityTypeRegistry.registerNoopEntity("corruption_dart", 0.3f, 0.3f, CorruptionDart::new);
+
+    /** 腐蚀液池：技能落点的持续区域 */
+    public static final RegistryObject<EntityType<CorruptionPoolEntity>> CORRUPTION_POOL =
+            EntityTypeRegistry.registerNoopEntity("corruption_pool", 3.0f, 0.4f, CorruptionPoolEntity::new);
+
+    /** 方块墙（自绘立方体，临时阻挡/墙技能） */
+    public static final RegistryObject<EntityType<CuboidEntity>> CUBOID =
+            EntityTypeRegistry.registerNoopEntity("cuboid", 1.0f, 1.0f, CuboidEntity::new);
+
+    /** 护盾（自绘二十面体） */
+    public static final RegistryObject<EntityType<ShieldEntity>> SHIELD =
+            EntityTypeRegistry.registerNoopEntity("shield", 1.0f, 1.0f, ShieldEntity::new);
 }

@@ -106,8 +106,8 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
     /** 是否启用爆体：默认开启 —— 所有王庭生物都会爆体，使徒（BaseApostleEntity）在构造器里关闭。 */
     protected boolean fakeDeathEnabled = true;
     protected boolean hasWalkAnim = false;
-    protected float walkSpeed = 0.6f;
-    protected float runSpeed = 1.2f;
+    protected float walkSpeed = 0.18f;   // 兜底：接近玩家 0.25 的 0.7x，避免子类漏设时异常
+    protected float runSpeed = 0.24f;    // 追击速度兜底（不是动画速度，单位见 MOVEMENT_SPEED）
     protected boolean stopAiAtDist = true;
     protected boolean defaultControllersEnabled = true;
 

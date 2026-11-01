@@ -37,6 +37,11 @@ import org.bytechen.rottenruins.overworld.registry.RegisterParticles;
 import org.bytechen.rottenruins.overworld.registry.entities.base.EntityManager;
 import org.bytechen.rottenruins.overworld.registry.entities.base.HallEntityManager;
 import org.bytechen.rottenruins.overworld.registry.entities.base.HallProjectileManager;
+import net.minecraft.world.entity.Entity;
+import org.bytechen.rottenruins.client.entity.render.SkillProjectileRenderer;
+import org.bytechen.rottenruins.client.entity.render.impl.CuboidRenderer;
+import org.bytechen.rottenruins.client.entity.render.impl.ShieldRenderer;
+import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionEntityTypes;
 import org.bytechen.rottenruins.overworld.registry.items.BlockBarTooltip;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.item.ItemProperties;
@@ -69,6 +74,12 @@ public class ClientModEventHandler {
             registerGeoBaseRenderer(event, type);
         for (EntityType<?> type : HallProjectileManager.consumeProjectileTypes())
             registerGeoProjectileRenderer(event, type);
+
+        // ---- 腐化技能实体渲染（简单粒子弹体 / 自绘立方体 / 自绘护盾） ----
+        event.registerEntityRenderer(CorruptionEntityTypes.CORRUPTION_DART.get(), SkillProjectileRenderer::new);
+        event.registerEntityRenderer(CorruptionEntityTypes.CORRUPTION_POOL.get(), SkillProjectileRenderer::new);
+        event.registerEntityRenderer(CorruptionEntityTypes.CUBOID.get(), CuboidRenderer::new);
+        event.registerEntityRenderer(CorruptionEntityTypes.SHIELD.get(), ShieldRenderer::new);
         for (EntityType<?> type : EntityManager.consumeSkillEntityTypes())
             registerGeoEntityRenderer(event, type);
 

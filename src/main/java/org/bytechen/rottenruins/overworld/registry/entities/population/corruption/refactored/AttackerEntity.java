@@ -23,8 +23,8 @@ public class AttackerEntity extends BaseRefactoredEntity {
                           Consumer<AbstractRottenEntity> resources) {
         super(entityType, level, resources);
         this.setHasWalkAnim(true);
-        this.setWalkSpeed(0.21F);
-        this.setRunSpeed(0.9F);
+        this.setWalkSpeed(0.16F);
+        this.setRunSpeed(0.22F);
         this.setFakeDeathChance(40);
         this.setFakeDeathDuration(30);
     }

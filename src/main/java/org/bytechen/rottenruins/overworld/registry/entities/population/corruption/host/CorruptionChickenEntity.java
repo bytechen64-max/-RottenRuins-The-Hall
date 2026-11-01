@@ -25,8 +25,8 @@ public class CorruptionChickenEntity extends BaseHostEntity {
                                    Consumer<AbstractRottenEntity> resources) {
         super(entityType, level, resources);
         this.setHasWalkAnim(false);
-        this.setWalkSpeed(0.2F);
-        this.setRunSpeed(0.6F);
+        this.setWalkSpeed(0.21F);
+        this.setRunSpeed(0.21F);
         this.setFakeDeathChance(40);
         this.setFakeDeathDuration(30);
     }
