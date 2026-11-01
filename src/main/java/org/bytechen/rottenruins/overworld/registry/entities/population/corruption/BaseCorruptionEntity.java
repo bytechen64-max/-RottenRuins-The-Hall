@@ -6,8 +6,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.level.Level;
-import org.bytechen.infcore.api.goal.InfectedTargetGoal;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.ChaseLockGoal;
+import org.bytechen.rottenruins.overworld.registry.entities.ai.CorruptionHuntGoal;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.FaceTargetGoal;
 import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.base.RottenFaction;
@@ -58,13 +58,8 @@ public abstract class BaseCorruptionEntity extends AbstractRottenEntity {
     protected void registerGoals() {
         // 追击占位（只占 MOVE）：有目标时压住 RandomStrollGoal
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
-        // 索敌：统一走 infcore 阵营判断（同阵营感染生物默认不互殴，玩家按威胁值过滤）
-        this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
-                .range(40.0D)
-                .mustSee(false)
-                .targetOtherInfected(true)   // 腐化 vs 王庭：跨阵营索敌（同类型仍被 infcore 过滤）
-                .filter(this)
-                .build());
+        // 索敌：腐化专属的积极狩猎 Goal（5t 扫描、64 格、无视线要求；同阵营不互殴）
+        this.goalSelector.addGoal(2, new CorruptionHuntGoal(this, 64.0D));
         this.goalSelector.addGoal(2, new FaceTargetGoal(this, 4));
         this.goalSelector.addGoal(5, new RandomStrollGoal(this, 0.8D));
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));

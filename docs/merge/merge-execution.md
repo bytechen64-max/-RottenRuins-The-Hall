@@ -404,6 +404,26 @@ spread_infection_leaves / spread_infection_wood）注册时是普通 `Block`，�
 可调参数：`AbstractRottenEntity.NEARBY_PLAYER_AGGRO_DISTANCE`（12 格）、
 腐化目标 goal 的 `range(40.0)`。
 
+### 1.23 腐化系专用索敌 Goal（更快更远）（2026-11-01）
+
+**问题**：腐化系之前用的是 infcore 的 `InfectedTargetGoal`（扫描 10t 一次、范围 40 格），
+对"其他生物"的索敌存在感偏低。
+
+**新增 `CorruptionHuntGoal`**（`overworld/registry/entities/ai/`）：
+- 扫描间隔 **5t**（原 10t）；
+- 索敌半径 **64 格**（原 40 格）；
+- 不做视线检查（隔墙也能锁定）；
+- 同阵营腐化生物不互殴；王庭、动物、村民、玩家全部可锁定（玩家排除创造/旁观）；
+- 直接 `setTarget`，配合已有的 `ChaseLockGoal + tickChase` 追击。
+
+已替换 `BaseCorruptionEntity.registerGoals` 里的 infcore 目标 goal。
+
+**实测（dedicated server + RCON）**：
+- 腐化僵尸放在 (2,91,2)，牛放在 38 格外：12 秒内牛被击杀（原地变成腐化牛）；
+- 相邻测试中腐化僵尸对王庭骷髅造成了实际伤害（45 → 34.5）。
+→ 腐化对普通生物/王庭的索敌与攻击链路是通的；若游戏内仍显被动，主要受限于
+"目标在 64 格外 / 寻路失败（墙、水、高低差）/ 附近没有玩家导致 `stopAiAtDist` 暂停 AI"。
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）
