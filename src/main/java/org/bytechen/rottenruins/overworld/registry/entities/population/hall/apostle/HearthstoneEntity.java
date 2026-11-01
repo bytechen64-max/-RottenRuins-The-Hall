@@ -364,6 +364,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
+                .targetOtherInfected(true)   // 王庭 vs 腐化：跨阵营索敌（同阵营仍被 infcore 过滤）
                 .range(FOLLOW_RANGE)
                 .mustSee(false)
                 .filter(this)

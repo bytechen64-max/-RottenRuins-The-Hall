@@ -128,6 +128,7 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
         // 免得"追击路径"被随机散步顶掉（位移本身仍由 AbstractRottenEntity#tickChase 发起）
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
+                .targetOtherInfected(true)   // 王庭 vs 腐化：跨阵营索敌（同阵营仍被 infcore 过滤）
                 .range(40.0)
                 // 威胁点数过滤器：玩家威胁 < 5 不主动索敌；非玩家生物照常索敌
                 .filter(this)

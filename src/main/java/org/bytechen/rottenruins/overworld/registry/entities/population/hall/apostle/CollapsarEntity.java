@@ -379,6 +379,7 @@ public class CollapsarEntity extends BaseApostleEntity {
     protected void registerGoals() {
         // 索敌：64 格内看见就打（不需要视线 —— 它靠悬停俯视，隔着树叶也应该锁人）
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
+                .targetOtherInfected(true)   // 王庭 vs 腐化：跨阵营索敌
                 .range(FOLLOW_RANGE)
                 .mustSee(false)
                 // 威胁点数过滤器：玩家威胁 < 5 不主动索敌；非玩家生物照常索敌

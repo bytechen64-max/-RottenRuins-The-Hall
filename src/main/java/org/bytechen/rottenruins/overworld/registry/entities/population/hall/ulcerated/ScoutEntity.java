@@ -161,6 +161,7 @@ public class ScoutEntity extends BaseUlceratedEntity {
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
         // 索敌：与其它王庭生物一致 —— goalSelector 优先级 2，40 格内无需视线
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
+                .targetOtherInfected(true)   // 王庭 vs 腐化：跨阵营索敌（同阵营仍被 infcore 过滤）
                 .range(40.0)
                 .mustSee(false)
                 // 威胁点数过滤器：玩家威胁 < 5 不主动索敌；非玩家生物照常索敌

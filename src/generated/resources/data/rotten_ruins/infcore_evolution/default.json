@@ -25,6 +25,30 @@
       "source": "minecraft:skeleton"
     },
     {
+      "type": "rotten_ruins:hall_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_player",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:corruption_player"
+    },
+    {
+      "type": "rotten_ruins:hall_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_skeleton",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:corruption_skeleton"
+    },
+    {
       "type": "rotten_ruins:hall_evo",
       "keepEquipment": false,
       "keepNbt": false,

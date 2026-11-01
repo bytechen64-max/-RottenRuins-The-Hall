@@ -44,6 +44,14 @@ public class EvolutionDataProvider extends org.bytechen.infcore.core.datagen.Evo
         entries.add(entry(hallInf, EntityType.SKELETON, false, false,
                 List.of(target(EntityTypeRegistry.INF_SKELETON.get(), 100))));
 
+        // 王庭击杀腐化生物后的转换规则（corruption victim -> hall 形态）：
+        // 有对应王庭形态的走显式规则；其余腐化生物由 UlceratedConversionRules 的
+        // 体积兜底（小 -> 斥候 / 中 -> 追迹者 / 大 -> 巨碑）自动转换。
+        entries.add(entry(hallInf, CorruptionEntityTypes.CORRUPTION_PLAYER.get(), false, false,
+                List.of(target(EntityTypeRegistry.INF_PLAYER.get(), 100))));
+        entries.add(entry(hallInf, CorruptionEntityTypes.CORRUPTION_SKELETON.get(), false, false,
+                List.of(target(EntityTypeRegistry.INF_SKELETON.get(), 100))));
+
         // ==================== 王庭：巨碑进阶 ====================
         // 注意：同一 source 的两条规则会互相覆盖，必须写成一条 entry + 两个 target。
         entries.add(entry(hallEvo, EntityTypeRegistry.MONOLITH.get(), false, false,

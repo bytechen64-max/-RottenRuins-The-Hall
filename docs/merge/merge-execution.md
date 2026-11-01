@@ -267,6 +267,22 @@
 - 触发时播放粒子爆发 + 冲击环，然后由 infcore `EvolutionManager` 生成对应的腐化种实体；
 - 数据侧在 `EvolutionDataProvider` 里以 `corruption_evo` 类型新增 4 条规则（`runData` 已生成，总计 18 条规则）。
 
+### 1.16 跨阵营索敌：王庭 → 腐化（2026-11-01）
+
+**索敌**：王庭侧 10 个 `InfectedTargetGoal` 全部加上 `.targetOtherInfected(true)`：
+- 王庭生物（`hall_player / hall_skeleton / hall_enderman / scout / pursuer / monolith /
+  bonecrusher / heavy_bomb / collapsar / hearthstone`）现在会主动索敌腐化生物；
+- infcore 的感染过滤会自动拒绝"相同感染类型"目标（王庭内部仍不互殴），
+  腐化生物对王庭的索敌仍保持关闭（单向）。
+
+**转换规则**（`hall_inf`，王庭击杀腐化生物时触发）：
+- 有对应王庭形态的走显式规则：
+  - `corruption_player` → `hall_player`
+  - `corruption_skeleton` → `hall_skeleton`
+- 其余腐化生物走 `UlceratedConversionRules` 的体积兜底：
+  小体积 → 痈溃斥候，中体积 → 痈溃追迹者，大体积 → 痈溃巨碑；
+- 生成规则写入 `EvolutionDataProvider`，`runData` 已重新生成（`hall_inf` 现在 4 条规则，总计 20 条）。
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）

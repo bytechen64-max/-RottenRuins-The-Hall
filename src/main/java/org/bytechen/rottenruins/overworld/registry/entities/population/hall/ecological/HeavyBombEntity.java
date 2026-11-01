@@ -121,6 +121,7 @@ public class HeavyBombEntity extends BaseEcologicalEntity {
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
+                .targetOtherInfected(true)   // 王庭 vs 腐化：跨阵营索敌（同阵营仍被 infcore 过滤）
                 .range(40.0)
                 .mustSee(false)
                 // 威胁点数过滤器：玩家威胁 < 5 不主动索敌；非玩家生物照常索敌

@@ -76,6 +76,7 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         // 而它的 doHurtTarget 在基类里被写死为 false，攻击部分一直空转。
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
         this.targetSelector.addGoal(1, new InfectedTargetGoal.Builder(this)
+                .targetOtherInfected(true)   // 王庭 vs 腐化：跨阵营索敌（同阵营仍被 infcore 过滤）
                 .range(40.0)          // 搜索范围
                 .mustSee(false)       // 无需视线
                 // 威胁点数过滤器：玩家威胁 < 5 不主动索敌；非玩家生物照常索敌
