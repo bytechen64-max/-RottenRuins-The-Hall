@@ -13,6 +13,9 @@
     "rotten_ruins:hall_sandstone",
     "rotten_ruins:hall_ash_cut_sandstone",
     "rotten_ruins:hall_ash_smooth_sandstone",
-    "rotten_ruins:hall_ash_collapsed_chiseled_sandstone"
+    "rotten_ruins:hall_ash_collapsed_chiseled_sandstone",
+    "rotten_ruins:grounding_stake",
+    "rotten_ruins:source_filter",
+    "rotten_ruins:source_collector"
   ]
 }

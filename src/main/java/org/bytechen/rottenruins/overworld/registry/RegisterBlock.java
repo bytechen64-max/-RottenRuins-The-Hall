@@ -21,6 +21,9 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.DeathCoreBlock;
+import org.bytechen.rottenruins.overworld.registry.blocks.impl.GroundingStakeBlock;
+import org.bytechen.rottenruins.overworld.registry.blocks.impl.SourceWireBlock;
+import org.bytechen.rottenruins.overworld.registry.blocks.impl.SourceMachineBlock;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.FleshRiftBlock;
 import org.bytechen.rottenruins.overworld.registry.items.DeathCoreBlockItem;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.HallAshCactusBlock;
@@ -91,6 +94,20 @@ public class RegisterBlock {
     }
 
     // ==================== impl ====================
+
+    public static final RegistryObject<SourceMachineBlock> SOURCE_FILTER=registerBlockWithItem("source_filter",()->
+            new SourceMachineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F).noOcclusion(),false));
+    public static final RegistryObject<SourceMachineBlock> SOURCE_COLLECTOR=registerBlockWithItem("source_collector",()->
+            new SourceMachineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F).noOcclusion(),true));
+
+    public static final RegistryObject<GroundingStakeBlock> GROUNDING_STAKE =
+            registerBlockWithItem("grounding_stake", () -> new GroundingStakeBlock(
+                    BlockBehaviour.Properties.copy(Blocks.LIGHTNING_ROD).noOcclusion().strength(1.5F)));
+
+    public static final RegistryObject<SourceWireBlock> SOURCE_WIRE =
+            registerBlockWithItem("source_wire", () -> new SourceWireBlock(
+                    BlockBehaviour.Properties.copy(Blocks.REDSTONE_WIRE).noCollission().noOcclusion()
+                            .lightLevel(state -> state.getValue(SourceWireBlock.POWER))));
 
 
     /**

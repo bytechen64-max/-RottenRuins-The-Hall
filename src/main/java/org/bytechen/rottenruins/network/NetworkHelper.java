@@ -64,6 +64,10 @@ public class NetworkHelper {
         NETWORK.registerMessage(packetId++, MagicPoolSyncPacket.class,
                 MagicPoolSyncPacket::encode, MagicPoolSyncPacket::decode, MagicPoolSyncPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        NETWORK.registerMessage(packetId++, org.bytechen.rottenruins.network.c2s.FilterSettingsPacket.class,
+                org.bytechen.rottenruins.network.c2s.FilterSettingsPacket::encode,
+                org.bytechen.rottenruins.network.c2s.FilterSettingsPacket::decode,
+                org.bytechen.rottenruins.network.c2s.FilterSettingsPacket::handle,Optional.of(NetworkDirection.PLAY_TO_SERVER));
     }
 
     public static <MSG> void sendToPlayer(ServerPlayer player, MSG msg) { NETWORK.send(PacketDistributor.PLAYER.with(() -> player), msg); }

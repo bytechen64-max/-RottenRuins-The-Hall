@@ -35,10 +35,15 @@ public final class RotAdvancementTriggers {
         }
         registered = true;
         CriteriaTriggers.register(FirstJoinTrigger.INSTANCE);
+        CriteriaTriggers.register(SourceMilestoneTrigger.INSTANCE);
     }
 
     /** 玩家进入世界时发放「初次踏入世界」判据（进度只发一次，重复登录自动 no-op）。 */
     public static void triggerFirstJoin(ServerPlayer player) {
         FirstJoinTrigger.INSTANCE.trigger(player);
+    }
+
+    public static void triggerSourceMilestone(ServerPlayer player,SourceMilestoneTrigger.Milestone milestone) {
+        SourceMilestoneTrigger.INSTANCE.trigger(player,milestone);
     }
 }

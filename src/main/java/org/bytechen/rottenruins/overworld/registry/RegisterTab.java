@@ -130,8 +130,22 @@ public class RegisterTab {
 
                     // ─────────────────────────── 魔法（13） ───────────────────────────
                     .section(section("magic"), (params, output) -> {
-                        // 法力板（七系）
+                        items(output,RegisterBlock.SOURCE_FILTER.get().asItem(),RegisterBlock.SOURCE_COLLECTOR.get().asItem());
+                        items(output, RegisterBlock.GROUNDING_STAKE.get().asItem(), RegisterBlock.SOURCE_WIRE.get().asItem());
+                        // 储魔瓶与魔法材料
                         items(output,
+                        RegisterItem.MANA_BOTTLE.get(),
+                        RegisterItem.LIGHT_MANA_BOTTLE.get(),
+                        RegisterItem.FIRE_MANA_BOTTLE.get(),
+                        RegisterItem.WATER_MANA_BOTTLE.get(),
+                        RegisterItem.NATURE_MANA_BOTTLE.get(),
+                        RegisterItem.VOID_MANA_BOTTLE.get(),
+                        RegisterItem.DEATH_MANA_BOTTLE.get(),
+                        RegisterItem.MYSTERIOUS_MANA_BOTTLE.get(),
+                        RegisterItem.SOURCE_CHARGE_SAND.get());
+                        // 基础板材与七系法力板
+                        items(output,
+                        RegisterItem.SOURCE_MANA_PLATE.get(),
                         RegisterItem.LIGHT_MANA_PLATE.get(),
                         RegisterItem.FIRE_MANA_PLATE.get(),
                         RegisterItem.WATER_MANA_PLATE.get(),
@@ -167,6 +181,7 @@ public class RegisterTab {
                     .section(section("gear"), (params, output) -> {
                         // 王庭武器与工具
                         items(output,
+                        RegisterItem.SIMPLE_FIELD_METER.get(),
                         RegisterItem.DOMERITE_SWORD.get(),
                         RegisterItem.DOMERITE_LONGSWORD.get(),
                         RegisterItem.DOMERITE_AXE.get(),
@@ -258,6 +273,10 @@ public class RegisterTab {
                     .section(section("misc"), (params, output) -> {
                         // 先放已经明确归入"其它"的物品
                         items(output,
+                        RegisterItem.CHIP_NULL.get(),
+                        RegisterItem.CHIP_ENHANCED.get(),
+                        RegisterItem.CHIP_SCAN.get(),
+                        RegisterItem.CHIP_EXTRACT.get(),
                         RegisterItem.INF_ENDER_PEAR.get());
                         // 再兜底收本命名空间里尚未归类的物品（example_item 是占位图标，不展示）
                         Set<Item> claimed = new LinkedHashSet<>();

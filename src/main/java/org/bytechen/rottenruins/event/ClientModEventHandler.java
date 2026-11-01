@@ -39,6 +39,11 @@ import org.bytechen.rottenruins.overworld.registry.entities.base.HallEntityManag
 import org.bytechen.rottenruins.overworld.registry.entities.base.HallProjectileManager;
 import org.bytechen.rottenruins.overworld.registry.items.BlockBarTooltip;
 import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.item.ItemProperties;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.RenderType;
+import org.bytechen.rottenruins.overworld.registry.RegisterBlock;
+import org.bytechen.rottenruins.overworld.registry.items.SimpleFieldMeterItem;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.resources.ResourceLocation;
@@ -210,6 +215,13 @@ public class ClientModEventHandler {
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
+        event.enqueueWork(()->net.minecraft.client.gui.screens.MenuScreens.register(
+                org.bytechen.rottenruins.overworld.registry.SourceMenus.SOURCE_MACHINE.get(),
+                org.bytechen.rottenruins.client.gui.SourceMachineScreen::new));
+        event.enqueueWork(() -> ItemBlockRenderTypes.setRenderLayer(RegisterBlock.SOURCE_WIRE.get(), RenderType.cutout()));
+        event.enqueueWork(() -> ItemProperties.register(RegisterItem.SIMPLE_FIELD_METER.get(),
+                ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "field_potential"),
+                (stack, level, entity, seed) -> SimpleFieldMeterItem.getReading(stack) / 2.0F));
         ClientEventHelpers.setupClientRenderLayers();
         ClientPacketHandlers.init();
 

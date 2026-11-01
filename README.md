@@ -5,6 +5,39 @@
 
 - 腐朽之疫：王庭，是基于系'腐朽之疫‘创造的第二个作品
 
+## 高势区密度
+
+游戏目录下的 `config/rotten_ruins/SplendidingConfig.json5` 中，
+`highPotentialChunkRarity` 控制高势区的稀有度，默认 `64`，表示平均每 64 个区块出现一个。
+设为 `32` 更密集，`128` 更稀疏；`0` 关闭，`1` 表示全部区块。
+旧配置中没有此项时使用默认值，也可手动添加 `highPotentialChunkRarity: 64`。
+
+修改文件后重启游戏或服务端生效；多人游戏以服务端配置为准。
+高势区由种子、维度和区块坐标即时计算，修改密度会同时改变已有区块和新生成区块的判定。
+管理员可用 `/rotten_ruins high_potential [chunkX chunkZ]` 查询当前维度的区块。
+
+简易场强计（`rotten_ruins:simple_field_meter`）位于创造栏的“武器与工具”分区。
+携带时每半秒刷新纹理：所在区块为高势区时显示高势能；否则在水平区块坐标半径
+5（含边界）的圆形范围内检测到高势区时显示中势能；其余显示低势能。
+读数由服务端计算并同步，遵循当前的高势区密度配置。
+
+## 接地桩与源导线
+
+滤波器调参与储魔瓶灌注见 [源荷滤波器与集荷器](docs/source-machines.md)。
+
+- 接地桩（`rotten_ruins:grounding_stake`）使用提供的模型，可以向六个方向放置。
+  模型底面必须贴在有坚固支撑的方块面上；接地桩不能支撑另一根接地桩，拆除支撑后会掉落。
+- 两个源荷砂无序合成一个源导线（`rotten_ruins:source_wire`），两者均在创造栏“魔法”分区。
+  导线像红石粉一样铺在地面，支持一格台阶，使用原版灰度红石纹理染成蓝色。
+- 在高势区放一根接地桩，在任意非高势区放另一根，用导线连接两根桩的相邻位置。
+  同一网络中同时存在高、低势接地桩时导线激活，显示亮蓝自发光并提供随强度变化的方块光照。
+- 从与高势桩相邻的导线算起，沿线最短路径每 4 格衰减 1 档，最高 15、最低 1；多个高势桩取最近者。
+  切断线路或拆除一端接地桩后熄灭，网络约每秒校验一次，只计算已加载的区块。
+  源导线的势能独立于原版红石信号。
+
+网络测试：`gradlew copyPatchedMods runGameTestServer --offline`；
+独立算法测试可编译 `PotentialCircuit.java` 与 `tools/tests/PotentialCircuitTest.java` 后运行 `PotentialCircuitTest`。
+
 ## 开发工具
 
 - [`tools/shader-preview`](tools/shader-preview/README.md)：不启动游戏的着色器离屏预览 / 编译检查（物品描边、法阵、光柱、魔法星图…）

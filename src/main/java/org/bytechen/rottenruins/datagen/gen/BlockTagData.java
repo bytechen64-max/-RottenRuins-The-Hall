@@ -33,7 +33,9 @@ public class BlockTagData extends BlockTagsProvider {
 
         // 死亡核心：石质手感，用镐挖；不强制需要钻石工具（比黑曜石软）。
         tag(BlockTags.MINEABLE_WITH_PICKAXE)
-                .add(RegisterBlock.DEATH_CORE.get());
+                .add(RegisterBlock.DEATH_CORE.get())
+                .add(RegisterBlock.GROUNDING_STAKE.get());
+        tag(BlockTags.MINEABLE_WITH_PICKAXE).add(RegisterBlock.SOURCE_FILTER.get(),RegisterBlock.SOURCE_COLLECTOR.get());
 
         // ========== HALL_PLANKS 建筑方块 ==========
 

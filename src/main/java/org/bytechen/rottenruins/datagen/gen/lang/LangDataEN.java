@@ -32,6 +32,7 @@ public class LangDataEN extends LanguageProvider {
         add("itemGroup." + HallMod.MODID + ".main.section.blocks", "Blocks");
         add("itemGroup." + HallMod.MODID + ".main.section.misc", "Miscellaneous");
         add(RegisterItem.EXAMPLE_ITEM.get(), "Example Item");
+        add(RegisterItem.SIMPLE_FIELD_METER.get(), "Simple Field Meter");
         add(RegisterItem.VOID_SWORD.get(), "Void Sword");
         add(RegisterItem.CRIMSON_VOW.get(), "Crimson Vow");
         add(RegisterItem.SILENT_DAYLIGHT.get(), "Silent Daylight");
@@ -232,6 +233,7 @@ public class LangDataEN extends LanguageProvider {
         // ---- Magic system · items ----
         // Mana plates: one per school.
         add(RegisterItem.DEATH_MANA_PLATE.get(), "Death Mana Plate");
+        add(RegisterItem.SOURCE_MANA_PLATE.get(), "Source Mana Plate");
         add(RegisterItem.FIRE_MANA_PLATE.get(), "Fire Mana Plate");
         add(RegisterItem.LIGHT_MANA_PLATE.get(), "Light Mana Plate");
         add(RegisterItem.NATURE_MANA_PLATE.get(), "Nature Mana Plate");
@@ -240,6 +242,63 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterItem.MYSTERIOUS_MANA_PLATE.get(), "Mysterious Mana Plate");
         add(RegisterItem.MAGIC_CATA.get(), "Magic Catalyst");
         add(RegisterItem.VOID_RUNE.get(), "Void Rune");
+        add(RegisterItem.MANA_BOTTLE.get(), "Mana Bottle");
+        add(RegisterItem.LIGHT_MANA_BOTTLE.get(), "Mana Bottle [Light]");
+        add(RegisterItem.FIRE_MANA_BOTTLE.get(), "Mana Bottle [Fire]");
+        add(RegisterItem.WATER_MANA_BOTTLE.get(), "Mana Bottle [Water]");
+        add(RegisterItem.NATURE_MANA_BOTTLE.get(), "Mana Bottle [Nature]");
+        add(RegisterItem.VOID_MANA_BOTTLE.get(), "Mana Bottle [Void]");
+        add(RegisterItem.DEATH_MANA_BOTTLE.get(), "Mana Bottle [Death]");
+        add(RegisterItem.MYSTERIOUS_MANA_BOTTLE.get(), "Mana Bottle [Mysterious]");
+        add(RegisterItem.SOURCE_CHARGE_SAND.get(), "Source Charge Sand");
+        add(RegisterItem.CHIP_NULL.get(), "Blank Chip");
+        add(RegisterItem.CHIP_ENHANCED.get(), "Enhanced Chip");
+        add(RegisterItem.CHIP_SCAN.get(), "Scanning Chip");
+        add(RegisterItem.CHIP_EXTRACT.get(), "Extraction Chip");
+        add(RegisterBlock.GROUNDING_STAKE.get(), "Grounding Stake");
+        add(RegisterBlock.SOURCE_WIRE.get(), "Source Wire");
+        add(RegisterBlock.SOURCE_FILTER.get(), "Source Charge Filter");
+        add(RegisterBlock.SOURCE_COLLECTOR.get(), "Charge Collector");
+        add("gui.rotten_ruins.source.reference", "Bands");
+        add("gui.rotten_ruins.source.mode.0", "Manual");
+        add("gui.rotten_ruins.source.mode.1", "Quick tune");
+        add("gui.rotten_ruins.source.mode.2", "Band table");
+        add("gui.rotten_ruins.source.fine_tune", "Fine tune");
+        add("gui.rotten_ruins.source.preset_hint", "Tune to %s: fc %s / B %s / G %s / φ %s. A powered source circuit is still required.");
+        add("gui.rotten_ruins.source.param.0.short", "Frequency fc");
+        add("gui.rotten_ruins.source.param.1.short", "Bandwidth B");
+        add("gui.rotten_ruins.source.param.2.short", "Gain G");
+        add("gui.rotten_ruins.source.param.3.short", "Phase φ");
+        add("gui.rotten_ruins.source.ports_hint", "Blue IN, orange OUT. Sneak-use with an empty hand to rotate.");
+        add("gui.rotten_ruins.source.reference_hint", "Inclusive windows; 0.1 steps; blue IN, orange OUT");
+        add("gui.rotten_ruins.source.spectrum", "FIELD OSCILLOSCOPE");
+        add("gui.rotten_ruins.source.unmatched", "No matching element window");
+        add("gui.rotten_ruins.source.tuned", "Element: %s");
+        add("gui.rotten_ruins.source.power", "Power %s/15");
+        add("gui.rotten_ruins.source.input_bottle", "Empty");
+        add("gui.rotten_ruins.source.output_bottle", "Filled");
+        add("gui.rotten_ruins.source.no_power", "No powered circuit");
+        add("gui.rotten_ruins.source.no_filter", "No upstream filter");
+        add("gui.rotten_ruins.source.invalid_band", "Outside element window");
+        add("gui.rotten_ruins.source.conflict", "Upstream filter conflict");
+        add("gui.rotten_ruins.source.output_full", "Clear the output slot");
+        add("gui.rotten_ruins.source.charging", "Charging bottle");
+        add("gui.rotten_ruins.source.insert_bottle", "Insert a blank mana bottle");
+        add("gui.rotten_ruins.source.param.0", "Center frequency fc: %s");
+        add("gui.rotten_ruins.source.param.1", "Bandwidth B: %s");
+        add("gui.rotten_ruins.source.param.2", "Gain G: %s");
+        add("gui.rotten_ruins.source.param.3", "Phase φ: %s");
+        add("gui.rotten_ruins.source.param.0.hint", "Main frequency of potential discharge. Range 0–10, step 0.1.");
+        add("gui.rotten_ruins.source.param.1.hint", "Passband width and coherence. Range 0–10, step 0.1.");
+        add("gui.rotten_ruins.source.param.2.hint", "Output amplitude and conversion strength. Range 0–10; higher valid gain charges faster.");
+        add("gui.rotten_ruins.source.param.3.hint", "Field polarity: positive (+) or inverted (−). Void requires inversion.");
+        add("gui.rotten_ruins.source.element.light", "Light");
+        add("gui.rotten_ruins.source.element.fire", "Fire");
+        add("gui.rotten_ruins.source.element.water", "Water");
+        add("gui.rotten_ruins.source.element.nature", "Nature");
+        add("gui.rotten_ruins.source.element.death", "Death");
+        add("gui.rotten_ruins.source.element.void", "Void");
+        add("gui.rotten_ruins.source.element.mysterious", "Mysterious");
         add(RegisterItem.WAND.get(), "Empty Wand");
         add(RegisterItem.WAND_NATURE.get(), "Nature Wand");
         add(RegisterItem.WAND_FIRE.get(), "Fire Wand");
@@ -534,5 +593,27 @@ public class LangDataEN extends LanguageProvider {
         add(AdvancementProviderData.titleKey(AdvancementProviderData.DEATH_PATH), "Death");
         add(AdvancementProviderData.descriptionKey(AdvancementProviderData.DEATH_PATH),
                 "§[rrs:glitch:amp=1.5]Obtain the Death Star§[/]");
+        add(AdvancementProviderData.titleKey(AdvancementProviderData.MAGIC_PATH), "Magic, a Piece of Cake!");
+        add(AdvancementProviderData.descriptionKey(AdvancementProviderData.MAGIC_PATH), "A discipline of mastering nature");
+        sourceAdvancement("field_meter","Invisible, Yet Measurable","Obtain a Simple Field Meter and start looking for potential differences");
+        sourceAdvancement("high_potential","A Promising Field","Enter a high-potential chunk while carrying a Simple Field Meter");
+        sourceAdvancement("grounding_stake","Feet on the Ground","Obtain a Grounding Stake to anchor the flow");
+        sourceAdvancement("source_wire","This Time It Is Not Redstone","Obtain Source Wire to connect high and low potential");
+        sourceAdvancement("source_filter","Order from Chaos","Obtain a Source Charge Filter");
+        sourceAdvancement("tuned_filter","On the Right Wavelength","Tune a filter into any valid element window");
+        sourceAdvancement("void_tuning","Think in Reverse","Tune a filter to the Void band with inverted phase");
+        sourceAdvancement("source_collector","Catch What You Can","Obtain a Charge Collector to fill mana bottles");
+        sourceAdvancement("powered_circuit","What Goes Around","Open a source machine connected to a valid high-to-low potential circuit");
+        sourceAdvancement("element_bottle","Flow in a Bottle","Obtain any elemental mana bottle");
+        sourceAdvancement("all_bottles","Seven Colors, One Collection","Obtain all seven elemental mana bottles over time");
+        sourceAdvancement("source_plate","A Foundation for Magic","Obtain a Source Mana Plate");
+        sourceAdvancement("element_plate","Magic Takes Shape","Obtain any elemental mana plate");
+        sourceAdvancement("all_plates","All Elements Accounted For","Obtain all seven elemental mana plates over time");
+    }
+
+    private void sourceAdvancement(String name,String title,String description) {
+        String path=AdvancementProviderData.sourcePath(name);
+        add(AdvancementProviderData.titleKey(path),title);
+        add(AdvancementProviderData.descriptionKey(path),description);
     }
 }

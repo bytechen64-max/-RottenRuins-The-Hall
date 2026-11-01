@@ -2,6 +2,7 @@ package org.bytechen.rottenruins.overworld.registry;
 
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.registry.blockentity.DeathCoreBlockEntity;
+import org.bytechen.rottenruins.overworld.registry.blockentity.SourceMachineBlockEntity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -13,6 +14,11 @@ import java.util.function.Supplier;
 
 public class RegisterBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, HallMod.MODID);
+
+    public static final RegistryObject<BlockEntityType<SourceMachineBlockEntity>> SOURCE_FILTER=BLOCK_ENTITIES.register("source_filter",()->
+            BlockEntityType.Builder.of((pos,state)->new SourceMachineBlockEntity(pos,state,false),RegisterBlock.SOURCE_FILTER.get()).build(null));
+    public static final RegistryObject<BlockEntityType<SourceMachineBlockEntity>> SOURCE_COLLECTOR=BLOCK_ENTITIES.register("source_collector",()->
+            BlockEntityType.Builder.of((pos,state)->new SourceMachineBlockEntity(pos,state,true),RegisterBlock.SOURCE_COLLECTOR.get()).build(null));
 
     public static <T extends BlockEntityType<?>> RegistryObject<T> registerBlockEntity(String name, Supplier<T> supplier) {
         return BLOCK_ENTITIES.register(name, supplier);

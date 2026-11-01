@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "rotten_ruins:block/source_filter",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "rotten_ruins:block/source_filter"
+    },
+    "facing=south": {
+      "model": "rotten_ruins:block/source_filter",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "rotten_ruins:block/source_filter",
+      "y": 270
+    }
+  }
+}

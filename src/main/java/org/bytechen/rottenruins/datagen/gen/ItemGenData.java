@@ -54,10 +54,25 @@ public class ItemGenData extends ItemModelProvider {
                 if(item instanceof BaseGlowingGeoItem)return;
                 String path = loc.getPath();
                 if (item instanceof BlockItem || MANUAL_WHITELIST.contains(path)) return;
+                if (path.equals("simple_field_meter")) {
+                    fieldMeter(path);
+                    return;
+                }
                 if (isHandheld(item)) handheldItem(path);
                 else this.basicItem(item);
             }
         });
+    }
+
+    private void fieldMeter(String path) {
+        var medium = withExistingParent(path + "_medium", mcLoc("item/generated"))
+                .texture("layer0", modLoc("item/" + path + "_medium"));
+        var high = withExistingParent(path + "_high", mcLoc("item/generated"))
+                .texture("layer0", modLoc("item/" + path + "_high"));
+        withExistingParent(path, mcLoc("item/generated"))
+                .texture("layer0", modLoc("item/" + path + "_low"))
+                .override().predicate(modLoc("field_potential"), 0.5F).model(medium).end()
+                .override().predicate(modLoc("field_potential"), 1.0F).model(high).end();
     }
 
     /**

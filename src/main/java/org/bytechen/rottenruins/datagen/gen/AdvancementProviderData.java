@@ -2,6 +2,7 @@ package org.bytechen.rottenruins.datagen.gen;
 
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.FrameType;
+import net.minecraft.advancements.RequirementsStrategy;
 import net.minecraft.advancements.critereon.ContextAwarePredicate;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.core.HolderLookup;
@@ -13,7 +14,10 @@ import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.common.data.ForgeAdvancementProvider;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.advancement.FirstJoinTrigger;
+import org.bytechen.rottenruins.advancement.SourceMilestoneTrigger;
 import org.bytechen.rottenruins.overworld.registry.RegisterItem;
+import org.bytechen.rottenruins.overworld.registry.RegisterBlock;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -23,7 +27,8 @@ import java.util.function.Consumer;
  * 成就树的数据生成（输出到 {@code data/rotten_ruins/advancements/}）。
  *
  * <p>当前树：树根 {@code rotten_ruins:root}（玩家第一次进入世界时由
- * {@link FirstJoinTrigger} 发放）+ 「死亡」分支 {@code rotten_ruins:death}（获得死亡之星时触发）。
+ * {@link FirstJoinTrigger} 发放）+ 「死亡」分支 {@code rotten_ruins:death}（获得死亡之星时触发）
+ * + 「魔法」分支 {@code rotten_ruins:magic}（获得源荷砂时触发）。
  * 标题 / 描述走语言键（{@code advancements.rotten_ruins.<path>.*}），中文文案见 {@code LangDataCN}。</p>
  *
  * <p><b>如何扩展成完整成就树</b>：在 {@code RuinsAdvancements#buildBranches} 里用
@@ -38,6 +43,12 @@ public class AdvancementProviderData extends ForgeAdvancementProvider {
 
     /** 「死亡」分支的 path；完整 id 是 {@code rotten_ruins:death}。 */
     public static final String DEATH_PATH = "death";
+
+    /** 「魔法」分支的 path；完整 id 是 {@code rotten_ruins:magic}。 */
+    public static final String MAGIC_PATH = "magic";
+
+    /** 源荷生产线位于魔法分支下。 */
+    public static String sourcePath(String name) { return MAGIC_PATH+"/"+name; }
 
     public AdvancementProviderData(PackOutput output, CompletableFuture<HolderLookup.Provider> registries,
                                    ExistingFileHelper fileHelper) {
@@ -111,8 +122,8 @@ public class AdvancementProviderData extends ForgeAdvancementProvider {
         /**
          * 成就树分支的挂载点。
          *
-         * <p>现有分支：「死亡」—— 获得 {@code rotten_ruins:death_star}（死亡之星）时触发；
-         * 判定用原版 {@code minecraft:inventory_changed}，玩家把死亡之星拿进背包（合成 / 拾取 /
+         * <p>现有分支：「死亡」—— 获得死亡之星；「魔法」—— 获得源荷砂。
+         * 判定用原版 {@code minecraft:inventory_changed}，玩家把对应物品拿进背包（合成 / 拾取 /
          * /give 等都会走容器变动）即完成，不需要自定义判据。</p>
          *
          * <p>继续扩展时照抄这个模式：{@code node(root 或其它父节点, path, 图标, FrameType)}
@@ -126,6 +137,61 @@ public class AdvancementProviderData extends ForgeAdvancementProvider {
                     .addCriterion("death_star",
                             InventoryChangeTrigger.TriggerInstance.hasItems(RegisterItem.DEATH_STAR.get()))
                     .save(saver, id(DEATH_PATH), fileHelper);
+
+            // ---- 魔法：获得源荷砂，作为魔法分支的起点 ----
+            Advancement magic=node(root, MAGIC_PATH, RegisterItem.SOURCE_CHARGE_SAND.get(), FrameType.GOAL)
+                    .addCriterion("source_charge_sand",
+                            InventoryChangeTrigger.TriggerInstance.hasItems(RegisterItem.SOURCE_CHARGE_SAND.get()))
+                    .save(saver, id(MAGIC_PATH), fileHelper);
+            buildSourceBranch(magic,saver,fileHelper);
+        }
+
+        private static void buildSourceBranch(Advancement magic,Consumer<Advancement> saver,ExistingFileHelper helper) {
+            // 勘测：有仪器，再找到真实的高势区，最后建立接点。
+            Advancement meter=obtain(magic,"field_meter",RegisterItem.SIMPLE_FIELD_METER.get(),saver,helper);
+            Advancement high=milestone(meter,"high_potential",RegisterItem.SIMPLE_FIELD_METER.get(),SourceMilestoneTrigger.Milestone.HIGH_POTENTIAL,saver,helper);
+            obtain(high,"grounding_stake",RegisterBlock.GROUNDING_STAKE.get(),saver,helper);
+
+            // 生产线：设备物品用原版持有判据，调参和通电需要实际操作。
+            Advancement wire=obtain(magic,"source_wire",RegisterBlock.SOURCE_WIRE.get(),saver,helper);
+            Advancement filter=obtain(wire,"source_filter",RegisterBlock.SOURCE_FILTER.get(),saver,helper);
+            Advancement tuned=milestone(filter,"tuned_filter",RegisterBlock.SOURCE_FILTER.get(),SourceMilestoneTrigger.Milestone.TUNED_FILTER,saver,helper);
+            milestone(tuned,"void_tuning",RegisterItem.VOID_MANA_BOTTLE.get(),SourceMilestoneTrigger.Milestone.VOID_TUNING,saver,helper);
+            Advancement collector=obtain(tuned,"source_collector",RegisterBlock.SOURCE_COLLECTOR.get(),saver,helper);
+            Advancement circuit=milestone(collector,"powered_circuit",RegisterBlock.SOURCE_COLLECTOR.get(),SourceMilestoneTrigger.Milestone.POWERED_CIRCUIT,saver,helper);
+            ItemLike[] bottles={RegisterItem.LIGHT_MANA_BOTTLE.get(),RegisterItem.FIRE_MANA_BOTTLE.get(),RegisterItem.WATER_MANA_BOTTLE.get(),
+                    RegisterItem.NATURE_MANA_BOTTLE.get(),RegisterItem.DEATH_MANA_BOTTLE.get(),RegisterItem.VOID_MANA_BOTTLE.get(),RegisterItem.MYSTERIOUS_MANA_BOTTLE.get()};
+            Advancement firstBottle=obtainSet(circuit,"element_bottle",RegisterItem.WATER_MANA_BOTTLE.get(),false,bottles,saver,helper);
+            obtainSet(firstBottle,"all_bottles",RegisterItem.MYSTERIOUS_MANA_BOTTLE.get(),true,bottles,saver,helper);
+
+            // 板材：七系收藏使用独立条件，依次获得即可累计完成。
+            Advancement base=obtain(magic,"source_plate",RegisterItem.SOURCE_MANA_PLATE.get(),saver,helper);
+            ItemLike[] plates={RegisterItem.LIGHT_MANA_PLATE.get(),RegisterItem.FIRE_MANA_PLATE.get(),RegisterItem.WATER_MANA_PLATE.get(),
+                    RegisterItem.NATURE_MANA_PLATE.get(),RegisterItem.DEATH_MANA_PLATE.get(),RegisterItem.VOID_MANA_PLATE.get(),RegisterItem.MYSTERIOUS_MANA_PLATE.get()};
+            Advancement firstPlate=obtainSet(base,"element_plate",RegisterItem.WATER_MANA_PLATE.get(),false,plates,saver,helper);
+            obtainSet(firstPlate,"all_plates",RegisterItem.MYSTERIOUS_MANA_PLATE.get(),true,plates,saver,helper);
+        }
+
+        private static Advancement obtain(Advancement parent,String name,ItemLike item,Consumer<Advancement> saver,ExistingFileHelper helper) {
+            String path=sourcePath(name);
+            return node(parent,path,item,FrameType.TASK)
+                    .addCriterion("obtain",InventoryChangeTrigger.TriggerInstance.hasItems(item)).save(saver,id(path),helper);
+        }
+
+        private static Advancement milestone(Advancement parent,String name,ItemLike icon,SourceMilestoneTrigger.Milestone event,
+                                               Consumer<Advancement> saver,ExistingFileHelper helper) {
+            String path=sourcePath(name);
+            return node(parent,path,icon,FrameType.GOAL).addCriterion("perform",SourceMilestoneTrigger.criterion(event)).save(saver,id(path),helper);
+        }
+
+        private static Advancement obtainSet(Advancement parent,String name,ItemLike icon,boolean all,ItemLike[] items,
+                                             Consumer<Advancement> saver,ExistingFileHelper helper) {
+            String path=sourcePath(name);
+            var builder=node(parent,path,icon,all?FrameType.CHALLENGE:FrameType.TASK);
+            for(ItemLike item:items) builder.addCriterion("obtain_"+ForgeRegistries.ITEMS.getKey(item.asItem()).getPath(),
+                    InventoryChangeTrigger.TriggerInstance.hasItems(item));
+            builder.requirements(all?RequirementsStrategy.AND:RequirementsStrategy.OR);
+            return builder.save(saver,id(path),helper);
         }
     }
 }

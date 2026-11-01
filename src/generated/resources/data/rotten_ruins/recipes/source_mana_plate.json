@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "S": {
+      "item": "rotten_ruins:source_charge_sand"
+    }
+  },
+  "pattern": [
+    " C ",
+    "ISI",
+    " C "
+  ],
+  "result": {
+    "item": "rotten_ruins:source_mana_plate"
+  },
+  "show_notification": true
+}

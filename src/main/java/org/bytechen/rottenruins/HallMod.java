@@ -52,7 +52,9 @@ public class HallMod {
         EntityTypeRegistry.ENTITY_TYPES.register(modEventBus);
         RegisterParticles.PARTICLE_TYPES.register(modEventBus);
         RegisterBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+        SourceMenus.MENUS.register(modEventBus);
         RegisterFeature.FEATURES.register(modEventBus);
+        RegisterLootModifiers.SERIALIZERS.register(modEventBus);
 
         // 腐化系内容（原 corruption 工程，简化移植）：方块 / 物品 / 生物 / 效果
         CorruptionContent.register(modEventBus);

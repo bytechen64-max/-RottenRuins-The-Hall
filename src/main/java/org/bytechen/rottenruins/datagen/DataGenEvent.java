@@ -18,6 +18,7 @@ public class DataGenEvent {
         var lp = event.getLookupProvider();
 
         event.getGenerator().addProvider(event.includeClient(), new BlockStateData(out, efh));
+        event.getGenerator().addProvider(event.includeClient(), new PotentialBlockData(out, efh));
         // 腐化系特殊方块（残骸 / 血肉温床 / 腐染矮草 / 腐染经络）的 blockstate+model
         event.getGenerator().addProvider(event.includeClient(), new CorruptionBlockStateData(out, efh));
         event.getGenerator().addProvider(event.includeClient(), new ItemGenData(out, efh));
@@ -42,5 +43,6 @@ public class DataGenEvent {
 
         event.getGenerator().addProvider(event.includeServer(), new RecipeProviderData(out));
         event.getGenerator().addProvider(event.includeServer(), new LootTableData(out));
+        event.getGenerator().addProvider(event.includeServer(), new GlobalLootModifierData(out));
     }
 }

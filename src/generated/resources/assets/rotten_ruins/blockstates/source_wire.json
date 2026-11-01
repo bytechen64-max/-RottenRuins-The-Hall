@@ -1,0 +1,176 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_dot_off"
+      },
+      "when": {
+        "power": "0"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_side_off"
+      },
+      "when": {
+        "north": "side|up",
+        "power": "0"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_up_off"
+      },
+      "when": {
+        "north": "up",
+        "power": "0"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_side_off",
+        "y": 90
+      },
+      "when": {
+        "east": "side|up",
+        "power": "0"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_up_off",
+        "y": 90
+      },
+      "when": {
+        "east": "up",
+        "power": "0"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_side_off",
+        "y": 180
+      },
+      "when": {
+        "power": "0",
+        "south": "side|up"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_up_off",
+        "y": 180
+      },
+      "when": {
+        "power": "0",
+        "south": "up"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_side_off",
+        "y": 270
+      },
+      "when": {
+        "power": "0",
+        "west": "side|up"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_up_off",
+        "y": 270
+      },
+      "when": {
+        "power": "0",
+        "west": "up"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_dot_on"
+      },
+      "when": {
+        "power": "1|2|3|4|5|6|7|8|9|10|11|12|13|14|15"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_side_on"
+      },
+      "when": {
+        "north": "side|up",
+        "power": "1|2|3|4|5|6|7|8|9|10|11|12|13|14|15"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_up_on"
+      },
+      "when": {
+        "north": "up",
+        "power": "1|2|3|4|5|6|7|8|9|10|11|12|13|14|15"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_side_on",
+        "y": 90
+      },
+      "when": {
+        "east": "side|up",
+        "power": "1|2|3|4|5|6|7|8|9|10|11|12|13|14|15"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_up_on",
+        "y": 90
+      },
+      "when": {
+        "east": "up",
+        "power": "1|2|3|4|5|6|7|8|9|10|11|12|13|14|15"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_side_on",
+        "y": 180
+      },
+      "when": {
+        "power": "1|2|3|4|5|6|7|8|9|10|11|12|13|14|15",
+        "south": "side|up"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_up_on",
+        "y": 180
+      },
+      "when": {
+        "power": "1|2|3|4|5|6|7|8|9|10|11|12|13|14|15",
+        "south": "up"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_side_on",
+        "y": 270
+      },
+      "when": {
+        "power": "1|2|3|4|5|6|7|8|9|10|11|12|13|14|15",
+        "west": "side|up"
+      }
+    },
+    {
+      "apply": {
+        "model": "rotten_ruins:block/source_wire_up_on",
+        "y": 270
+      },
+      "when": {
+        "power": "1|2|3|4|5|6|7|8|9|10|11|12|13|14|15",
+        "west": "up"
+      }
+    }
+  ]
+}

@@ -31,6 +31,14 @@ public class RecipeProviderData extends RecipeProvider {
     @Override
     protected void buildRecipes(Consumer<FinishedRecipe> consumer) {
         addWandRecipes(consumer);
+        addPotentialEquipmentRecipes(consumer);
+        addChipRecipes(consumer);
+        addSourceMachineRecipes(consumer);
+        addManaPlateRecipes(consumer);
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, RegisterBlock.SOURCE_WIRE.get())
+                .requires(RegisterItem.SOURCE_CHARGE_SAND.get(), 2)
+                .unlockedBy("has_source_charge_sand", has(RegisterItem.SOURCE_CHARGE_SAND.get()))
+                .save(consumer);
         // 原木 -> 4 个木板
         addPlanksRecipe(consumer, RegisterBlock.HALL_LOG.get(), Item.byBlock(RegisterBlock.HALL_PLANKS.get()));
 
@@ -62,6 +70,103 @@ public class RecipeProviderData extends RecipeProvider {
 
         // ── 死亡之星：下界之星 + 一圈凋零玫瑰 ──
         addDeathStarRecipe(consumer);
+    }
+
+    private void addManaPlateRecipes(Consumer<FinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC,RegisterItem.SOURCE_MANA_PLATE.get())
+                .define('C',Items.COPPER_INGOT).define('I',Items.IRON_INGOT)
+                .define('S',RegisterItem.SOURCE_CHARGE_SAND.get())
+                .pattern(" C ").pattern("ISI").pattern(" C ")
+                .unlockedBy("has_source_charge_sand",has(RegisterItem.SOURCE_CHARGE_SAND.get())).save(consumer);
+        addInfusedManaPlateRecipe(consumer,RegisterItem.LIGHT_MANA_PLATE.get(),RegisterItem.LIGHT_MANA_BOTTLE.get());
+        addInfusedManaPlateRecipe(consumer,RegisterItem.FIRE_MANA_PLATE.get(),RegisterItem.FIRE_MANA_BOTTLE.get());
+        addInfusedManaPlateRecipe(consumer,RegisterItem.WATER_MANA_PLATE.get(),RegisterItem.WATER_MANA_BOTTLE.get());
+        addInfusedManaPlateRecipe(consumer,RegisterItem.NATURE_MANA_PLATE.get(),RegisterItem.NATURE_MANA_BOTTLE.get());
+        addInfusedManaPlateRecipe(consumer,RegisterItem.DEATH_MANA_PLATE.get(),RegisterItem.DEATH_MANA_BOTTLE.get());
+        addInfusedManaPlateRecipe(consumer,RegisterItem.VOID_MANA_PLATE.get(),RegisterItem.VOID_MANA_BOTTLE.get());
+        addInfusedManaPlateRecipe(consumer,RegisterItem.MYSTERIOUS_MANA_PLATE.get(),RegisterItem.MYSTERIOUS_MANA_BOTTLE.get());
+    }
+
+    /** 八个同系储魔瓶包围一块源荷板材，产出一块对应板材。 */
+    private void addInfusedManaPlateRecipe(Consumer<FinishedRecipe> consumer,Item result,Item bottle) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC,result)
+                .define('P',RegisterItem.SOURCE_MANA_PLATE.get()).define('B',bottle)
+                .pattern("BBB").pattern("BPB").pattern("BBB")
+                .unlockedBy("has_source_mana_plate",has(RegisterItem.SOURCE_MANA_PLATE.get()))
+                .unlockedBy("has_element_bottle",has(bottle)).save(consumer);
+    }
+
+    private void addSourceMachineRecipes(Consumer<FinishedRecipe> consumer) {
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC,RegisterItem.MANA_BOTTLE.get())
+                .requires(Items.GLASS_BOTTLE).requires(Items.COPPER_INGOT).requires(RegisterItem.SOURCE_CHARGE_SAND.get())
+                .unlockedBy("has_source_charge_sand",has(RegisterItem.SOURCE_CHARGE_SAND.get())).save(consumer);
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC,RegisterBlock.SOURCE_FILTER.get())
+                .define('I',Items.IRON_INGOT).define('G',Items.GLASS).define('C',Items.COPPER_INGOT)
+                .define('S',RegisterItem.CHIP_SCAN.get()).define('W',RegisterBlock.SOURCE_WIRE.get())
+                .pattern("IGI").pattern("CSC").pattern("IWI")
+                .unlockedBy("has_chip_scan",has(RegisterItem.CHIP_SCAN.get())).save(consumer);
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC,RegisterBlock.SOURCE_COLLECTOR.get())
+                .define('I',Items.IRON_INGOT).define('G',Items.GLASS).define('C',Items.COPPER_INGOT)
+                .define('E',RegisterItem.CHIP_EXTRACT.get()).define('H',Items.HOPPER)
+                .pattern("IGI").pattern("CEC").pattern(" H ")
+                .unlockedBy("has_chip_extract",has(RegisterItem.CHIP_EXTRACT.get())).save(consumer);
+    }
+
+    private void addPotentialEquipmentRecipes(Consumer<FinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, RegisterBlock.GROUNDING_STAKE.get())
+                .define('S', RegisterItem.SOURCE_CHARGE_SAND.get())
+                .define('I', Items.IRON_INGOT)
+                .define('T', Items.STICK)
+                .pattern("S").pattern("I").pattern("T")
+                .unlockedBy("has_source_charge_sand", has(RegisterItem.SOURCE_CHARGE_SAND.get()))
+                .save(consumer);
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, RegisterItem.SIMPLE_FIELD_METER.get())
+                .define('G', Items.GLASS)
+                .define('S', RegisterItem.SOURCE_CHARGE_SAND.get())
+                .define('C', Items.COPPER_INGOT)
+                .define('I', Items.IRON_INGOT)
+                .pattern("GGG").pattern("SCS").pattern("III")
+                .unlockedBy("has_source_charge_sand", has(RegisterItem.SOURCE_CHARGE_SAND.get()))
+                .save(consumer);
+    }
+
+    private void addChipRecipes(Consumer<FinishedRecipe> consumer) {
+        // 蓝色空白芯片是三种功能芯片的共同基底。
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, RegisterItem.CHIP_NULL.get())
+                .requires(RegisterItem.SOURCE_CHARGE_SAND.get())
+                .requires(Items.COPPER_INGOT)
+                .requires(Items.REDSTONE)
+                .unlockedBy("has_source_charge_sand", has(RegisterItem.SOURCE_CHARGE_SAND.get()))
+                .save(consumer);
+        // 增强：金质导体与红石电路围绕空白芯片布置。
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, RegisterItem.CHIP_ENHANCED.get())
+                .define('C', RegisterItem.CHIP_NULL.get())
+                .define('G', Items.GOLD_INGOT)
+                .define('R', Items.REDSTONE)
+                .pattern(" R ").pattern("GCG").pattern(" R ")
+                .unlockedBy("has_chip_null", has(RegisterItem.CHIP_NULL.get()))
+                .save(consumer);
+
+        // 扫描：紫水晶与石英作为感应材料，指南针作为定位部件。
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, RegisterItem.CHIP_SCAN.get())
+                .define('C', RegisterItem.CHIP_NULL.get())
+                .define('A', Items.AMETHYST_SHARD)
+                .define('Q', Items.QUARTZ)
+                .define('P', Items.COMPASS)
+                .pattern(" A ").pattern("QCQ").pattern(" P ")
+                .unlockedBy("has_chip_null", has(RegisterItem.CHIP_NULL.get()))
+                .save(consumer);
+
+        // 提取：漏斗与活塞代表收集和搬运部件，铁锭构成外壳。
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, RegisterItem.CHIP_EXTRACT.get())
+                .define('C', RegisterItem.CHIP_NULL.get())
+                .define('H', Items.HOPPER)
+                .define('I', Items.IRON_INGOT)
+                .define('P', Items.PISTON)
+                .pattern(" H ").pattern("ICI").pattern(" P ")
+                .unlockedBy("has_chip_null", has(RegisterItem.CHIP_NULL.get()))
+                .save(consumer);
     }
 
     private void addWandRecipes(Consumer<FinishedRecipe> consumer) {

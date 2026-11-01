@@ -1,0 +1,38 @@
+{
+  "parent": "rotten_ruins:magic/high_potential",
+  "criteria": {
+    "obtain": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:grounding_stake"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancements.rotten_ruins.magic/grounding_stake.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "item": "rotten_ruins:grounding_stake"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancements.rotten_ruins.magic/grounding_stake.title"
+    }
+  },
+  "requirements": [
+    [
+      "obtain"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

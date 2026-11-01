@@ -35,6 +35,10 @@ public class RegisterItem {
         return ITEMS.register(name, () -> new Item(new Item.Properties().stacksTo(64)));
     }
 
+    private static RegistryObject<Item> registerFilledManaBottle(String name) {
+        return ITEMS.register(name,()->new Item(new Item.Properties().stacksTo(64).craftRemainder(MANA_BOTTLE.get())));
+    }
+
     /**
      * Registers an item that implements {@link IAutoRenderableItem} and also
      * adds it to {@link GeoItemRenderManager} for automatic Geo model/renderer creation.
@@ -79,6 +83,9 @@ public class RegisterItem {
 
 
     public static final RegistryObject<Item> EXAMPLE_ITEM = registerSimpleItem("example_item");
+
+    public static final RegistryObject<Item> SIMPLE_FIELD_METER = ITEMS.register("simple_field_meter",
+            SimpleFieldMeterItem::new);
 
     /** VoidSword with cosmic starfield shader (from Live reference mod). */
     public static final RegistryObject<Item> VOID_SWORD = ITEMS.register("void_sword",
@@ -163,6 +170,7 @@ public class RegisterItem {
     // 见下面光明法力板那一行。
     //
     // 水板材对应 MagicType.WATER；各流派板材用于法杖合成与充能。
+    public static final RegistryObject<Item> SOURCE_MANA_PLATE = registerSimpleItem("source_mana_plate");
     public static final RegistryObject<Item> DEATH_MANA_PLATE = registerSimpleItem("death_mana_plate");
 
     /**
@@ -198,6 +206,23 @@ public class RegisterItem {
     // ---- 催化剂 / 符文：目前是纯材料 ----
     public static final RegistryObject<Item> MAGIC_CATA = registerSimpleItem("magic_cata");
     public static final RegistryObject<Item> VOID_RUNE = registerSimpleItem("void_rune");
+
+    // 元素储魔瓶用于板材灌注配方，合成后返还普通空储魔瓶。
+    public static final RegistryObject<Item> MANA_BOTTLE = registerSimpleItem("mana_bottle");
+    public static final RegistryObject<Item> LIGHT_MANA_BOTTLE = registerFilledManaBottle("light_mana_bottle");
+    public static final RegistryObject<Item> FIRE_MANA_BOTTLE = registerFilledManaBottle("fire_mana_bottle");
+    public static final RegistryObject<Item> WATER_MANA_BOTTLE = registerFilledManaBottle("water_mana_bottle");
+    public static final RegistryObject<Item> NATURE_MANA_BOTTLE = registerFilledManaBottle("nature_mana_bottle");
+    public static final RegistryObject<Item> VOID_MANA_BOTTLE = registerFilledManaBottle("void_mana_bottle");
+    public static final RegistryObject<Item> DEATH_MANA_BOTTLE = registerFilledManaBottle("death_mana_bottle");
+    public static final RegistryObject<Item> MYSTERIOUS_MANA_BOTTLE = registerFilledManaBottle("mysterious_mana_bottle");
+    public static final RegistryObject<Item> SOURCE_CHARGE_SAND = registerSimpleItem("source_charge_sand");
+
+    // 芯片：蓝色为空白基底，其它三种由空白芯片合成，暂不附加功能。
+    public static final RegistryObject<Item> CHIP_NULL = registerSimpleItem("chip_null");
+    public static final RegistryObject<Item> CHIP_ENHANCED = registerSimpleItem("chip_enhanced");
+    public static final RegistryObject<Item> CHIP_SCAN = registerSimpleItem("chip_scan");
+    public static final RegistryObject<Item> CHIP_EXTRACT = registerSimpleItem("chip_extract");
 
 
     //死亡

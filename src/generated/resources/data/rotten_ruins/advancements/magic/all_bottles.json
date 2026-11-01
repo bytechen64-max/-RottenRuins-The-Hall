@@ -1,0 +1,128 @@
+{
+  "parent": "rotten_ruins:magic/element_bottle",
+  "criteria": {
+    "obtain_death_mana_bottle": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:death_mana_bottle"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "obtain_fire_mana_bottle": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:fire_mana_bottle"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "obtain_light_mana_bottle": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:light_mana_bottle"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "obtain_mysterious_mana_bottle": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:mysterious_mana_bottle"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "obtain_nature_mana_bottle": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:nature_mana_bottle"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "obtain_void_mana_bottle": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:void_mana_bottle"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "obtain_water_mana_bottle": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:water_mana_bottle"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancements.rotten_ruins.magic/all_bottles.description"
+    },
+    "frame": "challenge",
+    "hidden": false,
+    "icon": {
+      "item": "rotten_ruins:mysterious_mana_bottle"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancements.rotten_ruins.magic/all_bottles.title"
+    }
+  },
+  "requirements": [
+    [
+      "obtain_light_mana_bottle"
+    ],
+    [
+      "obtain_fire_mana_bottle"
+    ],
+    [
+      "obtain_water_mana_bottle"
+    ],
+    [
+      "obtain_nature_mana_bottle"
+    ],
+    [
+      "obtain_death_mana_bottle"
+    ],
+    [
+      "obtain_void_mana_bottle"
+    ],
+    [
+      "obtain_mysterious_mana_bottle"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

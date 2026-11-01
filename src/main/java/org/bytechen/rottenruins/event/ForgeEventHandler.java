@@ -6,6 +6,7 @@ import org.bytechen.rottenruins.command.AnomalyCommand;
 import org.bytechen.rottenruins.command.BlackHoleCommand;
 import org.bytechen.rottenruins.command.CollapseCommand;
 import org.bytechen.rottenruins.command.CrimsonVowCommand;
+import org.bytechen.rottenruins.command.HighPotentialCommand;
 import org.bytechen.rottenruins.command.MeteorEventCommand;
 import org.bytechen.rottenruins.command.SpreadCommand;
 import org.bytechen.rottenruins.command.ThreatCommand;
@@ -126,6 +127,7 @@ public class ForgeEventHandler {
         CollapseCommand.register(event);
         BlackHoleCommand.register(event);
         ThreatCommand.register(event);
+        HighPotentialCommand.register(event);
         // 绯红誓约「起誓」的调试入口（直接展开法阵 / 起蓄力阵 / 清冷却）
         CrimsonVowCommand.register(event);
         MeteorEventCommand.register(event);

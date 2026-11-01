@@ -2,10 +2,14 @@ package org.bytechen.rottenruins.event.impl;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.advancement.RotAdvancementTriggers;
+import org.bytechen.rottenruins.advancement.SourceMilestoneTrigger;
+import org.bytechen.rottenruins.overworld.registry.RegisterItem;
+import org.bytechen.rottenruins.overworld.worldgen.HighPotentialChunks;
 
 /**
  * 成就 / 进度相关事件。
@@ -31,6 +35,22 @@ public final class AdvancementEventHandler {
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             RotAdvancementTriggers.triggerFirstJoin(serverPlayer);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if(event.phase==TickEvent.Phase.END && event.player instanceof ServerPlayer player && player.tickCount%20==0) {
+            checkHighPotential(player);
+        }
+    }
+
+    public static void checkHighPotential(ServerPlayer player) {
+        // 场强计本身带读数 NBT，判定物品类型而非完整 ItemStack，避免读数使成就失效。
+        boolean carriesMeter=player.getOffhandItem().is(RegisterItem.SIMPLE_FIELD_METER.get())
+                || player.getInventory().items.stream().anyMatch(stack->stack.is(RegisterItem.SIMPLE_FIELD_METER.get()));
+        if(carriesMeter && HighPotentialChunks.isHighPotentialChunk(player.serverLevel(),player.blockPosition())) {
+            RotAdvancementTriggers.triggerSourceMilestone(player,SourceMilestoneTrigger.Milestone.HIGH_POTENTIAL);
         }
     }
 }

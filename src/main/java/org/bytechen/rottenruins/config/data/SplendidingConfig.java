@@ -59,6 +59,15 @@ public class SplendidingConfig implements ConfigData {
     @Comment("Enable debug mode")
     public boolean debug = false;
 
+    public static final int DEFAULT_HIGH_POTENTIAL_CHUNK_RARITY = 64;
+
+    @Comment("高势区生成稀有度：平均每 N 个区块出现一个，数值越小越密集。"
+            + "默认 64（约 1.5625%）；32 更密集，128 更稀疏；0 关闭，1 全部为高势区。"
+            + "修改配置文件后重启游戏或服务端生效，已有区块也会按新密度重新判定。")
+    @ConfigEntry.BoundedDiscrete(min = 0, max = Integer.MAX_VALUE)
+    @ConfigEntry.Gui.Tooltip
+    public int highPotentialChunkRarity = DEFAULT_HIGH_POTENTIAL_CHUNK_RARITY;
+
     @Comment("Base damage multiplier")
     public float damageMultiplier = 1.0f;
 

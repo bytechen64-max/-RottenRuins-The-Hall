@@ -30,6 +30,7 @@ public class LangDataCN extends LanguageProvider {
         add("itemGroup." + HallMod.MODID + ".main.section.blocks", "方块");
         add("itemGroup." + HallMod.MODID + ".main.section.misc", "其它");
         add(RegisterItem.EXAMPLE_ITEM.get(), "测试物品");
+        add(RegisterItem.SIMPLE_FIELD_METER.get(), "简易场强计");
         add(RegisterItem.VOID_SWORD.get(), "伪-虚无之刃");
         add(RegisterItem.HALL_BONE_FRAGMENTS.get(),  "王庭骨");
         add(RegisterItem.HALL_TENDON.get(), "王庭肌腱");
@@ -216,6 +217,7 @@ public class LangDataCN extends LanguageProvider {
         // ---- 魔法体系 · 物品 ----
         // 七个流派各有对应法力板，可用于合成与补充法杖魔能。
         add(RegisterItem.DEATH_MANA_PLATE.get(), "死亡魔法版材");
+        add(RegisterItem.SOURCE_MANA_PLATE.get(), "源荷板材");
         add(RegisterItem.FIRE_MANA_PLATE.get(), "火焰魔法版材");
         add(RegisterItem.LIGHT_MANA_PLATE.get(), "光明魔法版材");
         add(RegisterItem.NATURE_MANA_PLATE.get(), "自然魔法版材");
@@ -224,6 +226,63 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.MYSTERIOUS_MANA_PLATE.get(), "神秘魔法版材");
         add(RegisterItem.MAGIC_CATA.get(), "魔法催化剂");
         add(RegisterItem.VOID_RUNE.get(), "虚空符文");
+        add(RegisterItem.MANA_BOTTLE.get(), "储魔瓶");
+        add(RegisterItem.LIGHT_MANA_BOTTLE.get(), "储魔瓶[光明]");
+        add(RegisterItem.FIRE_MANA_BOTTLE.get(), "储魔瓶[火]");
+        add(RegisterItem.WATER_MANA_BOTTLE.get(), "储魔瓶[水]");
+        add(RegisterItem.NATURE_MANA_BOTTLE.get(), "储魔瓶[自然]");
+        add(RegisterItem.VOID_MANA_BOTTLE.get(), "储魔瓶[虚空]");
+        add(RegisterItem.DEATH_MANA_BOTTLE.get(), "储魔瓶[死亡]");
+        add(RegisterItem.MYSTERIOUS_MANA_BOTTLE.get(), "储魔瓶[神秘]");
+        add(RegisterItem.SOURCE_CHARGE_SAND.get(), "源荷砂");
+        add(RegisterItem.CHIP_NULL.get(), "空白芯片");
+        add(RegisterItem.CHIP_ENHANCED.get(), "增强芯片");
+        add(RegisterItem.CHIP_SCAN.get(), "扫描芯片");
+        add(RegisterItem.CHIP_EXTRACT.get(), "提取芯片");
+        add(RegisterBlock.GROUNDING_STAKE.get(), "接地桩");
+        add(RegisterBlock.SOURCE_WIRE.get(), "源导线");
+        add(RegisterBlock.SOURCE_FILTER.get(), "源荷滤波器");
+        add(RegisterBlock.SOURCE_COLLECTOR.get(), "集荷器");
+        add("gui.rotten_ruins.source.reference", "波段表");
+        add("gui.rotten_ruins.source.mode.0", "手动调谐");
+        add("gui.rotten_ruins.source.mode.1", "懒人模式");
+        add("gui.rotten_ruins.source.mode.2", "波段表");
+        add("gui.rotten_ruins.source.fine_tune", "手动微调");
+        add("gui.rotten_ruins.source.preset_hint", "一键配置%s：fc %s / B %s / G %s / φ %s。仍需有效源导线回路。");
+        add("gui.rotten_ruins.source.param.0.short", "中心频率 fc");
+        add("gui.rotten_ruins.source.param.1.short", "带宽 B");
+        add("gui.rotten_ruins.source.param.2.short", "增益 G");
+        add("gui.rotten_ruins.source.param.3.short", "相位 φ");
+        add("gui.rotten_ruins.source.ports_hint", "蓝口输入，橙口输出；空手潜行右键旋转。");
+        add("gui.rotten_ruins.source.reference_hint", "窗口含边界；参数步长 0.1；蓝口输入，橙口输出");
+        add("gui.rotten_ruins.source.spectrum", "场谱示波仪");
+        add("gui.rotten_ruins.source.unmatched", "未匹配有效元素窗口");
+        add("gui.rotten_ruins.source.tuned", "元素：%s");
+        add("gui.rotten_ruins.source.power", "强度 %s/15");
+        add("gui.rotten_ruins.source.input_bottle", "空瓶");
+        add("gui.rotten_ruins.source.output_bottle", "产物");
+        add("gui.rotten_ruins.source.no_power", "未通电：检查回路和开口方向");
+        add("gui.rotten_ruins.source.no_filter", "输入端未连接上游滤波器");
+        add("gui.rotten_ruins.source.invalid_band", "滤波参数未落入元素窗口");
+        add("gui.rotten_ruins.source.conflict", "上游滤波器设置冲突");
+        add("gui.rotten_ruins.source.output_full", "请取出产物后继续灌注");
+        add("gui.rotten_ruins.source.charging", "正在灌注源荷");
+        add("gui.rotten_ruins.source.insert_bottle", "放入普通储魔瓶开始灌注");
+        add("gui.rotten_ruins.source.param.0", "中心频率 fc：%s");
+        add("gui.rotten_ruins.source.param.1", "带宽 B：%s");
+        add("gui.rotten_ruins.source.param.2", "增益 G：%s");
+        add("gui.rotten_ruins.source.param.3", "相位 φ：%s");
+        add("gui.rotten_ruins.source.param.0.hint", "势差释放的主频。范围 0–10，步长 0.1。");
+        add("gui.rotten_ruins.source.param.1.hint", "通带宽度与相干性。范围 0–10，步长 0.1。");
+        add("gui.rotten_ruins.source.param.2.hint", "输出幅值与换能强度。范围 0–10；有效窗口内增益越高，灌注越快。");
+        add("gui.rotten_ruins.source.param.3.hint", "场相极性。仅有正相（+）与反相（−）；虚空要求反相。");
+        add("gui.rotten_ruins.source.element.light", "光");
+        add("gui.rotten_ruins.source.element.fire", "火");
+        add("gui.rotten_ruins.source.element.water", "水");
+        add("gui.rotten_ruins.source.element.nature", "自然");
+        add("gui.rotten_ruins.source.element.death", "死亡");
+        add("gui.rotten_ruins.source.element.void", "虚空");
+        add("gui.rotten_ruins.source.element.mysterious", "神秘");
         add(RegisterItem.WAND.get(), "空法杖");
         add(RegisterItem.WAND_NATURE.get(), "自然法杖");
         add(RegisterItem.WAND_FIRE.get(), "火焰法杖");
@@ -512,5 +571,27 @@ public class LangDataCN extends LanguageProvider {
         add(AdvancementProviderData.titleKey(AdvancementProviderData.DEATH_PATH), "死亡");
         add(AdvancementProviderData.descriptionKey(AdvancementProviderData.DEATH_PATH),
                 "§[rrs:glitch:amp=1.5]获得死亡之星§[/]");
+        add(AdvancementProviderData.titleKey(AdvancementProviderData.MAGIC_PATH), "魔法，轻而易举啊！");
+        add(AdvancementProviderData.descriptionKey(AdvancementProviderData.MAGIC_PATH), "一门掌握自然的学问");
+        sourceAdvancement("field_meter","看不见，测得到","获得简易场强计，开始寻找势差");
+        sourceAdvancement("high_potential","势在必得","携带简易场强计进入一个高势区");
+        sourceAdvancement("grounding_stake","脚踏实地","获得接地桩，为势流建立接点");
+        sourceAdvancement("source_wire","这回不是红石","获得源导线，准备连接高低势区");
+        sourceAdvancement("source_filter","给混沌分个频","获得源荷滤波器");
+        sourceAdvancement("tuned_filter","对上频道","将源荷滤波器调入任意有效元素窗口");
+        sourceAdvancement("void_tuning","反着来","把滤波器调到虚空波段，并使用反相");
+        sourceAdvancement("source_collector","收得住，才算本事","获得集荷器，准备灌注储魔瓶");
+        sourceAdvancement("powered_circuit","有来有回","打开一台接入有效高低势回路的源荷设备");
+        sourceAdvancement("element_bottle","把势流装进瓶子","获得任意一瓶元素储魔瓶");
+        sourceAdvancement("all_bottles","七色收藏家","分别获得七系元素储魔瓶，无需同时持有");
+        sourceAdvancement("source_plate","万法之基","获得源荷板材");
+        sourceAdvancement("element_plate","魔法有了形状","获得任意一种元素魔法板材");
+        sourceAdvancement("all_plates","万象归板","分别获得全部七系魔法板材，无需同时持有");
+    }
+
+    private void sourceAdvancement(String name,String title,String description) {
+        String path=AdvancementProviderData.sourcePath(name);
+        add(AdvancementProviderData.titleKey(path),title);
+        add(AdvancementProviderData.descriptionKey(path),description);
     }
 }

@@ -1,0 +1,32 @@
+{
+  "parent": "rotten_ruins:magic/tuned_filter",
+  "criteria": {
+    "perform": {
+      "conditions": {
+        "milestone": "void_tuning"
+      },
+      "trigger": "rotten_ruins:source_milestone"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancements.rotten_ruins.magic/void_tuning.description"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "icon": {
+      "item": "rotten_ruins:void_mana_bottle"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancements.rotten_ruins.magic/void_tuning.title"
+    }
+  },
+  "requirements": [
+    [
+      "perform"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
