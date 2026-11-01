@@ -385,6 +385,25 @@ spread_infection_leaves / spread_infection_wood）注册时是普通 `Block`，�
 > 注意：实测用的 `run/world` 已被清理方块/实体，但 0,90 附近的 chunk 群系仍保留为腐化群系
 > （群系写入是持久数据），如果在意可以删掉该测试世界或重新生成。
 
+### 1.22 提高索敌积极性（2026-11-01）
+
+**为什么之前"索敌积极性低"**：
+1. 合并基类 `AbstractRottenEntity.canTarget/canAttackPlayer` 对**所有阵营**都套了
+   "玩家威胁点数 ≥ 5 才主动索敌"的闸门——这是王庭原本的设计（玩家先击杀王庭生物积累威胁），
+   但腐化系也继承了，导致玩家站在腐化生物旁边它们也不理人；
+2. 腐化的 `InfectedTargetGoal` 没有开 `targetOtherInfected`，所以腐化不会主动打王庭（只能挨打）。
+
+**修改**：
+- `AbstractRottenEntity` 增加"贴脸索敌"：玩家进入 **12 格**内时，即使威胁点数为 0 也会被主动索敌
+  （远处玩家仍按原威胁点数规则，创造/旁观永远排除）；
+- `BaseCorruptionEntity` 重写 `canTarget` / `canAttackPlayer`：**腐化系完全无视威胁点数**，
+  非创造/旁观玩家靠近即索敌；
+- 腐化系目标 goal 打开 `.targetOtherInfected(true)`：腐化 ↔ 王庭现在是双向敌对
+  （同阵营仍被 infcore 的同类型过滤挡住）。
+
+可调参数：`AbstractRottenEntity.NEARBY_PLAYER_AGGRO_DISTANCE`（12 格）、
+腐化目标 goal 的 `range(40.0)`。
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）

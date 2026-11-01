@@ -37,6 +37,23 @@ public abstract class BaseCorruptionEntity extends AbstractRottenEntity {
         return RottenFaction.CORRUPTION;
     }
 
+    /**
+     * 腐化系不受"玩家威胁点数"限制：靠近就主动索敌（创造/旁观仍排除）。
+     */
+    @Override
+    public boolean canTarget(LivingEntity owner, LivingEntity target) {
+        if (target instanceof net.minecraft.world.entity.player.Player player
+                && AbstractRottenEntity.isIgnoredPlayer(player)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    protected boolean canAttackPlayer(net.minecraft.world.entity.player.Player player) {
+        return !AbstractRottenEntity.isIgnoredPlayer(player);
+    }
+
     @Override
     protected void registerGoals() {
         // 追击占位（只占 MOVE）：有目标时压住 RandomStrollGoal
@@ -45,6 +62,7 @@ public abstract class BaseCorruptionEntity extends AbstractRottenEntity {
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .range(40.0D)
                 .mustSee(false)
+                .targetOtherInfected(true)   // 腐化 vs 王庭：跨阵营索敌（同类型仍被 infcore 过滤）
                 .filter(this)
                 .build());
         this.goalSelector.addGoal(2, new FaceTargetGoal(this, 4));

@@ -153,6 +153,12 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
     }
 
     /**
+     * 玩家贴脸到这个距离内时，即使威胁点数不够也会被主动索敌。
+     * <p>避免王庭生物在玩家已经贴脸时还"装瞎"；远处的玩家仍按威胁点数判定。</p>
+     */
+    protected static final double NEARBY_PLAYER_AGGRO_DISTANCE = 12.0D;
+
+    /**
      * 威胁点数索敌过滤器 —— 直接作为 {@code InfectedTargetGoal} 的 filter 传入。
      * <p>
      * {@link net.minecraft.world.entity.player.Player 玩家}：创造 / 旁观模式直接排除；
@@ -163,7 +169,8 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
     public boolean canTarget(LivingEntity owner, LivingEntity target) {
         if (!(target instanceof Player player)) return true;
         if (isIgnoredPlayer(player)) return false;
-        return ThreatHelper.getThreat(player) >= ThreatHelper.TARGET_THREAT_THRESHOLD;
+        return canAttackPlayer(player)
+                || owner.distanceToSqr(player) <= NEARBY_PLAYER_AGGRO_DISTANCE * NEARBY_PLAYER_AGGRO_DISTANCE;
     }
 
     /**
@@ -205,7 +212,8 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
      */
     protected boolean canAttackPlayer(Player player) {
         return ThreatHelper.getThreat(player) >= ThreatHelper.TARGET_THREAT_THRESHOLD
-                || isRetaliationTarget(player);
+                || isRetaliationTarget(player)
+                || this.distanceToSqr(player) <= NEARBY_PLAYER_AGGRO_DISTANCE * NEARBY_PLAYER_AGGRO_DISTANCE;
     }
 
     // ==================== 范围攻击（AoE / 扇形扫击）公共判定 ====================
