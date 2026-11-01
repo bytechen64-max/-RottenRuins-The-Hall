@@ -13,6 +13,11 @@ import org.bytechen.rottenruins.overworld.registry.entities.population.corruptio
 import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.skill.CorruptionSkillFx;
 import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.skill.CorruptionSkillUtil;
 
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+
 import java.util.function.Consumer;
 
 /**
@@ -97,5 +102,23 @@ public class CorruptionBatEntity extends BaseHostEntity {
         CorruptionSkillUtil.fear(target, 80, 0);
         CorruptionSkillFx.impact(this.level(), target.position(), 0xFF5A0A2A, 0.6F);
         CorruptionSkillUtil.playSoundPitched(this, SoundEvents.BAT_HURT, 1.0F, 1.6F, 0.2F);
+    }
+
+    // =========================================================================
+    // 动画：模型只有 idle / fly / speed_fly（没有 walk / run）
+    // =========================================================================
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
+        if (!defaultControllersEnabled) return;
+        registrar.add(new AnimationController<>(this, "movement_controller", 3, state -> {
+            if (isDeadOrDying() || isBurstAnimating()) return PlayState.STOP;
+            if (!isActuallyMoving) {
+                state.setControllerSpeed(getIdleAnimSpeed());
+                return state.setAndContinue(RawAnimation.begin().thenLoop("idle"));
+            }
+            state.setControllerSpeed(getRunAnimSpeed());
+            return state.setAndContinue(RawAnimation.begin().thenLoop("fly"));
+        }));
     }
 }

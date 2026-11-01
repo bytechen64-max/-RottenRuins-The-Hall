@@ -47,7 +47,7 @@ public class ShockerEntity extends BaseRefactoredEntity {
     public ShockerEntity(EntityType<? extends ShockerEntity> entityType, Level level,
                          Consumer<AbstractRottenEntity> resources) {
         super(entityType, level, resources);
-        this.setHasWalkAnim(true);
+        this.setHasWalkAnim(false);   // 该模型无 run 动画：始终走 walk
         this.setWalkSpeed(0.22F);
         this.setRunSpeed(0.29F);
         this.setFakeDeathEnabled(true);

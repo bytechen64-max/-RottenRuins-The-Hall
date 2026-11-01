@@ -225,6 +225,29 @@
 
 **简化点（TODO）**：同化骷髅死亡 35% 生成骨堆、同化蝙蝠飞行 AI、B1 连发（多 burst）、部分音效/粒子沿用原版替代。
 
+### 1.14 修复：walk/run 动画不匹配（2026-11-01）
+
+**现象**：日志反复刷 `Unable to find animation: run for ShockerEntity / DegenerateCowEntity`；
+同时部分有 run 动画的生物 run 从未被播放。
+
+**根因**：合并基类 `AbstractRottenEntity` 的 `movement_controller` 用 `hasWalkAnimation()`
+决定播放 walk 还是 run。`setHasWalkAnim(true)` 代表"走/跑两段动画都有"，
+但合并时这个标记与各生物 animation json 的实际片段并不一致：有的模型没有 run 却标了 true（刷警告），
+有的模型只有 walk，有的模型连 walk 都没有（蝙蝠只有 idle/fly/speed_fly）。
+
+**修复（对照每个生物的 animation json 逐只核对）**：
+| 生物 | 动画片段 | 修正 |
+|---|---|---|
+| 腐化牛 / 匍匐者 / 长臂兽 / 震撼者 / 原虫 | 无 `run` | `setHasWalkAnim(false)`（始终走 walk，不再请求 run） |
+| 同化蝙蝠 | 只有 `idle` / `fly` / `speed_fly`，无 walk/run | 重写 `registerControllers`：不移动播 idle、移动播 fly |
+| 其余（僵尸/玩家/同化牛/同化村民/同化狼/degenerate 猪、僵尸、村民/袭击者/碎骨等） | 有 `run` | 保持 `true`，追击时正常切 run |
+| 同化羊/猪/骷髅/鸡/孕育者/骨堆/腐植柱/召唤柱 | 无 `run` | 保持 `false`（本就只播 walk/idle） |
+
+核对方式：脚本 `_merge_scripts/audit_animations_all.py` 从两个实体注册表提取
+`类 → defaultResources(name)` 映射，读取 `assets/rotten_ruins/animations/<name>.animation.json`
+的 `animations` 键，与类里的 `setHasWalkAnim` 标记比对；当前剩余告警为 0。
+（无声/无 walk 的站桩生物：骨堆 / 腐植柱 / 召唤柱 速度与 travel 均为 0，永远走 idle，不会请求 walk。）
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）

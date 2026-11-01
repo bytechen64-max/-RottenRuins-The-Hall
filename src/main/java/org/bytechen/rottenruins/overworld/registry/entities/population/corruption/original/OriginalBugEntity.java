@@ -47,7 +47,7 @@ public class OriginalBugEntity extends BaseOriginalEntity {
     public OriginalBugEntity(EntityType<? extends OriginalBugEntity> entityType, Level level,
                              Consumer<AbstractRottenEntity> resources) {
         super(entityType, level, resources);
-        this.setHasWalkAnim(true);
+        this.setHasWalkAnim(false);   // 该模型无 run 动画：始终走 walk
         this.setWalkSpeed(0.23F);
         this.setRunSpeed(0.31F);
         this.setFakeDeathEnabled(false);
