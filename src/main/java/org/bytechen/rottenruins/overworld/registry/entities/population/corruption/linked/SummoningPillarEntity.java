@@ -100,9 +100,6 @@ public class SummoningPillarEntity extends BaseLinkedEntity {
                 CorruptionSkillFx.pillar(this.level(), this.position(), 1.2,
                         CorruptionSkillUtil.CORRUPTION_RED, 8);
             }
-            if (this.tickCount % 100 == 5) {
-                CorruptionSpreadHelper.registerZone(serverLevel, this.blockPosition(), 8);
-            }
         }
 
         if (summonCooldown > 0) {

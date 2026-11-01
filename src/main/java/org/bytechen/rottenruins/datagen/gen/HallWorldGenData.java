@@ -39,7 +39,10 @@ public class HallWorldGenData extends DatapackBuiltinEntriesProvider {
             .add(Registries.NOISE_SETTINGS, FleshDimensionData::bootstrapNoiseSettings)
             .add(Registries.CONFIGURED_FEATURE, HallFeatureData::bootstrapConfiguredFeatures)
             .add(Registries.PLACED_FEATURE, HallFeatureData::bootstrapPlacedFeatures)
-            .add(Registries.BIOME, HallBiomeData::bootstrap)
+            .add(Registries.BIOME, ctx -> {
+                        HallBiomeData.bootstrap(ctx);
+                        org.bytechen.rottenruins.datagen.gen.corruption.CorruptionBiomeData.bootstrap(ctx);
+                    })
             .add(Registries.DIMENSION_TYPE, FleshDimensionData::bootstrapDimensionType)
             .add(Registries.LEVEL_STEM, Lifecycle.stable(), FleshDimensionData::bootstrapLevelStem);
 

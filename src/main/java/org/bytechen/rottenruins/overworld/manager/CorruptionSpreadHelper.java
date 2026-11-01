@@ -70,8 +70,4 @@ public final class CorruptionSpreadHelper {
                 || state.is(CorruptionBlocks.VARIABLE_HEIGHT_CROP.get())
                 || state.is(CorruptionBlocks.SPIRACLE_BLOCK.get());
     }
-
-    public static void registerZone(ServerLevel level, BlockPos center, int radius) {
-        CorruptionZoneData.get(level).addZone(center, radius);
-    }
 }
