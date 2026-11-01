@@ -182,3 +182,12 @@
   change; the mixin only applies while a sectioned tab is selected, leaving all other tabs
   untouched.
 
+## [Unreleased] — Removed the nightly meteor shower
+
+### Removed
+- **Automatic meteor-shower event**: `MeteorShowerEvent` is gone — meteors no longer spawn
+  around players at night. `MeteoriteEntity` (landing AoE, block spread, shockwave and
+  rendering) and the `/meteorevent` set-piece are unchanged;
+  `config/rotten_ruins/MeteorConfig.json5` now holds only landing-behaviour values (the old
+  event-generation options such as `enable` and `intervalBase` were dropped).
+

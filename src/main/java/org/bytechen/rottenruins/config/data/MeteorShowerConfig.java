@@ -6,40 +6,15 @@ import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
 import org.bytechen.rottenruins.HallMod;
 
+/**
+ * 陨石落地行为配置（{@code MeteoriteEntity} 读取）。
+ * <p>
+ * 自动的「每晚陨石雨」已移除；本配置现在只服务于陨石实体
+ * （AoE 伤害、方块扩散、冲击波等），配置文件为
+ * {@code config/rotten_ruins/MeteorConfig.json5}。
+ */
 @Config(name = HallMod.MODID + "/MeteorConfig")
 public class MeteorShowerConfig implements ConfigData {
-
-    // ═══════════════════════════════════════════════════════════════
-    // 事件生成参数（MeteorShowerEvent 使用）
-    // ═══════════════════════════════════════════════════════════════
-
-    @Comment("是否启用陨石雨事件")
-    @ConfigEntry.Gui.Tooltip
-    public boolean enable = true;
-
-    @Comment("基础间隔（tick）")
-    @ConfigEntry.Gui.Tooltip
-    public int intervalBase = 3600;
-
-    @Comment("随机偏移（± tick）")
-    @ConfigEntry.Gui.Tooltip
-    public int intervalJitter = 60;
-
-    @Comment("水平随机半径（格）")
-    @ConfigEntry.Gui.Tooltip
-    public double spawnRadius = 64.0;
-
-    @Comment("地面以上的生成高度")
-    @ConfigEntry.Gui.Tooltip
-    public double heightAboveGround = 100.0;
-
-    @Comment("下落速度（负Y）")
-    @ConfigEntry.Gui.Tooltip
-    public double fallSpeed = -1.5;
-
-    @Comment("生成失败后的重试间隔（tick）")
-    @ConfigEntry.Gui.Tooltip
-    public int retryDelay = 100;
 
     // ═══════════════════════════════════════════════════════════════
     // 陨石落地行为参数（MeteoriteEntity 使用）

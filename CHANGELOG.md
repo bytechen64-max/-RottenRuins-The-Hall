@@ -249,3 +249,11 @@
 - `getDisplayItems()` 对外仍是那份干净的扁平物品表，JEI / 其它 mod 读到的没有变化；
   混入也只在选中分区标签时生效，其它标签零影响。
 
+## [未发布] — 移除每晚陨石雨
+
+### 移除 (Removed)
+- **自动陨石雨事件**：删除 `MeteorShowerEvent` —— 夜晚不再自动在玩家周围生成陨石。
+  陨石实体 `MeteoriteEntity`（落地 AoE / 方块扩散 / 冲击波 / 渲染）与
+  `/meteorevent` 天灾演出全部保留；`config/rotten_ruins/MeteorConfig.json5`
+  现在只保留陨石落地行为参数（`enable`、`intervalBase` 等生成参数已删除）。
+
