@@ -9,6 +9,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.bytechen.rottenruins.HallMod;
+import org.bytechen.rottenruins.overworld.registry.blocks.impl.corruption.CorruptionSpreadBlock;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.corruption.CorruptionGrassBlock;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.corruption.CorruptionVariableHeightCropBlock;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.corruption.FleshbedBlock;
@@ -64,16 +65,20 @@ public class CorruptionBlocks {
     }
 
     // ==================== 腐化地貌 ====================
-    public static final RegistryObject<Block> SPREAD_DIRT = block("spread_dirt", () -> new Block(soil()));
-    public static final RegistryObject<Block> SPREAD_STONE = block("spread_stone", () -> new Block(stone()));
+    public static final RegistryObject<Block> SPREAD_DIRT =
+            block("spread_dirt", () -> new CorruptionSpreadBlock(soil().randomTicks()));
+    public static final RegistryObject<Block> SPREAD_STONE =
+            block("spread_stone", () -> new CorruptionSpreadBlock(stone().randomTicks()));
     public static final RegistryObject<Block> INFECTION_COBBLESTONE_BLOCK =
-            block("infection_cobblestone_block", () -> new Block(stone()));
+            block("infection_cobblestone_block", () -> new CorruptionSpreadBlock(stone().randomTicks()));
     public static final RegistryObject<Block> SPREAD_INFECTION_LEAVES =
-            block("spread_infection_leaves", () -> new Block(BlockBehaviour.Properties.copy(Blocks.OAK_LEAVES)));
+            block("spread_infection_leaves",
+                    () -> new CorruptionSpreadBlock(BlockBehaviour.Properties.copy(Blocks.OAK_LEAVES).randomTicks()));
     public static final RegistryObject<Block> SPREAD_INFECTION_WOOD =
             // 注意：不能 copy(OAK_LOG)——它的 mapColor 回调会读 RotatedPillarBlock.AXIS，
             // 普通 Block 没有该属性会在注册期直接抛异常。用 OAK_PLANKS 的静态属性。
-            block("spread_infection_wood", () -> new Block(BlockBehaviour.Properties.copy(Blocks.OAK_PLANKS)));
+            block("spread_infection_wood",
+                    () -> new CorruptionSpreadBlock(BlockBehaviour.Properties.copy(Blocks.OAK_PLANKS).randomTicks()));
     public static final RegistryObject<Block> CORRUPTION_GRASS =
             block("corruption_grass", () -> new CorruptionGrassBlock(plant()));
     public static final RegistryObject<Block> CORRUPTION_TRACHEA = block("corruption_trachea", () -> new Block(organic()));

@@ -315,6 +315,22 @@
 > 说明：之前阶段 4 的 `CorruptionZoneData` / `CorruptionZoneSpawnHandler` 区域刷怪方案
 > 已被移除（它只是无 biome 时的临时替代），现在统一走真实群系 + 群系生成表。
 
+### 1.18 腐化方块自主扩散（2026-11-01）
+
+**之前为什么不会自己扩散**：腐化地貌方块（spread_dirt / spread_stone / infection_cobblestone_block /
+spread_infection_leaves / spread_infection_wood）注册时是普通 `Block`，没有 `randomTick`，
+也没有实现 infcore 的 `ISpreadBlock`；扩散数据虽然存在，但只有召唤柱在手动调 `applySpread`。
+
+**修复**：新增 `CorruptionSpreadBlock`（与王庭 `AbstractSpreadBlock` 同一套逻辑）：
+- 实现 `ISpreadBlock#getSpreadType()` → `rotten_ruins:corruption`；
+- `isRandomlyTicking = true`，`randomTick` 里调用
+  `SpreadHelper.trySpreadNearby(state, level, pos, random, this, 3, 0.5F)`；
+- 腐土顶面 20% 概率长出 `corruption_grass`；
+- 上述 5 个方块改为 `CorruptionSpreadBlock` 并加 `.randomTicks()`。
+
+由于所有扩散都会触发 `BlockSpreadEvent.Post`，腐化群系会随自主扩散一起自然扩张
+（`CorruptionBiomeSpreadHandler` → `HallBiomeProcessor` → infcore `BiomeSpreadHelper`）。
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）
