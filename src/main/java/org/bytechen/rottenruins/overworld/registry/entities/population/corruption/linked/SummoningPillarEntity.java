@@ -43,6 +43,9 @@ public class SummoningPillarEntity extends BaseLinkedEntity {
     /** 首轮召唤的延迟，避免刚加载就刷 */
     private int summonCooldown = 100;
 
+    /** 腐植柱守卫检查计时 */
+    private int guardTimer = 100;
+
     public SummoningPillarEntity(EntityType<? extends SummoningPillarEntity> entityType, Level level,
                                  Consumer<AbstractRottenEntity> resources) {
         super(entityType, level, resources);
@@ -53,11 +56,12 @@ public class SummoningPillarEntity extends BaseLinkedEntity {
         this.setFakeDeathEnabled(false);
         // C9 辐照领域：作为兵营，被拆掉时留下一片污染
         this.enableDeathField(3.5F, 160, 3.0F);
+        this.guardTimer = 60;
     }
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 23.0D)
+                .add(Attributes.MAX_HEALTH, 60.0D)
                 .add(Attributes.ATTACK_DAMAGE, 11.0D)
                 .add(Attributes.ARMOR, 8.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.25D)
@@ -73,6 +77,13 @@ public class SummoningPillarEntity extends BaseLinkedEntity {
     public void tick() {
         super.tick();
         if (this.level().isClientSide || !this.isAlive()) return;
+
+        // 常驻回血：每 20t 恢复 1 点
+        if (this.tickCount % 20 == 0) {
+            this.heal(1.0F);
+        }
+        // 一阶召唤柱：维持身边 2 个腐植柱守卫
+        tickHumusGuards();
 
         if (summonCooldown > 0) {
             summonCooldown--;
@@ -96,6 +107,43 @@ public class SummoningPillarEntity extends BaseLinkedEntity {
 
         performSummon(Math.min(SUMMON_COUNT, LOCAL_POPULATION_CAP - population));
         summonCooldown = SUMMON_COOLDOWN;
+    }
+
+    /** 一阶召唤柱：在自身周围维持 2 个腐植柱守卫（死亡后补召）。 */
+    private void tickHumusGuards() {
+        if (guardTimer > 0) {
+            guardTimer--;
+            return;
+        }
+        guardTimer = 100;
+
+        int existing = 0;
+        for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class,
+                this.getBoundingBox().inflate(16.0))) {
+            if (e instanceof org.bytechen.rottenruins.overworld.registry.entities.population.corruption.linked.HumusColumnEntity) {
+                existing++;
+            }
+        }
+        if (existing >= 2) return;
+
+        for (int i = existing; i < 2; i++) {
+            var humus = CorruptionEntityTypes.HUMUS_COLUMN.get().create(this.level());
+            if (humus == null) continue;
+
+            double angle = (Math.PI * 2 / 2) * i + this.random.nextDouble() * 0.8;
+            double r = 2.2 + this.random.nextDouble() * 1.2;
+            humus.moveTo(this.getX() + Math.cos(angle) * r, this.getY(),
+                    this.getZ() + Math.sin(angle) * r,
+                    this.random.nextFloat() * 360.0F, 0.0F);
+            humus.setPersistenceRequired();
+            if (this.getTarget() != null) humus.setTarget(this.getTarget());
+            this.level().addFreshEntity(humus);
+
+            CorruptionSkillFx.pillar(this.level(), humus.position(), 2.0,
+                    CorruptionSkillUtil.CORRUPTION_RED, 16);
+        }
+
+        CorruptionSkillUtil.playSoundPitched(this, SoundEvents.EVOKER_CAST_SPELL, 1.0F, 1.1F, 0.1F);
     }
 
     /** 统计半径内的同族数量（含自己）。 */

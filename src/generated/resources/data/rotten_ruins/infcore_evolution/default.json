@@ -166,6 +166,54 @@
       "keepNbt": false,
       "results": [
         {
+          "target": "rotten_ruins:degenerate_zombie",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:corruption_zombie"
+    },
+    {
+      "type": "rotten_ruins:corruption_evo",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:degenerate_cow",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:corruption_cow"
+    },
+    {
+      "type": "rotten_ruins:corruption_evo",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:degenerate_pig",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:corruption_pig"
+    },
+    {
+      "type": "rotten_ruins:corruption_evo",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:degenerate_villager",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:corruption_villager"
+    },
+    {
+      "type": "rotten_ruins:corruption_evo",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
           "target": "rotten_ruins:long_arm_beast",
           "weight": 50
         },

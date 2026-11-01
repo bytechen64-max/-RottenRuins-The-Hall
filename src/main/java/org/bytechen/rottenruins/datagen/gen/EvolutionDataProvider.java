@@ -75,6 +75,18 @@ public class EvolutionDataProvider extends org.bytechen.infcore.core.datagen.Evo
         entries.add(entry(corruptionInf, EntityType.PLAYER, false, false,
                 List.of(target(CorruptionEntityTypes.CORRUPTION_PLAYER.get(), 100))));
 
+        // ==================== 腐化：感染生物击杀进阶（3 kills -> degenerate） ====================
+        // 同化种击杀 3 个生物后进化为对应的腐化种（宿主家族 -> 腐化家族）。
+        // 没有对应腐化种的（骷髅/狼/蝙蝠/鸡/玩家/骨堆）不配置规则，applyEvolution 自然不触发。
+        entries.add(entry(corruptionEvo, CorruptionEntityTypes.CORRUPTION_ZOMBIE.get(), false, false,
+                List.of(target(CorruptionEntityTypes.DEGENERATE_ZOMBIE.get(), 100))));
+        entries.add(entry(corruptionEvo, CorruptionEntityTypes.CORRUPTION_COW.get(), false, false,
+                List.of(target(CorruptionEntityTypes.DEGENERATE_COW.get(), 100))));
+        entries.add(entry(corruptionEvo, CorruptionEntityTypes.CORRUPTION_PIG.get(), false, false,
+                List.of(target(CorruptionEntityTypes.DEGENERATE_PIG.get(), 100))));
+        entries.add(entry(corruptionEvo, CorruptionEntityTypes.CORRUPTION_VILLAGER.get(), false, false,
+                List.of(target(CorruptionEntityTypes.DEGENERATE_VILLAGER.get(), 100))));
+
         // ==================== 腐化：孕育者进阶（corruption BearerManager） ====================
         entries.add(entry(corruptionEvo, CorruptionEntityTypes.BEARER.get(), false, false,
                 List.of(target(CorruptionEntityTypes.LONG_ARM_BEAST.get(), 50),

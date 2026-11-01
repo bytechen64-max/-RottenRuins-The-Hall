@@ -1,5 +1,8 @@
 package org.bytechen.rottenruins.overworld.registry.entities.population.corruption;
 
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import org.bytechen.infcore.core.evolution.EvolutionManager;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
@@ -194,5 +197,27 @@ public abstract class BaseHostEntity extends BaseCorruptionEntity {
             CorruptionSkillFx.impact(this.level(), this.position(), 0xFFB0202F, 0.5F);
         }
         return true;
+    }
+
+    // =========================================================================
+    // 击杀进阶：同化种击杀 3 个生物后进化为对应的腐化种（degenerate）
+    // =========================================================================
+
+    /** 击杀数达到该值触发进阶 */
+    public static final int EVOLVE_KILL_THRESHOLD = 3;
+
+    @Override
+    public void onKilledEntity(Entity killed) {
+        super.onKilledEntity(killed);
+
+        if (this.level().isClientSide || !this.isAlive()) return;
+        if (this.getKillCount() != EVOLVE_KILL_THRESHOLD) return;
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+
+        // 只有数据里配置了对应腐化种的宿主才会真正进化（没有对应类型则返回 false）
+        CorruptionSkillUtil.burst(this, 2.2, 24, 0.4);
+        CorruptionSkillFx.shockwaveRing(this.level(), this.position(), 2.5,
+                CorruptionSkillUtil.CORRUPTION_RED, 24);
+        EvolutionManager.applyEvolution(serverLevel, this, this.getFaction().evolutionRuleType());
     }
 }

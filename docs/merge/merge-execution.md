@@ -248,6 +248,25 @@
 的 `animations` 键，与类里的 `setHasWalkAnim` 标记比对；当前剩余告警为 0。
 （无声/无 walk 的站桩生物：骨堆 / 腐植柱 / 召唤柱 速度与 travel 均为 0，永远走 idle，不会请求 walk。）
 
+### 1.15 玩法调整：一阶召唤柱强化 + 感染生物击杀进阶（2026-11-01）
+
+#### 一阶召唤柱（`SummoningPillarEntity`）
+- 最大生命 **23 → 60**；
+- **常驻回血**：每 20t 恢复 1 点生命（无论是否在战斗中）；
+- **腐植柱守卫**：每隔 100t 检查自身 16 格内的腐植柱数量，不足 2 个时在周围补召（新召出的腐植柱
+  `setPersistenceRequired()`，不会自然消失）；原有 C12 宿主召唤逻辑保留；
+- 死亡时依旧按 C9 殉照领域留下 3.5 格腐蚀池。
+
+#### 感染生物击杀进阶（宿主家族 → 腐化种）
+- 同化种（`BaseHostEntity` 家族）击杀数达到 **3** 时，按 infcore 进化表进化为对应的腐化种：
+  - `corruption_zombie` → `degenerate_zombie`
+  - `corruption_cow` → `degenerate_cow`
+  - `corruption_pig` → `degenerate_pig`
+  - `corruption_villager` → `degenerate_villager`
+- 没有腐化种对应的（骷髅 / 狼 / 蝙蝠 / 鸡 / 玩家 / 骨堆）不配置规则，`applyEvolution` 自然不触发；
+- 触发时播放粒子爆发 + 冲击环，然后由 infcore `EvolutionManager` 生成对应的腐化种实体；
+- 数据侧在 `EvolutionDataProvider` 里以 `corruption_evo` 类型新增 4 条规则（`runData` 已生成，总计 18 条规则）。
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）
