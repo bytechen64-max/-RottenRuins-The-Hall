@@ -9,7 +9,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.bytechen.infcore.api.block.ISpreadBlock;
 import org.bytechen.infcore.core.blockspread.SpreadHelper;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionBlocks;
 
 /**
  * 腐化扩散方块 —— 与王庭 {@code AbstractSpreadBlock} 相同的自我扩散逻辑。
@@ -46,11 +45,5 @@ public class CorruptionSpreadBlock extends Block implements ISpreadBlock {
     public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         SpreadHelper.trySpreadNearby(state, level, pos, random, this, SPREAD_ATTEMPTS, SPREAD_CHANCE);
 
-        // 腐土顶面偶尔长出腐化矮草（让扩散区域更像群系）
-        if (state.is(CorruptionBlocks.SPREAD_DIRT.get())
-                && level.getBlockState(pos.above()).isAir()
-                && random.nextFloat() < 0.04F) {
-            level.setBlockAndUpdate(pos.above(), CorruptionBlocks.CORRUPTION_GRASS.get().defaultBlockState());
-        }
     }
 }

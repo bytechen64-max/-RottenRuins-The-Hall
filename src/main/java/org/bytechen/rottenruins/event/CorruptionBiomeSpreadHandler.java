@@ -11,6 +11,7 @@ import org.bytechen.infcore.api.event.BlockSpreadEvent;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.manager.CorruptionSpreadHelper;
 import org.bytechen.rottenruins.overworld.swarm.HallBiomeProcessor;
+import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionBlocks;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -28,6 +29,9 @@ public final class CorruptionBiomeSpreadHandler {
     /** 与 {@code CorruptionBlockSpreadDataProvider} 对应的扩散类型 */
     private static final ResourceLocation CORRUPTION_SPREAD_TYPE = CorruptionSpreadHelper.SPREAD_TYPE;
 
+    /** 腐土被感染时顶部长出腐化草的概率（只在转换瞬间判定一次） */
+    private static final float GRASS_ON_CONVERT_CHANCE = 0.10F;
+
     private CorruptionBiomeSpreadHandler() {}
 
     @SubscribeEvent
@@ -39,6 +43,15 @@ public final class CorruptionBiomeSpreadHandler {
         if (corruptionBiome == null) return;
 
         HallBiomeProcessor.enqueueForward(serverLevel, event.getPos(), corruptionBiome, event.getOldState());
+
+        // 只在"刚刚被感染成腐土"的那一刻判定一次长草，避免每个随机刻反复长草
+        // （密度由 GRASS_ON_CONVERT_CHANCE 控制）
+        if (event.getNewState().is(CorruptionBlocks.SPREAD_DIRT.get())
+                && serverLevel.getBlockState(event.getPos().above()).isAir()
+                && serverLevel.random.nextFloat() < GRASS_ON_CONVERT_CHANCE) {
+            serverLevel.setBlockAndUpdate(event.getPos().above(),
+                    CorruptionBlocks.CORRUPTION_GRASS.get().defaultBlockState());
+        }
     }
 
     /** 腐化群系 key（与 {@code CorruptionBiomeData} 一致）。 */

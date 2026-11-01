@@ -40,19 +40,9 @@ public final class CorruptionSpreadHelper {
             }
             if (org.bytechen.infcore.core.blockspread.BlockSpreadManager.applySpread(level, pos, SPREAD_TYPE)) {
                 spread++;
-                maybeGrowGrass(level, pos);
             }
         }
         return spread;
-    }
-
-    /** 腐土顶面偶尔长出腐化矮草，让区域看起来更像"群系"。 */
-    private static void maybeGrowGrass(ServerLevel level, BlockPos pos) {
-        if (!level.getBlockState(pos).is(CorruptionBlocks.SPREAD_DIRT.get())) return;
-        BlockPos above = pos.above();
-        if (level.getBlockState(above).isAir() && level.random.nextInt(100) < 8) {
-            level.setBlockAndUpdate(above, CorruptionBlocks.CORRUPTION_GRASS.get().defaultBlockState());
-        }
     }
 
     /** 是否腐化地面（用于自然生成的落点判断）。 */

@@ -349,6 +349,23 @@ spread_infection_leaves / spread_infection_wood）注册时是普通 `Block`，�
 - `CorruptionSpreadBlock.randomTick` 里腐土长草概率 `20% → 4%`；
 - 召唤柱扩散时腐土长草概率 `25% → 8%`。
 
+### 1.20 修复：腐化草密度过高（改为"感染瞬间判定"）（2026-11-01）
+
+**为什么越到后面几乎每一格都长草**：上一版把长草判定写在
+`CorruptionSpreadBlock.randomTick` 里——腐土方块会**一直被随机 tick**，每个随机刻都有
+4%（召唤柱扩散时 8%）概率在头顶长草；随机刻是持续发生的，时间越久，一块腐土头顶
+"至少长过一次草"的概率就越接近 100%，于是密度随时间线性逼近"每格都长"。
+
+**修复**：长草判定从"每个随机刻"移到"方块被感染的瞬间"：
+- `CorruptionSpreadBlock.randomTick` 只做扩散，不再长草；
+- `CorruptionSpreadHelper.spreadArea` 不再附带长草；
+- `CorruptionBiomeSpreadHandler` 在 `BlockSpreadEvent.Post`（扩散成功、方块刚变成
+  `spread_dirt` 的那一次）里判定一次：上方是空气时按
+  `GRASS_ON_CONVERT_CHANCE = 10%` 放一株腐化草；
+- 一处方块最多只会判定一次，密度等于"被感染的表层腐土中约 10% 长草"，
+  不再随存活时间增长；
+- 草的"长高"（下半格 → 两格高）仍由草方块自己的随机 tick 控制，与长草密度无关。
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）
