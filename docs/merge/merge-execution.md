@@ -410,8 +410,8 @@ spread_infection_leaves / spread_infection_wood）注册时是普通 `Block`，�
 对"其他生物"的索敌存在感偏低。
 
 **新增 `CorruptionHuntGoal`**（`overworld/registry/entities/ai/`）：
-- 扫描间隔 **5t**（原 10t）；
-- 索敌半径 **64 格**（原 40 格）；
+- 扫描间隔 **0t（每 tick）**（原 10t）；
+- 索敌半径 **40 格**（与原配置一致）；
 - 不做视线检查（隔墙也能锁定）；
 - 同阵营腐化生物不互殴；王庭、动物、村民、玩家全部可锁定（玩家排除创造/旁观）；
 - 直接 `setTarget`，配合已有的 `ChaseLockGoal + tickChase` 追击。

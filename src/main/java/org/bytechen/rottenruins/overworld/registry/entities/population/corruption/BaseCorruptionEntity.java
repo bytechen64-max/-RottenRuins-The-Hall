@@ -59,7 +59,7 @@ public abstract class BaseCorruptionEntity extends AbstractRottenEntity {
         // 追击占位（只占 MOVE）：有目标时压住 RandomStrollGoal
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
         // 索敌：腐化专属的积极狩猎 Goal（5t 扫描、64 格、无视线要求；同阵营不互殴）
-        this.goalSelector.addGoal(2, new CorruptionHuntGoal(this, 64.0D));
+        this.goalSelector.addGoal(2, new CorruptionHuntGoal(this, 40.0D));
         this.goalSelector.addGoal(2, new FaceTargetGoal(this, 4));
         this.goalSelector.addGoal(5, new RandomStrollGoal(this, 0.8D));
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));

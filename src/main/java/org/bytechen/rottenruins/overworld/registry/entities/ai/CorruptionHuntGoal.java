@@ -16,15 +16,15 @@ import java.util.List;
  *
  * <p>比 infcore 的 {@link org.bytechen.infcore.api.goal.InfectedTargetGoal} 更"积极"：</p>
  * <ul>
- *   <li>扫描间隔 5 tick（原版是 10 tick）；</li>
- *   <li>索敌半径 64 格（原版合并配置是 40 格）；</li>
+ *   <li>扫描间隔 0 tick（每 tick 扫描）（原版是 10 tick）；</li>
+ *   <li>索敌半径 40 格（原版合并配置是 40 格）；</li>
  *   <li>不做视线检查，隔墙也能锁定；</li>
  *   <li>同阵营腐化生物不互殴，其余（王庭、动物、村民、玩家）一律可锁。</li>
  * </ul>
  */
 public class CorruptionHuntGoal extends Goal {
 
-    private static final int SCAN_INTERVAL = 5;
+    private static final int SCAN_INTERVAL = 0;
 
     private final Mob mob;
     private final double rangeSqr;
