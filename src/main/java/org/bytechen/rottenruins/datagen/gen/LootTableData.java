@@ -19,6 +19,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.registry.EntityTypeRegistry;
 import org.bytechen.rottenruins.overworld.registry.RegisterBlock;
+import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionBlocks;
 import org.bytechen.rottenruins.overworld.registry.RegisterItem;
 
 import java.util.List;
@@ -101,6 +102,11 @@ public class LootTableData extends LootTableProvider {
                             dropOther(RegisterBlock.DOMITE_MINERAL.get(), RegisterItem.DOMITE_ORE.get());
                         } else if (block == RegisterBlock.DOMERITE_MINERAL.get()) {
                             dropOther(RegisterBlock.DOMERITE_MINERAL.get(), RegisterItem.DOMERITE_ORE.get());
+                        } else if (block == CorruptionBlocks.CORRUPTION_GRASS.get()) {
+                            // two blocks tall: only the lower half drops
+                            add(block, createSinglePropConditionTable(block,
+                                    net.minecraft.world.level.block.state.properties.BlockStateProperties.DOUBLE_BLOCK_HALF,
+                                    net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER));
                         } else if (block instanceof DoorBlock) {
                             // 门类方块必须使用 createDoorTable，否则两半都会掉落
                             add(block, createDoorTable((DoorBlock) block));

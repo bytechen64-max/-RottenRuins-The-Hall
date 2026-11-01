@@ -47,7 +47,7 @@ public class CorruptionBlockStateData extends BlockStateProvider {
     @Override
     protected void registerStatesAndModels() {
         // 腐染矮草（cross）
-        this.crossBlockWithItem(CorruptionBlocks.CORRUPTION_GRASS.get());
+        this.corruptionGrassWithItem(CorruptionBlocks.CORRUPTION_GRASS.get());
         // 腐染经络（三段 cross + age/section 变体）
         this.corruptionCropBlockWithItem(CorruptionBlocks.VARIABLE_HEIGHT_CROP.get());
         // 血肉温床（手写模型 + 水平朝向）
@@ -66,6 +66,29 @@ public class CorruptionBlockStateData extends BlockStateProvider {
     }
 
     // ==================== 腐染经络 ====================
+
+    // ==================== corruption grass (two blocks tall) ====================
+
+    private void corruptionGrassWithItem(net.minecraft.world.level.block.Block block) {
+        net.minecraft.resources.ResourceLocation texture = blockTexture(block);
+        net.minecraftforge.client.model.generators.ModelFile cross =
+                models().cross(name(block), texture).renderType("cutout");
+
+        net.minecraft.world.level.block.state.properties.EnumProperty<
+                net.minecraft.world.level.block.state.properties.DoubleBlockHalf> half =
+                net.minecraft.world.level.block.state.properties.BlockStateProperties.DOUBLE_BLOCK_HALF;
+
+        getVariantBuilder(block)
+                .partialState()
+                .with(half, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER)
+                .modelForState().modelFile(cross).addModel()
+                .partialState()
+                .with(half, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER)
+                .modelForState().modelFile(cross).addModel();
+
+        itemModels().withExistingParent(name(block), mcLoc("item/generated"))
+                .texture("layer0", texture);
+    }
 
     private void corruptionCropBlockWithItem(Block block) {
         ResourceLocation bottomTex = extend(blockTexture(block), "_bottom");

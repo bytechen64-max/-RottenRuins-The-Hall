@@ -331,6 +331,24 @@ spread_infection_leaves / spread_infection_wood）注册时是普通 `Block`，�
 由于所有扩散都会触发 `BlockSpreadEvent.Post`，腐化群系会随自主扩散一起自然扩张
 （`CorruptionBiomeSpreadHandler` → `HallBiomeProcessor` → infcore `BiomeSpreadHelper`）。
 
+### 1.19 腐染矮草改为两格高 + 降低密度（2026-11-01）
+
+**只长一格高的原因**：`CorruptionGrassBlock` 之前继承 `TallGrassBlock`——那是**单格**的矮草类，
+没有 `HALF` 状态，所以永远不会出现第二格。
+
+**改为两格高**：
+- `CorruptionGrassBlock` 改为继承 `DoublePlantBlock`（`HALF = LOWER / UPPER`）；
+- 下半格只能长在 `spread_dirt` 上；上半格必须踩在下半格上；
+- 下半格随机 tick 时若上方是空气，12% 概率 `placeAt` 长出上半格，所以会出现
+  一格高和两格高混生的效果；玩家用物品放置时也会直接放两格；
+- datagen 生成两个 blockstate 变体（`half=lower` / `half=upper`），模型同用十字模型；
+- 战利品表改为只有下半格掉落（`block_state_property: half=lower`），并保留
+  `DoublePlantBlock` 的"拆上带下"行为。
+
+**降低密度**：
+- `CorruptionSpreadBlock.randomTick` 里腐土长草概率 `20% → 4%`；
+- 召唤柱扩散时腐土长草概率 `25% → 8%`。
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）

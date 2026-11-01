@@ -1,6 +1,9 @@
 {
   "variants": {
-    "": {
+    "half=lower": {
+      "model": "rotten_ruins:block/corruption_grass"
+    },
+    "half=upper": {
       "model": "rotten_ruins:block/corruption_grass"
     }
   }

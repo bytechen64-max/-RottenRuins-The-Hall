@@ -50,7 +50,7 @@ public final class CorruptionSpreadHelper {
     private static void maybeGrowGrass(ServerLevel level, BlockPos pos) {
         if (!level.getBlockState(pos).is(CorruptionBlocks.SPREAD_DIRT.get())) return;
         BlockPos above = pos.above();
-        if (level.getBlockState(above).isAir() && level.random.nextInt(100) < 25) {
+        if (level.getBlockState(above).isAir() && level.random.nextInt(100) < 8) {
             level.setBlockAndUpdate(above, CorruptionBlocks.CORRUPTION_GRASS.get().defaultBlockState());
         }
     }

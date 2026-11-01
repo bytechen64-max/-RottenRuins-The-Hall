@@ -49,7 +49,7 @@ public class CorruptionSpreadBlock extends Block implements ISpreadBlock {
         // 腐土顶面偶尔长出腐化矮草（让扩散区域更像群系）
         if (state.is(CorruptionBlocks.SPREAD_DIRT.get())
                 && level.getBlockState(pos.above()).isAir()
-                && random.nextFloat() < 0.2F) {
+                && random.nextFloat() < 0.04F) {
             level.setBlockAndUpdate(pos.above(), CorruptionBlocks.CORRUPTION_GRASS.get().defaultBlockState());
         }
     }

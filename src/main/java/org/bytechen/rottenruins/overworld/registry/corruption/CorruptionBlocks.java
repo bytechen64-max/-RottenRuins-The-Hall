@@ -80,7 +80,7 @@ public class CorruptionBlocks {
             block("spread_infection_wood",
                     () -> new CorruptionSpreadBlock(BlockBehaviour.Properties.copy(Blocks.OAK_PLANKS).randomTicks()));
     public static final RegistryObject<Block> CORRUPTION_GRASS =
-            block("corruption_grass", () -> new CorruptionGrassBlock(plant()));
+            block("corruption_grass", () -> new CorruptionGrassBlock(plant().randomTicks()));
     public static final RegistryObject<Block> CORRUPTION_TRACHEA = block("corruption_trachea", () -> new Block(organic()));
     public static final RegistryObject<Block> CONNECT_BLOCK = block("connect_block", () -> new Block(organic()));
     public static final RegistryObject<Block> DECIDUAL_TISSUE_BLOCK = block("decidual_tissue_block", () -> new Block(organic()));
