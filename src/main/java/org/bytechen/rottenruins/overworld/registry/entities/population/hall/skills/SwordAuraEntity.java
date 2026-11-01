@@ -42,6 +42,8 @@ public class SwordAuraEntity extends Entity {
      *   <li>{@link #STYLE_APOSTLE}：使徒斩击 —— 额外一层更大的<b>白色外层</b>，
      *       内部黑色剑气<b>始终画在白色之上</b>（形成 outline 观感），
      *       白色外层外侧再叠一层空间扭曲。见 {@code SwordAuraRenderer}。</li>
+     *   <li>{@link #STYLE_VERDICT}：天穹裁决 —— 发光剑气 + 受控朝向。</li>
+     *   <li>{@link #STYLE_FROST}：寒霜斩击 —— 几何同使徒，配色换成冰白 / 深蓝。</li>
      * </ul>
      */
     private static final EntityDataAccessor<Integer> DATA_STYLE =
@@ -68,6 +70,17 @@ public class SwordAuraEntity extends Entity {
      * 于是它空着 —— 这样不必为了一个 float 再动一次同步数据表）。</p>
      */
     public static final int STYLE_VERDICT = 2;
+
+    /**
+     * <b>寒霜斩击</b>样式：几何与 {@link #STYLE_APOSTLE} 完全一致（外层放大 + 内芯 outline，
+     * 旋转仍按 entity id 随机），只是把两层配色从「白 / 黑」换成「冰白 / 深蓝」。
+     *
+     * <p>为什么单开一档而不是给使徒样式加颜色参数：样式已经是一个同步字段，
+     * 再加三个颜色通道就要多开三个 {@code EntityDataAccessor}（还得多写一遍 NBT）。
+     * 而"蓝白斩击"目前只有寂寒白日一把武器要，第二套固定配色比可变配色便宜得多 ——
+     * 真要支持任意配色时，再把这里换成 RGB 三通道即可，渲染分支不用动。</p>
+     */
+    public static final int STYLE_FROST = 3;
 
     /** 竖直（俯仰 0）：剑尖朝下劈。 */
     public static final float ORIENT_VERTICAL = 0.0f;
@@ -107,7 +120,7 @@ public class SwordAuraEntity extends Entity {
     // ═══════════════════════════════════════════════════════════════
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         entityData.define(DATA_SCALE, DEFAULT_SCALE);
         entityData.define(DATA_ALPHA, DEFAULT_ALPHA);
         entityData.define(DATA_MAX_AGE, DEFAULT_MAX_AGE);
@@ -202,7 +215,15 @@ public class SwordAuraEntity extends Entity {
     public void setAuraHeight(float v)  { entityData.set(DATA_HEIGHT, v); }
     public void setAuraRadius(float v)  { entityData.set(DATA_RADIUS, v); }
     public void setShrinkSpeed(float v) { entityData.set(DATA_SHRINK_SPEED, v); }
-    public void setStyle(int v)         { entityData.set(DATA_STYLE, v == STYLE_APOSTLE ? STYLE_APOSTLE : v == STYLE_VERDICT ? STYLE_VERDICT : STYLE_DEFAULT); }
+    public void setStyle(int v)         { entityData.set(DATA_STYLE, normalizeStyle(v)); }
+
+    /** 把外部传来的样式号收敛到已知的四个样式之一（未知值退化成默认样式）。 */
+    private static int normalizeStyle(int v) {
+        if (v == STYLE_APOSTLE) return STYLE_APOSTLE;
+        if (v == STYLE_VERDICT) return STYLE_VERDICT;
+        if (v == STYLE_FROST)   return STYLE_FROST;
+        return STYLE_DEFAULT;
+    }
     public void setOuterScale(float v)  { entityData.set(DATA_OUTER_SCALE, Math.max(0f, v)); }
 
     /**
@@ -246,7 +267,7 @@ public class SwordAuraEntity extends Entity {
     // ═══════════════════════════════════════════════════════════════
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    public void readAdditionalSaveData(CompoundTag tag) {
         age = tag.getInt("Age");
         if (tag.contains("Scale"))       setScale(tag.getFloat("Scale"));
         if (tag.contains("Alpha"))       setAlpha(tag.getFloat("Alpha"));
@@ -259,7 +280,7 @@ public class SwordAuraEntity extends Entity {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    public void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("Age", age);
         tag.putFloat("Scale", getScale());
         tag.putFloat("Alpha", getAlpha());
@@ -369,6 +390,31 @@ public class SwordAuraEntity extends Entity {
     public static SwordAuraEntity spawnApostleSlash(Level level, Vec3 pos) {
         return spawnApostleSlash(level, pos,
                 DEFAULT_SCALE, APOSTLE_HEIGHT, APOSTLE_RADIUS, 14, 1.6f);
+    }
+
+    /**
+     * <b>寒霜斩击</b>专用工厂：构件与 {@link #spawnApostleSlash} 一致，
+     * 只把样式换成 {@link #STYLE_FROST}（蓝白 outline 而非黑白）。
+     *
+     * <p>参数含义与使徒斩击完全相同，尺寸/寿命由调用方决定 ——
+     * 寂寒白日的三连斩用更短更细的比例（高 6、半径 0.9），
+     * 因为它是<b>贴着目标放</b>的一下，不是使徒那种贯穿半个房间的大斩。</p>
+     */
+    public static SwordAuraEntity spawnFrostSlash(Level level, Vec3 pos,
+                                                 float scale, float height, float radius,
+                                                 int maxAge, float shrinkSpeed) {
+        SwordAuraEntity e = new SwordAuraEntity(EntityTypeRegistry.SWORD_AURA.get(), level);
+        e.setPos(pos);
+        e.setStyle(STYLE_FROST);
+        e.setOuterScale(DEFAULT_OUTER_SCALE);
+        e.setScale(scale);
+        e.setAlpha(DEFAULT_ALPHA);
+        e.setAuraHeight(height);
+        e.setAuraRadius(radius);
+        e.setMaxAge(maxAge);
+        e.setShrinkSpeed(shrinkSpeed);
+        level.addFreshEntity(e);
+        return e;
     }
 
     /**

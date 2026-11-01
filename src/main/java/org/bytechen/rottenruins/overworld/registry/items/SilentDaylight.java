@@ -7,6 +7,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.Item;
@@ -32,6 +34,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Optional;
 
+import static net.minecraft.world.entity.LivingEntity.DATA_HEALTH_ID;
+
 /**
  * SilentDaylight（静默白昼）— 水面湍流剑刃 + 深蓝/浅蓝流动描边 + <b>低版本（1.8 式）右键格挡</b>。
  *
@@ -49,12 +53,17 @@ import java.util.Optional;
  *   <li>深蓝 ↔ 浅蓝流动描边（本类实现 {@link ICustomOutline}）</li>
  * </ol>
  *
- * <h3>右键格挡（低版本行为）</h3>
- * <p>按住右键把剑举在身前，受到伤害时按比例减免，且只有<b>来自正面</b>的攻击
- * 才算格挡。能力来自 {@link IBlockingWeapon}，结算在 {@link WeaponBlock}，
- * 第一人称举剑姿态在 client 侧的 {@code CrimsonVowBlockRig} +
- * {@code ItemInHandRendererMixin} —— 那条姿态管线是按接口判定的，所以任何
- * {@code IBlockingWeapon} 都自动获得同一套举剑动作，不需要为这把剑新增混入。</p>
+ * <h3>右键：格挡姿势 + 寒气领域</h3>
+ * <p>按住右键把剑举在身前：既能格挡（{@link IBlockingWeapon}，受击按比例减免，
+ * 只有来自<b>来自正面</b>的攻击才算），又同时维持寒气领域 ——
+ * 举剑期间每 tick 回血、冻结半径 {@link #WARD_RADIUS} 格内的生物、吹散飞行物，
+ * 身边还会环绕一颗蓝色正三棱锥（客户端画，见
+ * {@code client/entity/render/impl/SilentDaylightWardRenderer}）。
+ * 松手即停，没有冷却。</p>
+ *
+ * <p>减伤结算在 {@link WeaponBlock}，第一人称举剑姿态在 client 侧的
+ * {@code CrimsonVowBlockRig} + {@code ItemInHandRendererMixin} —— 那条姿态管线是按接口判定的，
+ * 所以任何 {@link IBlockingWeapon} 都自动获得同一套动作，不需要为这把剑新增混入。</p>
  *
  * <p>三个覆写缺一不可（原因见 {@link IBlockingWeapon} 的类注释）：</p>
  * <ul>
@@ -146,16 +155,48 @@ public class SilentDaylight extends SwordItem implements ICustomOutline, IBlocki
     private static final int TRAIT_TEXT_FROM = 0xFFB6E8FF;
     private static final int TRAIT_TEXT_TO = 0xFF7FA8FF;
 
+    /** 「斩击」正文：冰白 → 亮靛 —— 与三斩本体的蓝白配色同源。 */
+    private static final int SLASH_TEXT_FROM = 0xFFD6F1FF;
+    private static final int SLASH_TEXT_TO = 0xFF7FB4FF;
+
+    /** 「寒气」正文：偏青的白 → 浅蓝 —— 靠近领域那个三棱锥的冰蓝光。 */
+    private static final int WARD_TEXT_FROM = 0xFFCFEEFF;
+    private static final int WARD_TEXT_TO = 0xFF63A6FF;
+
+    /**
+     * 把数值格式化成 tooltip 里的样子：整数不带小数点，非整数保留一位。
+     *
+     * <p>直接用 {@code %s} 会打出 {@code 8.0}、{@code 6.0} 这种尾巴 ——
+     * 数值本身没错，但和原版 tooltip 里 {@code +8 攻击伤害} 的写法不一致。</p>
+     */
+    private static String formatNumber(float value) {
+        if (Math.abs(value - Math.round(value)) < 1.0E-4F) {
+            return Integer.toString(Math.round(value));
+        }
+        return String.format(java.util.Locale.ROOT, "%.1f", value);
+    }
+
     /** 取色板里的 RGB、换上新的 alpha（底板与边框都要半透明版本）。 */
     private static int accent(int argb, int alpha) {
         return (alpha << 24) | (argb & 0x00FFFFFF);
     }
 
     // ──────────────────────────────────────────────────────────────
-    //  右键：进入格挡（举起）
+    //  右键：进入格挡（举起），举着期间维持寒气领域
     // ──────────────────────────────────────────────────────────────
+    //
+    //  右键回到「按住举剑」这条路径：beginBlock 让玩家进入原版的"使用中"状态，
+    //  于是 1.8 式格挡（减伤 + 第一/第三人称举剑姿势）与寒气领域由同一个动作驱动 ——
+    //  举剑期间每 tick 在 onBlockTick 里结算领域，松手即停，没有冷却。
 
-    /** 走 {@link IBlockingWeapon#beginBlock}，它顺带处理客户端预测与三条自检。 */
+    /**
+     * 走 {@link IBlockingWeapon#beginBlock}，它顺带处理客户端预测与三条自检。
+     *
+     * <p><b>这里不能有任何"提前 return"的闸门</b>：{@code MultiPlayerGameMode.useItem}
+     * 在本物品处于原版冷却中时会直接本地 PASS，<b>连 {@code ItemStack.use} 都不调</b>
+     * （字节码：{@code if (cooldowns.isOnCooldown(item)) { value = PASS; return packet; }}）。
+     * 一旦这里挂上冷却，右键就既没有举剑姿势也没有领域 —— 所以本剑刻意不给冷却。</p>
+     */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         return IBlockingWeapon.beginBlock(level, player, hand);
@@ -208,25 +249,131 @@ public class SilentDaylight extends SwordItem implements ICustomOutline, IBlocki
     //  格挡回调（全部只在服务端触发）
     // ──────────────────────────────────────────────────────────────
 
-    /** 按下右键、格挡开始。挂 buff / 起冷却 / 播动作音都放这里。 */
+    /** 按下右键、格挡开始。开场火花放这里；冷却不在这里上（见 {@link #onBlockStop}）。 */
     @Override
     public void onBlockStart(ItemStack stack, Level level, Player player, InteractionHand hand) {
         ModUtils.LOGGER.debug("[SilentDaylight] 格挡开始 player={} hand={}",
                 player.getName().getString(), hand);
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK,
+                    player.getX(), player.getY() + 1.0D, player.getZ(),
+                    24, 0.9D, 1.0D, 0.9D, 0.12D);
+        }
     }
 
-    /** 每 20 tick 心跳一次，避免刷屏；需要持续消耗 / 进度累积时在这里扩展。 */
+    /**
+     * 举剑期间每 tick 一次：维持寒气领域（回血 / 冰冻周围 / 吹散飞行物）。
+     *
+     * <p>领域的<b>唯一</b>驱动点就是这里 —— 它跟着"正在使用本剑"这个原版状态走，
+     * 所以松手、换手、被换掉物品，领域都会立刻停。</p>
+     */
     @Override
     public void onBlockTick(ItemStack stack, Level level, Player player, int heldTicks) {
+        if (level.isClientSide() || !(level instanceof net.minecraft.server.level.ServerLevel serverLevel)) {
+            return;
+        }
+        tickWard(serverLevel, player, heldTicks);
         if (heldTicks % 20 == 0) {
             ModUtils.LOGGER.debug("[SilentDaylight] 格挡持续 {} tick", heldTicks);
         }
     }
 
-    /** 松开右键、格挡结束。 */
+    // ──────────────────────────────────────────────────────────────
+    //  右键：寒气领域（回血 / 冰冻周围生物 / 吹散飞行物）
+    // ──────────────────────────────────────────────────────────────
+    //
+    //  领域没有实体，状态就是"玩家正在举剑"（原版 isUsingItem + 手上是本剑）：
+    //    · 服务端每 tick 由 IBlockingWeapon.tickBlocking → onBlockTick 结算效果；
+    //    · 客户端用同一个条件画身边那颗蓝色三棱锥
+    //      （见 client/entity/render/impl/SilentDaylightWardRenderer）。
+    //  这样不需要任何自定义同步 —— 举剑状态原版本来就同步。
+
+    /** 领域半径（格）。 */
+    public static final double WARD_RADIUS = 6.0D;
+
+    /** 每 tick 回复的生命值（4 tick 回 1 点 ≈ 5 点/秒）。 */
+    public static final float WARD_HEAL_PER_TICK = 0.25F;
+
+    /** 冰冻判定：每隔这么多 tick 给范围内生物顶一次冻结计时。 */
+    public static final int WARD_FREEZE_INTERVAL = 5;
+
+    /**
+     * 玩家此刻是否在维持寒气领域（客户端也要用这个判断来画三棱锥）。
+     *
+     * <p>条件只有"在使用物品 + 正在用的是寂寒白日"：{@code isUsingItem} 由原版同步，
+     * 所以两端结论一致，不需要额外发包。三棱锥因此与举剑姿势同时出现、同时消失。</p>
+     */
+    public static boolean isWarding(@Nullable Player player) {
+        if (player == null) {
+            return false;
+        }
+        return player.isUsingItem() && player.getUseItem().getItem() instanceof SilentDaylight;
+    }
+
+    /**
+     * 寒气领域的一次结算（服务端，每 tick）。
+     *
+     * <ul>
+     *   <li><b>回血</b>：每 tick {@value #WARD_HEAL_PER_TICK} 点（不治疗已死目标）；</li>
+     *   <li><b>冰冻</b>：每 {@value #WARD_FREEZE_INTERVAL} tick 把范围内生物的冻结计时顶满，
+     *       并附带缓慢 —— 用原版的 powder-snow 冻结，所以抗冻/免冻的生物自然免疫；</li>
+     *   <li><b>吹散飞行物</b>：范围内所有 {@code Projectile} 直接销毁
+     *       （箭、火球、雪球、药水…都是它的子类）。</li>
+     * </ul>
+     */
+    private static void tickWard(net.minecraft.server.level.ServerLevel level, Player player,
+                                 int heldTicks) {
+        // ① 回血
+        float heal = (float) (player.getHealth()+player.getMaxHealth()*0.02);
+        if (player.isAlive() && player.getHealth() < player.getMaxHealth()) {
+            player.getEntityData().set(DATA_HEALTH_ID,heal);
+        }
+
+        net.minecraft.world.phys.AABB box =
+                player.getBoundingBox().inflate(WARD_RADIUS);
+        double radiusSqr = WARD_RADIUS * WARD_RADIUS;
+        net.minecraft.world.phys.Vec3 center = player.getBoundingBox().getCenter();
+
+        // ② 冰冻周围生物（不含自己）
+        if (heldTicks % WARD_FREEZE_INTERVAL == 0) {
+            for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box,
+                    e -> e != player && e.isAlive() && e.canFreeze()
+                            && e.getBoundingBox().distanceToSqr(center) <= radiusSqr)) {
+                living.setTicksFrozen(living.getTicksRequiredToFreeze());
+                living.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                        net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 40, 1));
+                level.sendParticles(ParticleTypes.SNOWFLAKE,
+                        living.getX(), living.getY() + living.getBbHeight() * 0.5D, living.getZ(),
+                        6, 0.3D, 0.4D, 0.3D, 0.01D);
+            }
+        }
+
+        // ③ 吹散飞行物
+        for (net.minecraft.world.entity.projectile.Projectile projectile :
+                level.getEntitiesOfClass(net.minecraft.world.entity.projectile.Projectile.class, box,
+                        p -> p.isAlive()
+                                && p.getBoundingBox().distanceToSqr(center) <= radiusSqr)) {
+            if (projectile.getOwner() == player) {
+                continue;   // 自己的投射物不动
+            }
+            level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
+                    projectile.getX(), projectile.getY(), projectile.getZ(),
+                    8, 0.2D, 0.2D, 0.2D, 0.08D);
+            projectile.levelCallback.onRemove(Entity.RemovalReason.DISCARDED);
+        }
+    }
+
+    /**
+     * 松开右键、格挡结束。领域随之停止，<b>不上冷却</b>（原因见 {@link #use}）。
+     */
     @Override
     public void onBlockStop(ItemStack stack, Level level, Player player, int heldTicks) {
         ModUtils.LOGGER.debug("[SilentDaylight] 格挡结束，共 {} tick", heldTicks);
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.SNOWFLAKE,
+                    player.getX(), player.getY() + 1.0D, player.getZ(),
+                    16, 0.8D, 1.0D, 0.8D, 0.03D);
+        }
     }
 
     /** 挡下一次伤害。做反击 / 耗耐久 / 弹刀音效时的挂载点。 */
@@ -367,6 +514,23 @@ public class SilentDaylight extends SwordItem implements ICustomOutline, IBlocki
         tooltip.add(TooltipLines.feature(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TIDE,
                 TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_TIDE, level,
                 ACCENT_ICE, ACCENT_LIGHT, TIDE_TEXT_FROM, TIDE_TEXT_TO));
+
+        // 左键三连斩：把四个数字读出来，别让玩家自己去猜
+        tooltip.add(TooltipLines.feature(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_SLASH,
+                Component.translatable(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_SLASH,
+                        SilentDaylightAttack.SLASH_COUNT,
+                        formatNumber(SilentDaylightAttack.ICE_DAMAGE),
+                        formatNumber(SilentDaylightAttack.PERCENT_HEALTH),
+                        formatNumber((float) SilentDaylightAttack.SLASH_RANGE)),
+                level,
+                ACCENT_ICE, ACCENT_LIGHT, SLASH_TEXT_FROM, SLASH_TEXT_TO));
+
+        // 右键寒气领域：半径是玩家唯一需要在战斗中判断的量（本剑没有冷却）
+        tooltip.add(TooltipLines.feature(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_WARD,
+                Component.translatable(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_WARD,
+                        formatNumber((float) WARD_RADIUS)),
+                level,
+                ACCENT_ICE, ACCENT_LIGHT, WARD_TEXT_FROM, WARD_TEXT_TO));
 
         tooltip.add(TooltipLines.feature(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TRAIT,
                 TranslateUtils.TOOLTIP_TRAIT, level,

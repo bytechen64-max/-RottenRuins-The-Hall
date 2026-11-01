@@ -199,6 +199,29 @@ public final class MagicHandle {
     }
 
     /**
+     * 当前选中槽位的法术是否<b>正在冷却</b>。<b>双端可用</b>。
+     *
+     * <p>用在 {@link StaffBase#use} 的起手之前：冷却中要直接返回，
+     * <b>连"使用中"状态都不进</b> —— 否则客户端会先起手（举杖姿势 + 蓄力进度条），
+     * 而原版对 {@code UseAnim.BOW} 的使用中状态还会把移动速度按比例压下去，
+     * 玩家就会"点一下右键，人变慢、杖举起来、但什么都没放出来"。
+     * 客户端那份冷却表是同步下来的副本并且两端各自倒计时（见
+     * {@code PlayerMagicPool#tickCooldowns}），所以这里两端结论一致，不需要额外发包。</p>
+     */
+    public static boolean isSelectedSpellOnCooldown(@NotNull net.minecraft.world.entity.player.Player player) {
+        PlayerMagicPool pool = getPool(player);
+        if (pool == null) {
+            return false;
+        }
+        int slot = pool.getSelectedSlot();
+        if (!pool.isValidSlot(slot)) {
+            return false;
+        }
+        ResourceLocation magicId = MagicStats.magicId(pool.getStackInSlot(slot));
+        return magicId != null && pool.onCooldown(magicId);
+    }
+
+    /**
      * 按下时调用（等价于旧名 {@link #clientOnServerUsing}）。
      *
      * @see MagicHandle 类注释里那条完整时序
@@ -796,6 +819,10 @@ public final class MagicHandle {
         // Capture the focus before charging it: the last cast can turn it into an empty wand.
         boolean specialUse = MagicStats.isSpecialUse(player, player.getItemInHand(hand), spellStack);
 
+        // 这一次释放的上下文：特殊使用标记在扣蓝前就算好，冷却倍率与法术本体共用它
+        MagicCastContext context = new MagicCastContext(slot, hand, heldTicks, chargeRatio,
+                target, specialUse);
+
         // ---- 2. 扣蓝（事件可能改过数值，所以这里才是权威判定）----
         if (!pay(player, hand, spell, cost)) {
             return new CastOutcome(CastResult.NOT_ENOUGH_MANA, target);
@@ -805,6 +832,12 @@ public final class MagicHandle {
         ResourceLocation magicId = MagicStats.magicId(spellStack);
         if (magicId != null) {
             int cooldown = MagicStats.cooldownTicks(player, spellStack);
+            // 法术可以按"这一次的上下文"调整冷却（例如"特殊使用时冷却减半"）。
+            // 倍率钳到 >=0：返回负数没有意义，钳掉比让它把冷却算成负数安全。
+            float multiplier = Math.max(0.0F, spell.cooldownMultiplier(context));
+            if (multiplier != 1.0F) {
+                cooldown = Math.max(0, Math.round(cooldown * multiplier));
+            }
             if (cooldown > 0) {
                 PlayerMagicPool pool = getPool(player);
                 if (pool != null) {
@@ -814,8 +847,7 @@ public final class MagicHandle {
         }
 
         // ---- 4. 出效果 ----
-        spell.cast(player, spellStack,
-                new MagicCastContext(slot, hand, heldTicks, chargeRatio, target, specialUse));
+        spell.cast(player, spellStack, context);
         ItemStack usedStaff = player.getItemInHand(hand);
         if (usedStaff.getItem() instanceof WandItem wand && wand.capacity() > 0) {
             usedStaff.hurtAndBreak(1, player, holder -> holder.broadcastBreakEvent(hand));

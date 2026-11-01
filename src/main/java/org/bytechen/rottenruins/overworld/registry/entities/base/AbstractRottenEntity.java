@@ -430,7 +430,7 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
     }
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(IS_WALKING, true);
         this.entityData.define(HAS_WALK_ANIM_SYNCED, false);

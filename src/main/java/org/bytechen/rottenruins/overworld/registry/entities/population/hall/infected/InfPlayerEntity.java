@@ -545,7 +545,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
     }
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(MADNESS_COOLDOWN, 0);
         this.entityData.define(LEAP_COOLDOWN, 0);

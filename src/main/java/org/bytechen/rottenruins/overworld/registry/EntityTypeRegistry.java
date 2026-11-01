@@ -7,6 +7,7 @@ import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenE
 import org.bytechen.rottenruins.overworld.registry.entities.base.EntityManager;
 import org.bytechen.rottenruins.overworld.registry.entities.base.HallEntityManager;
 import org.bytechen.rottenruins.overworld.registry.entities.base.HallProjectileManager;
+import org.bytechen.rottenruins.overworld.registry.entities.population.death.DeathHunter;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.apostle.CollapsarEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.apostle.HearthstoneEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.defensive.WindingColumnEntity;
@@ -334,4 +335,13 @@ public class EntityTypeRegistry {
             registerMob("hearthstone", 1.6f, 2.2f,
                     (type, level) -> new HearthstoneEntity(type, level, HearthstoneEntity.resources()),
                     HearthstoneEntity::createAttributes);
+
+    // ────────── 死亡猎手（照恼鬼：穿墙飞行 / 冲刺 / 随机游荡，数值 ×1.2） ──────────
+    //  碰撞箱 0.48 × 0.96 = 恼鬼的 0.4 × 0.8 各乘 1.2。
+    //  资源按小写命名：geo/death_hunter.geo.json + textures/entity/death_hunter.png
+    //  + animations/death_hunter.animation.json。
+    public static final RegistryObject<EntityType<DeathHunter>> DEATH_HUNTER =
+            registerMob("death_hunter", DeathHunter.WIDTH, DeathHunter.HEIGHT,
+                    (type, level) -> new DeathHunter(type, level, DeathHunter.resources()),
+                    DeathHunter::createAttributes);
 }

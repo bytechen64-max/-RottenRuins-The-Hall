@@ -193,7 +193,7 @@ public class CrimsonVowFieldEntity extends Entity {
     // ══════════════════════════════════════════════════════════════
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         entityData.define(DATA_RADIUS, DEFAULT_RADIUS);
         entityData.define(DATA_MAX_AGE, DEFAULT_MAX_AGE);
         entityData.define(DATA_PULSE, 0);
@@ -556,7 +556,7 @@ public class CrimsonVowFieldEntity extends Entity {
     @Override public boolean canBeCollidedWith() { return false; }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    public void readAdditionalSaveData(CompoundTag tag) {
         age = tag.getInt("Age");
         if (tag.hasUUID("Owner")) ownerUUID = tag.getUUID("Owner");
         if (tag.contains("Radius")) entityData.set(DATA_RADIUS, tag.getFloat("Radius"));
@@ -569,7 +569,7 @@ public class CrimsonVowFieldEntity extends Entity {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    public void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("Age", age);
         if (ownerUUID != null) tag.putUUID("Owner", ownerUUID);
         tag.putFloat("Radius", getRadius());

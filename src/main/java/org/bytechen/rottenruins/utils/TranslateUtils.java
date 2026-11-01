@@ -83,6 +83,14 @@ public final class TranslateUtils {
     public static final String SILENT_DAYLIGHT_TOOLTIP_TIDE = "item.rotten_ruins.silent_daylight.tooltip.tide";
     /** 寂寒白日 · 特性行的标签（「白日」，正文用 {@link #TOOLTIP_TRAIT}） */
     public static final String SILENT_DAYLIGHT_TOOLTIP_LABEL_TRAIT = "item.rotten_ruins.silent_daylight.tooltip.label.trait";
+    /** 寂寒白日 · 「斩击」标签（左键三连斩） */
+    public static final String SILENT_DAYLIGHT_TOOLTIP_LABEL_SLASH = "item.rotten_ruins.silent_daylight.tooltip.label.slash";
+    /** 寂寒白日 · 三连斩正文（%s ×3：次数 / 冰伤 / 百分比） */
+    public static final String SILENT_DAYLIGHT_TOOLTIP_SLASH = "item.rotten_ruins.silent_daylight.tooltip.slash";
+    /** 寂寒白日 · 「寒气」标签（右键护体领域） */
+    public static final String SILENT_DAYLIGHT_TOOLTIP_LABEL_WARD = "item.rotten_ruins.silent_daylight.tooltip.label.ward";
+    /** 寂寒白日 · 寒气领域正文（%s：半径） */
+    public static final String SILENT_DAYLIGHT_TOOLTIP_WARD = "item.rotten_ruins.silent_daylight.tooltip.ward";
     /** 寂寒白日 · 调试行（%s ×3；它没有绯红誓约那个攻击距离加成，所以少一个参数） */
     public static final String SILENT_DAYLIGHT_TOOLTIP_DEBUG = "item.rotten_ruins.silent_daylight.tooltip.debug";
 }

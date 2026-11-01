@@ -41,7 +41,9 @@ public class ItemGenData extends ItemModelProvider {
     private static final Set<String> MANUAL_WHITELIST = Set.of(
             "domerite_sword", "domerite_pickaxe", "domerite_axe", "domerite_shovel", "domerite_hoe","domerite_longsword","crimson_vow","silent_daylight",
             // 魔法更新：贴图待补，先用手写模型
-            "fire_ball", "spear_of_judgment", "suppression_field"
+            "fire_ball", "spear_of_judgment", "suppression_field",
+            // 疾行：贴图还没画，先用手写模型占位（补上 textures/item/sprint.png 就能显示）
+            "sprint"
     );
 
     @Override

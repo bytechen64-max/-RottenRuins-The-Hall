@@ -224,11 +224,11 @@ public class InfSkeletonArrowEntity extends Entity implements IAutoRenderableEnt
     }
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    public void readAdditionalSaveData(CompoundTag tag) {
         if (tag.hasUUID("OwnerUUID")) ownerUUID = tag.getUUID("OwnerUUID");
         if (tag.hasUUID("TargetUUID")) targetUUID = tag.getUUID("TargetUUID");
         life = tag.getInt("Life");
@@ -236,7 +236,7 @@ public class InfSkeletonArrowEntity extends Entity implements IAutoRenderableEnt
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    public void addAdditionalSaveData(CompoundTag tag) {
         if (ownerUUID != null) tag.putUUID("OwnerUUID", ownerUUID);
         if (targetUUID != null) tag.putUUID("TargetUUID", targetUUID);
         tag.putInt("Life", life);

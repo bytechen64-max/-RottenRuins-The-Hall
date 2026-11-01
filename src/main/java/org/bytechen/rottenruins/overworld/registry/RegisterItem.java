@@ -24,6 +24,7 @@ import org.bytechen.rottenruins.overworld.registry.items.magic.its.TidalPulse;
 import org.bytechen.rottenruins.overworld.registry.items.magic.its.BriarSnare;
 import org.bytechen.rottenruins.overworld.registry.items.magic.its.PurifyingLight;
 import org.bytechen.rottenruins.overworld.registry.items.magic.its.ArcaneStep;
+import org.bytechen.rottenruins.overworld.registry.items.magic.its.Sprint;
 
 import java.util.function.Supplier;
 
@@ -248,6 +249,9 @@ public class RegisterItem {
 
     public static final RegistryObject<Item> ARCANE_STEP =
             ITEMS.register("arcane_step", ArcaneStep::new);
+
+    public static final RegistryObject<Item> SPRINT =
+            ITEMS.register("sprint", Sprint::new);
 
     public static final RegistryObject<Item> INF_PLAYER_SPAWN_EGG = registerSpawnEgg("hall_player",EntityTypeRegistry.INF_PLAYER);
     public static final RegistryObject<Item> INF_ENDERMAN_SPAWN_EGG = registerSpawnEgg("hall_enderman",EntityTypeRegistry.INF_ENDERMAN);

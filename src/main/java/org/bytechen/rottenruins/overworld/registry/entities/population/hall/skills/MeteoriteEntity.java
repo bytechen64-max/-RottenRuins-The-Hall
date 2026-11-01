@@ -445,18 +445,18 @@ public class MeteoriteEntity extends Entity implements IAutoRenderableEntity {
     // ═══════════════════════════════════════════════════════════════
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         this.entityData.define(FADE_TIMER, 0);
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    public void readAdditionalSaveData(CompoundTag tag) {
         hasImpacted = tag.getBoolean("impacted");
         entityData.set(FADE_TIMER, tag.getInt("fadeTimer"));
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    public void addAdditionalSaveData(CompoundTag tag) {
         tag.putBoolean("impacted", hasImpacted);
         tag.putInt("fadeTimer", entityData.get(FADE_TIMER));
     }

@@ -330,7 +330,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
     // ══════════════════════════════════════════════════════════════
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(DATA_OVERLOAD_UNTIL, 0);
         this.entityData.define(DATA_COLLAPSE_VARIANT, -1);

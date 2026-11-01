@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import org.bytechen.rottenruins.overworld.registry.items.WeaponBlock;
@@ -113,17 +114,63 @@ public final class CrimsonVowBlockRig {
      * <p>由混入类在 {@code ItemRenderer.render(...)} 的 PoseStack 参数上调用，
      * 因此此刻栈上就是"正常手持"的完整变换，包括玩家手臂位置与模型 display 变换。</p>
      *
+     * <p>这个重载固定按<b>右手</b>叠加，保留给"确定是主手"的调用点。
+     * 需要在世界/第一人称里区分左右手时用 {@link #applyBlockDelta(PoseStack, boolean)}。</p>
+     *
      * @param poseStack 原版准备传给物品渲染的 PoseStack（就地修改）
      */
     public static void applyBlockDelta(PoseStack poseStack) {
-        poseStack.translate(INWARD_X, LIFT_Y, NEAR_Z);
-        poseStack.mulPose(Axis.ZP.rotationDegrees(SWEEP_Z));
+        applyBlockDelta(poseStack, false);
+    }
+
+    /**
+     * 叠加格挡增量，<b>支持左手</b>。
+     *
+     * <h3>为什么左手要镜像</h3>
+     * <p>增量是在<b>相机空间</b>里写的，而原版把两只手放在对称的位置上：
+     * {@code ItemInHandRenderer.applyItemArmTransform} 的平移是
+     * {@code x = (arm == RIGHT ? +1 : -1) * 0.56}，也就是右手在屏幕右、左手在屏幕左。
+     * 所以同一组增量直接套到左手上会变成：往<b>屏幕外</b>平移、往反方向横剑、
+     * 剑面转向背面 —— 表现就是"左手举剑姿势完全不对"。</p>
+     *
+     * <p>镜像规则（绕 Y 轴镜像相机空间）：</p>
+     * <ul>
+     *   <li>X 方向平移取反 —— 左手要"往屏幕中心收"是 +X；</li>
+     *   <li>绕 Z、绕 Y 的旋转取反 —— 横剑方向与剑面朝向都跟着镜像；</li>
+     *   <li>Y 平移、Z 平移、绕 X 的俯仰、整体缩放<b>不变</b> ——
+     *       抬高、拉近、低头、大小在镜像下是同一件事。</li>
+     * </ul>
+     *
+     * @param poseStack 原版准备传给物品渲染的 PoseStack（就地修改）
+     * @param mirrored  {@code true} = 这只手渲染在屏幕左侧（左手），X 平移与 Z/Y 旋转取反
+     */
+    public static void applyBlockDelta(PoseStack poseStack, boolean mirrored) {
+        float sign = mirrored ? -1.0F : 1.0F;
+
+        poseStack.translate(INWARD_X * sign, LIFT_Y, NEAR_Z);
+        poseStack.mulPose(Axis.ZP.rotationDegrees(SWEEP_Z * sign));
         // Y 轴放在 Z 之后：先把剑横过来，再绕竖直轴把剑面转向镜头。
         // 顺序反过来的话 Z 会把 Y 的结果再转侧，等于白转。
-        poseStack.mulPose(Axis.YP.rotationDegrees(FACE_Y));
+        poseStack.mulPose(Axis.YP.rotationDegrees(FACE_Y * sign));
         poseStack.mulPose(Axis.XP.rotationDegrees(TILT_X));
         poseStack.scale(SCALE, SCALE, SCALE);
         applyChargeDelta(poseStack);
+    }
+
+    /**
+     * 这次渲染的这只手是否落在<b>屏幕左侧</b>（也就是需要镜像的那一侧）。
+     *
+     * <p>与原版 {@code ItemInHandRenderer.renderArmWithItem} 的算法一致：
+     * 先取"要渲染的是哪条手臂"，
+     * {@code arm = (hand == MAIN_HAND) ? player.getMainArm() : player.getMainArm().getOpposite()}，
+     * 再看它是不是左臂。所以左手玩家主手举剑、右手玩家副手举剑，都会走镜像分支。</p>
+     */
+    public static boolean rendersOnLeftSide(AbstractClientPlayer player, InteractionHand hand) {
+        if (player == null) return false;
+        HumanoidArm arm = hand == InteractionHand.MAIN_HAND
+                ? player.getMainArm()
+                : player.getMainArm().getOpposite();
+        return arm == HumanoidArm.LEFT;
     }
 
     /**

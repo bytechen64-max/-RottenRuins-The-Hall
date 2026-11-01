@@ -280,6 +280,32 @@ public interface IMagicBaseItem {
     }
 
     /**
+     * 这一次释放的<b>冷却倍率</b>。默认 {@code 1.0}（不调整）。
+     *
+     * <p>框架在"进冷却"那一刻用
+     * {@code 冷却 = MagicStats.cooldownTicks(...) × 本方法}。返回 {@code 0.5F} 就是这一次冷却减半，
+     * 返回 {@code 0} 就这一下不进冷却。</p>
+     *
+     * <p>为什么做成"按这一次的上下文"而不是一个固定数：<b>全局</b>的冷却缩减属于属性
+     * （{@code cooldown_reduction} → {@code MagicStatProvider} 那条链），而"这一下因为特殊
+     * 所以短一点"属于法术自己的临时决定 —— 后者要读得到
+     * {@link MagicCastContext#specialUse()}、蓄力比例、目标，所以必须带上下文。</p>
+     *
+     * <pre>{@code
+     * @Override
+     * public float cooldownMultiplier(MagicCastContext ctx) {
+     *     return ctx.specialUse() ? 0.5F : 1.0F;   // 特殊使用 → 冷却减半
+     * }
+     * }</pre>
+     *
+     * @param context 本次释放的上下文（含特殊使用标记）
+     * @return 倍率；负数会被框架钳到 0
+     */
+    default float cooldownMultiplier(@NotNull MagicCastContext context) {
+        return 1.0F;
+    }
+
+    /**
      * 这次释放算不算<b>特殊使用</b>。
      *
      * <p><b>目前唯一的条件：法术的流派和手上法杖的流派相同。</b>

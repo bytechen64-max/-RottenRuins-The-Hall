@@ -100,6 +100,7 @@ public class LangDataCN extends LanguageProvider {
         add(EntityTypeRegistry.HEAVY_BOMB.get(), "王庭重型轰炸");
         add(EntityTypeRegistry.HEAVY_BOMB_TNT.get(), "重型炸弹TNT");
         add(EntityTypeRegistry.HEARTHSTONE.get(), "王庭炉石");
+        add(EntityTypeRegistry.DEATH_HUNTER.get(), "死亡猎手");
         add(EntityTypeRegistry.BONECRUSHER.get(), "王庭碎骨");
         add(EntityTypeRegistry.COLLAPSAR.get(), "萨米使徒");
         add(EntityTypeRegistry.SCOUT.get(), "溃烂纠察");
@@ -159,6 +160,12 @@ public class LangDataCN extends LanguageProvider {
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TIDE, "湍流");
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_TIDE, "剑刃浸在一层流动的水光里");
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TRAIT, "白日");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_SLASH, "斩击");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_SLASH,
+                "左键命中即追加 %s 道蓝白长斩 · 每道 %s 点冰伤 + 目标最大生命 %s%% · %s 格内全体受击");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_WARD, "寒气");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_WARD,
+                "举剑展开 %s 格寒气领域 · 持续回血、冻结生物、吹散飞行物");
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_DEBUG,
                 "调试 · 格挡结算 ×%s%% · 仅正面 %s · 使用时长 %s tick");
 
@@ -236,10 +243,12 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.BRIAR_SNARE.get(), "荆棘禁锢");
         add(RegisterItem.PURIFYING_LIGHT.get(), "净化之光");
         add(RegisterItem.ARCANE_STEP.get(), "奥术闪步");
+        add(RegisterItem.SPRINT.get(), "疾行");
         add("item.rotten_ruins.tidal_pulse.desc", "击退周围生物；自身灭火，获得抗火、水下呼吸与海豚的恩惠");
         add("item.rotten_ruins.briar_snare.desc", "在准星处伤害并强力减速生物，附加虚弱与中毒");
         add("item.rotten_ruins.purifying_light.desc", "治疗、净化并保护友方；伤害敌对生物，对亡灵更强");
         add("item.rotten_ruins.arcane_step.desc", "闪现至准星附近可站立的位置，短暂获得速度提升");
+        add("item.rotten_ruins.sprint.desc", "沿视线方向冲刺，动量等效于垂直抬升 5×法术强度（上限 30 格）后再放大 3 倍，伴随电火花；特殊使用时冷却减半");
         // 死亡之星：下界之星 + 凋零玫瑰
         add(RegisterItem.DEATH_STAR.get(), "死亡之星");
 

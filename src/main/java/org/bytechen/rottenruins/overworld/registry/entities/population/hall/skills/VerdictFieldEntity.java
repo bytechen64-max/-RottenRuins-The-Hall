@@ -92,7 +92,7 @@ public class VerdictFieldEntity extends Entity {
     // ══════════════════════════════════════════════════════════════
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         entityData.define(DATA_RADIUS, DEFAULT_RADIUS);
         entityData.define(DATA_MAX_AGE, DEFAULT_MAX_AGE);
         entityData.define(DATA_PULSE, 0);
@@ -285,7 +285,7 @@ public class VerdictFieldEntity extends Entity {
     // ══════════════════════════════════════════════════════════════
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    public void readAdditionalSaveData(CompoundTag tag) {
         age = tag.getInt("Age");
         if (tag.contains("Radius")) setRadius(tag.getFloat("Radius"));
         if (tag.contains("MaxAge")) setMaxAge(tag.getInt("MaxAge"));
@@ -293,7 +293,7 @@ public class VerdictFieldEntity extends Entity {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    public void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("Age", age);
         tag.putFloat("Radius", getRadius());
         tag.putInt("MaxAge", getMaxAge());

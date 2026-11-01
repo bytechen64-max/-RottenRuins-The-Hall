@@ -152,7 +152,7 @@ public class VerdictBeamEntity extends Entity {
     // ══════════════════════════════════════════════════════════════
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         entityData.define(DATA_RADIUS, DEFAULT_RADIUS);
         entityData.define(DATA_LENGTH, DEFAULT_LENGTH);
         entityData.define(DATA_MAX_AGE, DEFAULT_MAX_AGE);
@@ -379,7 +379,7 @@ public class VerdictBeamEntity extends Entity {
     // ══════════════════════════════════════════════════════════════
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    public void readAdditionalSaveData(CompoundTag tag) {
         age = tag.getInt("Age");
         wave1Done = tag.getBoolean("Wave1");
         wave2Done = tag.getBoolean("Wave2");
@@ -392,7 +392,7 @@ public class VerdictBeamEntity extends Entity {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    public void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("Age", age);
         tag.putBoolean("Wave1", wave1Done);
         tag.putBoolean("Wave2", wave2Done);

@@ -10,11 +10,13 @@ import org.bytechen.rottenruins.command.MeteorEventCommand;
 import org.bytechen.rottenruins.command.SpreadCommand;
 import org.bytechen.rottenruins.command.ThreatCommand;
 import org.bytechen.rottenruins.overworld.registry.items.CrimsonVowAttack;
+import org.bytechen.rottenruins.overworld.registry.items.SilentDaylightAttack;
 import org.bytechen.rottenruins.overworld.registry.items.VoidSwordGuard;
 import org.bytechen.rottenruins.overworld.registry.items.WeaponBlock;
 import org.bytechen.rottenruins.api.IBlockingWeapon;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
@@ -60,6 +62,11 @@ public class ForgeEventHandler {
         if (player == null) return;
         // 单纯的叠加：不 setCanceled
         CrimsonVowAttack.onAttackLanded(player, event.getTarget());
+        // 静谧白昼：主手拿着它时，无论这一下有没有造成伤害，都追加三次斩击
+        if (player instanceof ServerPlayer serverPlayer
+                && event.getTarget() instanceof LivingEntity livingTarget) {
+            SilentDaylightAttack.onAttackLanded(serverPlayer, livingTarget);
+        }
     }
 
     /**

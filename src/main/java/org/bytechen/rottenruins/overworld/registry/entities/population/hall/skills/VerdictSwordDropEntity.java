@@ -106,7 +106,7 @@ public class VerdictSwordDropEntity extends Entity {
     // ══════════════════════════════════════════════════════════════
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         entityData.define(DATA_FALL_FROM, DEFAULT_FALL_FROM);
         entityData.define(DATA_FALL_TICKS, DEFAULT_FALL_TICKS);
         entityData.define(DATA_MAX_AGE, DEFAULT_MAX_AGE);
@@ -279,7 +279,7 @@ public class VerdictSwordDropEntity extends Entity {
     // ══════════════════════════════════════════════════════════════
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    public void readAdditionalSaveData(CompoundTag tag) {
         age = tag.getInt("Age");
         damageDone = tag.getBoolean("Landed");
         if (tag.hasUUID("Target")) targetUUID = tag.getUUID("Target");
@@ -292,7 +292,7 @@ public class VerdictSwordDropEntity extends Entity {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    public void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("Age", age);
         tag.putBoolean("Landed", damageDone);
         if (targetUUID != null) tag.putUUID("Target", targetUUID);

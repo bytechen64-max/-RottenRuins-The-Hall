@@ -105,7 +105,7 @@ public class BlackHoleEntity extends Entity {
     }
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         this.entityData.define(DATA_RADIUS, DEF_RADIUS);
         this.entityData.define(DATA_BEND, DEF_BEND);
         this.entityData.define(DATA_LIFETIME, DEF_LIFETIME);
@@ -195,7 +195,7 @@ public class BlackHoleEntity extends Entity {
     // ── 持久化 ──
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    public void readAdditionalSaveData(CompoundTag tag) {
         this.age = tag.getInt("Age");
         if (tag.contains("Radius")) setRadius(tag.getFloat("Radius"));
         if (tag.contains("Bend")) setBend(tag.getFloat("Bend"));
@@ -208,7 +208,7 @@ public class BlackHoleEntity extends Entity {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    public void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("Age", this.age);
         tag.putFloat("Radius", getRadius());
         tag.putFloat("Bend", getBend());

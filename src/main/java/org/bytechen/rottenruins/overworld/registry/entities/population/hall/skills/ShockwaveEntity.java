@@ -44,7 +44,7 @@ public class ShockwaveEntity extends Entity {
 
     public ShockwaveEntity(EntityType<?> type, Level level) { super(type, level); noCulling = true; }
 
-    @Override protected void defineSynchedData() {
+    @Override public void defineSynchedData() {
         entityData.define(DATA_SPREAD_SPEED, DEF_SPEED);
         entityData.define(DATA_MAX_RADIUS, DEF_RADIUS);
         entityData.define(DATA_LIFETIME, DEF_LIFE);
@@ -79,7 +79,7 @@ public class ShockwaveEntity extends Entity {
     @Override public boolean isPickable()  { return false; }
     @Override public boolean isAttackable(){ return false; }
 
-    @Override protected void readAdditionalSaveData(CompoundTag t) {
+    @Override public void readAdditionalSaveData(CompoundTag t) {
         age = t.getInt("Age");
         if (t.contains("Speed"))  setSpreadSpeed(t.getFloat("Speed"));
         if (t.contains("Radius")) setMaxRadius(t.getFloat("Radius"));
@@ -88,7 +88,7 @@ public class ShockwaveEntity extends Entity {
         if (t.contains("RPos"))   setRingPosition(t.getFloat("RPos"));
         if (t.contains("RWid"))   setRingWidth(t.getFloat("RWid"));
     }
-    @Override protected void addAdditionalSaveData(CompoundTag t) {
+    @Override public void addAdditionalSaveData(CompoundTag t) {
         t.putInt("Age", age); t.putFloat("Speed", getSpreadSpeed()); t.putFloat("Radius", getMaxRadius());
         t.putInt("Life", getLifetime()); t.putFloat("Alpha", getAlpha());
         t.putFloat("RPos", getRingPosition()); t.putFloat("RWid", getRingWidth());

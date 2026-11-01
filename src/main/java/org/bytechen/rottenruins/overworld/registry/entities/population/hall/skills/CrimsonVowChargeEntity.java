@@ -110,7 +110,7 @@ public class CrimsonVowChargeEntity extends Entity {
     // ══════════════════════════════════════════════════════════════
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         entityData.define(DATA_CHARGE, 0f);
         entityData.define(DATA_RADIUS, MIN_RADIUS);
     }
@@ -321,7 +321,7 @@ public class CrimsonVowChargeEntity extends Entity {
     @Override public boolean canBeCollidedWith() { return false; }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    public void readAdditionalSaveData(CompoundTag tag) {
         age = tag.getInt("Age");
         chargeTicks = tag.getInt("Charge");
         if (tag.hasUUID("Owner")) ownerUUID = tag.getUUID("Owner");
@@ -330,7 +330,7 @@ public class CrimsonVowChargeEntity extends Entity {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    public void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("Age", age);
         tag.putInt("Charge", chargeTicks);
         if (ownerUUID != null) tag.putUUID("Owner", ownerUUID);

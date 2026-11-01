@@ -273,7 +273,7 @@ public class CollapseEntity extends Entity {
     // ═══════════════════════════════════════════════════════════════
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         this.entityData.define(DATA_LIVE_TIME, DEF_MAX_LIVE_TIME);
         this.entityData.define(DATA_MAX_LIVE_TIME, DEF_MAX_LIVE_TIME);
         this.entityData.define(DATA_COLLAPSE_TYPE, 0);
@@ -289,7 +289,7 @@ public class CollapseEntity extends Entity {
     // ═══════════════════════════════════════════════════════════════
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    public void readAdditionalSaveData(CompoundTag tag) {
         if (tag.contains("LiveTime")) setLiveTime(tag.getInt("LiveTime"));
         if (tag.contains("MaxLiveTime")) setMaxLiveTime(tag.getInt("MaxLiveTime"));
         if (tag.contains("CollapseType")) setCollapseType(CollapseType.fromId(tag.getInt("CollapseType")));
@@ -301,7 +301,7 @@ public class CollapseEntity extends Entity {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    public void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("LiveTime", getLiveTime());
         tag.putInt("MaxLiveTime", getMaxLiveTime());
         tag.putInt("CollapseType", getCollapseTypeId());

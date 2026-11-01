@@ -208,7 +208,7 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
     }
 
     @Override
-    protected void checkFallDamage(double y, boolean onGround, BlockState state, BlockPos pos) {
+    public void checkFallDamage(double y, boolean onGround, BlockState state, BlockPos pos) {
         // 飞行生物不受到摔落伤害
     }
 

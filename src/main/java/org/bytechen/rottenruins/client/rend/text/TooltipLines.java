@@ -43,8 +43,23 @@ public final class TooltipLines {
     public static MutableComponent feature(String labelKey, String bodyKey, Level level,
                                            int labelFrom, int labelTo,
                                            int bodyFrom, int bodyTo) {
+        return feature(labelKey, Component.translatable(bodyKey), level,
+                labelFrom, labelTo, bodyFrom, bodyTo);
+    }
+
+    /**
+     * 同上，但正文已经是拼好的组件 —— 用于正文里带参数的条目
+     * （例如「左键命中即追加 3 道蓝白斩光 · 每道 8 点冰伤 + 目标最大生命 1%」
+     * 里的三个数字都在运行时才知道）。
+     *
+     * <p>参数化必须在这里拼：{@code Component.translatable(key, args)} 已经能填参，
+     * 而 {@code feature} 只接受翻译键的话，那些参数就没地方传了。</p>
+     */
+    public static MutableComponent feature(String labelKey, Component body, Level level,
+                                           int labelFrom, int labelTo,
+                                           int bodyFrom, int bodyTo) {
         return FlowingNameColors.line(Component.translatable(labelKey), labelFrom, labelTo, level)
                 .append(Component.literal(GAP))
-                .append(FlowingNameColors.line(Component.translatable(bodyKey), bodyFrom, bodyTo, level));
+                .append(FlowingNameColors.line(body, bodyFrom, bodyTo, level));
     }
 }

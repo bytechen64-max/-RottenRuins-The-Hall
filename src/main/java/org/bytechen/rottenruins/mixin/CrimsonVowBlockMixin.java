@@ -71,7 +71,8 @@ public abstract class CrimsonVowBlockMixin {
                                             MultiBufferSource bufferSource, int packedLight,
                                             CallbackInfo ci) {
         if (!CrimsonVowBlockRig.shouldApply(player, stack, hand)) return;
-        CrimsonVowBlockRig.applyBlockDelta(poseStack);
+        // 左手（副手举剑 / 左手玩家的主手）要镜像，否则增量会往屏幕外推、剑面转反
+        CrimsonVowBlockRig.applyBlockDelta(poseStack, CrimsonVowBlockRig.rendersOnLeftSide(player, hand));
     }
 
     /**

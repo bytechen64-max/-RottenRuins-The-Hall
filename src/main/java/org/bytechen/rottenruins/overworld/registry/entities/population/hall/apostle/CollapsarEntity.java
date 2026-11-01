@@ -462,7 +462,7 @@ public class CollapsarEntity extends BaseApostleEntity {
     private static final float MAX_DAMAGE_PER_HIT = 20.0F;
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         super.defineSynchedData();                       // 基类的走路/动画同步数据，必须保留
         // 初值是“满血的存储形态”，不是满血本身 —— 800 血写进去的是 -700
         this.entityData.define(DATA_HEALTH, toStoredHealth((float) MAX_HEALTH));
@@ -1264,7 +1264,7 @@ public class CollapsarEntity extends BaseApostleEntity {
     }
 
     @Override
-    protected void checkFallDamage(double y, boolean onGround, net.minecraft.world.level.block.state.BlockState state,
+    public void checkFallDamage(double y, boolean onGround, net.minecraft.world.level.block.state.BlockState state,
                                    net.minecraft.core.BlockPos pos) {
         // 飞行单位不吃摔落伤害
     }

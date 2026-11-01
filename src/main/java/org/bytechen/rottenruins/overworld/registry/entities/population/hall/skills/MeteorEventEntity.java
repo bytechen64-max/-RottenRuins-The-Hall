@@ -88,7 +88,7 @@ public class MeteorEventEntity extends Entity {
     // ══════════════════════════════════════════════════════════════
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         entityData.define(DATA_SEED, 0);
     }
 
@@ -418,7 +418,7 @@ public class MeteorEventEntity extends Entity {
     @Override public boolean canBeCollidedWith() { return false; }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    public void readAdditionalSaveData(CompoundTag tag) {
         age = tag.getInt("Age");
         impacted = tag.getBoolean("Impacted");
         if (tag.hasUUID("Owner")) ownerUUID = tag.getUUID("Owner");
@@ -426,7 +426,7 @@ public class MeteorEventEntity extends Entity {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    public void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("Age", age);
         tag.putBoolean("Impacted", impacted);
         if (ownerUUID != null) tag.putUUID("Owner", ownerUUID);

@@ -95,7 +95,7 @@ public class InfEndermanEntity extends BaseInfectedEntity {
 
     // ---------- 同步数据定义 ----------
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(IS_CRAWLING, false);
     }

@@ -47,7 +47,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * <h3>伤害是怎么分配出去的</h3>
  * <ol>
- *   <li><b>直接命中</b>：{@link #onHitEntity} → {@link SpellDamageUtil#hurt}，
+ *   <li><b>直接命中</b>：{@link #onHitEntity} → {@link SpellDamageUtil#}，
  *       带法术物品、走 {@code MagicDamageEvent}，因此
  *       {@code rotten_ruins:spell_power} 会乘进去、击杀会算在施法者头上、掉落不丢。</li>
  *   <li><b>爆炸范围</b>：交给原版 {@code Explosion} 结算。它的伤害

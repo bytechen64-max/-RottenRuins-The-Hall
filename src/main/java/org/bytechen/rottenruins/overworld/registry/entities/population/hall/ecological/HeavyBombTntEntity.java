@@ -160,18 +160,18 @@ public class HeavyBombTntEntity extends Entity implements IAutoRenderableEntity 
     }
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    public void readAdditionalSaveData(CompoundTag tag) {
         if (tag.hasUUID("OwnerUUID")) ownerUUID = tag.getUUID("OwnerUUID");
         life = tag.getInt("Life");
         exploded = tag.getBoolean("Exploded");
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    public void addAdditionalSaveData(CompoundTag tag) {
         if (ownerUUID != null) tag.putUUID("OwnerUUID", ownerUUID);
         tag.putInt("Life", life);
         tag.putBoolean("Exploded", exploded);

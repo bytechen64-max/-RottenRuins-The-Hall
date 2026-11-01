@@ -114,6 +114,7 @@ public class LangDataEN extends LanguageProvider {
         add(EntityTypeRegistry.HEAVY_BOMB.get(), "Heavy Bomb");
         add(EntityTypeRegistry.HEAVY_BOMB_TNT.get(), "Heavy Bomb TNT");
         add(EntityTypeRegistry.HEARTHSTONE.get(), "Hearthstone");
+        add(EntityTypeRegistry.DEATH_HUNTER.get(), "Death Hunter");
         add(EntityTypeRegistry.BONECRUSHER.get(), "Hall Shell");
         add(EntityTypeRegistry.SHOCKWAVE.get(), "Shockwave");
         add(EntityTypeRegistry.METEORITE.get(), "Meteorite");
@@ -178,6 +179,12 @@ public class LangDataEN extends LanguageProvider {
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TIDE, "Tide");
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_TIDE, "The blade lies under a layer of flowing water");
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TRAIT, "Daylight");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_SLASH, "Slash");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_SLASH,
+                "Any left-click hit adds %s long blue-white slashes · each deals %s frost damage + %s%% of max health to everything within %s blocks");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_WARD, "Frost");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_WARD,
+                "Raising the blade opens a %s-block frost field · heals you, freezes creatures and sweeps projectiles away");
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_DEBUG,
                 "Debug · block resolves x%s%% · frontal only %s · use duration %s ticks");
 
@@ -252,10 +259,12 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterItem.BRIAR_SNARE.get(), "Briar Snare");
         add(RegisterItem.PURIFYING_LIGHT.get(), "Purifying Light");
         add(RegisterItem.ARCANE_STEP.get(), "Arcane Step");
+        add(RegisterItem.SPRINT.get(), "Sprint");
         add("item.rotten_ruins.tidal_pulse.desc", "Pushes creatures back; extinguishes you and grants fire and water protection");
         add("item.rotten_ruins.briar_snare.desc", "Entangles creatures near your crosshair with weakness and poison");
         add("item.rotten_ruins.purifying_light.desc", "Heals, cleanses and shields allies; harms hostiles, especially undead");
         add("item.rotten_ruins.arcane_step.desc", "Blink to solid ground near your crosshair and gain a short speed boost");
+        add("item.rotten_ruins.sprint.desc", "Dashes along your view direction; momentum equals a 5 x spell power block vertical lift (max 30) multiplied by 3, with sparks; half cooldown on a special use");
         // Death Star: nether star + wither roses
         add(RegisterItem.DEATH_STAR.get(), "Death Star");
 

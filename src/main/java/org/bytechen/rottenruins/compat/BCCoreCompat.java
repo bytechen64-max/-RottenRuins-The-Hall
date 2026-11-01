@@ -66,11 +66,13 @@ public final class BCCoreCompat {
         if (ModList.get().isLoaded(MOD_ID)) {
             try {
                 api = Class.forName(API_CLASS);
-                // 优先按签名精确查找，避免有重载时选错
-                trigger = find(api, "triggerVoidSword", Player.class, ItemStack.class);
-                get = find(api, "get", LivingEntity.class);
-                set = find(api, "set", LivingEntity.class, float.class);
-                add = find(api, "add", LivingEntity.class, float.class);
+                // 优先按签名精确查找，避免有重载时选错；
+                // 名字给一组候选：不同版本的 VitalProbe 用过 get/getHealth、set/setHealth 两种写法，
+                // 只认一种会让"读数"或"写血"其中一半静默失效（改血就退化成吃护甲的原版伤害）。
+                trigger = find(api, new String[]{"triggerVoidSword"}, Player.class, ItemStack.class);
+                get = find(api, new String[]{"get", "getHealth", "healthOf"}, LivingEntity.class);
+                set = find(api, new String[]{"set", "setHealth", "writeHealth"}, LivingEntity.class, float.class);
+                add = find(api, new String[]{"add", "addHealth", "changeHealth"}, LivingEntity.class, float.class);
             } catch (ReflectiveOperationException | LinkageError e) {
                 ModUtils.LOGGER.warn("[BCCoreCompat] vitalprobe 已加载但 API 解析失败，"
                         + "改血相关功能将不可用：{}", e.toString());
@@ -83,24 +85,44 @@ public final class BCCoreCompat {
         GET_HEALTH = get;
         SET_HEALTH = set;
         ADD_HEALTH = add;
+
+        // 启动期把"改血到底能用哪一半"打出来。这条日志是排查"改血没生效"的第一手证据：
+        // 只看 set 能不能用是不够的 —— 只 set 不 get 的路径（虚空剑）照样能工作，
+        // 而"读血量再减"的路径会静默退回原版 hurt。
+        if (api != null) {
+            if (get != null && set != null) {
+                ModUtils.LOGGER.info("[BCCoreCompat] 改血 API 就绪：读={} 写={} 增减={}",
+                        get.getName(), set.getName(), add == null ? "无" : add.getName());
+            } else {
+                ModUtils.LOGGER.warn("[BCCoreCompat] vitalprobe 的改血 API 不完整（读={} 写={}），"
+                                + "改血会退回原版 hurt（吃护甲、吃无敌帧）。",
+                        get == null ? "缺失" : get.getName(),
+                        set == null ? "缺失" : set.getName());
+            }
+        }
     }
 
     /**
-     * 先按精确签名找；找不到再退一步只按"方法名 + 形参个数"找
-     * （比如以后形参类型从 Player 换成 LivingEntity 也不会直接失效）。
+     * 按"候选方法名 + 精确签名"找方法；签名对不上再退一步只按"方法名 + 形参个数"找
+     * （比如以后形参类型从 Player 换成 LivingEntity、或 float 换成 double 也不会直接失效）。
      */
-    private static Method find(Class<?> api, String name, Class<?>... params)
+    private static Method find(Class<?> api, String[] names, Class<?>... params)
             throws ReflectiveOperationException {
-        try {
-            return api.getMethod(name, params);
-        } catch (NoSuchMethodException first) {
+        for (String name : names) {
+            try {
+                return api.getMethod(name, params);
+            } catch (NoSuchMethodException ignored) {
+                // 换下一个候选名
+            }
+        }
+        for (String name : names) {
             for (Method m : api.getMethods()) {
                 if (m.getName().equals(name) && m.getParameterCount() == params.length) {
                     return m;
                 }
             }
-            throw first;
         }
+        throw new NoSuchMethodException(java.util.Arrays.toString(names) + "/" + params.length);
     }
 
     private BCCoreCompat() {}
@@ -151,7 +173,9 @@ public final class BCCoreCompat {
         if (!isHealthApiAvailable() || entity == null) return Float.NaN;
         try {
             Object result = GET_HEALTH.invoke(null, entity);
-            return result instanceof Float f ? f : Float.NaN;
+            // 返回类型可能是 float / double / int / Float，统一按 Number 收，
+            // 只认 Float 会让 double 实现静默变成 NaN，进而让整条改血退化成原版伤害。
+            return result instanceof Number n ? n.floatValue() : Float.NaN;
         } catch (ReflectiveOperationException | LinkageError e) {
             ModUtils.LOGGER.warn("[BCCoreCompat] 读取血量失败：{}", e.toString());
             return Float.NaN;

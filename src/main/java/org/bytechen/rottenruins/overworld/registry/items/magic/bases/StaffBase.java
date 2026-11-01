@@ -111,6 +111,16 @@ public abstract class StaffBase extends Item {
                                                   @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
+        // 选中法术还在冷却 → 直接返回，<b>连"使用中"状态都不进</b>。
+        //
+        // 必须在客户端也判这一次：客户端原本无条件 startUsingItem，于是冷却中按右键会
+        // 先摆出举杖姿势 + 蓄力进度条（UseAnim.BOW），而原版对"使用中"状态还会压移动速度，
+        // 表现就是"人不明所以地变慢、杖举起来，但什么都没放出来"。
+        // 冷却表两端都有（PlayerMagicPool 同步 + 两端各自倒计时），所以这里判出来是一致的。
+        if (MagicHandle.isSelectedSpellOnCooldown(player)) {
+            return InteractionResultHolder.fail(stack);
+        }
+
         // 客户端：只起手，让蓄力/维持有动画与进度条；判定全在服务端
         if (level.isClientSide()) {
             player.startUsingItem(hand);

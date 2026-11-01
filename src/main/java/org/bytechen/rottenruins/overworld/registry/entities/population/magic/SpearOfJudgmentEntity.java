@@ -390,7 +390,7 @@ public class SpearOfJudgmentEntity extends Projectile implements ItemSupplier {
 
     /** 本实体没有任何需要同步的字段：位置靠位置包，渲染靠固定贴图。 */
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
     }
 
     @Override
@@ -403,7 +403,7 @@ public class SpearOfJudgmentEntity extends Projectile implements ItemSupplier {
     // ══════════════════════════════════════════════════════════════
 
     @Override
-    protected void addAdditionalSaveData(@NotNull CompoundTag tag) {
+    public void addAdditionalSaveData(@NotNull CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putDouble(TAG_DIRECTION + "X", direction.x);
         tag.putDouble(TAG_DIRECTION + "Y", direction.y);
@@ -416,7 +416,7 @@ public class SpearOfJudgmentEntity extends Projectile implements ItemSupplier {
     }
 
     @Override
-    protected void readAdditionalSaveData(@NotNull CompoundTag tag) {
+    public void readAdditionalSaveData(@NotNull CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         Vec3 dir = new Vec3(tag.getDouble(TAG_DIRECTION + "X"),
                 tag.getDouble(TAG_DIRECTION + "Y"),
