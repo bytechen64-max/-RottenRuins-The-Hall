@@ -424,6 +424,24 @@ spread_infection_leaves / spread_infection_wood）注册时是普通 `Block`，�
 → 腐化对普通生物/王庭的索敌与攻击链路是通的；若游戏内仍显被动，主要受限于
 "目标在 64 格外 / 寻路失败（墙、水、高低差）/ 附近没有玩家导致 `stopAiAtDist` 暂停 AI"。
 
+### 1.24 腐化索敌改为与王庭完全一致（2026-11-01）
+
+按需求把腐化系的自定义 `CorruptionHuntGoal` 删除，`BaseCorruptionEntity` 直接使用与王庭
+（`InfPlayerEntity` / `InfSkeletonEntity` 等）完全相同的 infcore 目标 Goal：
+
+```java
+this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
+        .range(40.0D)
+        .mustSee(false)
+        .targetOtherInfected(true)
+        .filter(this)
+        .build());
+```
+
+- 与王庭的差别只剩 `canTarget` / `canAttackPlayer`（腐化不检查玩家威胁点数，靠近就索敌）；
+- 同阵营腐化仍被 infcore 的同类型过滤挡住，不会内战；
+- 王庭、动物、村民、玩家都可被锁定，40 格、无需视线、每 10t 扫描一次（与王庭同一套参数）。
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）
