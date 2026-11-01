@@ -366,6 +366,25 @@ spread_infection_leaves / spread_infection_wood）注册时是普通 `Block`，�
   不再随存活时间增长；
 - 草的"长高"（下半格 → 两格高）仍由草方块自己的随机 tick 控制，与长草密度无关。
 
+### 1.21 验证：腐化群系自然生成链路（2026-11-01）
+
+**实测（dedicated server + RCON，命令反馈判定）**：
+1. 在 y=90 铺 11×11 泥土平台，`summon rotten_ruins:summoning_pillar 5 91 5`；
+2. 10 秒后 `execute if block 5 90 5 rotten_ruins:spread_dirt run ...` → 有输出（方块已被感染）；
+3. `execute if biome 5 90 5 rotten_ruins:corruption_wasteland run ...` → 有输出，
+   `execute unless biome ...` → 无输出（群系确实已改写成腐化群系）。
+
+**自然生成链路**（群系已确认生效后）：
+- `corruption_wasteland` 的 biome JSON 里有 21 条 `monster` 生成项（同化种/腐化种/重构种/腐植柱，
+  召唤柱权重 1）；
+- 新增 `SplendidingSpawnPlacements`：给全部 21 种腐化生物注册
+  `ON_GROUND + MOTION_BLOCKING_NO_LEAVES + Monster::checkMonsterSpawnRules` 放置规则；
+- 因此原版 `NaturalSpawner` 会在腐化群系范围内正常刷这些生物（需满足原版刷怪条件：
+  附近有玩家、怪物亮度条件/夜晚、mob cap 未满等）。
+
+> 注意：实测用的 `run/world` 已被清理方块/实体，但 0,90 附近的 chunk 群系仍保留为腐化群系
+> （群系写入是持久数据），如果在意可以删掉该测试世界或重新生成。
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）
