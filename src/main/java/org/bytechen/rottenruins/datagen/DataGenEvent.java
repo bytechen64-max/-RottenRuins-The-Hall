@@ -2,6 +2,7 @@ package org.bytechen.rottenruins.datagen;
 
 import org.bytechen.rottenruins.datagen.gen.*;
 import org.bytechen.rottenruins.datagen.gen.corruption.CorruptionBlockStateData;
+import org.bytechen.rottenruins.datagen.gen.corruption.CorruptionBlockSpreadDataProvider;
 import org.bytechen.rottenruins.datagen.gen.lang.LangDataCN;
 import org.bytechen.rottenruins.datagen.gen.lang.LangDataEN;
 import net.minecraft.data.PackOutput;
@@ -29,6 +30,7 @@ public class DataGenEvent {
         event.getGenerator().addProvider(event.includeClient(), new EffectSpriteData(out, efh));
         event.getGenerator().addProvider(event.includeClient(), new EvolutionDataProvider(out));
         event.getGenerator().addProvider(event.includeClient(), new BlockSpreadDataProvider(out));
+        event.getGenerator().addProvider(event.includeClient(), new CorruptionBlockSpreadDataProvider(out));
 
         event.getGenerator().addProvider(event.includeServer(), new HallWorldGenData(out, lp));
         // 成就树（根节点 = 首次进入世界；见 AdvancementProviderData）

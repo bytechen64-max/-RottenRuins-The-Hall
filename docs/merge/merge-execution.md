@@ -283,6 +283,42 @@
   小体积 → 痈溃斥候，中体积 → 痈溃追迹者，大体积 → 痈溃巨碑；
 - 生成规则写入 `EvolutionDataProvider`，`runData` 已重新生成（`hall_inf` 现在 4 条规则，总计 20 条）。
 
+### 1.17 一阶召唤柱：方块感染 + 腐化群系自然生成（2026-11-01）
+
+#### 方块感染（infcore 方块扩散数据）
+- 新增 `CorruptionBlockSpreadDataProvider`（type = `rotten_ruins:corruption`，输出
+  `data/rotten_ruins/infcore_blockspread/corruption.json`，共 55 条规则）：
+  - 草/菌丝/灰化土/泥土/沙子/砂砾… → `spread_dirt`
+  - 石头/深板岩/安山岩/闪长岩/花岗岩/凝灰岩… → `spread_stone`
+  - 圆石/石砖/砖块 → `infection_cobblestone_block`
+  - 各类树叶 → `spread_infection_leaves`；各类原木 → `spread_infection_wood`
+  - 草/蕨/花 → `variable_height_crop`
+- `CorruptionSpreadHelper`（`overworld/manager`）封装：
+  - `spreadArea(level, center, radius, attempts)`：随机取点调 infcore
+    `BlockSpreadManager.applySpread(..., rotten_ruins:corruption)`；
+  - 腐土顶面 25% 概率长出 `corruption_grass`；
+  - `isCorruptionGround()` 给自然生成判落点；`registerZone()` 登记腐化区域。
+
+#### 一阶召唤柱行为
+- 每 20t：先感染**脚下方块**（中心取 `blockPosition().below()`，半径 4、8 次尝试），
+  再向周围扩散（半径 6、4 次尝试），并带柱状粒子；
+- 每 100t 把自身位置登记为腐化区域（半径 8）；区域数据独立于柱子存在，柱子被拆后区域仍在。
+
+#### 腐化群系自然生成
+- `CorruptionZoneData`（SavedData，每个 `ServerLevel` 独立）：保存区域中心/半径，
+  相邻区域自动合并、最大半径 16，随世界存档持久化；
+- `CorruptionZoneSpawnHandler`（Forge 事件，每 100t）：对每个区域，若 96 格内有玩家，
+  且区域中心 32 格内腐化生物 < 14，则在半径内随机柱状扫描腐化地面，找到 2 格空气位置后
+  按权重表生成腐化生物；
+- 权重表：同化种（僵尸/牛/猪/羊/鸡/骷髅/狼/蝙蝠/村民/骨堆）权重 2~12；
+  腐化种（degenerate 4/匍匐者）3~4；重构种（袭击者/孕育者/长臂兽/震撼者）1~2；
+  腐植柱 2；**一阶召唤柱 1（相对较少）**；
+- 生成的生物会 `finalizeSpawn(NATURAL)` 并设为持久化（避免刚生成就 despawn）。
+
+> 说明：这里的"腐化群系"是**数据驱动的腐化方块区域 + 区域刷怪器**，不是注册真实 biome
+> （后者需要 worldgen/biome source 改造，会动世界生成）。如果后续想要真正的腐化 biome，
+> 可以在这套区域数据之上再接 biome 注入。
+
 ---
 
 ## 2. 与完整目标相比的简化点（后续补）

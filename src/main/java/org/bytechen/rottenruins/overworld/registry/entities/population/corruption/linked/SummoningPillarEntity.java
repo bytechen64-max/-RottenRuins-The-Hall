@@ -15,6 +15,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionEntityTypes;
 import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
+import org.bytechen.rottenruins.overworld.manager.CorruptionSpreadHelper;
 import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.BaseLinkedEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.skill.CorruptionSkillFx;
 import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.skill.CorruptionSkillUtil;
@@ -45,6 +46,9 @@ public class SummoningPillarEntity extends BaseLinkedEntity {
 
     /** 腐植柱守卫检查计时 */
     private int guardTimer = 100;
+
+    /** 脚下方块感染 / 扩散计时 */
+    private int spreadTimer = 20;
 
     public SummoningPillarEntity(EntityType<? extends SummoningPillarEntity> entityType, Level level,
                                  Consumer<AbstractRottenEntity> resources) {
@@ -84,6 +88,22 @@ public class SummoningPillarEntity extends BaseLinkedEntity {
         }
         // 一阶召唤柱：维持身边 2 个腐植柱守卫
         tickHumusGuards();
+
+        // 腐化群系：直接感染脚下方块，并向周围扩散；区域登记后腐化生物会自然生成
+        if (this.level() instanceof ServerLevel serverLevel) {
+            if (this.spreadTimer > 0) {
+                this.spreadTimer--;
+            } else {
+                this.spreadTimer = 20;
+                CorruptionSpreadHelper.spreadArea(serverLevel, this.blockPosition().below(), 4, 8);
+                CorruptionSpreadHelper.spreadArea(serverLevel, this.blockPosition(), 6, 4);
+                CorruptionSkillFx.pillar(this.level(), this.position(), 1.2,
+                        CorruptionSkillUtil.CORRUPTION_RED, 8);
+            }
+            if (this.tickCount % 100 == 5) {
+                CorruptionSpreadHelper.registerZone(serverLevel, this.blockPosition(), 8);
+            }
+        }
 
         if (summonCooldown > 0) {
             summonCooldown--;
