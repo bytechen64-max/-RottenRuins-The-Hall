@@ -84,6 +84,9 @@ if (-not (Test-Path $asciiFont)) {
 }
 
 $baseSources = @(
+    'src\main\java\org\bytechen\rottenruins\client\gui\WandHudGeometry.java',
+    'src\main\java\org\bytechen\rottenruins\client\gui\WandHudMotion.java',
+    'src\main\java\org\bytechen\rottenruins\client\gui\WandHudVisuals.java',
     'tools\gui-preview\MiniJson.java',
     'tools\gui-preview\PreviewGl.java',
     'tools\gui-preview\PreviewTexture.java',

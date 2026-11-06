@@ -366,6 +366,15 @@ public class LangDataEN extends LanguageProvider {
         add("rotten_ruins.wheel.subtitle", "%s: OPEN/CLOSE  |  CLICK A SIGIL TO CAST");
         add("rotten_ruins.wheel.active_sigils", "ACTIVE SIGILS  %s / %s");
         add("rotten_ruins.wheel.mana", "MANA  %s / %s");
+        add("rotten_ruins.wand_hud.player_mana", "PLAYER MANA  %s / %s");
+        add("rotten_ruins.wand_hud.element_mana", "WAND %s  %s / %s");
+        add("rotten_ruins.wand_hud.common", "COMMON");
+        add("rotten_ruins.wand_hud.no_reserve", "NO WAND RESERVE");
+        add("rotten_ruins.wand_hud.skill", "SELECTED  %s");
+        add("rotten_ruins.wand_hud.no_skill", "NONE");
+        add("rotten_ruins.wand_hud.chat_hint", "Drag move · Wheel/corner scale · RMB reset");
+        add("rotten_ruins.wand_hud.hide", "HIDE WAND HUD");
+        add("rotten_ruins.wand_hud.show", "SHOW WAND HUD");
         add("rotten_ruins.wheel.release_to_cast", "CLICK A SIGIL TO CAST");
         add("rotten_ruins.wheel.rmb_cancel", "RMB  CLOSE");
         add("rotten_ruins.wheel.page", "WHEEL  %s");

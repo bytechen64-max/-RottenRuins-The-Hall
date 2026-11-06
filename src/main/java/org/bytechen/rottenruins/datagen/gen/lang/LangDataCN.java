@@ -349,6 +349,15 @@ public class LangDataCN extends LanguageProvider {
         add("rotten_ruins.wheel.subtitle", "%s 开关  |  点击方位施法");
         add("rotten_ruins.wheel.active_sigils", "主动法术  %s / %s");
         add("rotten_ruins.wheel.mana", "法力  %s / %s");
+        add("rotten_ruins.wand_hud.player_mana", "玩家魔能  %s / %s");
+        add("rotten_ruins.wand_hud.element_mana", "法杖%s储能  %s / %s");
+        add("rotten_ruins.wand_hud.common", "通用");
+        add("rotten_ruins.wand_hud.no_reserve", "法杖无元素储能");
+        add("rotten_ruins.wand_hud.skill", "当前技能  %s");
+        add("rotten_ruins.wand_hud.no_skill", "未选择");
+        add("rotten_ruins.wand_hud.chat_hint", "拖动位置 · 滚轮/右下角缩放 · 右键重置");
+        add("rotten_ruins.wand_hud.hide", "隐藏法杖状态");
+        add("rotten_ruins.wand_hud.show", "显示法杖状态");
         add("rotten_ruins.wheel.release_to_cast", "点击方位施法");
         add("rotten_ruins.wheel.rmb_cancel", "右键关闭");
         add("rotten_ruins.wheel.page", "轮盘  %s");

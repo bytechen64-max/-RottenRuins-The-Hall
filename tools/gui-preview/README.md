@@ -32,6 +32,8 @@ cmd /c "tools\gui-preview\gui_preview.cmd -Scene tab_divider -Time 2.0"      # �
 cmd /c "tools\gui-preview\gui_preview.cmd -Scene difficulty -Time 2.0"       # 难度选择界面
 cmd /c "tools\gui-preview\gui_preview.cmd -Scene spell_wheel -Time 3.4"      # 魔法轮盘施法 HUD（设计稿）
 cmd /c "tools\gui-preview\gui_preview.cmd -Scene spell_loadout -Time 2.0"    # 魔法装载界面（设计稿）
+cmd /c "tools\gui-preview\gui_preview.cmd -Scene wand_hud -Height 300 -Time 2" # 法杖 HUD 静态对照
+cmd /c "tools\gui-preview\gui_preview.cmd -Scene wand_hud -Height 300 -Time -1" # 导出 204 帧动效序列
 cmd /c "tools\gui-preview\gui_preview.cmd -All"                              # 全部场景
 ```
 
@@ -64,6 +66,7 @@ cmd /c "tools\gui-preview\gui_preview.cmd -All"                              # �
 | `spell_loadout` | `SceneSpellLoadout.java` | **魔法装载界面（设计稿）**：左侧法术图鉴（ACTIVE/PASSIVE 页签）、中间轮盘配置预览、右侧详情、拖拽绑定态、被动只读态 | `spell_loadout.png`、`spell_loadout_drag.png`、`spell_loadout_passive.png` |
 | `wheel_shader_lab` | `SceneWheelShaderLab.java` | 轮盘三支设计着色器的实验台（扇形状态 / 光环 / 核心，不含完整界面） | `wheel_shader_lab.png`、`wheel_shader_lab_t2.png`、`wheel_shader_lab_t4.png` |
 | `sdf_test` | `SceneSdfTest.java` | **SDF 平滑形状自检**（disc / ring / roundRect / capsule line / star / 细环），改 `sdf_ui` 或 `SdfShapes` 后先跑它 | `sdf_test.png` |
+| `wand_hud` | `SceneWandHud.java` | 与游戏共用圆环绘制和弹簧状态：细轨道、外置刻度、悬停推挤、高光、扣蓝残影和就绪扩散；`-Time -1` 导出 30 FPS 动效序列 | `wand_hud.png`、`wand_motion/frame_*.png` |
 | `source_machines` | `SceneSourceMachines.java` | 源荷滤波器手动 / 懒人预设 / 波段表与集荷器；复用实机波形线带，需先将 `ElementBand.java` 和 `SourceWaveform.java` 编译到 `build/circuit-test` | `source_filter_manual.png`、`source_filter_quick.png`、`source_filter_bands.png`、`source_collector_modern.png` |
 | `debug` | `SceneDebug.java` | 框架调试：分阶段画 fill/渐变/文字/贴图/shader，用来定位渲染问题 | `debug_*.png` |
 
