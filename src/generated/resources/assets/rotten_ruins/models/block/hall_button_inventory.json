@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/button_inventory",
+  "textures": {
+    "texture": "rotten_ruins:block/hall_planks"
+  }
+}

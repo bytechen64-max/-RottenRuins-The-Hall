@@ -1,0 +1,38 @@
+{
+  "parent": "rotten_ruins:root",
+  "criteria": {
+    "death_star": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:death_star"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancements.rotten_ruins.death.description"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "icon": {
+      "item": "rotten_ruins:death_star"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancements.rotten_ruins.death.title"
+    }
+  },
+  "requirements": [
+    [
+      "death_star"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

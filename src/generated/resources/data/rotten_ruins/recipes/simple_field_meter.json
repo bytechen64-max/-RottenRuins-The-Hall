@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "S": {
+      "item": "rotten_ruins:source_charge_sand"
+    }
+  },
+  "pattern": [
+    "GGG",
+    "SCS",
+    "III"
+  ],
+  "result": {
+    "item": "rotten_ruins:simple_field_meter"
+  },
+  "show_notification": true
+}

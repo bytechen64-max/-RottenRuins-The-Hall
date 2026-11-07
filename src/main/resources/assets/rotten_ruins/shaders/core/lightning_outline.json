@@ -1,0 +1,5 @@
+{
+  "vertex": "rotten_ruins:lightning_outline",
+  "fragment": "rotten_ruins:lightning_outline",
+  "attributes": ["Position", "Color", "Normal"]
+}

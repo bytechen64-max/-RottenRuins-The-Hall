@@ -1,0 +1,253 @@
+{
+  "entries": [
+    {
+      "type": "rotten_ruins:hall_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_player",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:player"
+    },
+    {
+      "type": "rotten_ruins:hall_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_skeleton",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:skeleton"
+    },
+    {
+      "type": "rotten_ruins:hall_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_player",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:corruption_player"
+    },
+    {
+      "type": "rotten_ruins:hall_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_skeleton",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:corruption_skeleton"
+    },
+    {
+      "type": "rotten_ruins:hall_evo",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:bonecrusher",
+          "weight": 50
+        },
+        {
+          "target": "rotten_ruins:heavy_bomb",
+          "weight": 50
+        }
+      ],
+      "source": "rotten_ruins:monolith"
+    },
+    {
+      "type": "rotten_ruins:corruption_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:corruption_bat",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:bat"
+    },
+    {
+      "type": "rotten_ruins:corruption_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:corruption_pig",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:pig"
+    },
+    {
+      "type": "rotten_ruins:corruption_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:corruption_sheep",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:sheep"
+    },
+    {
+      "type": "rotten_ruins:corruption_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:corruption_cow",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:cow"
+    },
+    {
+      "type": "rotten_ruins:corruption_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:corruption_wolf",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:wolf"
+    },
+    {
+      "type": "rotten_ruins:corruption_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:corruption_chicken",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:chicken"
+    },
+    {
+      "type": "rotten_ruins:corruption_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:corruption_skeleton",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:skeleton"
+    },
+    {
+      "type": "rotten_ruins:corruption_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:corruption_zombie",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:zombie"
+    },
+    {
+      "type": "rotten_ruins:corruption_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:corruption_villager",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:villager"
+    },
+    {
+      "type": "rotten_ruins:corruption_inf",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:corruption_player",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:player"
+    },
+    {
+      "type": "rotten_ruins:corruption_evo",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:degenerate_zombie",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:corruption_zombie"
+    },
+    {
+      "type": "rotten_ruins:corruption_evo",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:degenerate_cow",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:corruption_cow"
+    },
+    {
+      "type": "rotten_ruins:corruption_evo",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:degenerate_pig",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:corruption_pig"
+    },
+    {
+      "type": "rotten_ruins:corruption_evo",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:degenerate_villager",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:corruption_villager"
+    },
+    {
+      "type": "rotten_ruins:corruption_evo",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
+          "target": "rotten_ruins:long_arm_beast",
+          "weight": 50
+        },
+        {
+          "target": "rotten_ruins:shocker",
+          "weight": 50
+        }
+      ],
+      "source": "rotten_ruins:bearer"
+    }
+  ],
+  "replace": false
+}

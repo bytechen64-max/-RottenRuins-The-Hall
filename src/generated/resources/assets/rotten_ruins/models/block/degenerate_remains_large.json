@@ -1,0 +1,102 @@
+{
+  "elements": [
+    {
+      "faces": {
+        "down": {
+          "texture": "#4",
+          "uv": [
+            16.0,
+            0.0,
+            0.0,
+            16.0
+          ]
+        },
+        "up": {
+          "texture": "#4",
+          "uv": [
+            16.0,
+            16.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "from": [
+        0,
+        0.01,
+        0
+      ],
+      "to": [
+        16,
+        0.01,
+        16
+      ]
+    },
+    {
+      "faces": {
+        "north": {
+          "texture": "#6"
+        },
+        "south": {
+          "texture": "#6"
+        }
+      },
+      "from": [
+        0,
+        0,
+        8
+      ],
+      "rotation": {
+        "angle": 45.0,
+        "axis": "y",
+        "origin": [
+          8,
+          0,
+          8
+        ],
+        "rescale": true
+      },
+      "to": [
+        16,
+        16,
+        8
+      ]
+    },
+    {
+      "faces": {
+        "north": {
+          "texture": "#6"
+        },
+        "south": {
+          "texture": "#6"
+        }
+      },
+      "from": [
+        0,
+        0,
+        8
+      ],
+      "rotation": {
+        "angle": -45.0,
+        "axis": "y",
+        "origin": [
+          8,
+          0,
+          8
+        ],
+        "rescale": true
+      },
+      "to": [
+        16,
+        16,
+        8
+      ]
+    }
+  ],
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "4": "rotten_ruins:block/degenerate_remains_large",
+    "6": "rotten_ruins:block/degenerate_remains_large_side",
+    "particle": "rotten_ruins:block/degenerate_remains_large"
+  }
+}

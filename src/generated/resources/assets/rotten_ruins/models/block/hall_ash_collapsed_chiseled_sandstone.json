@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "rotten_ruins:block/hall_sandstone_bottom",
+    "side": "rotten_ruins:block/hall_ash_collapsed_chiseled_sandstone",
+    "top": "rotten_ruins:block/hall_sandstone_top"
+  }
+}

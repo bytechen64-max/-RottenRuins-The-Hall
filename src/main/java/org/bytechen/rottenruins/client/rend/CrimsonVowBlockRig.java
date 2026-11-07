@@ -1,0 +1,240 @@
+package org.bytechen.rottenruins.client.rend;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import org.bytechen.rottenruins.overworld.registry.items.WeaponBlock;
+
+/**
+ * 低版本（1.8 式）举剑格挡的<b>姿态增量</b>。
+ *
+ * <h3>为什么是"增量"，而不是像参考模组那样"整套替换"</h3>
+ * <p>参考模组（ArcaneVortex）的做法是：在 {@code renderArmWithItem} 头部取消原版，
+ * 然后自己 pushPose → 套一组固定变换 → {@code ItemRenderer.renderStatic(stack,
+ * FIRST_PERSON_RIGHT_HAND, ...)}。它<b>能那样做的前提是它的武器没有自定义
+ * first-person display 变换</b>（照抄原版手持观感）。</p>
+ *
+ * <p>而本模组的 crimson_vow 模型自带：</p>
+ * <pre>
+ *   "firstperson_righthand": { "rotation": [-68.98, -78.66, -29.26], "translation": [2.25, 5.25, 0] }
+ * </pre>
+ * <p>那组变换本来是为了"正常手持"调好的。用整套替换时，它会被
+ * {@code FIRST_PERSON_RIGHT_HAND} 上下文<b>再套一遍</b>，与格挡姿态的旋转叠加，
+ * 结果就是剑刃被拧向镜头 —— 实机反馈的"整个剑往摄像机戳"正是这个。</p>
+ *
+ * <p>所以这里改成：<b>让原版照常渲染</b>（它的 arm transform 与模型 display
+ * 变换都按设计生效），我们只在传给
+ * {@code ItemRenderer.render(...)} 的 PoseStack 上<b>叠加一个增量</b>，
+ * 把"正常手持"抬成"举剑格挡"。这样：</p>
+ * <ul>
+ *   <li>模型自己的 display 变换只生效一次，剑刃方向不再被拧乱；</li>
+ *   <li>增量即使微调，也只是在"正常手持"基础上偏一点，
+ *       不会出现"整把剑消失"或"戳镜头"这种量级的问题；</li>
+ *   <li>不需要自己算 {@code side}、也不需要重画手臂（原版那条路径本来就不画手臂）。</li>
+ * </ul>
+ *
+ * <h3>增量的方向与量级</h3>
+ * <p>原版第一人称持剑是"剑在右下、刃朝上"。格挡要的是"抬到身前、横向斜挡"，
+ * 所以增量取：向上抬、往屏幕中心收、绕 Z 轴把剑身横过来。
+ * 三个量都在下面的常数里，实机按观感调即可。</p>
+ */
+public final class CrimsonVowBlockRig {
+
+    // ── 姿态增量常数 ──
+    //
+    // 单位与相机空间一致（1.0 ≈ 一个方块）。数值偏保守：
+    // 目标是"看得见、像在格挡"，在正常手持基础上做小幅偏移最安全。
+
+    /** 向上抬。原版持剑在右下，需要抬高才进入视野中央。 */
+    private static final float LIFT_Y = 0.26F;
+
+    /** 往屏幕中心收（负值 = 朝中心方向）。 */
+    private static final float INWARD_X = -0.18F;
+
+    /** 朝镜头方向略微拉近，避免剑被身体挡住。 */
+    private static final float NEAR_Z = 0.12F;
+
+    /**
+     * 把剑身横过来，从"竖举"变成 1.8 那种"斜挡在身前"。
+     * <b>符号 = 朝哪边斜</b>，实机看是镜像的就把符号取反。
+     */
+    private static final float SWEEP_Z = 38.0F;
+
+    /**
+     * 绕 Y 轴转，让<b>剑面正对镜头</b>。
+     *
+     * <p>剑是薄片，侧对镜头时几乎看不见（只见一条边）。原版第一人称持剑时
+     * 剑面是正对镜头的，但格挡姿态叠了 {@link #SWEEP_Z} 与 {@link #TILT_X}
+     * 之后剑面会被转侧，所以需要这一项把它转回来。</p>
+     *
+     * <p>正值朝一侧、负值朝另一侧；实机若发现转向了背面（看到剑背），取反即可。</p>
+     */
+    private static final float FACE_Y = 60.0F;
+
+    /** 略微抬头/低头，让剑面朝镜头而不是侧对（剑是薄片，侧对会看不见）。 */
+    private static final float TILT_X = -12.0F;
+
+    /** 整体缩小一点，防止剑尖顶出画面。 */
+    private static final float SCALE = 0.95F;
+
+    // ── 「起誓」蓄力期间叠加的增量 ──
+    //
+    //  这段是**表现层**的：蓄力本身由服务端的 CrimsonVowChargeEntity 推进，
+    //  这里只是把"正在积攒"这件事画到剑上，让第一人称也有反馈 ——
+    //  否则玩家低头只看得到地上那个圈，手上毫无变化。
+    //
+    //  三个量都很小：第一人称的任何大幅位移都会让剑看起来"脱手"。
+
+    /** 蓄满时剑往前推多少（格）。 */
+    private static final float CHARGE_PUSH = 0.17F;
+    /** 蓄满时剑抬高多少（格）。 */
+    private static final float CHARGE_LIFT = 0.055F;
+    /** 蓄满时绕 X 轴压低多少（度）。 */
+    private static final float CHARGE_TILT = -9.0F;
+
+    private CrimsonVowBlockRig() {}
+
+    /**
+     * 该实体此刻是否正在用某把 {@link WeaponBlock} 武器格挡。
+     * 复用接口的判定，保证"看得见的姿态"和"算得出的减伤"是同一个条件。
+     */
+    public static boolean isBlocking(LivingEntity entity) {
+        return org.bytechen.rottenruins.api.IBlockingWeapon.isBlocking(entity);
+    }
+
+    /**
+     * 在已有（原版已摆好的）姿态上叠加格挡增量。
+     *
+     * <p>由混入类在 {@code ItemRenderer.render(...)} 的 PoseStack 参数上调用，
+     * 因此此刻栈上就是"正常手持"的完整变换，包括玩家手臂位置与模型 display 变换。</p>
+     *
+     * <p>这个重载固定按<b>右手</b>叠加，保留给"确定是主手"的调用点。
+     * 需要在世界/第一人称里区分左右手时用 {@link #applyBlockDelta(PoseStack, boolean)}。</p>
+     *
+     * @param poseStack 原版准备传给物品渲染的 PoseStack（就地修改）
+     */
+    public static void applyBlockDelta(PoseStack poseStack) {
+        applyBlockDelta(poseStack, false);
+    }
+
+    /**
+     * 叠加格挡增量，<b>支持左手</b>。
+     *
+     * <h3>为什么左手要镜像</h3>
+     * <p>增量是在<b>相机空间</b>里写的，而原版把两只手放在对称的位置上：
+     * {@code ItemInHandRenderer.applyItemArmTransform} 的平移是
+     * {@code x = (arm == RIGHT ? +1 : -1) * 0.56}，也就是右手在屏幕右、左手在屏幕左。
+     * 所以同一组增量直接套到左手上会变成：往<b>屏幕外</b>平移、往反方向横剑、
+     * 剑面转向背面 —— 表现就是"左手举剑姿势完全不对"。</p>
+     *
+     * <p>镜像规则（绕 Y 轴镜像相机空间）：</p>
+     * <ul>
+     *   <li>X 方向平移取反 —— 左手要"往屏幕中心收"是 +X；</li>
+     *   <li>绕 Z、绕 Y 的旋转取反 —— 横剑方向与剑面朝向都跟着镜像；</li>
+     *   <li>Y 平移、Z 平移、绕 X 的俯仰、整体缩放<b>不变</b> ——
+     *       抬高、拉近、低头、大小在镜像下是同一件事。</li>
+     * </ul>
+     *
+     * @param poseStack 原版准备传给物品渲染的 PoseStack（就地修改）
+     * @param mirrored  {@code true} = 这只手渲染在屏幕左侧（左手），X 平移与 Z/Y 旋转取反
+     */
+    public static void applyBlockDelta(PoseStack poseStack, boolean mirrored) {
+        float sign = mirrored ? -1.0F : 1.0F;
+
+        poseStack.translate(INWARD_X * sign, LIFT_Y, NEAR_Z);
+        poseStack.mulPose(Axis.ZP.rotationDegrees(SWEEP_Z * sign));
+        // Y 轴放在 Z 之后：先把剑横过来，再绕竖直轴把剑面转向镜头。
+        // 顺序反过来的话 Z 会把 Y 的结果再转侧，等于白转。
+        poseStack.mulPose(Axis.YP.rotationDegrees(FACE_Y * sign));
+        poseStack.mulPose(Axis.XP.rotationDegrees(TILT_X));
+        poseStack.scale(SCALE, SCALE, SCALE);
+        applyChargeDelta(poseStack);
+    }
+
+    /**
+     * 这次渲染的这只手是否落在<b>屏幕左侧</b>（也就是需要镜像的那一侧）。
+     *
+     * <p>与原版 {@code ItemInHandRenderer.renderArmWithItem} 的算法一致：
+     * 先取"要渲染的是哪条手臂"，
+     * {@code arm = (hand == MAIN_HAND) ? player.getMainArm() : player.getMainArm().getOpposite()}，
+     * 再看它是不是左臂。所以左手玩家主手举剑、右手玩家副手举剑，都会走镜像分支。</p>
+     */
+    public static boolean rendersOnLeftSide(AbstractClientPlayer player, InteractionHand hand) {
+        if (player == null) return false;
+        HumanoidArm arm = hand == InteractionHand.MAIN_HAND
+                ? player.getMainArm()
+                : player.getMainArm().getOpposite();
+        return arm == HumanoidArm.LEFT;
+    }
+
+    /**
+     * 蓄力增量：把剑往前推、略微抬高并压低剑尖。
+     *
+     * <p>叠在格挡姿态<b>之后</b>（而不是替换它）：蓄力是"举着剑继续攒"，
+     * 格挡的基准姿态必须原样保留，两者是相加关系。</p>
+     *
+     * <p>进度直接读客户端那个蓄力法阵实体 —— 它的 {@code DATA_CHARGE} 是
+     * 同步数据，两端一致，所以这里不需要任何新网络包，也不会与真正的
+     * 蓄力进度错开（读的是同一个源）。</p>
+     */
+    private static void applyChargeDelta(PoseStack poseStack) {
+        float charge = localCharge();
+        if (charge <= 0.001F) return;
+
+        poseStack.translate(0.0F, CHARGE_LIFT * charge, -CHARGE_PUSH * charge);
+        poseStack.mulPose(Axis.XP.rotationDegrees(CHARGE_TILT * charge));
+    }
+
+    /**
+     * 本地玩家当前举着的剑的蓄力进度（0..1）；没在蓄力时返回 0。
+     *
+     * <p>按 {@code ownerUUID} 认人，而不是"找到最近的一个" —— 附近可能有
+     * 别的玩家也在蓄力，认错人会让你的剑跟着别人的节奏抖。</p>
+     */
+    public static float localCharge() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return 0f;
+        java.util.UUID self = mc.player.getUUID();
+        for (net.minecraft.world.entity.Entity e : mc.level.entitiesForRendering()) {
+            if (e instanceof org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.CrimsonVowChargeEntity c
+                    && self.equals(c.getOwnerUUID())) {
+                return c.charge(mc.getFrameTime());
+            }
+        }
+        return 0f;
+    }
+
+    /**
+     * 供混入类判断：这次渲染是否要套格挡姿态。
+     *
+     * <p>注意<b>不需要</b>判断 {@code hand}：{@code renderArmWithItem} 每次只为
+     * 一只手调用，而 {@code IBlockingWeapon.isBlocking} 已经用
+     * {@code getUseItem()} 锁定"正在被使用的那只手"的物品 ——
+     * 所以只有真正在举的那只手会命中，另一只手照常。</p>
+     */
+    public static boolean shouldApply(AbstractClientPlayer player, ItemStack stack,
+                                      InteractionHand hand) {
+        if (stack.isEmpty()) return false;
+        if (!(stack.getItem() instanceof org.bytechen.rottenruins.api.IBlockingWeapon)) return false;
+        // 双手都可能拿到同一个物品实例（副手），这里再确认一次"这只手就是使用中的那只"
+        if (hand != player.getUsedItemHand()) return false;
+        return isBlocking(player);
+    }
+
+    /** 便利方法：把增量应用到 {@code ItemRenderer.render} 的第 5 个参数（PoseStack）。 */
+    public static PoseStack modified(PoseStack poseStack) {
+        applyBlockDelta(poseStack);
+        return poseStack;
+    }
+
+    @SuppressWarnings("unused")
+    private static ItemRenderer itemRenderer() {
+        return Minecraft.getInstance().getItemRenderer();
+    }
+}

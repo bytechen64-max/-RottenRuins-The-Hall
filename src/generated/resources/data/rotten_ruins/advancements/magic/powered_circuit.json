@@ -1,0 +1,32 @@
+{
+  "parent": "rotten_ruins:magic/source_collector",
+  "criteria": {
+    "perform": {
+      "conditions": {
+        "milestone": "powered_circuit"
+      },
+      "trigger": "rotten_ruins:source_milestone"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancements.rotten_ruins.magic/powered_circuit.description"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "icon": {
+      "item": "rotten_ruins:source_collector"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancements.rotten_ruins.magic/powered_circuit.title"
+    }
+  },
+  "requirements": [
+    [
+      "perform"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

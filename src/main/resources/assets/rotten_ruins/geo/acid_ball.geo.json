@@ -1,0 +1,35 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.acid_ball",
+				"texture_width": 16,
+				"texture_height": 16,
+				"visible_bounds_width": 2,
+				"visible_bounds_height": 2,
+				"visible_bounds_offset": [0, 0, 0]
+			},
+			"bones": [
+				{
+					"name": "bb_main",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [-4, -4, 0],
+							"size": [8, 8, 0],
+							"uv": {
+								"north": {"uv": [3, 3], "uv_size": [10, 10]},
+								"east": {"uv": [0, 5], "uv_size": [0, 8]},
+								"south": {"uv": [13, 3], "uv_size": [-10, 10]},
+								"west": {"uv": [8, 5], "uv_size": [0, 8]},
+								"up": {"uv": [0, 5], "uv_size": [8, 0]},
+								"down": {"uv": [8, 5], "uv_size": [8, 0]}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

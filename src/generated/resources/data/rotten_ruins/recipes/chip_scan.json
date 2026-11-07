@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": {
+      "item": "minecraft:amethyst_shard"
+    },
+    "C": {
+      "item": "rotten_ruins:chip_null"
+    },
+    "P": {
+      "item": "minecraft:compass"
+    },
+    "Q": {
+      "item": "minecraft:quartz"
+    }
+  },
+  "pattern": [
+    " A ",
+    "QCQ",
+    " P "
+  ],
+  "result": {
+    "item": "rotten_ruins:chip_scan"
+  },
+  "show_notification": true
+}

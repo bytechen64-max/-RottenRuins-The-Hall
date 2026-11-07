@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "S": {
+      "item": "rotten_ruins:source_charge_sand"
+    },
+    "T": {
+      "item": "minecraft:stick"
+    }
+  },
+  "pattern": [
+    "S",
+    "I",
+    "T"
+  ],
+  "result": {
+    "item": "rotten_ruins:grounding_stake"
+  },
+  "show_notification": true
+}

@@ -43,6 +43,13 @@ side = "BOTH"
 [[dependencies."${mod_id}"]]
 modId = "infcore"
 mandatory = true
-versionRange = "*"
+versionRange = "[0.1.2,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies."${mod_id}"]]
+modId = "curios"
+mandatory = true
+versionRange = "[5.4.0,)"
 ordering = "NONE"
 side = "BOTH"
