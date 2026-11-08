@@ -6,6 +6,7 @@ import org.bytechen.rottenruins.overworld.registry.capability.base.AbstractCapab
 import org.bytechen.rottenruins.overworld.registry.capability.interfaces.ByteItemHandle;
 import org.bytechen.rottenruins.overworld.registry.capability.interfaces.ByteNumberAbility;
 import org.bytechen.rottenruins.overworld.registry.capability.threat.ThreatCapability;
+import org.bytechen.rottenruins.overworld.registry.effect.customEffect.CustomEffectHolder;
 import org.bytechen.rottenruins.overworld.registry.capability.PlayerMagicPool;
 import org.bytechen.rottenruins.overworld.registry.capability.TwistedPoint;
 import net.minecraft.resources.ResourceLocation;
@@ -30,6 +31,16 @@ public class CapabilityRegistry {
 
     /** 威胁点数：所有生物 / 玩家通用 */
     public static final Capability<ThreatCapability> THREAT_CAP =
+            CapabilityManager.get(new CapabilityToken<>(){});
+
+    /**
+     * 自定义效果容器（{@code CustomEffectHolder}）：挂在<b>所有</b> LivingEntity 上，
+     * 自带 NBT 序列化（{@code IModCapability}），所以效果会随实体一起存进存档。
+     *
+     * <p>它与原版 {@code MobEffect} 那套完全独立：不进 Forge 效果注册表、
+     * 不出现在原版效果列表里、{@code /effect clear} 与牛奶也清不掉它。</p>
+     */
+    public static final Capability<CustomEffectHolder> CUSTOM_EFFECT_CAP =
             CapabilityManager.get(new CapabilityToken<>(){});
 
     /**

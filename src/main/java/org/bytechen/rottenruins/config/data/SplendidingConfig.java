@@ -68,6 +68,16 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public int highPotentialChunkRarity = DEFAULT_HIGH_POTENTIAL_CHUNK_RARITY;
 
+    /** 势能合成台的基准合成时间（tick）：200 tick = 10 秒。 */
+    public static final int DEFAULT_POTENTIAL_CRAFTING_BASE_TICKS = 200;
+
+    @Comment("势能合成台的基准合成时间（单位 tick，20 tick = 1 秒）。"
+            + "默认 200（= 10 秒）。配方 JSON 里的 outputtime 可以单独覆盖这个值。"
+            + "接入势能后最多加速到 2 倍（势能满 15 时时间减半）。")
+    @ConfigEntry.BoundedDiscrete(min = 1, max = 72000)
+    @ConfigEntry.Gui.Tooltip
+    public int potentialCraftingBaseTimeTicks = DEFAULT_POTENTIAL_CRAFTING_BASE_TICKS;
+
     @Comment("Base damage multiplier")
     public float damageMultiplier = 1.0f;
 

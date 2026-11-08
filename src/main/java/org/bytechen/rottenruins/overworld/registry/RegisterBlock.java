@@ -24,6 +24,7 @@ import org.bytechen.rottenruins.overworld.registry.blocks.impl.DeathCoreBlock;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.GroundingStakeBlock;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.SourceWireBlock;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.SourceMachineBlock;
+import org.bytechen.rottenruins.overworld.registry.blocks.impl.PotentialCraftingTableBlock;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.FleshRiftBlock;
 import org.bytechen.rottenruins.overworld.registry.items.DeathCoreBlockItem;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.HallAshCactusBlock;
@@ -99,6 +100,20 @@ public class RegisterBlock {
             new SourceMachineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F).noOcclusion(),false));
     public static final RegistryObject<SourceMachineBlock> SOURCE_COLLECTOR=registerBlockWithItem("source_collector",()->
             new SourceMachineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F).noOcclusion(),true));
+
+    /**
+     * <b>势能合成台</b>：16 格环形材料位 + 圆心产物位，靠势能驱动。
+     *
+     * <p>它继承 {@link SourceMachineBlock}，因此自动成为势能电路里的一个设备
+     * （前后两个口、{@code SourceWireNetwork} 会往它的 {@code POWER} 属性写强度）。
+     * 界面与配方见 {@code PotentialCraftingMenu} / {@code PotentialCraftingRecipe}。</p>
+     */
+    public static final RegistryObject<PotentialCraftingTableBlock> POTENTIAL_CRAFTING_TABLE =
+            registerBlockWithItem("potential_crafting_table",
+                    () -> new PotentialCraftingTableBlock(
+                            BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
+                                    .strength(3.5F, 6.0F)
+                                    .noOcclusion()));
 
     public static final RegistryObject<GroundingStakeBlock> GROUNDING_STAKE =
             registerBlockWithItem("grounding_stake", () -> new GroundingStakeBlock(

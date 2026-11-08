@@ -68,6 +68,13 @@ public class NetworkHelper {
                 org.bytechen.rottenruins.network.c2s.FilterSettingsPacket::encode,
                 org.bytechen.rottenruins.network.c2s.FilterSettingsPacket::decode,
                 org.bytechen.rottenruins.network.c2s.FilterSettingsPacket::handle,Optional.of(NetworkDirection.PLAY_TO_SERVER));
+
+        // 自定义效果快照同步（服务端 → 客户端，单向）
+        NETWORK.registerMessage(packetId++, org.bytechen.rottenruins.network.s2c.CustomEffectSyncPacket.class,
+                org.bytechen.rottenruins.network.s2c.CustomEffectSyncPacket::encode,
+                org.bytechen.rottenruins.network.s2c.CustomEffectSyncPacket::decode,
+                org.bytechen.rottenruins.network.s2c.CustomEffectSyncPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 
     public static <MSG> void sendToPlayer(ServerPlayer player, MSG msg) { NETWORK.send(PacketDistributor.PLAYER.with(() -> player), msg); }

@@ -6,6 +6,7 @@ import org.bytechen.rottenruins.command.AnomalyCommand;
 import org.bytechen.rottenruins.command.BlackHoleCommand;
 import org.bytechen.rottenruins.command.CollapseCommand;
 import org.bytechen.rottenruins.command.CrimsonVowCommand;
+import org.bytechen.rottenruins.command.CustomEffectCommand;
 import org.bytechen.rottenruins.command.HighPotentialCommand;
 import org.bytechen.rottenruins.command.MeteorEventCommand;
 import org.bytechen.rottenruins.command.SpreadCommand;
@@ -113,6 +114,9 @@ public class ForgeEventHandler {
         if (event.getEntity() == null) return;
         ForgeEventHelpers.handleLivingTick(event.getEntity());
         IBlockingWeapon.tickBlocking(event.getEntity());
+        // 自定义效果：双端都会进，服务端跑逻辑、客户端只倒计时（见 CustomEffects#tick）
+        org.bytechen.rottenruins.overworld.registry.effect.customEffect.CustomEffects
+                .tick(event.getEntity());
     }
 
     @SubscribeEvent
@@ -127,6 +131,8 @@ public class ForgeEventHandler {
         CollapseCommand.register(event);
         BlackHoleCommand.register(event);
         ThreatCommand.register(event);
+        // 自定义效果的调试入口（/rotten_ruins ce ...）
+        CustomEffectCommand.register(event);
         HighPotentialCommand.register(event);
         // 绯红誓约「起誓」的调试入口（直接展开法阵 / 起蓄力阵 / 清冷却）
         CrimsonVowCommand.register(event);

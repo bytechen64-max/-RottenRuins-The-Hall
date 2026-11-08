@@ -43,7 +43,9 @@ public class ItemGenData extends ItemModelProvider {
             // 魔法更新：贴图待补，先用手写模型
             "fire_ball", "spear_of_judgment", "suppression_field",
             // 疾行：贴图还没画，先用手写模型占位（补上 textures/item/sprint.png 就能显示）
-            "sprint"
+            "sprint",
+            // 奥数立方：贴图待补，先用手写模型占位（补上 textures/item/olympiad_cube.png 就能显示）
+            "olympiad_cube"
     );
 
     @Override

@@ -177,6 +177,11 @@ public class LangDataEN extends LanguageProvider {
                 "Debug · block resolves x%s%% · frontal only %s · use duration %s ticks · entity reach +%s");
 
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LORE, "\"Noon is silent; only cold water remains.\"");
+        // Death message for the SilentDaylight damage type (damage_type/silent_daylight_ice.json)
+        // %1$s = victim, %2$s = killer; the killer is intentionally not printed
+        add("death.attack.rotten_ruins.silent_daylight_ice", "%1$s was frozen to death, teammate turn off the CDU");
+        add("death.attack.rotten_ruins.silent_daylight_ice.item", "%1$s was frozen to death, teammate turn off the CDU");
+        add("death.attack.rotten_ruins.silent_daylight_ice.player", "%1$s was frozen to death, teammate turn off the CDU");
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TIDE, "Tide");
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_TIDE, "The blade lies under a layer of flowing water");
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TRAIT, "Daylight");
@@ -259,6 +264,16 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterBlock.SOURCE_WIRE.get(), "Source Wire");
         add(RegisterBlock.SOURCE_FILTER.get(), "Source Charge Filter");
         add(RegisterBlock.SOURCE_COLLECTOR.get(), "Charge Collector");
+        add(RegisterBlock.POTENTIAL_CRAFTING_TABLE.get(), "Potential Crafting Altar");
+        add("block.rotten_ruins.potential_crafting_table.hint",
+                "16 ring slots around one central output slot. Recipes are shapeless; ingredients are not refunded once crafting starts.");
+        add("block.rotten_ruins.potential_crafting_table.hint_power",
+                "Needs potential from a source wire circuit (high-potential zone to grounding stake). More potential = faster, down to half the time.");
+        add("gui.rotten_ruins.potential_crafting.power", "Potential %s / %s");
+        add("gui.rotten_ruins.potential_crafting.remaining", "%s s left");
+        add("gui.rotten_ruins.potential_crafting.needs_power", "Requires potential");
+        add("gui.rotten_ruins.potential_crafting.idle", "Place ingredients to begin");
+        add("gui.rotten_ruins.potential_crafting.no_recipe", "No matching recipe");
         add("gui.rotten_ruins.source.reference", "Bands");
         add("gui.rotten_ruins.source.mode.0", "Manual");
         add("gui.rotten_ruins.source.mode.1", "Quick tune");
@@ -319,6 +334,7 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterItem.PURIFYING_LIGHT.get(), "Purifying Light");
         add(RegisterItem.ARCANE_STEP.get(), "Arcane Step");
         add(RegisterItem.SPRINT.get(), "Sprint");
+        add(RegisterItem.OLYMPIAD_CUBE.get(), "Olympiad Cube");
         add("item.rotten_ruins.tidal_pulse.desc", "Pushes creatures back; extinguishes you and grants fire and water protection");
         add("item.rotten_ruins.briar_snare.desc", "Entangles creatures near your crosshair with weakness and poison");
         add("item.rotten_ruins.purifying_light.desc", "Heals, cleanses and shields allies; harms hostiles, especially undead");

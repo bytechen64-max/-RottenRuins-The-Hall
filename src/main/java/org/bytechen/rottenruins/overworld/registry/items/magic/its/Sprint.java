@@ -72,7 +72,7 @@ public class Sprint extends CMagicBaseItem {
     /**
      * <b>动量倍率</b>：算出来的初速度整体乘这个数。
      *
-     * <p>它只放大<b>实际给出的速度</b>，不改 {@link #lift} 的标定 ——
+     * <p>它只放大<b>实际给出的速度</b>，不改 {@link #} 的标定 ——
      * {@code lift} 仍然是"等效竖直抬升多少格"的衡量尺度（用来缩放特效与音调），
      * 而乘 3 之后真正飞出去的距离远大于 lift 所对应的抛物线
      * （水平/竖直都会按比例变长，且拖得更久）。</p>
@@ -83,7 +83,7 @@ public class Sprint extends CMagicBaseItem {
         //               属性              流派         使用方式            蓝  CD  蓄力 每秒 伤害
         super(defaultProperties(), MagicType.LIGHT, UsingType.IMMEDIATELY,
                 30,     // 启动耗蓝
-                100,    // 冷却 tick（5 秒；特殊使用时减半 → 2.5 秒）
+                60,    // 冷却 tick（5 秒；特殊使用时减半 → 2.5 秒）
                 0,      // 蓄力 tick —— 非 CHARGE，基类会归零
                 0,      // 每秒维持耗蓝 —— 非 KEEP，基类会归零
                 0.0F);  // 不造成伤害

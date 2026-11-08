@@ -39,18 +39,22 @@ import org.joml.Vector3f;
  * 框架在维持期间回调 {@link #onKeepTick}。</p>
  *
  * <h3>半径与法术强度</h3>
- * <p>{@link #radiusFor}：{@code 5 × (1 + 强度加成/4)}，其中"强度加成"是
+ * <p>{@link #radiusOf}：{@code 10 × (1 + 强度加成/4)}，其中"强度加成"是
  * {@code rotten_ruins:spell_power}（倍率属性，默认 1.0）<b>比基准 1.0 多出来的部分</b>：</p>
  * <table border="1">
  *   <tr><th>{@code rotten_ruins:spell_power}</th><th>加成</th><th>半径</th></tr>
- *   <tr><td>1.0（默认）</td><td>0</td><td><b>5.0 格</b></td></tr>
- *   <tr><td>1.4</td><td>+0.4</td><td>5.5 格</td></tr>
- *   <tr><td>2.0</td><td>+1.0</td><td>6.25 格</td></tr>
+ *   <tr><td>1.0（默认）</td><td>0</td><td><b>10.0 格</b></td></tr>
+ *   <tr><td>1.4</td><td>+0.4</td><td>11.0 格</td></tr>
+ *   <tr><td>2.0</td><td>+1.0</td><td>12.5 格</td></tr>
  * </table>
- * <p>之所以要减掉 1.0：需求同时说了"初始半径 5 格"和"大约 5×(1+强度/4)"，
- * 而属性默认值就是 1.0 —— 不减的话默认半径会变成 6.25，和"初始 5 格"对不上。
- * 想要字面意义的 {@code 5×(1+spell_power/4)}，把 {@link #radiusFor} 里的
- * {@code - 1.0d} 去掉即可。</p>
+ * <p>之所以要减掉 1.0：属性默认值就是 1.0，不减的话默认半径会和
+ * {@link #BASE_RADIUS} 对不上。想要字面意义的 {@code 10×(1+spell_power/4)}，
+ * 把 {@link #radiusOf} 里的 {@code - 1.0d} 去掉即可。</p>
+ *
+ * <h3>视觉</h3>
+ * <p>场本身没有实体：客户端 {@code SuppressionFieldRenderer} 用<b>和寂寒白日三棱锥同一套</b>
+ * 的画法（只画棱、辉光 + 芯两层、加法混合），把它画成一个<b>包住整个场的正方体</b>，
+ * 半边长就是 {@link #radiusOf} 算出来的半径，所以尺寸永远和实际判定一致。</p>
  *
  * <h3>摔落伤害是怎么算的</h3>
  * <p>向下压的冲击速度是 {@value #SUPPRESS_PUSH} 格/tick，把它当动量，
@@ -78,13 +82,16 @@ public class SuppressionField extends CMagicBaseItem {
     // ══════════════════════════════════════════════════════════════
 
     /** 基础半径（格）：法术强度等于基准值（加成 0）时就是它。 */
-    public static final double BASE_RADIUS = 5.0d;
+    public static final double BASE_RADIUS = 10.0d;
 
     /**
      * 半径上限（格）。防呆用：{@code spell_power} 是可叠的倍率属性，
      * 没上限的话一条 {@code /attribute} 就能让场罩住整个区块。
+     *
+     * <p>跟着 {@link #BASE_RADIUS} 一起放大：上限的作用是"防呆"，
+     * 相对成长空间要和基础半径保持同一个比例。</p>
      */
-    public static final double MAX_RADIUS = 24.0d;
+    public static final double MAX_RADIUS = 48.0d;
 
     /** 每次脉冲给空中目标的向下冲击速度（格/tick）—— 这就是"动量"的来源。 */
     public static final double SUPPRESS_PUSH = 0.8d;
@@ -127,17 +134,38 @@ public class SuppressionField extends CMagicBaseItem {
     // ══════════════════════════════════════════════════════════════
 
     /**
-     * 按法术强度算场的半径：{@code 5 × (1 + 强度加成/4)}，
+     * 按法术强度算场的半径：{@code 10 × (1 + 强度加成/4)}，
      * 其中"强度加成" = <b>有效法强 − 1.0</b>，有效法强 = 通用法强 + 虚空法强（相加，
      * 见 {@link MagicStats#spellPower}）。
      *
-     * <p>想做成"另一个形状的成长曲线"直接覆写它 —— 它只在一处被调用。</p>
+     * <p><b>双端可用</b>：服务端用它算判定，客户端渲染器用它算那个正方体的大小，
+     * 两边必须是同一个公式，所以真正实现在这里、由 {@link #radiusFor} 转发。</p>
+     *
+     * <table border="1">
+     *   <tr><th>{@code spell_power}</th><th>加成</th><th>半径</th></tr>
+     *   <tr><td>1.0（默认）</td><td>0</td><td><b>10.0 格</b></td></tr>
+     *   <tr><td>1.4</td><td>+0.4</td><td>11.0 格</td></tr>
+     *   <tr><td>2.0</td><td>+1.0</td><td>12.5 格</td></tr>
+     * </table>
+     *
+     * <p>减 1.0 是为了让"属性默认值（1.0）= 基础半径"成立。</p>
      */
-    protected double radiusFor(@NotNull ServerPlayer caster, @NotNull ItemStack stack) {
+    public static double radiusOf(@NotNull Player caster, @NotNull ItemStack stack) {
         double spellPower = MagicStats.spellPower(caster, stack);
-        // 减 1.0 让"默认属性 = 基础半径 5 格"成立，见类注释里的表
+        // 减 1.0 让"默认属性 = 基础半径"成立，见上面的表
         double bonus = spellPower - 1.0d;
         return Mth.clamp(BASE_RADIUS * (1.0d + bonus / 4.0d), 1.0d, MAX_RADIUS);
+    }
+
+    /**
+     * 实例入口，转发给 {@link #radiusOf}。
+     *
+     * <p>想做成"另一个形状的成长曲线"直接覆写它 —— 它只在一处被调用。
+     * 注意客户端渲染器走的是静态 {@link #radiusOf}，覆写这里要自己保证两边一致
+     * （或者干脆连 {@code radiusOf} 一起改）。</p>
+     */
+    protected double radiusFor(@NotNull ServerPlayer caster, @NotNull ItemStack stack) {
+        return radiusOf(caster, stack);
     }
 
     // ══════════════════════════════════════════════════════════════

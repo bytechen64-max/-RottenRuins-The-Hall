@@ -41,7 +41,7 @@ import org.bytechen.rottenruins.overworld.registry.blockentity.SourceMachineBloc
 import org.jetbrains.annotations.Nullable;
 
 /** 前面为输出口，背面为输入口，侧面不导通。 */
-public final class SourceMachineBlock extends BaseEntityBlock {
+public class SourceMachineBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final IntegerProperty POWER = SourceWireBlock.POWER;
     private final boolean collector;

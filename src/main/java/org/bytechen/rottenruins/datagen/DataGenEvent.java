@@ -44,6 +44,8 @@ public class DataGenEvent {
                 new ItemTagData(out, blockTags.contentsGetter(), lp, efh));
 
         event.getGenerator().addProvider(event.includeServer(), new RecipeProviderData(out));
+        // 势能合成台的配方（data/rotten_ruins/recipes/*.json，格式见 exampleRepice 的样例）
+        event.getGenerator().addProvider(event.includeServer(), new PotentialCraftingRecipeData(out));
         event.getGenerator().addProvider(event.includeServer(), new LootTableData(out));
         event.getGenerator().addProvider(event.includeServer(), new GlobalLootModifierData(out));
     }

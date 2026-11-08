@@ -28,6 +28,7 @@ import org.bytechen.rottenruins.api.TooltipShaderSpec;
 import org.bytechen.rottenruins.client.rend.text.FlowingNameColors;
 import org.bytechen.rottenruins.client.rend.text.TooltipLines;
 import org.bytechen.rottenruins.utils.ModUtils;
+import org.bytechen.rottenruins.utils.SpellDamageUtil;
 import org.bytechen.rottenruins.utils.TranslateUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -297,17 +298,35 @@ public class SilentDaylight extends SwordItem implements ICustomOutline, IBlocki
     /** 冰冻判定：每隔这么多 tick 给范围内生物顶一次冻结计时。 */
     public static final int WARD_FREEZE_INTERVAL = 5;
 
+    /** 每次冰冻结算额外造成的一次冰伤（正常伤害，吃护甲与事件，可以致死）。 */
+    public static final float WARD_FREEZE_DAMAGE = 2.0F;
+
     /**
      * 玩家此刻是否在维持寒气领域（客户端也要用这个判断来画三棱锥）。
      *
      * <p>条件只有"在使用物品 + 正在用的是寂寒白日"：{@code isUsingItem} 由原版同步，
-     * 所以两端结论一致，不需要额外发包。三棱锥因此与举剑姿势同时出现、同时消失。</p>
+     * 所以两端结论一致，不需要额外发包。</p>
      */
     public static boolean isWarding(@Nullable Player player) {
         if (player == null) {
             return false;
         }
         return player.isUsingItem() && player.getUseItem().getItem() instanceof SilentDaylight;
+    }
+
+    /**
+     * 玩家此刻手上（主手或副手）是否拿着寂寒白日。
+     *
+     * <p>三棱锥的<b>常驻</b>显示条件就是它：拿着剑就有一颗环绕，
+     * 举剑（{@link #isWarding}）时变成三颗 —— 见
+     * {@code client/entity/render/impl/SilentDaylightWardRenderer}。</p>
+     */
+    public static boolean isHolding(@Nullable Player player) {
+        if (player == null) {
+            return false;
+        }
+        return player.getMainHandItem().getItem() instanceof SilentDaylight
+                || player.getOffhandItem().getItem() instanceof SilentDaylight;
     }
 
     /**
@@ -334,7 +353,7 @@ public class SilentDaylight extends SwordItem implements ICustomOutline, IBlocki
         double radiusSqr = WARD_RADIUS * WARD_RADIUS;
         net.minecraft.world.phys.Vec3 center = player.getBoundingBox().getCenter();
 
-        // ② 冰冻周围生物（不含自己）
+        // ② 冰冻周围生物（不含自己）：顶满冻结计时 + 缓慢 + 一次真实冰伤
         if (heldTicks % WARD_FREEZE_INTERVAL == 0) {
             for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box,
                     e -> e != player && e.isAlive() && e.canFreeze()
@@ -345,6 +364,15 @@ public class SilentDaylight extends SwordItem implements ICustomOutline, IBlocki
                 level.sendParticles(ParticleTypes.SNOWFLAKE,
                         living.getX(), living.getY() + living.getBbHeight() * 0.5D, living.getZ(),
                         6, 0.3D, 0.4D, 0.3D, 0.01D);
+
+                // 冰冻也要能杀人，而且伤害类型要是"冰"：
+                // damageSources().freeze() 没有攻击者（掉落缺 killer），playerAttack 类型又不对，
+                // 所以用 iceSourceOf 把「FREEZE 类型 + 玩家攻击者」拼起来。
+                if (player instanceof net.minecraft.server.level.ServerPlayer serverCaster) {
+                    DamageSource freezeSource = SpellDamageUtil.iceSourceOf(living, serverCaster);
+                    SpellDamageUtil.hurt(living, freezeSource, player.getUseItem(),
+                            serverCaster, WARD_FREEZE_DAMAGE);
+                }
             }
         }
 

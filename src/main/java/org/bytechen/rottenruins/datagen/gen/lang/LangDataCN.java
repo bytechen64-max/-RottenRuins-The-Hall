@@ -158,6 +158,11 @@ public class LangDataCN extends LanguageProvider {
                 "调试 · 格挡结算 ×%s%% · 仅正面 %s · 使用时长 %s tick · 实体范围 +%s");
 
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LORE, "「白昼无声，唯余一刃寒水。」");
+        // 寂寒白日专属冰伤类型的死亡消息（damage_type/silent_daylight_ice.json）
+        // %1$s = 死者，%2$s = 击杀者；这里刻意不写击杀者
+        add("death.attack.rotten_ruins.silent_daylight_ice", "%1$s被冰冰冰，队友CDU关一下");
+        add("death.attack.rotten_ruins.silent_daylight_ice.item", "%1$s被冰冰冰，队友CDU关一下");
+        add("death.attack.rotten_ruins.silent_daylight_ice.player", "%1$s被冰冰冰，队友CDU关一下");
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TIDE, "湍流");
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_TIDE, "剑刃浸在一层流动的水光里");
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TRAIT, "白日");
@@ -243,6 +248,16 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterBlock.SOURCE_WIRE.get(), "源导线");
         add(RegisterBlock.SOURCE_FILTER.get(), "源荷滤波器");
         add(RegisterBlock.SOURCE_COLLECTOR.get(), "集荷器");
+        add(RegisterBlock.POTENTIAL_CRAFTING_TABLE.get(), "势能合成台");
+        add("block.rotten_ruins.potential_crafting_table.hint",
+                "16 格环形材料位，圆心为产物位；配方无序，投入后不再退还");
+        add("block.rotten_ruins.potential_crafting_table.hint_power",
+                "需要接入势能（高势区 ↔ 接地桩 的源导线回路）才会工作，势能越高越快，最多省一半时间");
+        add("gui.rotten_ruins.potential_crafting.power", "势能 %s / %s");
+        add("gui.rotten_ruins.potential_crafting.remaining", "剩余 %s 秒");
+        add("gui.rotten_ruins.potential_crafting.needs_power", "需要接入势能");
+        add("gui.rotten_ruins.potential_crafting.idle", "放入材料开始合成");
+        add("gui.rotten_ruins.potential_crafting.no_recipe", "没有匹配的配方");
         add("gui.rotten_ruins.source.reference", "波段表");
         add("gui.rotten_ruins.source.mode.0", "手动调谐");
         add("gui.rotten_ruins.source.mode.1", "懒人模式");
@@ -303,6 +318,7 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.PURIFYING_LIGHT.get(), "净化之光");
         add(RegisterItem.ARCANE_STEP.get(), "奥术闪步");
         add(RegisterItem.SPRINT.get(), "疾行");
+        add(RegisterItem.OLYMPIAD_CUBE.get(), "奥数立方");
         add("item.rotten_ruins.tidal_pulse.desc", "击退周围生物；自身灭火，获得抗火、水下呼吸与海豚的恩惠");
         add("item.rotten_ruins.briar_snare.desc", "在准星处伤害并强力减速生物，附加虚弱与中毒");
         add("item.rotten_ruins.purifying_light.desc", "治疗、净化并保护友方；伤害敌对生物，对亡灵更强");

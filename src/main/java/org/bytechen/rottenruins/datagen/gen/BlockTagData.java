@@ -36,6 +36,8 @@ public class BlockTagData extends BlockTagsProvider {
                 .add(RegisterBlock.DEATH_CORE.get())
                 .add(RegisterBlock.GROUNDING_STAKE.get());
         tag(BlockTags.MINEABLE_WITH_PICKAXE).add(RegisterBlock.SOURCE_FILTER.get(),RegisterBlock.SOURCE_COLLECTOR.get());
+        // 势能合成台：铁质设备手感，同样用镐挖
+        tag(BlockTags.MINEABLE_WITH_PICKAXE).add(RegisterBlock.POTENTIAL_CRAFTING_TABLE.get());
 
         // ========== HALL_PLANKS 建筑方块 ==========
 

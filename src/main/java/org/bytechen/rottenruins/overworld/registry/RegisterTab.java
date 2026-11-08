@@ -132,6 +132,7 @@ public class RegisterTab {
                     .section(section("magic"), (params, output) -> {
                         items(output,RegisterBlock.SOURCE_FILTER.get().asItem(),RegisterBlock.SOURCE_COLLECTOR.get().asItem());
                         items(output, RegisterBlock.GROUNDING_STAKE.get().asItem(), RegisterBlock.SOURCE_WIRE.get().asItem());
+                        items(output, RegisterBlock.POTENTIAL_CRAFTING_TABLE.get().asItem());
                         // 储魔瓶与魔法材料
                         items(output,
                         RegisterItem.MANA_BOTTLE.get(),

@@ -1,7 +1,13 @@
 package org.bytechen.rottenruins.utils;
 
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -77,6 +83,50 @@ public final class SpellDamageUtil {
             return caster.damageSources().indirectMagic(caster, caster);
         }
         return target.damageSources().magic();
+    }
+
+    /** 寂寒白日的专属冰伤类型（{@code data/rotten_ruins/damage_type/silent_daylight_ice.json}）。 */
+    private static final ResourceKey<DamageType> SILENT_DAYLIGHT_ICE = ResourceKey.create(
+            Registries.DAMAGE_TYPE,
+            new ResourceLocation(org.bytechen.rottenruins.HallMod.MODID, "silent_daylight_ice"));
+
+    /**
+     * 造一个<b>冰系</b>伤害来源：类型是寂寒白日的专属冰伤类型，攻击者是施法者。
+     *
+     * <h3>为什么不用 {@code damageSources().freeze()}</h3>
+     * <p>那个来源<b>没有攻击者</b>：由它致死时 {@code die(source)} 拿不到 killer ——
+     * 战利品表里带 {@code killer} 条件的掉落会缺一块、死亡消息也不会写出"被谁打死"。</p>
+     *
+     * <h3>为什么不用 {@code playerAttack}</h3>
+     * <p>那又反过来：归因对了，但伤害<b>类型</b>是"玩家近战"，死亡消息、伤害类型标签、
+     * 别的模组按 {@code DamageTypeTags} 做的判定全都读成普通攻击，看不出是冰伤。</p>
+     *
+     * <p>{@link DamageSource} 的公有构造器允许把两者拼起来，所以这里手动组装：
+     * {@code new DamageSource(类型, caster, caster)} —— 类型是冰系，归因仍是玩家。
+     * 用自定义类型（而不是原版 {@code freeze}）是为了让死亡消息走本模组自己的
+     * {@code death.attack.rotten_ruins.silent_daylight_ice}，不去改原版所有冰冻死亡的文案。</p>
+     *
+     * <p>自定义类型是数据包注册的，万一没加载到（数据包缺失）就退回原版 {@code FREEZE}，
+     * 不会因为取不到 Holder 把伤害整条打崩。</p>
+     */
+    @NotNull
+    public static DamageSource iceSourceOf(@NotNull LivingEntity target, @Nullable Player caster) {
+        Holder<DamageType> type = iceDamageTypeOf(target);
+        if (caster == null) {
+            return new DamageSource(type);
+        }
+        return new DamageSource(type, caster, caster);
+    }
+
+    /** 取专属冰伤类型；取不到就退回原版 {@code FREEZE}。 */
+    @NotNull
+    private static Holder<DamageType> iceDamageTypeOf(@NotNull LivingEntity target) {
+        var registry = target.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE);
+        try {
+            return registry.getHolderOrThrow(SILENT_DAYLIGHT_ICE);
+        } catch (Throwable t) {
+            return registry.getHolderOrThrow(DamageTypes.FREEZE);
+        }
     }
 
     // ══════════════════════════════════════════════════════════════

@@ -54,6 +54,10 @@ public class ForgeEventHelpers {
     private static final ResourceLocation MANA_KEY =
             ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "mana");
 
+    /** 自定义效果容器（本模组自己的 effect 系统，独立于原版 MobEffect）。 */
+    private static final ResourceLocation CUSTOM_EFFECT_KEY =
+            ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "custom_effects");
+
     private static final int SYNC_INTERVAL = 20; // 每秒同步一次（20 tick）
 
     // ==================== 能力附加 ====================
@@ -76,6 +80,16 @@ public class ForgeEventHelpers {
         // 威胁点数：所有生物（含玩家）都挂，初始 0
         event.addCapability(THREAT_KEY,
                 new CapabilityProvider<>(CapabilityRegistry.THREAT_CAP, new ThreatCapability()));
+
+        // 自定义效果容器：同样挂到所有生物上。
+        // 它实现了 IModCapability，所以 CapabilityProvider 会替我们做 NBT 持久化
+        // —— 效果因此能跟着实体存进存档，重进游戏还在。
+        if (event.getObject() instanceof net.minecraft.world.entity.LivingEntity) {
+            event.addCapability(CUSTOM_EFFECT_KEY,
+                    new CapabilityProvider<>(CapabilityRegistry.CUSTOM_EFFECT_CAP,
+                            new org.bytechen.rottenruins.overworld.registry.effect.customEffect
+                                    .CustomEffectHolder()));
+        }
     }
 
     // ==================== Tick 逻辑 ====================

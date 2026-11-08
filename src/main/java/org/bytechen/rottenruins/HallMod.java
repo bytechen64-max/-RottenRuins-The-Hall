@@ -47,6 +47,9 @@ public class HallMod {
         RegisterItem.ITEMS.register(modEventBus);
         WandEnchantments.ENCHANTMENTS.register(modEventBus);
         WandRecipes.SERIALIZERS.register(modEventBus);
+        // 势能合成台：配方类型 + 配方序列化器
+        PotentialCraftingRecipes.RECIPE_TYPES.register(modEventBus);
+        PotentialCraftingRecipes.SERIALIZERS.register(modEventBus);
         RegisterEffect.EFFECTS.register(modEventBus);
         SoundEventRegistry.SOUND_EVENTS.register(modEventBus);
         EntityTypeRegistry.ENTITY_TYPES.register(modEventBus);
@@ -66,6 +69,11 @@ public class HallMod {
 
         // 群系修改器序列化器
         BIOME_MODIFIER_SERIALIZERS.register(modEventBus);
+
+        // 自定义效果（本模组自己的 effect 系统，独立于原版 MobEffect）。
+        // 这里触发类加载完成注册并冻结注册表；效果数据挂在 capability 上，
+        // 由 ForgeEventHelpers#handleAttachCapabilities 附加到所有生物。
+        org.bytechen.rottenruins.overworld.registry.effect.customEffect.RegisterCustomEffect.init();
 
         // Cosmic starfield rendering（参考 Live 模组）
         if (FMLEnvironment.dist.isClient()) {

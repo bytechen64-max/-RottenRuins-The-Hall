@@ -3,6 +3,10 @@
     "rotten_ruins:domite_mineral",
     "rotten_ruins:domerite_mineral",
     "rotten_ruins:death_core",
+    "rotten_ruins:grounding_stake",
+    "rotten_ruins:source_filter",
+    "rotten_ruins:source_collector",
+    "rotten_ruins:potential_crafting_table",
     "rotten_ruins:hall_stone",
     "rotten_ruins:hall_pillar",
     "rotten_ruins:hall_stone_stairs",
@@ -13,9 +17,6 @@
     "rotten_ruins:hall_sandstone",
     "rotten_ruins:hall_ash_cut_sandstone",
     "rotten_ruins:hall_ash_smooth_sandstone",
-    "rotten_ruins:hall_ash_collapsed_chiseled_sandstone",
-    "rotten_ruins:grounding_stake",
-    "rotten_ruins:source_filter",
-    "rotten_ruins:source_collector"
+    "rotten_ruins:hall_ash_collapsed_chiseled_sandstone"
   ]
 }

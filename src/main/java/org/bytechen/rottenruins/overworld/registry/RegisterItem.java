@@ -278,6 +278,11 @@ public class RegisterItem {
     public static final RegistryObject<Item> SPRINT =
             ITEMS.register("sprint", Sprint::new);
 
+    /** 奥数立方：三形态追踪立方体。 */
+    public static final RegistryObject<Item> OLYMPIAD_CUBE =
+            ITEMS.register("olympiad_cube", org.bytechen.rottenruins.overworld.registry.items
+                    .magic.its.OlympiadCube::new);
+
     public static final RegistryObject<Item> INF_PLAYER_SPAWN_EGG = registerSpawnEgg("hall_player",EntityTypeRegistry.INF_PLAYER);
     public static final RegistryObject<Item> INF_ENDERMAN_SPAWN_EGG = registerSpawnEgg("hall_enderman",EntityTypeRegistry.INF_ENDERMAN);
     public static final RegistryObject<Item> INF_SKELETON_SPAWN_EGG = registerSpawnEgg("hall_skeleton",EntityTypeRegistry.INF_SKELETON);

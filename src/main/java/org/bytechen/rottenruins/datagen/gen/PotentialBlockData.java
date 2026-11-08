@@ -28,6 +28,8 @@ public final class PotentialBlockData extends BlockStateProvider {
     protected void registerStatesAndModels() {
         machine(RegisterBlock.SOURCE_FILTER.get(),"source_filter");
         machine(RegisterBlock.SOURCE_COLLECTOR.get(),"source_collector");
+        // 势能合成台：模型同样放在 src/main/resources（占位贴图，等美术资源到位后替换）
+        machine(RegisterBlock.POTENTIAL_CRAFTING_TABLE.get(),"potential_crafting_table");
         var stakeModel = models().getExistingFile(modLoc("block/grounding_stake"));
         getVariantBuilder(RegisterBlock.GROUNDING_STAKE.get()).forAllStates(state -> {
             Direction facing = state.getValue(GroundingStakeBlock.FACING);

@@ -40,8 +40,18 @@ import java.lang.reflect.Method;
  */
 public final class BCCoreCompat {
 
-    /** VitalProbe 的 modid，用于 {@link ModList#isLoaded}。 */
-    public static final String MOD_ID = "vitalprobe";
+    /**
+     * 改血引擎的 modid —— <b>新版叫 {@code bccore}</b>。
+     *
+     * <p>旧文档里写的是 {@code vitalprobe}，但实际发布的 jar（{@code bccore-0.0.1.jar}）
+     * 在 {@code mods.toml} 里声明的是 {@code modId = "bccore"}。
+     * 只认一个名字会让整个改血 API 静默失效（{@code isHealthApiAvailable()} 恒 false，
+     * 所有改血退回原版 hurt），所以两个都认，见 {@link #LEGACY_MOD_ID}。</p>
+     */
+    public static final String MOD_ID = "bccore";
+
+    /** 老名字，兼容仍用 {@code vitalprobe} 的版本。 */
+    public static final String LEGACY_MOD_ID = "vitalprobe";
 
     /** 对外 API 的类名。只引用字符串，所以不需要把 VitalProbe 加进依赖。 */
     private static final String API_CLASS = "org.bytechen.bccore.api.BCHealth";
@@ -63,7 +73,7 @@ public final class BCCoreCompat {
         Method set = null;
         Method add = null;
 
-        if (ModList.get().isLoaded(MOD_ID)) {
+        if (ModList.get().isLoaded(MOD_ID) || ModList.get().isLoaded(LEGACY_MOD_ID)) {
             try {
                 api = Class.forName(API_CLASS);
                 // 优先按签名精确查找，避免有重载时选错；

@@ -33,6 +33,7 @@ import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ulce
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ulcerated.PursuerEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ulcerated.ScoutEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.magic.FireBallEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.magic.OlympiadCubeEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.magic.SpearOfJudgmentEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
@@ -304,6 +305,17 @@ public class EntityTypeRegistry {
     //  碰撞箱照抄原版恶魂火球的 1.0 × 1.0。
     public static final RegistryObject<EntityType<FireBallEntity>> FIRE_BALL =
             registerNoopEntity("fire_ball", 1.0f, 1.0f, FireBallEntity::new);
+
+    // ────────── 法术投射物 —— 奥数立方 ──────────
+    //  碰撞箱 0.4 见方：它自己会追目标，做小一点反而好穿缝。
+    //  每 tick 同步一次（updateInterval 默认是 3），否则高速追踪时会看出跳格。
+    public static final RegistryObject<EntityType<OlympiadCubeEntity>> OLYMPIAD_CUBE =
+            ENTITY_TYPES.register("olympiad_cube", () -> EntityType.Builder
+                    .of(OlympiadCubeEntity::new, MobCategory.MISC)
+                    .sized(0.4f, 0.4f)
+                    .clientTrackingRange(8)
+                    .updateInterval(1)
+                    .build("olympiad_cube"));
 
     // ────────── 法术投射物 —— 审判之矛 ──────────
     //  这里没有复用 registerNoopEntity，唯一的原因是<b>需要 updateInterval(1)</b>：

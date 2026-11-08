@@ -99,6 +99,12 @@ public final class SilentDaylightWardRenderer {
     private static final float SPIN_Y_DEG_PER_SECOND = 211.0f;
     private static final float SPIN_Z_DEG_PER_SECOND = 83.0f;
 
+    /** 多颗时每颗的翻滚相位偏移（秒）：让它们姿态错开，不是同一个东西复制三份。 */
+    private static final double SPIN_PHASE_PER_TETRA = 1.7D;
+
+    /** 举剑维持寒气领域时环绕的三棱锥数量（手持时是 1 颗）。 */
+    private static final int WARDING_TETRA_COUNT = 3;
+
     /** 辉光层棱宽（格，半宽）。棱长约 0.36 格，0.024 的半径既看得见又不会糊成一团。 */
     private static final float GLOW_HALF_WIDTH = 0.024f;
     /** 芯层棱宽（格，半宽）。 */
@@ -133,10 +139,10 @@ public final class SilentDaylightWardRenderer {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
 
-        // 先收集：一个人都没举剑就直接跳过，别碰 GL 状态
+        // 先收集：一个人都没拿这把剑就直接跳过，别碰 GL 状态
         boolean any = false;
         for (Player player : mc.level.players()) {
-            if (SilentDaylight.isWarding(player)) {
+            if (SilentDaylight.isHolding(player)) {
                 any = true;
                 break;
             }
@@ -164,7 +170,7 @@ public final class SilentDaylightWardRenderer {
         Matrix4f matrix = poseStack.last().pose();
 
         for (Player player : mc.level.players()) {
-            if (!SilentDaylight.isWarding(player)) continue;
+            if (!SilentDaylight.isHolding(player)) continue;
             renderWard(buffer, tesselator, matrix, player, partialTick);
         }
 
@@ -177,7 +183,15 @@ public final class SilentDaylightWardRenderer {
         RenderSystem.disableBlend();
     }
 
-    /** 画一个玩家的三棱锥：算轨道点 + 翻滚姿态，再画六条棱（辉光 + 芯两层）。 */
+    /**
+     * 画一个玩家的三棱锥。
+     *
+     * <p>数量：<b>手持这把剑 = 1 颗常驻</b>；<b>举剑维持寒气领域 = 3 颗</b>
+     * （沿同一条轨道均分 120°，所以三颗永远围成一圈）。</p>
+     *
+     * <p>两层（辉光 / 芯）各用一次 {@code begin/end}，与三棱锥个数无关 ——
+     * 三颗时总共也只有两次绘制调用。</p>
+     */
     private static void renderWard(BufferBuilder buffer, Tesselator tesselator, Matrix4f matrix,
                                    Player player, float partialTick) {
         Vec3 center = player.getPosition(partialTick).add(0.0D, CENTER_LIFT, 0.0D);
@@ -185,25 +199,30 @@ public final class SilentDaylightWardRenderer {
         // 用世界时间（不是玩家 tickCount），退出重进不会跳角度
         double seconds = (player.level().getGameTime() + partialTick) / 20.0D;
 
-        Vec3 anchor = orbitPosition(center, seconds);
-        Vec3[] vertices = tetrahedronVertices(anchor, seconds);
+        int count = SilentDaylight.isWarding(player) ? WARDING_TETRA_COUNT : 1;
 
         // 呼吸：亮度在 0.75~1.0 之间轻微起伏，静止时也不会像"贴图"
         float pulse = 0.75f + 0.25f * (float) Math.sin(seconds * 1.8D);
 
         // ── ① 辉光层 ──
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-        for (int[] edge : EDGES) {
-            emitEdge(buffer, matrix, vertices[edge[0]], vertices[edge[1]],
-                    GLOW_HALF_WIDTH, GLOW_R, GLOW_G, GLOW_B, 0.42f * pulse);
+        for (int i = 0; i < count; i++) {
+            Vec3[] vertices = tetrahedronVertices(orbitPosition(center, seconds, i, count), seconds, i);
+            for (int[] edge : EDGES) {
+                emitEdge(buffer, matrix, vertices[edge[0]], vertices[edge[1]],
+                        GLOW_HALF_WIDTH, GLOW_R, GLOW_G, GLOW_B, 0.42f * pulse);
+            }
         }
         tesselator.end();
 
         // ── ② 芯层 ──
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-        for (int[] edge : EDGES) {
-            emitEdge(buffer, matrix, vertices[edge[0]], vertices[edge[1]],
-                    CORE_HALF_WIDTH, CORE_R, CORE_G, CORE_B, 0.85f * pulse);
+        for (int i = 0; i < count; i++) {
+            Vec3[] vertices = tetrahedronVertices(orbitPosition(center, seconds, i, count), seconds, i);
+            for (int[] edge : EDGES) {
+                emitEdge(buffer, matrix, vertices[edge[0]], vertices[edge[1]],
+                        CORE_HALF_WIDTH, CORE_R, CORE_G, CORE_B, 0.85f * pulse);
+            }
         }
         tesselator.end();
     }
@@ -217,10 +236,14 @@ public final class SilentDaylightWardRenderer {
      * 圆上一点就是 {@code R·(cosθ·u + sinθ·v)}。</p>
      *
      * <p>φ 随时间进动 → 倾斜方向在变，整个轨道缓慢扫过球面（"多向旋转"的一半）。</p>
+     *
+     * @param index  第几颗（0 起）
+     * @param count  这一帧一共画几颗：轨道上均分 {@code 360°/count}
      */
-    private static Vec3 orbitPosition(Vec3 center, double seconds) {
+    private static Vec3 orbitPosition(Vec3 center, double seconds, int index, int count) {
         double tilt = Math.toRadians(ORBIT_TILT_DEG);
-        double theta = Math.toRadians(seconds * ORBIT_DEG_PER_SECOND);
+        double theta = Math.toRadians(seconds * ORBIT_DEG_PER_SECOND
+                + 360.0 * index / Math.max(1, count));
         double phi = Math.toRadians(seconds * PRECESS_DEG_PER_SECOND);
 
         Vec3 normal = new Vec3(Math.sin(tilt) * Math.cos(phi),
@@ -247,14 +270,17 @@ public final class SilentDaylightWardRenderer {
      * 底面三点在 {@code y = -R/3} 的平面上、落在半径 {@code R·√8/3} 的圆上（间隔 120°）。
      * 这样六条棱等长 —— 是<b>正</b>三棱锥，不是随手拼的锥。
      * 再按三个轴的角速度翻滚，最后平移到轨道点。</p>
+     *
+     * @param index 第几颗：给翻滚一个相位偏移，三颗同时存在时不会读到"同一个东西复制三份"
      */
-    private static Vec3[] tetrahedronVertices(Vec3 anchor, double seconds) {
+    private static Vec3[] tetrahedronVertices(Vec3 anchor, double seconds, int index) {
         float baseRadius = TETRA_RADIUS * BASE_RING_RATIO;
         float baseY = -TETRA_RADIUS / 3.0f;
 
-        double ax = Math.toRadians(seconds * SPIN_X_DEG_PER_SECOND);
-        double ay = Math.toRadians(seconds * SPIN_Y_DEG_PER_SECOND);
-        double az = Math.toRadians(seconds * SPIN_Z_DEG_PER_SECOND);
+        double phase = seconds + index * SPIN_PHASE_PER_TETRA;
+        double ax = Math.toRadians(phase * SPIN_X_DEG_PER_SECOND);
+        double ay = Math.toRadians(phase * SPIN_Y_DEG_PER_SECOND);
+        double az = Math.toRadians(phase * SPIN_Z_DEG_PER_SECOND);
 
         Vec3[] out = new Vec3[4];
         out[0] = anchor.add(tumble(new Vec3(0.0D, TETRA_RADIUS, 0.0D), ax, ay, az));

@@ -2,6 +2,7 @@ package org.bytechen.rottenruins.overworld.registry;
 
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.registry.blockentity.DeathCoreBlockEntity;
+import org.bytechen.rottenruins.overworld.registry.blockentity.PotentialCraftingTableBlockEntity;
 import org.bytechen.rottenruins.overworld.registry.blockentity.SourceMachineBlockEntity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -19,6 +20,12 @@ public class RegisterBlockEntities {
             BlockEntityType.Builder.of((pos,state)->new SourceMachineBlockEntity(pos,state,false),RegisterBlock.SOURCE_FILTER.get()).build(null));
     public static final RegistryObject<BlockEntityType<SourceMachineBlockEntity>> SOURCE_COLLECTOR=BLOCK_ENTITIES.register("source_collector",()->
             BlockEntityType.Builder.of((pos,state)->new SourceMachineBlockEntity(pos,state,true),RegisterBlock.SOURCE_COLLECTOR.get()).build(null));
+
+    /** 势能合成台的方块实体：16 格环形材料位 + 圆心产物格。 */
+    public static final RegistryObject<BlockEntityType<PotentialCraftingTableBlockEntity>> POTENTIAL_CRAFTING_TABLE =
+            BLOCK_ENTITIES.register("potential_crafting_table", () -> BlockEntityType.Builder
+                    .of(PotentialCraftingTableBlockEntity::new, RegisterBlock.POTENTIAL_CRAFTING_TABLE.get())
+                    .build(null));
 
     public static <T extends BlockEntityType<?>> RegistryObject<T> registerBlockEntity(String name, Supplier<T> supplier) {
         return BLOCK_ENTITIES.register(name, supplier);

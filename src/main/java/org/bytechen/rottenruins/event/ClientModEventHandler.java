@@ -133,6 +133,10 @@ public class ClientModEventHandler {
         // 审判之矛使用沿飞行方向的立体光矛，不复用物品图标。
         event.registerEntityRenderer(EntityTypeRegistry.SPEAR_OF_JUDGMENT.get(),
                 SpearOfJudgmentRenderer::new);
+
+        // 奥数立方：三形态（三棱锥 / 立方体 / 八角双锥），只画棱、辉光 + 芯两层
+        event.registerEntityRenderer(EntityTypeRegistry.OLYMPIAD_CUBE.get(),
+                org.bytechen.rottenruins.client.entity.render.impl.OlympiadCubeRenderer::new);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -229,6 +233,10 @@ public class ClientModEventHandler {
         event.enqueueWork(()->net.minecraft.client.gui.screens.MenuScreens.register(
                 org.bytechen.rottenruins.overworld.registry.SourceMenus.SOURCE_MACHINE.get(),
                 org.bytechen.rottenruins.client.gui.SourceMachineScreen::new));
+        // 势能合成台：16 格环形 + 圆心产物，界面无贴图（全几何绘制 + 旋转/向心动画）
+        event.enqueueWork(()->net.minecraft.client.gui.screens.MenuScreens.register(
+                org.bytechen.rottenruins.overworld.registry.SourceMenus.POTENTIAL_CRAFTING.get(),
+                org.bytechen.rottenruins.client.gui.PotentialCraftingScreen::new));
         event.enqueueWork(() -> ItemBlockRenderTypes.setRenderLayer(RegisterBlock.SOURCE_WIRE.get(), RenderType.cutout()));
         event.enqueueWork(() -> ItemProperties.register(RegisterItem.SIMPLE_FIELD_METER.get(),
                 ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "field_potential"),
