@@ -69,11 +69,8 @@ public class RegisterBlock {
     }
 
     /**
-     * 注册方块 + 自定义方块物品（例如需要实现额外接口的 {@code DeathCoreBlockItem}）。
-     *
-     * <p>普通方块物品直接用 {@link #registerBlockWithItem(String, Supplier)}；只有
-     * 需要自定义 {@link BlockItem} 子类时才用这个重载。物品工厂在注册事件触发时
-     * 才求值，所以 {@code block} 可以安全地引用方块注册对象。</p>
+     * 注册方块 + 自定义方块物品（如 {@code DeathCoreBlockItem}）：物品工厂在注册事件触发时才
+     * 求值，所以 {@code block} 可以安全地引用方块注册对象。
      */
     public static <T extends Block> RegistryObject<T> registerBlockWithItem(
             String name, Supplier<T> block, java.util.function.Function<T, Item> itemFactory) {
@@ -82,19 +79,12 @@ public class RegisterBlock {
         return toReturn;
     }
 
-    /**
-     * 注册一个「王庭石质」柱状方块。
-     * <p>
-     * 属性直接复制原版 {@code minecraft:stone}：1.5 硬度 / 6.0 抗爆、需要正确工具（镐）才掉落，
-     * 与 {@link #HALL_STONE} 及其楼梯 / 台阶 / 石墙保持同一套石质手感。
-     */
+    /** 王庭石质柱状方块：属性直接复制原版石头（1.5 硬度 / 6.0 抗爆，需镐才掉落）。 */
     public static RegistryObject<Block> registerPillarBlock(String name) {
         return registerBlock(name,
                 () -> new RotatedPillarBlock(BlockBehaviour.Properties.copy(Blocks.STONE)),
                 new Item.Properties());
     }
-
-    // ==================== impl ====================
 
     public static final RegistryObject<SourceMachineBlock> SOURCE_FILTER=registerBlockWithItem("source_filter",()->
             new SourceMachineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F).noOcclusion(),false));
@@ -102,11 +92,8 @@ public class RegisterBlock {
             new SourceMachineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F).noOcclusion(),true));
 
     /**
-     * <b>势能合成台</b>：16 格环形材料位 + 圆心产物位，靠势能驱动。
-     *
-     * <p>它继承 {@link SourceMachineBlock}，因此自动成为势能电路里的一个设备
-     * （前后两个口、{@code SourceWireNetwork} 会往它的 {@code POWER} 属性写强度）。
-     * 界面与配方见 {@code PotentialCraftingMenu} / {@code PotentialCraftingRecipe}。</p>
+     * <b>势能合成台</b>：16 格环形材料位 + 圆心产物位。继承 {@link SourceMachineBlock}，
+     * 因此自动成为势能电路里的一个设备（{@code SourceWireNetwork} 往它的 {@code POWER} 写强度）。
      */
     public static final RegistryObject<PotentialCraftingTableBlock> POTENTIAL_CRAFTING_TABLE =
             registerBlockWithItem("potential_crafting_table",
@@ -124,15 +111,8 @@ public class RegisterBlock {
                     BlockBehaviour.Properties.copy(Blocks.REDSTONE_WIRE).noCollission().noOcclusion()
                             .lightLevel(state -> state.getValue(SourceWireBlock.POWER))));
 
-
-    /**
-     * 王庭石柱：可旋转的柱状石块（{@code axis} 属性）。
-     * <p>
-     * 合成链对齐原版「4 石块 → 4 石砖」：4 王庭石块 → 4 王庭石柱（另有切石机配方）。
-     * 挖掘属性也一并对齐原版石质方块 —— 1.5 硬度 / 6.0 抗爆、需要镐才掉落。
-     */
+    /** 王庭石柱：可旋转柱状石块（{@code axis}），合成与挖掘属性对齐原版石质方块。 */
     public static RegistryObject<Block> HALL_PILLAR = registerPillarBlock("hall_pillar");
-
 
     public static RegistryObject<Block> HALL_GRASS_BLOCK = registerBlockWithItem("hall_grass_block",
             () -> new SpreadBlock(BlockBehaviour.Properties.copy(Blocks.GRASS_BLOCK)
@@ -141,8 +121,6 @@ public class RegisterBlock {
     public static RegistryObject<Block> HALL_DIRT = registerBlockWithItem("hall_dirt",
             () -> new SpreadBlock(BlockBehaviour.Properties.copy(Blocks.DIRT)
                     .randomTicks()));
-
-
 
     public static RegistryObject<Block> HALL_STONE = registerBlockWithItem("hall_stone",
             () -> new SpreadBlock(BlockBehaviour.Properties.copy(Blocks.STONE)
@@ -160,8 +138,6 @@ public class RegisterBlock {
                     .isSuffocating((s, r, p) -> false)
                     .isViewBlocking((s, r, p) -> false)));
 
-
-
     public static RegistryObject<Block> DOMITE_MINERAL = registerBlockWithItem("domite_mineral",
             () -> new HallBaseBlock(BlockBehaviour.Properties.copy(Blocks.OBSIDIAN)));
     public static RegistryObject<Block> DOMERITE_MINERAL = registerBlockWithItem("domerite_mineral",
@@ -170,11 +146,8 @@ public class RegisterBlock {
     public static RegistryObject<Block> HALL_PLANKS = registerBlockWithItem("hall_planks",
             () -> new HallWoodBlocks.Planks(BlockBehaviour.Properties.copy(Blocks.OAK_PLANKS)));
 
-    // ---- HALL_PLANKS 建筑方块系列 ----
-    //
-    // 全部使用 HallWoodBlocks 里的「可燃变体」：燃烧数值与原版橡木系列一一对应
-    // （木板族 5 / 20）。原版的木门 / 活板门 / 按钮 / 压力板本身不可燃，因此这几个
-    // 仍用原版类，行为与原版完全一致。
+    // HALL_PLANKS 建筑方块系列：用 HallWoodBlocks 的可燃变体（燃烧值对齐原版橡木 5/20）；
+    // 门 / 活板门 / 按钮 / 压力板原版就不可燃，仍用原版类。
 
     public static RegistryObject<Block> HALL_STAIRS = registerBlockWithItem("hall_stairs",
             () -> new HallWoodBlocks.Stairs(() -> HALL_PLANKS.get().defaultBlockState(),
@@ -208,8 +181,6 @@ public class RegisterBlock {
                     BlockBehaviour.Properties.copy(Blocks.OAK_PRESSURE_PLATE),
                     HallBlockSetTypes.HALL));
 
-    // ---- HALL_STONE 建筑方块系列（楼梯/台阶/石墙/按钮/压力板）----
-
     public static RegistryObject<Block> HALL_STONE_STAIRS = registerBlockWithItem("hall_stone_stairs",
             () -> new StairBlock(() -> HALL_STONE.get().defaultBlockState(),
                     BlockBehaviour.Properties.copy(Blocks.STONE_STAIRS)));
@@ -231,7 +202,6 @@ public class RegisterBlock {
                     BlockBehaviour.Properties.copy(Blocks.STONE_PRESSURE_PLATE),
                     HallBlockSetTypes.HALL_STONE));
 
-
     public static RegistryObject<Block> HALL_VINE = registerBlockWithItem("hall_vine",
             HallVineBlock::new);
 
@@ -240,8 +210,6 @@ public class RegisterBlock {
 
     public static RegistryObject<Block> HALL_FLOWER = registerBlockWithItem("hall_flower",
             HallFlowerBlock::new);
-
-    // ---- 王庭烬痕沙漠系列 ----
 
     public static RegistryObject<Block> HALL_SANDSTONE = registerBlockWithItem("hall_sandstone",
             () -> new HallBaseBlock(BlockBehaviour.Properties.copy(Blocks.SANDSTONE)));
@@ -264,35 +232,19 @@ public class RegisterBlock {
     public static RegistryObject<Block> HALL_ASH_DEAD_BUSH = registerBlockWithItem("hall_ash_dead_bush",
             HallDeadBushBlock::new);
 
-    // ---- 血肉庭园维度（hall:heall）系列 ----
-    //
-    // 该维度的地形完全复用现有的王庭方块族（王庭草方块 / 王庭泥土 / 王庭石块 /
-    // 王庭原木 / 王庭树叶 / 王庭草 / 王庭花 / 王庭石柱 / 王庭烬痕砂岩），
-    // 不新增任何方块，唯一新增的是往返两个维度的通道 —— 血肉裂隙。
-
     /**
-     * 血肉裂隙：往返血肉庭园维度的通道。
-     * <p>
-     * 右键即传送；在主世界使用会记录落点，在血肉庭园使用则送回该落点。
-     * 自身发光，便于在昏暗处找到归路。
+     * 血肉裂隙：往返血肉庭园维度（hall:heall）的通道 —— 该维度地形完全复用王庭方块族，
+     * 只新增这一个方块。右键传送：主世界使用记录落点，血肉庭园使用送回该落点。
      */
     public static RegistryObject<Block> FLESH_RIFT = registerBlockWithItem("flesh_rift",
             () -> new FleshRiftBlock(BlockBehaviour.Properties.copy(Blocks.NETHERRACK)
                     .strength(2.0F, 1200.0F)
                     .lightLevel(s -> 11)));
 
-    // ---- 方块版 mask 附加着色器层的示例方块 ----
-
     /**
-     * 死亡核心：第一个走「方块版 mask 效果层」的方块。
-     *
-     * <p>本体是深色实心方块，渲染上只有 mask 白层窗口内会被替换成体积效果
-     * （{@code death_core} 效果：ShaderToy "Ghosts" 改造的 raymarch）。接入方式见
-     * {@link DeathCoreBlock} 的类注释；以后想给别的方块加层，照抄
-     * BlockEntity + BER 两个类即可。</p>
-     *
-     * <p>物品用 {@link DeathCoreBlockItem}：方块物品在手持/物品栏里也要显示同一层
-     * （走物品模型 quad，见 {@code BlockMaskLayerItem}）。</p>
+     * 死亡核心：本体是深色实心方块，只在 mask 白层窗口内被替换成体积效果
+     * （{@code death_core}：ShaderToy "Ghosts" 改造的 raymarch）。物品走
+     * {@link DeathCoreBlockItem}，手持/物品栏里也显示同一层（物品模型 quad）。
      */
     public static RegistryObject<Block> DEATH_CORE = registerBlockWithItem("death_core",
             DeathCoreBlock::new,

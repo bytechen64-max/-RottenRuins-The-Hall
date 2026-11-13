@@ -29,34 +29,10 @@ import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 /**
- * 裁决领域渲染器 —— 贴地的地面光纹圆盘。
- *
- * <h3>为什么它不在实体渲染阶段画</h3>
- * <p>实体渲染阶段（{@code EntityRenderer.render}）画出来的东西，
- * 深度测试的对手是"当前已经写进深度缓冲的内容"。地面光纹贴在地面上，
- * 而<b>实体和块模型在它之后才画</b>，所以它会浮在所有东西前面 ——
- * 表现就是"穿透实体和方块"。这与 {@code ShockwaveRenderHandler} 遇到的是
- * 同一类问题（那里是"场景拷贝必须包含所有实体"）。</p>
- *
- * <p>所以：实体渲染器<b>什么都不做</b>，真正的绘制交给
- * {@link VerdictFieldRenderHandler} 在 {@code RenderLevelStageEvent} 的
- * {@code AFTER_TRIPWIRE_BLOCKS} 阶段执行 —— 那时地形与实体都已经写好了深度，
- * 光纹自然会被前方的方块和生物正确遮挡。这就是最初那个深度问题的解法。</p>
- *
- * <h3>几何是一个平面圆盘</h3>
- * <p>领域实体记录"施法那一刻玩家脚下的 y"，渲染时只在<b>领域中心采一次</b>
- * 地表高度，整块圆盘统一落在那一层（见 {@link #groundOffset}）。
- * 圆盘因此是一个干净的平面 —— 与领域的判定形状（平面圆柱）一致，边缘一眼可辨。</p>
- *
- * <p>这里试过"逐网格点各自向下扫、让圆盘贴着地形起伏"，实战里不好看：
- * 跨过台阶或沟槽时圆盘会上下打补丁，变成一层起皱的薄膜，反而看不清领域范围。
- * 按反馈去掉了。</p>
- *
- * <h3>坐标系</h3>
- * <p>顶点喂<b>世界坐标</b>，由 poseStack 的矩阵完成"世界 → 相机相对"的变换，
- * 顶点着色器因此只需 {@code ProjMat * Position}。这与
- * {@link CollapsarHaloRenderer}（项目里已验证可用的世界空间特效）完全一致。
- * 详见 {@link #discVertex} 里那段踩坑记录。</p>
+ * 裁决领域渲染器 —— 贴地的地面光纹圆盘。实体渲染阶段（{@code EntityRenderer.render}）画会被深度测试
+ * 判到"实体与块模型之前"，表现为穿透方块，所以本类什么都不做，真正绘制交给 {@link VerdictFieldRenderHandler}
+ * 在 {@code AFTER_TRIPWIRE_BLOCKS} 阶段执行（那时地形与实体已写好深度）。几何是一个平面圆盘：
+ * 只在领域中心采一次地表高度，与判定形状（平面圆柱）一致；顶点喂<b>世界坐标</b>，矩阵完成世界→相机相对变换。
  */
 public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
 
@@ -65,7 +41,6 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
 
     /** 圆盘分段数（同时是辐条的角分辨率上限）。 */
     static final int SEGMENTS = 96;
-    /** 圆盘同心环数。 */
     static final int RINGS = 8;
     private static final float TWO_PI = (float) (2.0 * Math.PI);
 
@@ -87,22 +62,12 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
         super(ctx);
     }
 
-    /** 实体渲染阶段不做任何事 —— 真正的绘制在 {@link VerdictFieldRenderHandler}。 */
     @Override
     public void render(VerdictFieldEntity entity, float entityYaw, float partialTick,
                        PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        // no-op
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  真正绘制（由 RenderLevelStageEvent 调用）
-    // ══════════════════════════════════════════════════════════════
-
-    /**
-     * 画一个领域。
-     *
-     * @param poseStack 已经 translate 过 {@code -camera} 的坐标系（与其它实体一致）
-     */
+    /** 画一个领域；{@code poseStack} 已是 translate 过 {@code -camera} 的坐标系。 */
     public static void renderOne(VerdictFieldEntity entity, float partialTick, PoseStack poseStack) {
         ShaderInstance shader = SplendidingShaders.verdictFieldShader;
         if (shader == null) { noteOnce("shader", "shader=null（着色器没加载，领域不可见）"); return; }
@@ -119,15 +84,13 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
         if (level == null) { noteOnce("level", "level=null"); return; }
 
         float life = entity.lifeProgress(partialTick);
-        // 时间基准里带上 entity id 的低位：同时存在两个领域时，呼吸相位不会完全同步
-        // （同步的呼吸会读成"同一个特效复制了两份"）。
+        // 时间基准带上 entity id 低位：两个领域同时存在时呼吸相位不同步（同步会读成"特效复制了两份"）。
         float time = (entity.tickCount + partialTick) * 0.05f + (entity.getId() % 17) * 0.37f;
         int interval = Math.max(1, entity.swordInterval());
         float pulsePhase = (entity.getAge() + partialTick) % interval / interval;
         float ownerDim = entity.isOwnerPresent() ? 1.0f : 0.45f;
 
-        // 地表高度：只在中心采一次，整块圆盘统一落在这一层（见 groundOffset 的说明）。
-        // 长度/上下补丁那套逐列贴地在实战里不好看，已按反馈去掉。
+        // 地表高度只在中心采一次，整块圆盘统一落在这一层（逐列贴地会变成起皱的薄膜，已按反馈去掉）。
         float yOff = groundOffset(level, entity) + SURFACE_LIFT;
 
         Vec3 cam = mc.gameRenderer.getMainCamera().getPosition();
@@ -141,16 +104,11 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
                 entity.getX() - meshRadius, entity.getX() + meshRadius,
                 entity.getZ() - meshRadius, entity.getZ() + meshRadius));
 
-        // ── 光影兼容：pack 激活时不在世界 pass 里画 ──
-        //
-        //  光影包激活时世界 pass 画的是 <b>GBuffer</b>，而地面光纹是自发光图案，
-        //  在 GBuffer 里会被 pack 当成"贴在地面的材质"重新参与光照与雾，
-        //  颜色与亮度全部失控。所以入队，等 pack 合成完最终场景后在 MAIN_TARGET 上回放。
-        //  见 VerdictFieldLateRenderQueue 的类注释。
+        // 光影兼容：pack 激活时世界 pass 画的是 GBuffer，自发光光纹会被当成地面材质重新参与光照与雾，
+        // 颜色亮度失控 —— 入队，等 pack 合成完最终场景后在 MAIN_TARGET 上回放。
         if (HeldItemOutlineCompat.isOculusShaderPackActive()) {
             float groundY = (float) (entity.getY() + yOff);
-            // 投影矩阵、相机矩阵、相机位置全部<b>此刻</b>快照 ——
-            // 回放发生在下一帧的更晚阶段，那时回读拿到的是下一帧的值。
+            // 投影矩阵、相机矩阵、相机位置全部<b>此刻</b>快照（回放发生在下一帧更晚阶段）。
             VerdictFieldLateRenderQueue.enqueue(
                     RenderSystem.getProjectionMatrix(),
                     RenderSystem.getModelViewMatrix(),
@@ -172,22 +130,10 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
 
         poseStack.pushPose();
 
-        // ── 坐标系契约（本渲染器与调用方的分工）──
-        //
-        //  顶点喂**世界坐标**，由 poseStack 的矩阵完成"世界 → 相机相对"的变换，
-        //  顶点着色器因此只需 `ProjMat * Position`。
-        //  这与 CollapsarHaloRenderer（项目里已验证可用的世界空间特效）完全一致。
-        //
-        //  ⚠️ 这里不要自己算"相机相对坐标"，也不要再 translate(-cam)：
-        //   · 自己算 → 几何被当成世界坐标投影，症状是"不管在哪放都出现在世界原点"；
-        //   · 再平移一次 → 双重平移，几何被推到远处，症状是"彻底看不见"。
-        //  这两个错误我都实际犯过。
-        //
-        //  （曾在这里放过一个"矩阵平移分量 vs -cam"的断言探针，已删除：
-        //    poseStack 含相机旋转，旋转与平移会混合，那个比较方式本身不成立，
-        //    只会持续误报。这个契约唯一可靠的验证方式是看画面。）
+        // 坐标系契约：顶点喂**世界坐标**，矩阵完成"世界 → 相机相对"的变换（顶点着色器只需 ProjMat * Position）。
+        // ⚠️ 别自己算"相机相对坐标"，也别再 translate(-cam)：前者会被当世界坐标投影（永远在世界原点），
+        // 后者变双重平移（彻底看不见）；这个契约唯一可靠的验证方式是看画面。
 
-        // ── ① 地面光纹 ──
         setUniform(shader, "uTime", time);
         setUniform(shader, "uIntensity", intensity * ownerDim);
         setUniform(shader, "uRadius", radius);
@@ -195,8 +141,7 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
         setUniform(shader, "uHalo", HALO_RATIO);
         setUniform(shader, "uPulse", pulsePhase);
         setUniform(shader, "uProgress", life);
-        // 施法者在不在场：离场时阵法熄火（Java 侧同时停止出剑），
-        // 两边必须一致，否则会出现"画面还在转、伤害已经没有了"。
+        // 施法者在不在场：离场时阵法熄火，Java 侧同时停止出剑，两边必须一致。
         setUniform(shader, "uOwnerPresent", entity.isOwnerPresent() ? 1f : 0f);
         setUniform3(shader, "uFieldColor", FIELD_COLOR);
         setUniform3(shader, "uCoreColor", CORE_COLOR);
@@ -208,8 +153,7 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
         emitDisc(buffer, mat,
                 (float) entity.getX(), (float) (entity.getY() + yOff), (float) entity.getZ(),
                 meshRadius);
-        // 与 CollapsarHaloRenderer 保持一致：用 drawWithShader 而不是 Tesselator.end()。
-        // 前者明确按当前绑定的着色器把顶点直送 GPU，不依赖 Tesselator 内部状态。
+        // 用 drawWithShader 而不是 Tesselator.end()：明确按当前绑定的着色器把顶点直送 GPU。
         BufferUploader.drawWithShader(buffer.end());
 
         poseStack.popPose();
@@ -221,16 +165,8 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
         RenderSystem.defaultBlendFunc();
     }
 
-    /**
-     * 延后回放用的绘制入口（光影包激活时由
-     * {@link VerdictFieldLateRenderQueue#renderAll()} 调用）。
-     *
-     * <p>与立即绘制<b>共用同一份 uniform 设置与几何</b>，所以两条路径不可能分叉；
-     * 唯一的区别是目标 FBO 与顶点喂的世界坐标来源。</p>
-     *
-     * <p>几何依旧喂<b>世界坐标</b>（{@code worldX/Y/Z}），矩阵由调用方保证是
-     * "相机旋转 × translate(−camera)" —— 与 {@code renderOne} 里那条契约一致。</p>
-     */
+    /** 延后回放入口（光影包激活时由 {@link VerdictFieldLateRenderQueue#renderAll()} 调用）：与立即绘制共用同一份
+     *  uniform 与几何，几何仍喂<b>世界坐标</b>，矩阵由调用方保证是"相机旋转 × translate(−camera)"。 */
     static void drawDeferred(ShaderInstance shader, Matrix4f matrix,
                              float worldX, float worldY, float worldZ,
                              float radius, float meshRadius,
@@ -255,26 +191,8 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
         BufferUploader.drawWithShader(buffer.end());
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  地形采样
-    // ══════════════════════════════════════════════════════════════
-
-    /**
-     * 求领域所在的地表高度（相对实体 y 的偏移）。
-     *
-     * <h3>只在中心采一次</h3>
-     * <p>早期版本是<b>逐网格点</b>各自向下扫描、让圆盘沿地形起伏。那在平地上看起来不错，
-     * 但代价是：领域跨过台阶、沟槽或悬崖时，圆盘会跟着地形"上下补丁"——
-     * 有方块的地方补上去、缺方块的地方掉下去，变成一层贴着地形的起皱薄膜，
-     * 既不好看也让人看不出领域的实际范围。</p>
-     *
-     * <p>而领域的判定本来就是<b>一个平面圆柱</b>（半径 + 高度），并不是贴着地形的曲面。
-     * 所以这里只在<b>中心</b>采一次地面高度，整块圆盘统一落在那个高度上：
-     * 圆盘是一个干净的平面，与判定形状一致，边缘也一眼看得出来。</p>
-     *
-     * <p>先向下找（站姿绝大多数情况地面就在脚下），脚下是空的再向上找
-     * （站在台地边缘时背后可能有平台）。都找不到就用实体自己那一层。</p>
-     */
+    /** 求领域地表高度（相对实体 y 的偏移）：只在<b>中心</b>采一次、整盘同高 —— 与判定形状（平面圆柱）一致；
+     *  逐点贴地会让圆盘跨台阶时"上下补丁"成起皱薄膜。先向下找，脚下是空再向上（台地边缘），都不行就用 0。 */
     private static float groundOffset(Level level, VerdictFieldEntity entity) {
         double baseY = entity.getY();
         int baseYFloor = Mth.floor(baseY);
@@ -283,23 +201,14 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
 
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
-        // 先向下
         float down = scanColumn(level, pos, bx, bz, baseYFloor, baseYFloor - SCAN_DEPTH, -1, baseY);
         if (!Float.isNaN(down)) return down;
-        // 脚下没有才向上
         float up = scanColumn(level, pos, bx, bz, baseYFloor + 1, baseYFloor + SCAN_UP, 1, baseY);
         if (!Float.isNaN(up)) return up;
-        // 都没有：用实体自己那一层（保证领域永远可见）
         return 0f;
     }
 
-    /**
-     * 沿一列扫描，返回地表相对实体 y 的偏移；没找到返回 {@link Float#NaN}。
-     *
-     * @param fromY 起始方块 y
-     * @param toY   终止方块 y
-     * @param step  +1 向上 / -1 向下
-     */
+    /** 沿一列扫描，返回地表相对实体 y 的偏移；没找到返回 {@link Float#NaN}。{@code step}：+1 向上 / -1 向下。 */
     private static float scanColumn(Level level, BlockPos.MutableBlockPos pos,
                                     int bx, int bz, int fromY, int toY, int step, double baseY) {
         for (int by = fromY; step > 0 ? by <= toY : by >= toY; by += step) {
@@ -309,24 +218,13 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
             if (state.isAir()) continue;
             VoxelShape shape = state.getCollisionShape(level, pos);
             if (shape.isEmpty()) continue;
-            // 取碰撞盒顶面 —— 台阶/栅栏的顶面与整格不同，只有用碰撞盒高度才贴得准。
-            // 空形状（草、火把）已被上面跳过。
+            // 取碰撞盒顶面：台阶/栅栏的顶面与整格不同，空形状（草、火把）已被上面跳过。
             return (float) (by + shape.max(Direction.Axis.Y) - baseY);
         }
         return Float.NaN;
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  地面圆盘
-    // ══════════════════════════════════════════════════════════════
-
-    /**
-     * 发出水平圆盘的三角扇。整块圆盘都在同一个高度（领域中心采样到的地表）。
-     *
-     * <p>属性打包：{@code Color.rg} = (径向归一化, 角度归一化)，
-     * {@code Normal.xy} = 同上极坐标。片元只需要 r/g，Normal 留着是为了
-     * 将来要按径向做方向性东西时不用改顶点格式。</p>
-     */
+    /** 发出水平圆盘的三角扇。顶点属性 {@code Color.rg} 与 {@code Normal.xy} 都是 (径向, 角度) 归一化极坐标。 */
     private static void emitDisc(BufferBuilder buffer, Matrix4f mat,
                                  float cx, float cy, float cz, float meshRadius) {
         for (int ring = 0; ring < RINGS; ring++) {
@@ -339,12 +237,10 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
                 float a0 = seg / (float) SEGMENTS;
                 float a1 = (seg + 1) / (float) SEGMENTS;
 
-                // 三角 1：内环 a0 → 外环 a0 → 外环 a1
                 discVertex(buffer, mat, cx, cy, cz, r0, a0, meshRadius);
                 discVertex(buffer, mat, cx, cy, cz, r1, a0, meshRadius);
                 discVertex(buffer, mat, cx, cy, cz, r1, a1, meshRadius);
 
-                // 三角 2：内环 a0 → 外环 a1 → 内环 a1
                 discVertex(buffer, mat, cx, cy, cz, r0, a0, meshRadius);
                 discVertex(buffer, mat, cx, cy, cz, r1, a1, meshRadius);
                 discVertex(buffer, mat, cx, cy, cz, r0, a1, meshRadius);
@@ -352,19 +248,7 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
         }
     }
 
-    /**
-     * 发一个圆盘顶点。
-     *
-     * <p><b>发的是世界坐标</b>，不是"相机相对"坐标 —— 这是整件事的关键。
-     * 对照 {@code CollapsarHaloRenderer}（项目里已验证可用的世界空间特效）：
-     * 它在 handler 里把 {@code -camera} 平移进 pose，拿到那个矩阵后，
-     * 顶点直接喂<b>世界坐标</b>，由矩阵完成"世界 → 相机相对"的变换，
-     * 顶点着色器因此只需 {@code ProjMat * Position}。</p>
-     *
-     * <p>我最初写反了：自己先算出相机相对的局部坐标，再指望矩阵里没有相机平移 ——
-     * 于是几何被当成世界坐标投影，表现就是"不管在哪放，都出现在世界原点"；
-     * 后来我又加了一次平移去"纠正"，结果叠加成双重平移，几何被推到远处、彻底看不见。</p>
-     */
+    /** 发一个圆盘顶点：<b>发的是世界坐标</b>，矩阵负责世界 → 相机相对的变换（着色器只需 ProjMat * Position）。 */
     private static void discVertex(BufferBuilder buffer, Matrix4f mat,
                                    float cx, float cy, float cz,
                                    float rNorm, float aNorm,
@@ -379,10 +263,6 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
                 .endVertex();
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  uniform 工具
-    // ══════════════════════════════════════════════════════════════
-
     private static void setUniform(ShaderInstance shader, String name, float value) {
         var u = shader.getUniform(name);
         if (u != null) u.set(value);
@@ -393,19 +273,7 @@ public class VerdictFieldRenderer extends EntityRenderer<VerdictFieldEntity> {
         if (u != null) u.set(rgb[0], rgb[1], rgb[2]);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  诊断
-    // ══════════════════════════════════════════════════════════════
-
-    /**
-     * 限频诊断：<b>同一 key 每 {@value #NOTE_INTERVAL_MS} 毫秒最多写一行</b>。
-     *
-     * <p>这里踩过一次坑：按"内容变化"去重看着很聪明，但相机每帧都在动
-     * （{@code camY} 一直在变），于是每一帧的字符串都不同、每一帧都写一行 ——
-     * 一秒几十行、把日志刷成几万行。所以正确的维度是<b>时间</b>，不是内容。</p>
-     *
-     * <p>500ms 的间隔足以看清"放领域时到底发生了什么"，又不会污染日志。</p>
-     */
+    /** 限频诊断：同一 key 每 {@value #NOTE_INTERVAL_MS} 毫秒最多写一行（按内容去重不行 —— 相机每帧都在动）。 */
     private static final java.util.Map<String, Long> NOTE_LAST = new java.util.HashMap<>();
     private static final long NOTE_INTERVAL_MS = 500L;
 

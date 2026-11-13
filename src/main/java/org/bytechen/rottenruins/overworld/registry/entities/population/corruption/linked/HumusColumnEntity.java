@@ -105,9 +105,7 @@ public class HumusColumnEntity extends BaseLinkedEntity {
         this.entityData.define(GLOW_TIMER, 0);
     }
 
-    // =========================================================================
     // 光环
-    // =========================================================================
 
     @Override
     public void tick() {
@@ -265,8 +263,6 @@ public class HumusColumnEntity extends BaseLinkedEntity {
         this.entityData.set(GLOW_TIMER, timer);
     }
 
-    // ==================== 禁止移动 ====================
-
     @Override
     public void travel(Vec3 travelVector) {
         super.travel(Vec3.ZERO);
@@ -276,8 +272,6 @@ public class HumusColumnEntity extends BaseLinkedEntity {
     @Override
     public void push(Entity entity) {
     }
-
-    // ==================== 内部类 ====================
 
     private static class BuffEntry {
         final MobEffect effect;

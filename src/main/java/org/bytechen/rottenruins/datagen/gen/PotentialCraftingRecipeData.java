@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * 势能合成台配方的 datagen，写出 {@code data/rotten_ruins/recipes/potential_crafting/*.json}。
@@ -146,7 +147,7 @@ public final class PotentialCraftingRecipeData implements DataProvider {
         }
 
         private void save(@NotNull ItemStack output) {
-            recipes.add(new Entry(new ResourceLocation(HallMod.MODID, path),
+            recipes.add(new Entry(ModUtils.modLoc(path),
                     List.copyOf(ingredients), output, outputTime));
         }
     }

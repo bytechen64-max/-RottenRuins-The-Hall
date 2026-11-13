@@ -45,9 +45,7 @@ public class CustomEffectHolder extends AbstractCapability<CustomEffectHolder>
     public CustomEffectHolder() {
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 读
-    // ══════════════════════════════════════════════════════════════
 
     /** 某个效果的实例；没有则 {@code null}（对应原版 {@code getEffect}）。 */
     @Nullable
@@ -74,9 +72,7 @@ public class CustomEffectHolder extends AbstractCapability<CustomEffectHolder>
         return effects.size();
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 写（低层，不做回调 / 不同步 —— 那两层在 CustomEffects 里）
-    // ══════════════════════════════════════════════════════════════
 
     /**
      * 放入或合并。
@@ -122,9 +118,7 @@ public class CustomEffectHolder extends AbstractCapability<CustomEffectHolder>
         return removed;
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 同步标记
-    // ══════════════════════════════════════════════════════════════
 
     public boolean isDirty() {
         return dirty;
@@ -138,9 +132,7 @@ public class CustomEffectHolder extends AbstractCapability<CustomEffectHolder>
         this.dirty = false;
     }
 
-    // ══════════════════════════════════════════════════════════════
     // NBT
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     @NotNull

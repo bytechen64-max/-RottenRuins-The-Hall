@@ -203,8 +203,6 @@ public class LangDataEN extends LanguageProvider {
         add("biome." + HallMod.MODID + ".flesh_marrow", "Carrion Marrow");
         add(RegisterBlock.FLESH_RIFT.get().getDescriptionId() + ".no_dimension", "The other end of the rift has not yet formed...");
 
-        // ---- Magic attributes (see RegisterAttributes) ----
-        // ---- Magic: school names + item tooltips (see MagicType / MagicTooltips) ----
         add("magic_type." + HallMod.MODID + ".water", "Water");
         add("magic_type." + HallMod.MODID + ".fire", "Fire");
         add("magic_type." + HallMod.MODID + ".death", "Death");
@@ -235,7 +233,6 @@ public class LangDataEN extends LanguageProvider {
         add("attribute.name." + HallMod.MODID + ".spell_power_void", "Void Spell Power");
         add("attribute.name." + HallMod.MODID + ".spell_power_mysterious", "Mysterious Spell Power");
 
-        // ---- Magic system · items ----
         // Mana plates: one per school.
         add(RegisterItem.DEATH_MANA_PLATE.get(), "Death Mana Plate");
         add(RegisterItem.SOURCE_MANA_PLATE.get(), "Source Mana Plate");
@@ -264,9 +261,9 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterBlock.SOURCE_WIRE.get(), "Source Wire");
         add(RegisterBlock.SOURCE_FILTER.get(), "Source Charge Filter");
         add(RegisterBlock.SOURCE_COLLECTOR.get(), "Charge Collector");
-        add(RegisterBlock.POTENTIAL_CRAFTING_TABLE.get(), "Potential Crafting Altar");
+        add(RegisterBlock.POTENTIAL_CRAFTING_TABLE.get(), "Arcane Instrument Altar");
         add("block.rotten_ruins.potential_crafting_table.hint",
-                "16 ring slots around one central output slot. Recipes are shapeless; ingredients are not refunded once crafting starts.");
+                "15 slots around one central output slot. Press Craft to validate ingredients; ingredients are not refunded once crafting starts.");
         add("block.rotten_ruins.potential_crafting_table.hint_power",
                 "Needs potential from a source wire circuit (high-potential zone to grounding stake). More potential = faster, down to half the time.");
         add("gui.rotten_ruins.potential_crafting.power", "Potential %s / %s");
@@ -274,6 +271,20 @@ public class LangDataEN extends LanguageProvider {
         add("gui.rotten_ruins.potential_crafting.needs_power", "Requires potential");
         add("gui.rotten_ruins.potential_crafting.idle", "Place ingredients to begin");
         add("gui.rotten_ruins.potential_crafting.no_recipe", "No matching recipe");
+        add("gui.rotten_ruins.potential_crafting.start", "Craft");
+        add("gui.rotten_ruins.potential_crafting.crafting", "Crafting…");
+        // Custom effects (shown in HUD / Jade)
+        // Staff grades & Soul Drink
+        add(RegisterItem.SOUL_DRINK.get(), "Soul Drink");
+        add("staff_grade.rotten_ruins.common", "Grade: Common");
+        add("staff_grade.rotten_ruins.epic", "Grade: Epic");
+        add("staff_grade.rotten_ruins.legendary", "Grade: Legendary");
+        add("tooltip.rotten_ruins.staff_grade_bonus", "+%s spell damage of the same school");
+        add("effect.rotten_ruins.arcane_mark", "Arcane Mark");
+        add("effect.rotten_ruins.corrosion", "Corrosion");
+        add("effect.rotten_ruins.lethargy", "Lethargy");
+        add("effect.rotten_ruins.frailty", "Frailty");
+        add("gui.rotten_ruins.jade.crafting", "Crafting %s%% · ~%s s");
         add("gui.rotten_ruins.source.reference", "Bands");
         add("gui.rotten_ruins.source.mode.0", "Manual");
         add("gui.rotten_ruins.source.mode.1", "Quick tune");
@@ -343,7 +354,6 @@ public class LangDataEN extends LanguageProvider {
         // Death Star: nether star + wither roses
         add(RegisterItem.DEATH_STAR.get(), "Death Star");
 
-        // ---- Spell constellation GUI / key bind ----
         add("key.categories." + HallMod.MODID, "Rotten Ruins");
         add("key." + HallMod.MODID + ".open_magic", "Open Spell Constellation");
         add("rotten_ruins.gui.magic.title", "Spell Constellation");
@@ -356,7 +366,6 @@ public class LangDataEN extends LanguageProvider {
         add("rotten_ruins.gui.magic.mana", "Mana %s");
         add("rotten_ruins.gui.magic.cooldown", "Cooldown %ss");
         add("rotten_ruins.gui.magic.charge", "Charge %ss");
-        // ---- Spell wheel HUD / loadout ----
         add("key." + HallMod.MODID + ".cast_wheel", "Open/Close Spell Wheel");
         add("key." + HallMod.MODID + ".open_loadout", "Spell Loadout");
         add("rotten_ruins.gui.wheel.title", "Spell Wheel");
@@ -481,25 +490,19 @@ public class LangDataEN extends LanguageProvider {
         add("rotten_ruins.wheel.loadout.per_second", "%s / s");
         add("rotten_ruins.wheel.loadout.bind_to_slot", "BIND TO SLOT %s");
         add("rotten_ruins.wheel.loadout.release_on_socket", "RELEASE ON A SOCKET");
-        // ---- Section-code text effects · preview screen / command ----
         add("rotten_ruins.gui.textfx.title", "§[rrs:grad:#6FBF4A:#8B1E2D]Section-Code Text Effects§[/]");
         add("rotten_ruins.gui.textfx.hint", "Each row animates live; press ESC to close; type /rrsfx for more");
         add("rotten_ruins.command.rrsfx.enabled", "§aText effects: ON");
         add("rotten_ruins.command.rrsfx.disabled", "§cText effects: OFF");
 
-        // ---- Sound subtitles (see SoundData) ----
         // Body-explosion sound: same subtitle text as corruption's rip_body, hall namespace.
         add("subtitles." + HallMod.MODID + ".rip_body", "Body rips apart");
 
-        // ====================================================================
-        // ---- Simplified corruption content (migrated from the corruption mod) ----
         // Blocks / items / entities / effects are referenced through their registry
         // objects (CorruptionBlocks / CorruptionItems / CorruptionEntityTypes /
         // CorruptionEffects); keys are derived from registry ids, so a rename is a
         // compile error instead of a silently-missing translation.
-        // ====================================================================
 
-        // ---- A. Blocks: block.rotten_ruins.<id> (21) ----
         add(CorruptionBlocks.SPREAD_DIRT.get(), "Corrupted Dirt");
         add(CorruptionBlocks.SPREAD_STONE.get(), "Corrupted Stone");
         add(CorruptionBlocks.INFECTION_COBBLESTONE_BLOCK.get(), "Corrupted Cobblestone");
@@ -524,7 +527,6 @@ public class LangDataEN extends LanguageProvider {
         add(CorruptionBlocks.VARIABLE_HEIGHT_CROP.get(), "Corrupted Meridian");
         add(CorruptionBlocks.SPIRACLE_BLOCK.get(), "Living Spiracle");
 
-        // ---- B. Items: item.rotten_ruins.<id> (42 = 14 materials + 5 tools + 23 spawn eggs) ----
         // Materials
         add(CorruptionItems.INFECTION_BONE.get(), "Infected Bone");
         add(CorruptionItems.HARD_FRAGMENTS.get(), "Hardened Fragments");
@@ -572,7 +574,6 @@ public class LangDataEN extends LanguageProvider {
         add(CorruptionItems.SUMMONING_PILLAR_SPAWN_EGG.get(), "Stage I Summoning Pillar Spawn Egg");
         add(CorruptionItems.ORIGINAL_BUG_SPAWN_EGG.get(), "Primordial Worm Spawn Egg");
 
-        // ---- C. Entities: entity.rotten_ruins.<id> (23) ----
         add(CorruptionEntityTypes.CORRUPTION_ZOMBIE.get(), "Assimilated Zombie");
         add(CorruptionEntityTypes.CORRUPTION_PLAYER.get(), "Assimilated Player");
         add(CorruptionEntityTypes.CORRUPTION_COW.get(), "Assimilated Cow");
@@ -598,7 +599,6 @@ public class LangDataEN extends LanguageProvider {
         add(CorruptionEntityTypes.SUMMONING_PILLAR.get(), "Stage I Summoning Pillar");
         add(CorruptionEntityTypes.ORIGINAL_BUG.get(), "Primordial Worm");
 
-        // ---- D. Effects: effect.rotten_ruins.<id> (6) ----
         add(CorruptionEffects.CORRUPTION.get(), "Corruption");
         add(CorruptionEffects.LYSIS.get(), "Lysis");
         add(CorruptionEffects.MIASMA.get(), "Despair");
@@ -606,7 +606,6 @@ public class LangDataEN extends LanguageProvider {
         add(CorruptionEffects.BLEEDING.get(), "Bleeding");
         add(CorruptionEffects.FEAR.get(), "Fear");
 
-        // ---- E. Advancements: advancements.rotten_ruins.<path> ----
         // Keys come from AdvancementProviderData so the display JSON and lang stay in sync.
         // Advancement titles/descriptions are drawn as single Components (advancement GUI / toast),
         // so effect markers are safe here.

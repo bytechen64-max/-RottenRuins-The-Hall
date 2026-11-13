@@ -32,9 +32,7 @@ import java.util.function.Consumer;
  */
 public class SummoningPillarEntity extends BaseLinkedEntity {
 
-    // =========================================================================
     // C12 群体召唤参数
-    // =========================================================================
     private static final int SUMMON_COOLDOWN = 240;
     private static final int SUMMON_COUNT = 2;
     private static final int LOCAL_POPULATION_CAP = 10;
@@ -73,9 +71,7 @@ public class SummoningPillarEntity extends BaseLinkedEntity {
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0D);
     }
 
-    // =========================================================================
     // C12 群体召唤
-    // =========================================================================
 
     @Override
     public void tick() {

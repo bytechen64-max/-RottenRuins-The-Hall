@@ -39,18 +39,7 @@ public class RegisterItem {
         return ITEMS.register(name,()->new Item(new Item.Properties().stacksTo(64).craftRemainder(MANA_BOTTLE.get())));
     }
 
-    /**
-     * Registers an item that implements {@link IAutoRenderableItem} and also
-     * adds it to {@link GeoItemRenderManager} for automatic Geo model/renderer creation.
-     * <p>
-     * This mirrors the entity auto-registration pattern ({@code SplendidingEntityManager.registerAll}).
-     * </p>
-     *
-     * @param name     registry name
-     * @param supplier supplier for the item instance
-     * @param <T>      item type implementing IAutoRenderableItem
-     * @return RegistryObject holding the registered item
-     */
+    /** 注册实现 {@link IAutoRenderableItem} 的物品，并登记到 {@link GeoItemRenderManager} 以自动生成 Geo 模型 / 渲染器。 */
     public static <T extends Item & IAutoRenderableItem> RegistryObject<T> registerGeoItem(
             String name, Supplier<T> supplier) {
         RegistryObject<T> regObj = ITEMS.register(name, supplier);
@@ -58,16 +47,7 @@ public class RegisterItem {
         return regObj;
     }
 
-    /**
-     * Registers an existing {@link RegistryObject} item with {@link GeoItemRenderManager}
-     * for automatic renderer creation. Use this when the item registration doesn't go through
-     * {@link #registerGeoItem} directly.
-     *
-     * @param name   the registry name (same as used in ITEMS.register)
-     * @param regObj the already-registered item
-     * @param <T>    item type implementing IAutoRenderableItem
-     * @return the same RegistryObject for chaining
-     */
+    /** 把已注册的 {@link RegistryObject} 补登记到 {@link GeoItemRenderManager}（物品注册没走 {@link #registerGeoItem} 时用）。 */
     public static <T extends Item & IAutoRenderableItem> RegistryObject<T> registerGeoRenderer(
             String name, RegistryObject<T> regObj) {
         GeoItemRenderManager.register(name, regObj);
@@ -80,8 +60,6 @@ public class RegisterItem {
                 () -> new ForgeSpawnEggItem(entityTypeSupplier, -1, -1, new Item.Properties().stacksTo(64)));
     }
 
-
-
     public static final RegistryObject<Item> EXAMPLE_ITEM = registerSimpleItem("example_item");
 
     public static final RegistryObject<Item> SIMPLE_FIELD_METER = ITEMS.register("simple_field_meter",
@@ -91,19 +69,11 @@ public class RegisterItem {
     public static final RegistryObject<Item> VOID_SWORD = ITEMS.register("void_sword",
             VoidSword::new);
 
-    /**
-     * CrimsonVow — 同一个 {@code hall:cosmic} 遮罩填充 loader，但换了一整套
-     * 着色器内容：深粉等离子漩涡（{@code style: 17}）而不是宇宙星空。
-     * 模型走普通剑的 {@code minecraft:item/handheld}。
-     */
+    /** CrimsonVow —— 同一个 {@code hall:cosmic} 遮罩填充 loader，但换成深粉等离子漩涡（{@code style: 17}）而非宇宙星空。 */
     public static final RegistryObject<Item> CRIMSON_VOW = ITEMS.register("crimson_vow",
             CrimsonVow::new);
 
-    /**
-     * SilentDaylight（静默白昼）— 同一个 {@code hall:cosmic} loader，
-     * 但走的是<b>水面湍流</b>那条片元路径（{@code style: 18}）。
-     * 遮罩 {@code silent_daylight_mask} 把水灌进剑刃，剑柄留在水外。
-     */
+    /** SilentDaylight（静默白昼）—— 同一 loader，但走<b>水面湍流</b>片元路径（{@code style: 18}）；遮罩把水灌进剑刃，剑柄留在水外。 */
     public static final RegistryObject<Item> SILENT_DAYLIGHT = ITEMS.register("silent_daylight",
             SilentDaylight::new);
 
@@ -111,7 +81,6 @@ public class RegisterItem {
     public static final RegistryObject<Item> INF_ENDER_PEAR = ITEMS.register("hall_ender_pear",
             () -> new InfEnderPearItem(new Item.Properties().stacksTo(16)));
 
-    //impl
     public static final RegistryObject<BaseGlowingGeoItem> ACID_ANOMALY_EXTRACT =
             registerGeoItem("acid_anomaly_extract",
                     () -> new BaseGlowingGeoItem(
@@ -150,50 +119,17 @@ public class RegisterItem {
     public static final RegistryObject<Item> DOMERITE_LONGSWORD = ITEMS.register("domerite_longsword",
             () -> new DomeriteLongsword(new Item.Properties()));
 
-    // ══════════════════════════════════════════════════════════════
-    // 魔法体系 · 物品
-    // ══════════════════════════════════════════════════════════════
-    // 本轮<b>只做注册与表现</b>（模型 + 译名 + 泛光），数值与法术效果一律留白。
-    // 唯一的"行为"是光明法力板的 mask 泛光层，见下面 ManaPlateItem 那一段。
-    //
-    // 模型与译名都走 datagen（见 datagen/gen/ItemGenData 与 gen/lang/），
-    // 不要手写 json —— 模型是按注册表自动遍历生成的，手写的文件会被覆盖。
-
-    // ---- 法力板：各流派的基础板材 ----
-    // 目前都是纯材料，两个例外：
-    //   * 光明法力板 —— mask 泛光层（自发光）**和**剪影描边（纯色硬边 + 光雾）；
-    //   * 火焰法力板 —— 只有剪影描边，颜色模式 "fire_2"（参考 shadertoy 的燃烧描边）。
-    // 想让别的板也发光：放一张同画布的 <流派>_mana_plate_mask_glow.png，
-    // 再把对应那行从 registerSimpleItem 换成
-    // ITEMS.register(name, () -> new ManaPlateItem(props, <MaskLayerSpec>))。
-    // 想让别的板也描边：在上面的构造参数后追加一个 ManaPlateItem.GlowOutline，
-    // 见下面光明法力板那一行。
-    //
-    // 水板材对应 MagicType.WATER；各流派板材用于法杖合成与充能。
+    // 魔法体系物品：模型与译名全部走 datagen（ItemGenData / gen/lang），不要手写 json —— 手写的会被覆盖。
+    // 板材默认是纯材料；光明板额外带 mask 泛光层 + 剪影描边，火焰板只有剪影描边（颜色模式 "fire_2"）。
     public static final RegistryObject<Item> SOURCE_MANA_PLATE = registerSimpleItem("source_mana_plate");
     public static final RegistryObject<Item> DEATH_MANA_PLATE = registerSimpleItem("death_mana_plate");
 
-    /**
-     * 火焰法力板 —— 带「燃烧描边」（{@code ICustomOutline} + {@code "fire_2"} 颜色模式）。
-     *
-     * <p>不发光（没有 mask 泛光层），只描边：剪影外侧一条按参考 shadertoy「fire」烧起来的带子
-     * （3D simplex 火焰 + 烟 + 火星），再叠全局光雾。和光明板一样走物品自描述，
-     * 模型仍是 datagen 生成的 {@code minecraft:item/generated}。</p>
-     *
-     * <p>GUI 里不描边（{@link ManaPlateItem.GlowOutline#drawInGui()} = false）：
-     * 它是可堆叠材料，GUI 的描边是逐物品就地合成的，代价会随件数线性涨。</p>
-     */
+    /** 火焰法力板 —— 只有「燃烧描边」（{@code ICustomOutline} + {@code "fire_2"} 颜色模式），不发光；GUI 内不描边（可堆叠材料，逐件描边代价线性涨）。 */
     public static final RegistryObject<Item> FIRE_MANA_PLATE = ITEMS.register("fire_mana_plate",
             () -> new ManaPlateItem(new Item.Properties().stacksTo(64),
                     null, ManaPlateItem.FIRE_OUTLINE));
 
-    /**
-     * 光明法力板 —— 唯一同时带「泛光」与「泛光描边」的板材。
-     *
-     * <p>泛光走 {@code MaskLayerProvider}，描边走 {@code ICustomOutline} —— 两条路都是
-     * 物品自描述，所以模型仍是 datagen 生成的 {@code minecraft:item/generated}，
-     * 没有手写 JSON。描边 <b>只出现在轮廓外侧</b>，和贴在表面的泛光层不抢像素。</p>
-     */
+    /** 光明法力板 —— 唯一同时带「泛光」（{@code MaskLayerProvider}）与「泛光描边」（{@code ICustomOutline}）的板材，描边只出现在轮廓外侧。 */
     public static final RegistryObject<Item> LIGHT_MANA_PLATE = ITEMS.register("light_mana_plate",
             () -> new ManaPlateItem(new Item.Properties().stacksTo(64),
                     ManaPlateItem.LIGHT_GLOW, ManaPlateItem.LIGHT_OUTLINE));
@@ -203,7 +139,6 @@ public class RegisterItem {
     public static final RegistryObject<Item> WATER_MANA_PLATE = registerSimpleItem("water_mana_plate");
     public static final RegistryObject<Item> MYSTERIOUS_MANA_PLATE = registerSimpleItem("mysterious_mana_plate");
 
-    // ---- 催化剂 / 符文：目前是纯材料 ----
     public static final RegistryObject<Item> MAGIC_CATA = registerSimpleItem("magic_cata");
     public static final RegistryObject<Item> VOID_RUNE = registerSimpleItem("void_rune");
 
@@ -224,13 +159,9 @@ public class RegisterItem {
     public static final RegistryObject<Item> CHIP_SCAN = registerSimpleItem("chip_scan");
     public static final RegistryObject<Item> CHIP_EXTRACT = registerSimpleItem("chip_extract");
 
-
-    //死亡
     public static final RegistryObject<Item> DEATH_STAR = registerSimpleItem("death_star");
 
-    // ---- 法杖 ----
-    // 空杖保留附魔作为合成基底；七系杖各储存 500 魔能，通用杖储存 2500。
-    // 模型用 minecraft:item/handheld，由 ItemGenData 的 isHandheld 判定。
+    // 空杖保留附魔作为合成基底；七系杖各储存 500 魔能，通用杖 2500（模型用 minecraft:item/handheld，由 ItemGenData 的 isHandheld 判定）。
     public static final RegistryObject<Item> WAND = ITEMS.register("wand",
             () -> new WandItem(new Item.Properties().durability(512), MagicType.MYSTERIOUS, 0));
     public static final RegistryObject<Item> WAND_NATURE = ITEMS.register("wand_nature",
@@ -250,10 +181,7 @@ public class RegisterItem {
     public static final RegistryObject<Item> WAND_COMMON = ITEMS.register("wand_common",
             () -> new WandItem(new Item.Properties().durability(512), MagicType.MYSTERIOUS, WandItem.COMMON_CAPACITY));
 
-    // ---- 法术 ----
-    // 法术物品只声明基值，效果写在 cast() 里，投射物在 entities/magic/ 下。
-    // 放进魔法槽（PlayerMagicPool，按 M 打开魔法星图装配）里、拿法杖右键才会释放
-    // —— 直接拿在手上右键是没反应的。
+    // 法术物品只声明基值，效果写在 cast() 里；须装进魔法槽（按 M 打开魔法星图装配）后用杖右键释放，手持右键无效。
     public static final RegistryObject<Item> FIRE_BALL =
             ITEMS.register("fire_ball", FireBall::new);
 
@@ -262,6 +190,11 @@ public class RegisterItem {
 
     public static final RegistryObject<Item> SUPPRESSION_FIELD =
             ITEMS.register("suppression_field", SuppressionField::new);
+
+    /** 灵魂吸引（死灵 / 按住吸取 + 松手凋零骷髅头）。 */
+    public static final RegistryObject<Item> SOUL_DRINK =
+            ITEMS.register("soul_drink", org.bytechen.rottenruins.overworld.registry.items
+                    .magic.its.SoulDrink::new);
 
     public static final RegistryObject<Item> TIDAL_PULSE =
             ITEMS.register("tidal_pulse", TidalPulse::new);

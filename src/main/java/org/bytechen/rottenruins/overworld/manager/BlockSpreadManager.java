@@ -5,8 +5,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import org.bytechen.rottenruins.HallMod;
 import org.bytechen.infcore.api.block.ISpreadBlock;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * Hall 模组的方块扩散管理门面。
@@ -20,7 +20,7 @@ public final class BlockSpreadManager {
 
     /** 本模组的默认扩散类型 */
     public static final ResourceLocation DEFAULT_TYPE =
-            new ResourceLocation(HallMod.MODID, "spread");
+            ModUtils.modLoc("spread");
 
     private BlockSpreadManager() {}
 

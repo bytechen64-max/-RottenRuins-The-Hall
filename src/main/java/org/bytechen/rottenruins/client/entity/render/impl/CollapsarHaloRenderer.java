@@ -27,28 +27,8 @@ import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
 
 /**
- * 坍缩使徒的<b>背部六芒星光环</b>。
- *
- * <h3>画在哪、怎么保证"在背后"</h3>
- * 一张朝向相机的正方形 billboard，中心取本体身体中段，再沿<b>视线反方向</b>后退
- * {@link #BACK_OFFSET} 格。实体是在 {@code AFTER_TRIPWIRE_BLOCKS} 之前画完的，
- * 它的深度已经写进深度缓冲，所以：
- * <ul>
- *   <li>光环中心那部分会被本体自己挡住 ⇒ 视觉上就是"光环在本体背后"；</li>
- *   <li>被方块挡住的部分也会正常消失（本阶段用 LEQUAL，不写深度）。</li>
- * </ul>
- *
- * <h3>插值（为什么不用实体的 tick 位置）</h3>
- * 渲染发生在两次 tick 之间，实体本身是按 {@code partialTick} 插值画的。
- * 光环如果直接用 {@code getX()/getY()/getZ()}，就会比本体"慢半拍"，
- * 快速飞行时表现为光环在身后一顿一顿地追。所以这里全部走插值：
- * <ul>
- *   <li>位置：{@code Mth.lerp(pt, entity.xo, entity.getX())} 等三个轴；</li>
- *   <li>时间：{@code (gameTime + pt) / 20} ⇒ 自转、噪声流动、色相都在帧间连续；</li>
- *   <li>血量：用插值后的血量比例算 {@code uAgitation}（濒死时转得更快更亮）。</li>
- * </ul>
- *
- * @see org.bytechen.rottenruins.client.rend.SplendidingShaders#collapsarHaloShader
+ * 坍缩使徒的背部六芒星光环：朝相机的 billboard，沿视线反方向后退 {@link #BACK_OFFSET} 格，让本体挡住光环中心；
+ * 位置 / 时间 / 血量全部按 {@code partialTick} 插值，否则会比本体"慢半拍"；Oculus 激活时快照入队，等 renderLevel TAIL 回放。
  */
 @Mod.EventBusSubscriber(modid = HallMod.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CollapsarHaloRenderer {
@@ -66,11 +46,7 @@ public class CollapsarHaloRenderer {
     private static boolean loggedFirstGl = false;
     private static boolean loggedNoEntity = false;
     private static boolean loggedNoShader = false;
-    /**
-     * 空心六芒星边框的厚度（uv 空间，星形尖角半径 = 1.0）。
-     * <p>0.085 ⇒ 边框总厚 0.17（沿轮廓向内外各 0.085），换算到屏幕大约是整个光环直径的 8.5%，
-     * 是"看得出厚度但没糊住内容"的档位。</p>
-     */
+    /** 空心六芒星边框厚度（uv 空间，尖角半径 = 1.0）：0.085 ⇒ 边框总厚 0.17，约光环直径的 8.5%。 */
     private static final float BORDER_THICKNESS = 0.085F;
     /** 六芒星内部着色器内容的基础强度（濒死时会自己变亮）。 */
     private static final float CONTENT_STRENGTH = 1.25F;
@@ -84,8 +60,7 @@ public class CollapsarHaloRenderer {
 
         ShaderInstance shader = SplendidingShaders.collapsarHaloShader;
         if (shader == null) {
-            // 诊断：日志里只有这一行、没有「首帧」那行 → 着色器没注册成功（注册异常会被
-            // SplendidingShaders 里那个 catch 打成堆栈，先看有没有堆栈）
+            // 诊断：只出现这一行而没有「首帧」日志 ⇒ 着色器没注册成功（注册异常在 SplendidingShaders 里已打成堆栈）。
             if (!loggedNoShader) {
                 loggedNoShader = true;
                 HallMod.LOGGER.warn("[CollapsarHalo] collapsarHaloShader 为 null，光环不绘制");
@@ -95,9 +70,7 @@ public class CollapsarHaloRenderer {
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
-        // 注意：这里<b>不能</b>判 mc.options.hideGui。
-        // 那是 HUD 元素的规矩（F1 隐藏界面时 HUD 就该一起消失），而本光环是世界空间特效 ——
-        // 玩家按 F1 只是想看干净的风景，不该把 boss 身上最有辨识度的东西也一起关掉。
+        // 不能判 mc.options.hideGui：本光环是世界空间特效，F1 只该隐藏 HUD，不该把 boss 的辨识物一起关掉。
 
         float partialTick = event.getPartialTick();
         Vec3 camera = mc.gameRenderer.getMainCamera().getPosition();
@@ -114,8 +87,7 @@ public class CollapsarHaloRenderer {
             }
         }
 
-        // 诊断：处理器进来了、着色器也有，但本帧一个本体都没找到 —— 这种情况
-        // 只可能是 entitiesForRendering() 里没有它（例如本体已死、或还没同步到客户端）
+        // 处理器进来了、着色器也有，但本帧一个都没找到 ⇒ entitiesForRendering() 里没有它（已死或还没同步到客户端）
         if (found == 0 && !loggedNoEntity) {
             loggedNoEntity = true;
             HallMod.LOGGER.info("[CollapsarHalo] 处理器已运行但本帧未找到 CollapsarEntity");
@@ -124,17 +96,14 @@ public class CollapsarHaloRenderer {
         ps.popPose();
     }
 
-    // ── 单个光环 ──────────────────────────────────────────────
-
     private static void renderOne(CollapsarEntity collapsar,
                                   float partialTick, Matrix4f pose, Vec3 camera) {
-        // ① 位置：三轴都插值（本体也是这么画的，不插值就会"慢半拍"）
+        // 位置：三轴都插值（本体也是这么画的，不插值就会"慢半拍"）
         double x = Mth.lerp(partialTick, collapsar.xo, collapsar.getX());
         double y = Mth.lerp(partialTick, collapsar.yo, collapsar.getY());
         double z = Mth.lerp(partialTick, collapsar.zo, collapsar.getZ());
         Vec3 center = new Vec3(x, y + collapsar.getBbHeight() * CENTER_HEIGHT, z);
 
-        // ② 相机方向的基（billboard）
         Vec3 toCamera = camera.subtract(center);
         if (toCamera.lengthSqr() < 1.0E-6D) return;
         toCamera = toCamera.normalize();
@@ -146,7 +115,7 @@ public class CollapsarHaloRenderer {
         right = right.normalize();
         Vec3 up = right.cross(toCamera).normalize();
 
-        // ③ 平面中心：沿视线反方向后退 → 本体挡住光环中心
+        // 平面中心：沿视线反方向后退 → 本体挡住光环中心
         Vec3 plane = center.subtract(toCamera.scale(BACK_OFFSET));
 
         double r = HALO_RADIUS;
@@ -155,20 +124,16 @@ public class CollapsarHaloRenderer {
         Vec3 tr = plane.add(right.scale(r)).add(up.scale(r));
         Vec3 br = plane.add(right.scale(r)).subtract(up.scale(r));
 
-        // ④ 血量：插值不了血量本身（它是离散同步的），但比例足够平滑，
-        //    它同时决定转速、亮度——濒死时光环更躁动
+        // 血量是离散同步的插值不了，但比例足够平滑，且同时决定转速与亮度（濒死更躁动）
         float max = collapsar.getMaxHealth();
         float health = collapsar.getHealth();
         float agitation = max <= 0.0F ? 0.0F : Mth.clamp(1.0F - health / max, 0.0F, 1.0F);
 
-        // ⑤ 时间：gameTime + partialTick ⇒ 自转与噪声逐帧连续
+        // 时间：gameTime + partialTick ⇒ 自转与噪声逐帧连续
         float time = (collapsar.level().getGameTime() + partialTick) / 20.0F;
 
-        // 一次性诊断：光环不显示时，这一行能直接区分四种情况 ——
-        //   ① 日志里没有这行 → 处理器没进来 / 没找到实体；
-        //   ② 视图空间 z ≥ 0 → 几何跑到相机背后了；
-        //   ③ NDC 超出 [-1,1] → 几何落在屏幕外（矩阵约定错）；
-        //   ④ 两者都正常 → 问题在片元输出或混合状态。
+        // 一次性诊断：光环不显示时这一行能区分四种情况 —— 没有它 ⇒ 处理器没进来/没找到实体；
+        // 视图空间 z ≥ 0 ⇒ 几何跑到相机背后；NDC 超出 [-1,1] ⇒ 落在屏幕外（矩阵约定错）；都正常 ⇒ 问题在片元输出或混合状态。
         if (!loggedFirstHalo) {
             loggedFirstHalo = true;
             Vector3f viewCenter = pose.transformPosition(new Vector3f(
@@ -184,8 +149,7 @@ public class CollapsarHaloRenderer {
                     BASE_ALPHA * (0.78F + 0.30F * agitation));
         }
 
-        // 再记一行绘制前的 GL 状态：光环"完全看不见"最常见的两个原因是
-        // 混合被关掉、或深度函数不是 LEQUAL（几何在离相机 1 格之外就被裁掉）
+        // 再记一行绘制前 GL 状态：光环"完全看不见"最常见于混合被关掉、或深度函数不是 LEQUAL
         if (!loggedFirstGl) {
             loggedFirstGl = true;
             HallMod.LOGGER.info("[CollapsarHalo] 绘制前 GL: blend={} depthFunc={} (515=LEQUAL) cull={}",
@@ -197,12 +161,8 @@ public class CollapsarHaloRenderer {
         float alpha = BASE_ALPHA * (0.78F + 0.30F * agitation);
         float content = CONTENT_STRENGTH * (0.85F + 0.55F * agitation);
 
-        // ⑦ 光影兼容（详见类注释与 CollapsarHaloLateRenderQueue）：
-        //    · 阴影贴图 pass 里绝不画 —— 那是从光源视角重建的，此刻画进去会让地上/墙上
-        //      多出一整块六芒星阴影；
-        //    · 光影包激活时也不能"此刻"画：AFTER_TRIPWIRE_BLOCKS 时主帧缓冲里还是 GBuffer
-        //      原始数据，此刻画进去会被光影的 composite 当成普通几何重新着色，效果直接丢掉。
-        //      改成快照入队，等 renderLevel() TAIL 光影合成完成后再直写主 RT 回放。
+        // 光影兼容：阴影贴图 pass 里绝不画（否则地上/墙上会多出一整块六芒星阴影）；
+        // 光影包激活时也不能此刻画（主帧缓冲还是 GBuffer，会被 composite 当普通几何重新着色）⇒ 快照入队，renderLevel TAIL 再直写主 RT。
         if (HeldItemOutlineCompat.isOculusShadowPass()) return;
         if (HeldItemOutlineCompat.isOculusShaderPackActive()) {
             CollapsarHaloLateRenderQueue.enqueue(pose, bl, tl, tr, br, time, alpha, content, agitation);
@@ -212,14 +172,8 @@ public class CollapsarHaloRenderer {
         drawHalo(pose, bl, tl, tr, br, time, alpha, content, agitation);
     }
 
-    /**
-     * 延迟回放用：把已经算好的光环再画一遍。
-     *
-     * <p>与 {@link #renderOne} 的区别只有两点：着色器在回放时刻重新查一次
-     * （光影加载/重载后字段可能已经换了），以及调用方已经用
-     * {@link org.bytechen.rottenruins.client.rend.glint.LateOutlineRenderState}
-     * 绑好主 RT、清好 scissor 与混合状态。</p>
-     */
+    /** 延迟回放用：与 {@link #renderOne} 的区别是着色器在回放时刻重查（光影重载后字段可能已换），
+     *  且调用方已用 {@code LateOutlineRenderState} 绑好主 RT、清好 scissor 与混合状态。 */
     static void drawHalo(Matrix4f pose, Vec3 bl, Vec3 tl, Vec3 tr, Vec3 br,
                          float time, float alpha, float content, float agitation) {
         ShaderInstance shader = SplendidingShaders.collapsarHaloShader;

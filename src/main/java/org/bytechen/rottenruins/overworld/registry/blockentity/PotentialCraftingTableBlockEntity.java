@@ -37,7 +37,7 @@ import org.jetbrains.annotations.Nullable;
 public final class PotentialCraftingTableBlockEntity extends BlockEntity
         implements WorldlyContainer, MenuProvider {
 
-    public static final int RING_SLOTS = 16;
+    public static final int RING_SLOTS = 15;
     public static final int OUTPUT_SLOT = RING_SLOTS;
     public static final int SLOT_COUNT = RING_SLOTS + 1;
 
@@ -112,16 +112,10 @@ public final class PotentialCraftingTableBlockEntity extends BlockEntity
 
     public static void tick(Level level, BlockPos pos, BlockState state,
                             PotentialCraftingTableBlockEntity station) {
-        if (level.isClientSide) {
-            return;
+        if (level.isClientSide || !station.isCrafting()) {
+            return;   // 空闲时不自动开始：由界面上的按钮触发（见 requestStart）
         }
         int power = station.currentPower();
-        if (!station.isCrafting()) {
-            if (power > 0) {
-                station.tryStart();
-            }
-            return;
-        }
         if (power <= 0) {
             return;   // 没势能：暂停
         }
@@ -132,22 +126,30 @@ public final class PotentialCraftingTableBlockEntity extends BlockEntity
         }
     }
 
-    private void tryStart() {
+    /**
+     * 界面按钮点击：校验材料与产物格，能开始就开始一次合成。
+     *
+     * @return 是否真的开始了
+     */
+    public boolean requestStart() {
+        if (isCrafting()) {
+            return false;
+        }
         Level level = getLevel();
-        if (level == null) {
-            return;
+        if (level == null || level.isClientSide || currentPower() <= 0) {
+            return false;
         }
         PotentialCraftingRecipe recipe = PotentialCraftingRecipes.findMatch(level, this);
         if (recipe == null) {
-            return;
+            return false;
         }
         int[] consumption = recipe.matchConsumption(this);
         if (consumption == null) {
-            return;
+            return false;
         }
         ItemStack output = recipe.getResultItem(level.registryAccess()).copy();
         if (output.isEmpty() || !canAcceptOutput(output)) {
-            return;
+            return false;
         }
         System.arraycopy(consumption, 0, consume, 0, RING_SLOTS);
         pendingOutput = output;
@@ -155,6 +157,7 @@ public final class PotentialCraftingTableBlockEntity extends BlockEntity
         requiredProgress = recipe.timeTicks() * POWER_UNITS;
         progress = 0;
         setChanged();
+        return true;
     }
 
     private boolean canAcceptOutput(@NotNull ItemStack output) {

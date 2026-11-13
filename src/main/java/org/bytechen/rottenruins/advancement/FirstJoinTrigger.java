@@ -8,7 +8,7 @@ import net.minecraft.advancements.critereon.SerializationContext;
 import net.minecraft.advancements.critereon.SimpleCriterionTrigger;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import org.bytechen.rottenruins.HallMod;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * 「玩家初次进入世界」判据触发器。
@@ -31,7 +31,7 @@ import org.bytechen.rottenruins.HallMod;
 public class FirstJoinTrigger extends SimpleCriterionTrigger<FirstJoinTrigger.TriggerInstance> {
 
     /** 判据 id；成就 JSON 里 criterion 的 trigger 字段写这个。 */
-    public static final ResourceLocation ID = new ResourceLocation(HallMod.MODID, "first_join");
+    public static final ResourceLocation ID = ModUtils.modLoc("first_join");
 
     /** 单例：注册与触发都走它。 */
     public static final FirstJoinTrigger INSTANCE = new FirstJoinTrigger();

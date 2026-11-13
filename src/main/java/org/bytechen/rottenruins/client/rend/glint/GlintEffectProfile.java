@@ -12,9 +12,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Configuration for an item glint effect.
- * Use the builder or static factory methods to create profiles,
- * then register via {@link GlintRenderManager#register}.
+ * Configuration for an item glint effect; build via the builder or the factory methods,
+ * then register through {@link GlintRenderManager#register}.
  */
 public class GlintEffectProfile {
 
@@ -26,9 +25,8 @@ public class GlintEffectProfile {
         RAINBOW(2.0f),
         AUTO_SAMPLE_SCROLL(3.0f),
         /**
-         * 火焰：噪声湍流 + 1/t 过曝 ramp（移植自 shadertoy MdjfRK，见 outline_mask.fsh 的
-         * fireColor）。主色是白热核、副色是冷尾；{@code ColorFloor}（GUI 里是
-         * guiOutlineMinMix）决定尾部有多亮。ICustomOutline 侧对应的 key 是 {@code "fire"}。
+         * 火焰：噪声湍流 + 1/t 过曝 ramp（移植自 shadertoy MdjfRK，见 outline_mask.fsh 的 fireColor）。
+         * 主色白热核、副色冷尾；ColorFloor（GUI 里是 guiOutlineMinMix）决定尾部亮度，ICustomOutline 侧 key 为 "fire"。
          */
         FIRE(4.0f);
 
@@ -39,17 +37,13 @@ public class GlintEffectProfile {
         }
     }
 
-    // Primary color
     float red = 0.23f, green = 0.95f, blue = 1.0f, alpha = 1.0f;
-    // Secondary color (for DUAL_SCROLL mode)
     float secondaryRed = 1.0f, secondaryGreen = 0.25f, secondaryBlue = 0.78f, secondaryAlpha = 1.0f;
     ColorMode colorMode = ColorMode.SINGLE;
     float speed = 1.0f;
     float intensity = 0.8f;
-    // Bloom
     float bloomStrength = 0.0f;
     float bloomRadius = 1.0f;
-    // Palette (for AUTO_SAMPLE_SCROLL)
     float[][] paletteColors = new float[0][];
 
     // World-space outline (third-person / ground)
@@ -58,13 +52,10 @@ public class GlintEffectProfile {
     @Deprecated
     float worldOutlineWidth = 0.06f;
     /**
-     * 描边宽度，单位屏幕像素；同时是距离自适应下的<b>上限</b> —— 近处就是本值，远处按
-     * 「物品屏幕长边 × {@code SplendidingConfig.outlineWidthMaxRatio}」收细
-     * （见 {@code ItemOutlinePipeline.adaptPixelWidth}）。恒定像素宽用
-     * {@code SplendidingConfig.outlineDistanceScaling=false} 整体关掉。
+     * 描边宽度（屏幕像素），同时是距离自适应下的上限：近处取本值，远处按「物品屏幕长边 ×
+     * outlineWidthMaxRatio」收细（见 ItemOutlinePipeline.adaptPixelWidth）。
      */
     float worldOutlinePixelWidth = 2.5f;
-    /** 描边整体不透明度。 */
     float worldOutlineOpacity = 1.0f;
     String outlineShaderKey = null; // null = default
 
@@ -74,12 +65,9 @@ public class GlintEffectProfile {
     float gradientFlowSpeed = 1.0f;
     float gradientSpan = 1.0f;
 
-    // Display context flags
     boolean showInGui = true;
     boolean showWhenHeld = true;
     boolean showInWorld = true;
-
-    // -- builder --
 
     public static Builder builder() {
         return new Builder();
@@ -154,8 +142,6 @@ public class GlintEffectProfile {
         }
     }
 
-    // -- factory methods --
-
     public static GlintEffectProfile singleColor(float r, float g, float b) {
         return builder().color(r, g, b).colorMode(ColorMode.SINGLE).build();
     }
@@ -173,11 +159,8 @@ public class GlintEffectProfile {
     }
 
     /**
-     * 火焰预设：橙黄白热核 + 暗红冷尾，噪声湍流会顺着描边爬。
-     *
-     * <p>用加法混合（描边默认）时最像参考图：尾部接近黑、几乎不贡献亮度，
-     * 只剩几缕白热的火丝。想要"整圈泛着底光"的厚火，把 {@code guiOutlineMinMix}
-     * （或直接调 {@code ColorFloor}）抬起来。</p>
+     * 火焰预设：橙黄白热核 + 暗红冷尾。加法混合（描边默认）下尾部几乎不贡献亮度，只剩几缕白热火丝；
+     * 想要整圈底光就抬高 ColorFloor（GUI 里是 guiOutlineMinMix）。
      */
     public static GlintEffectProfile fire() {
         return builder()
@@ -199,10 +182,6 @@ public class GlintEffectProfile {
                 .build();
     }
 
-    /**
-     * Create a profile with auto-sampled colors from the item's texture,
-     * with bloom enabled for a star-like glow effect.
-     */
     public static GlintEffectProfile autoSampleWithBloom(Item item) {
         float[][] palette = autoSampleColors(item);
         return builder()
@@ -215,12 +194,7 @@ public class GlintEffectProfile {
                 .build();
     }
 
-    // -- auto color sampling --
-
-    /**
-     * Sample dominant colors from an item's texture sprite.
-     * Returns up to MAX_PALETTE_COLORS RGBA arrays.
-     */
+    /** 从物品贴图 sprite 采样最多 MAX_PALETTE_COLORS 个主色，返回 RGBA 数组。 */
     public static float[][] autoSampleColors(Item item) {
         if (item == null) return defaultPalette();
 
@@ -239,13 +213,7 @@ public class GlintEffectProfile {
         }
     }
 
-    /**
-     * Sample dominant colors from a texture atlas sprite.
-     * @param sprite     the sprite to sample
-     * @param sampleStep pixel step size (1 = every pixel, 2 = every other, etc.)
-     * @param quantize   color channel quantization step (0-255, higher = fewer colors)
-     * @param maxColors  maximum palette size
-     */
+    /** 从图集 sprite 采样主色：sampleStep 像素步长，quantize 通道量化步长（越大颜色越少），maxColors 调色板上限。 */
     public static float[][] sampleSprite(TextureAtlasSprite sprite, int sampleStep,
                                          int quantize, int maxColors) {
         try {
@@ -263,7 +231,7 @@ public class GlintEffectProfile {
                 for (int x = 0; x < w; x += sampleStep) {
                     int pixel = image.getPixelRGBA(x, y);
                     int a = (pixel >> 24) & 0xFF;
-                    if (a < 32) continue; // skip transparent pixels
+                    if (a < 32) continue;
 
                     int r = ((pixel >> 16) & 0xFF) / quantize * quantize;
                     int g = ((pixel >> 8) & 0xFF) / quantize * quantize;
@@ -314,13 +282,9 @@ public class GlintEffectProfile {
         }
     }
 
-    /**
-     * Extracts the NativeImage from a sprite's contents, trying common
-     * method/field names to work across different MCP mappings.
-     */
+    /** 反射取 sprite.contents() 的 NativeImage：方法名与字段名各试多套，兼容不同 MCP 映射。 */
     private static NativeImage getSpriteNativeImage(TextureAtlasSprite sprite) {
         Object contents = sprite.contents();
-        // Try common getter names
         for (String methodName : new String[]{"originalImage", "getOriginalImage", "image", "getImage"}) {
             try {
                 java.lang.reflect.Method m = contents.getClass().getMethod(methodName);
@@ -331,7 +295,6 @@ public class GlintEffectProfile {
                 break;
             }
         }
-        // Try field access
         for (String fieldName : new String[]{"originalImage", "image", "mipmapImage"}) {
             try {
                 java.lang.reflect.Field f = contents.getClass().getDeclaredField(fieldName);
@@ -354,8 +317,6 @@ public class GlintEffectProfile {
         };
     }
 
-    // -- display context check --
-
     public boolean shouldRender(ItemDisplayContext context) {
         return switch (context) {
             case GUI, FIXED -> showInGui;
@@ -365,8 +326,6 @@ public class GlintEffectProfile {
             default -> false;
         };
     }
-
-    // -- getters --
 
     public float getRed() { return red; }
     public float getGreen() { return green; }

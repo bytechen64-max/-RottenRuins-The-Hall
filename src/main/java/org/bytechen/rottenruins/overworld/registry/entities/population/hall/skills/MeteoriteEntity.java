@@ -44,26 +44,21 @@ import org.bytechen.rottenruins.overworld.registry.entities.base.RottenFaction;
  */
 public class MeteoriteEntity extends Entity implements IAutoRenderableEntity {
 
-    // ────────── 物理参数 ──────────
     private static final float GRAVITY = 0.08f;
     private static final float AIR_FRICTION = 0.99f;
 
-    // ────────── 拖尾参数 ──────────
     private static final int MAX_TRAIL_POINTS = 40;
 
-    // ────────── 尾部圆环参数 ──────────
     private static final int RING_SPAWN_INTERVAL = 2;
     public static final int RING_MAX_AGE = 30;
     private final List<TailRing> tailRings = new ArrayList<>();
 
-    // ────────── AoE 扩散圆环参数 ──────────
     private static final int AOE_RING_INTERVAL = 4;
     public static final int AOE_RING_MAX_AGE = 80;
     public static final float AOE_RING_START_R = 1.0f;
     public static final float AOE_RING_SPEED = 0.35f;
     private final List<AoeRing> aoeRings = new ArrayList<>();
 
-    // ────────── 二十面体基础参数 ──────────
     private static final float ICOSA_RADIUS = 1.0f;
     private static final double PARTICLE_SPEED = 0.15;
 
@@ -71,7 +66,6 @@ public class MeteoriteEntity extends Entity implements IAutoRenderableEntity {
 
     private static final ResourceLocation DUMMY = ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "textures/misc/white.png");
 
-    // ────────── 配置缓存（生成时从 ConfigHelper 读取一次，保证服务端正确） ──────────
     private float cfgAoeDamage = 5.0f;
     private float cfgIcosaMaxScale = 10.0f;
     private int cfgFadeTicks = 170;
@@ -88,7 +82,6 @@ public class MeteoriteEntity extends Entity implements IAutoRenderableEntity {
     private float cfgShockwaveInitialScale = 1.0f;
     private float cfgShockwaveShrink = 0.06f;
 
-    // ────────── 同步数据：fadeTimer 需要客户端可见用于渲染 ──────────
     private static final EntityDataAccessor<Integer> FADE_TIMER =
             SynchedEntityData.defineId(MeteoriteEntity.class, EntityDataSerializers.INT);
 
@@ -128,9 +121,7 @@ public class MeteoriteEntity extends Entity implements IAutoRenderableEntity {
         this.cfgShockwaveShrink = cfg.shockwaveShrink;
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // Tick
-    // ═══════════════════════════════════════════════════════════════
 
     @Override
     public void tick() {
@@ -218,9 +209,7 @@ public class MeteoriteEntity extends Entity implements IAutoRenderableEntity {
         this.setNoGravity(true);
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 拖尾
-    // ═══════════════════════════════════════════════════════════════
 
     private void recordTrailPoint() {
         long currentTick = level().getGameTime();
@@ -239,9 +228,7 @@ public class MeteoriteEntity extends Entity implements IAutoRenderableEntity {
     public List<TailRing> getTailRings() { return tailRings; }
     public List<AoeRing> getAoeRings() { return aoeRings; }
 
-    // ═══════════════════════════════════════════════════════════════
     // 二十面体 AoE 伤害 + 粒子
-    // ═══════════════════════════════════════════════════════════════
 
     private void doIcosahedronAoe() {
         int timer = entityData.get(FADE_TIMER);
@@ -348,9 +335,7 @@ public class MeteoriteEntity extends Entity implements IAutoRenderableEntity {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // AoE 扩散圆环（保持阶段持续生成）
-    // ═══════════════════════════════════════════════════════════════
 
     private void updateAoeRings() {
         int timer = entityData.get(FADE_TIMER);
@@ -370,9 +355,7 @@ public class MeteoriteEntity extends Entity implements IAutoRenderableEntity {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 地面撞击 → 网络包
-    // ═══════════════════════════════════════════════════════════════
 
     private void onImpactGround() {
         // ── 粒子爆发（全部 END_ROD 白色发光） ──
@@ -440,9 +423,7 @@ public class MeteoriteEntity extends Entity implements IAutoRenderableEntity {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 数据同步 / 存档
-    // ═══════════════════════════════════════════════════════════════
 
     @Override
     public void defineSynchedData() {
@@ -466,9 +447,7 @@ public class MeteoriteEntity extends Entity implements IAutoRenderableEntity {
         return NetworkHooks.getEntitySpawningPacket(this);
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // IGeoResources
-    // ═══════════════════════════════════════════════════════════════
 
     @Override public ResourceLocation model()     { return DUMMY; }
     @Override public ResourceLocation texture()   { return DUMMY; }
@@ -480,9 +459,7 @@ public class MeteoriteEntity extends Entity implements IAutoRenderableEntity {
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() { return cache; }
 
-    // ═══════════════════════════════════════════════════════════════
     // 尾部圆环数据 & 静态工厂
-    // ═══════════════════════════════════════════════════════════════
 
     public static class TailRing {
         public Vec3 position;

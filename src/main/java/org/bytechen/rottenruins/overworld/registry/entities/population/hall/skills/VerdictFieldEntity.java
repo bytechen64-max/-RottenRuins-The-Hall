@@ -23,32 +23,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.UUID;
 /**
- * 裁决领域 —— 地面的空中剑阵。
- *
- * <h3>它和另外两个技能的分工</h3>
- * <p>光柱是"一条竖线上所有目标同时吃一下"，突进是"把 30 送到一个方向上"，
- * 两者都是<b>瞬时</b>的。领域是唯一一个<b>持续</b>组件：
- * 它在你移动、被打断、甚至转头看别处的时候仍然在干活。
- * 所以它的定位不是伤害更高，而是"让这片地一直有裁决"——
- * 站桩清场、守点、或者给突进之后的撤退铺路。</p>
- *
- * <h3>为什么剑气是"每 {@value #SWORD_INTERVAL} tick 一道"而不是每 tick 结算</h3>
- * <p>每 tick 对范围内所有目标结算的写法，在一个 10 秒的领域里会打出 200 次伤害 ——
- * 那既不合理也没法平衡。改成脉冲式出剑之后：</p>
- * <ul>
- *   <li><b>伤害可预期</b>：10 秒 ≈ 8 道剑气，单目标总量固定；</li>
- *   <li><b>有节奏</b>：剑气一道一道飞出去，玩家看得见"剑阵在工作"，
- *       而不是一团持续掉血的雾；</li>
- *   <li><b>性能可控</b>：每道剑气是一个 {@link SwordAuraEntity} 实体，数量有上限。</li>
- * </ul>
- *
- * <h3>半径</h3>
- * <p>吃高度系数（{@code HeightFactor.fieldRadiusBlocks}），并且只影响覆盖、不影响伤害 ——
- * {@code FIELD_HURT} 是固定值。</p>
+ * 裁决领域 —— 地面上的空中剑阵：持续时间内的每 {@link #swordInterval()} tick 脉冲出剑。
+ * 半径只影响覆盖范围、不影响伤害（{@code FIELD_HURT} 固定）；主人离场则停止出剑。
  */
 public class VerdictFieldEntity extends Entity {
 
-    // ── 同步数据 ────────────────────────────────────────────────────
     private static final EntityDataAccessor<Float> DATA_RADIUS =
             SynchedEntityData.defineId(VerdictFieldEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> DATA_MAX_AGE =
@@ -58,25 +37,18 @@ public class VerdictFieldEntity extends Entity {
     private static final EntityDataAccessor<Boolean> DATA_OWNER_PRESENT =
             SynchedEntityData.defineId(VerdictFieldEntity.class, EntityDataSerializers.BOOLEAN);
 
-    // ── 默认值 ──────────────────────────────────────────────────────
     /** 默认半径（格）。地表值，会被高度系数放大。 */
     public static final float DEFAULT_RADIUS = 6.0f;
     /** 默认持续（tick）= 10 秒。 */
     public static final int DEFAULT_MAX_AGE = 200;
-    /** 出剑间隔（tick）= 1.2 秒。这是**基准值**，实际间隔见 {@link #swordInterval()}。 */
+    /** 出剑间隔（tick）= 1.2 秒的基准值；实际间隔见 {@link #swordInterval()}。 */
     public static final int SWORD_INTERVAL = 24;
-    /**
-     * 出剑间隔的下限（tick）。
-     * <p>配置里把 {@code verdictFieldRate} 拉到很高时，间隔会一路变小；
-     * 这个下限保证它不会小到"每 tick 一道剑气"，那既卡顿又没有节奏感。</p>
-     */
+    /** 出剑间隔下限（tick）：配置把次数拉高时防止退化成"每 tick 一道"。 */
     public static final int MIN_SWORD_INTERVAL = 4;
     /** 水平位置偏移量。与 {@code DomeriteLongsword#castField} 的生成坐标一致。 */
     public static final float CENTER_OFFSET = 0.5f;
 
-    /** 淡入（tick）。 */
     public static final float FADE_IN_TICKS = 6f;
-    /** 淡出（tick）。 */
     public static final float FADE_OUT_TICKS = 24f;
 
     private UUID ownerUUID;
@@ -86,10 +58,6 @@ public class VerdictFieldEntity extends Entity {
         super(type, level);
         this.noCulling = true;
     }
-
-    // ══════════════════════════════════════════════════════════════
-    //  同步数据
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     public void defineSynchedData() {
@@ -136,10 +104,6 @@ public class VerdictFieldEntity extends Entity {
         return p;
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  Tick
-    // ══════════════════════════════════════════════════════════════
-
     @Override
     public void tick() {
         if (isPassenger() && getVehicle() != null && !getVehicle().isPassengerOfSameVehicle(this)) {
@@ -163,13 +127,8 @@ public class VerdictFieldEntity extends Entity {
             entityData.set(DATA_OWNER_PRESENT, present);
         }
 
-        // ── 出剑节奏：前 swordInterval() 个 tick 用来淡入，所以第一道剑气不会立刻出去 ──
-        //
-        //  离场之后<b>停止出剑</b>，而不只是把光纹调暗。
-        //  原本的做法是"照常打，只是视觉暗一点" —— 玩家读不出因果关系，
-        //  只会觉得"这个技能有时候没伤害"。让阵法在主人离开后熄火，
-        //  "你走太远了"这件事就由<b>行为</b>说清楚了。
-        //  领域本身仍然把它的 10 秒走完（见类注释：不该变成规避冷却的玩法）。
+        // 主人离场就停止出剑（不只是把光纹调暗）：让"你走太远了"由行为说清，而不是让玩家觉得技能没伤害；
+        // 领域本身仍走完 10 秒。
         if (!present) return;
 
         if (age % swordInterval() == 0 && age > 0) {
@@ -177,18 +136,7 @@ public class VerdictFieldEntity extends Entity {
         }
     }
 
-    /**
-     * 实际的出剑间隔（tick）。
-     *
-     * <p>两个来源相乘，都只影响"频率"、不影响伤害数值：</p>
-     * <ul>
-     *   <li>{@link VerdictTuning#fieldRate()} —— 玩家在配置里的整体节奏；</li>
-     *   <li>{@link VerdictEffect#fieldRateScale(Player)} —— 裁决层数（打得多顺）。</li>
-     * </ul>
-     *
-     * <p>只读服务端侧的配置与效果，但客户端也要算同一个值才能让地面光纹的
-     * 脉冲环与真正的出剑对齐 —— 好在配置本来就是两端一致的文件。</p>
-     */
+    /** 实际出剑间隔（tick）= 基准值 ÷（配置倍率 × 裁决层数倍率），下限 {@link #MIN_SWORD_INTERVAL}；两端算法须一致才能对齐脉冲环。 */
     public int swordInterval() {
         float rate = VerdictTuning.fieldRate();
         Player owner = getOwner();
@@ -197,38 +145,15 @@ public class VerdictFieldEntity extends Entity {
         return Math.max(MIN_SWORD_INTERVAL, Math.round(SWORD_INTERVAL / rate));
     }
 
-    /**
-     * 发一轮剑气：锁定领域内最近的 {@value #MAX_TARGETS_PER_PULSE} 个目标，
-     * 在每个目标头顶生成一道<b>从天而降的落剑</b>。
-     *
-     * <h3>为什么从"3 道平行剑气"改成"落剑"</h3>
-     * <p>原本的做法是在"领域中心 → 目标"的连线上铺 3 道 {@code SwordAuraEntity}，
-     * 位置固定在连线的 35%/65%/95% 处。<b>那三把剑是水平排开的</b>，
-     * 而且伤害在生成的那一瞬就结算了 —— 于是画面上永远是"几道平行的白光
-     * 飘向目标"，而怪已经在掉血。既读不出方向（谁打谁），也读不出因果
-     * （剑还没到、血已经掉了）。</p>
-     *
-     * <p>改成落剑之后三件事同时解决：</p>
-     * <ul>
-     *   <li><b>方向</b>：剑是竖着从目标头顶钉下来的，谁被锁了一眼就能看出来；</li>
-     *   <li><b>因果</b>：伤害在<b>落地那一帧</b>结算（见
-     *       {@code VerdictSwordDropEntity.onLand}），"剑落下 → 怪掉血"完全同步；</li>
-     *   <li><b>阵法感</b>：多把剑以错开的时间落下，加上展开时那 7 道立柱，
-     *       整片区域读作"天上一直在往下落剑"。</li>
-     * </ul>
-     *
-     * <p>代价是伤害比原本晚约 0.45 秒。这是有意的取舍：领域是 10 秒的持续技能，
-     * 半秒的延迟换来可读性，很划算；而"必定生效但看不见"才是更难接受的。</p>
-     */
+    /** 发一轮剑气：锁定范围内最近的若干目标，各生成一道从天而降的落剑（伤害在落地帧结算，比原方案晚约 0.45 秒）。 */
     private void emitSword() {
         Player owner = getOwner();
         List<LivingEntity> targets = findTargets(owner);
-        if (targets.isEmpty()) return;                   // 没人可打：不出剑（动画仍靠 pulse 推进）
+        if (targets.isEmpty()) return;
 
         entityData.set(DATA_PULSE, getPulse() + 1);
 
-        // 一次脉冲最多几把剑同时落下。可配置（见 verdictFieldMaxTargets），
-        // 因为"每把剑是一个实体"—— 调大它的代价是线性的实体数增长。
+        // 每把剑都是一个实体，调大这个上限的代价是线性的实体数增长
         int maxTargets = VerdictTuning.fieldMaxTargets();
         for (int i = 0; i < Math.min(targets.size(), maxTargets); i++) {
             LivingEntity target = targets.get(i);
@@ -241,18 +166,15 @@ public class VerdictFieldEntity extends Entity {
             drop.setTarget(target);
             drop.setFieldEntity(this);        // 伤害归因：把施法者追回来（见该字段的注释）
             drop.setHurt(VerdictDamage.FIELD_HURT);
-            // 每次脉冲只给第一把剑打地面涟漪：三把剑各自打一圈会叠成一堆同心环，
-            // 而"这次脉冲的冲击点"本来就只有一个。
+            // 每次脉冲只让第一把剑打地面涟漪，否则叠成一堆同心环
             drop.setRingOnLand(i == 0);
             drop.setLandParticle(net.minecraft.core.particles.ParticleTypes.CRIT);
         }
     }
 
     /**
-     * 领域内最近的若干个合法目标，按距离升序。
-     *
-     * <p>排除施法者自己 —— {@code getEntitiesOfClass} 会把自己也算进去，
-     * 不排除的话这个技能会持续打自己血（走 setHealth 那条，护甲挡不住）。</p>
+     * 领域内最近的合法目标，按距离升序。必须排除施法者本身，
+     * 否则技能会持续打自己（走 setHealth，护甲挡不住）。
      */
     private List<LivingEntity> findTargets(@Nullable Player owner) {
         double r = getRadius();
@@ -267,10 +189,7 @@ public class VerdictFieldEntity extends Entity {
         return candidates;
     }
 
-    /**
-     * 每次脉冲最多锁定的目标数<b>默认值</b>。
-     * <p>真正的取值走 {@link VerdictTuning#fieldMaxTargets()}（可在配置里改，1~6）。</p>
-     */
+    /** 每次脉冲最多锁定目标数的默认值；实际取值走 {@link VerdictTuning#fieldMaxTargets()}（1~6）。 */
     public static final int MAX_TARGETS_PER_PULSE = 3;
 
     /** 落剑的下落耗时（tick）。0.45 秒 —— 再慢就不像剑雨了。 */
@@ -279,10 +198,6 @@ public class VerdictFieldEntity extends Entity {
     @Override public boolean shouldRenderAtSqrDistance(double d) { return true; }
     @Override public boolean isPickable()   { return false; }
     @Override public boolean isAttackable() { return false; }
-
-    // ══════════════════════════════════════════════════════════════
-    //  存档
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
@@ -304,10 +219,6 @@ public class VerdictFieldEntity extends Entity {
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return NetworkHooks.getEntitySpawningPacket(this);
     }
-
-    // ══════════════════════════════════════════════════════════════
-    //  静态工厂
-    // ══════════════════════════════════════════════════════════════
 
     /** 在玩家脚下展开裁决领域。 */
     public static VerdictFieldEntity spawn(Level level, Player owner, float radius, int maxAge) {

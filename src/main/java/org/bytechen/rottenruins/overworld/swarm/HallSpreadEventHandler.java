@@ -27,6 +27,7 @@ import org.bytechen.infcore.api.event.BlockSpreadEvent;
 import org.bytechen.infcore.core.blockspread.BlockSpreadManager;
 
 import java.util.*;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * Hall 感染群戏扩散事件处理器。
@@ -45,7 +46,7 @@ public class HallSpreadEventHandler {
 
     /** Hall 默认扩散类型 */
     private static final ResourceLocation HALL_SPREAD_TYPE =
-            new ResourceLocation(HallMod.MODID, "spread");
+            ModUtils.modLoc("spread");
 
     /** 可以被扩散的 vanilla 树叶集合（BFS 目标） */
     private static final Set<Block> VANILLA_LEAVES = Set.of(
@@ -69,8 +70,6 @@ public class HallSpreadEventHandler {
 
     private HallSpreadEventHandler() {}
 
-    // ==================== 方块扩散 → 群系变更 ====================
-
     @SubscribeEvent
     public static void onBlockSpread(BlockSpreadEvent.Post event) {
         if (!HALL_SPREAD_TYPE.equals(event.getSpreadType())) return;
@@ -88,8 +87,6 @@ public class HallSpreadEventHandler {
             startLeafCascade(serverLevel, event.getPos());
         }
     }
-
-    // ==================== 树叶连锁扩散 ====================
 
     /**
      * BFS 扫描相邻 vanilla 树叶（最多 {@value MAX_LEAF_CASCADE} 个），
@@ -173,8 +170,6 @@ public class HallSpreadEventHandler {
         int ticksRemaining = LEAF_CASCADE_TICKS;
     }
 
-    // ==================== 群系 ====================
-
     /**
      * 维度 → 扩散目标群系 的映射。
      * <p>
@@ -183,12 +178,12 @@ public class HallSpreadEventHandler {
      */
     private static final Map<ResourceKey<Level>, ResourceKey<Biome>> DIMENSION_TARGET_BIOME = Map.of(
             Level.OVERWORLD, ResourceKey.create(Registries.BIOME,
-                    new ResourceLocation(HallMod.MODID, "hall_wasteland"))
+                    ModUtils.modLoc("hall_wasteland"))
     );
 
     /** 未登记维度的兜底目标群系 */
     private static final ResourceKey<Biome> DEFAULT_TARGET_BIOME = ResourceKey.create(
-            Registries.BIOME, new ResourceLocation(HallMod.MODID, "hall_wasteland"));
+            Registries.BIOME, ModUtils.modLoc("hall_wasteland"));
 
     @SuppressWarnings("deprecation")
     private static Holder<Biome> resolveHallBiome(ServerLevel level) {
@@ -204,8 +199,6 @@ public class HallSpreadEventHandler {
                 level.dimension().location(), biomeKey.location());
         return registry.getHolderOrThrow(Biomes.PLAINS);
     }
-
-    // ==================== 扩散附带生成 ====================
 
     /** 扩散后生成植物的概率 */
     private static final float PLANT_CHANCE = 0.15F;
@@ -247,8 +240,6 @@ public class HallSpreadEventHandler {
         }
     }
 
-    // ==================== Tick 驱动 ====================
-
     @SubscribeEvent
     public static void onLevelTick(TickEvent.LevelTickEvent event) {
         if (event.side.isServer() && event.phase == TickEvent.Phase.END) {
@@ -258,8 +249,6 @@ public class HallSpreadEventHandler {
             }
         }
     }
-
-    // ==================== 生命周期 ====================
 
     @SubscribeEvent
     public static void onServerStopping(ServerStoppedEvent event) {

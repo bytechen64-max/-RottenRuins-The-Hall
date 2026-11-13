@@ -29,9 +29,7 @@ import java.util.function.Consumer;
  */
 public class GrovelerEntity extends BaseDeterioratedEntity {
 
-    // =========================================================================
     // C10 地底突袭参数
-    // =========================================================================
     private static final double BURROW_MIN_RANGE = 5.0;
     private static final double BURROW_MAX_RANGE = 20.0;
     private static final int BURROW_TICKS = 30;
@@ -69,9 +67,7 @@ public class GrovelerEntity extends BaseDeterioratedEntity {
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.8D);
     }
 
-    // =========================================================================
     // C10 地底突袭
-    // =========================================================================
 
     @Override
     public void tick() {

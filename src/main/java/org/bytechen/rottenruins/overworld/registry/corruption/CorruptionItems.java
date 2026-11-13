@@ -40,7 +40,6 @@ public class CorruptionItems {
                 () -> new ForgeSpawnEggItem(type, -1, -1, new Item.Properties()));
     }
 
-    // ==================== 材料 ====================
     public static final RegistryObject<Item> INFECTION_BONE = simple("infection_bone");
     public static final RegistryObject<Item> HARD_FRAGMENTS = simple("hard_fragments");
     public static final RegistryObject<Item> CHITIN_POLYMER = simple("chitin_polymer");
@@ -54,13 +53,11 @@ public class CorruptionItems {
     public static final RegistryObject<Item> ACID_SAC = simple("acid_sac");
     public static final RegistryObject<Item> ACID_BALL = simple("acid_ball");
 
-    // ==================== 注射器（占位，机制层后续补转化逻辑） ====================
     public static final RegistryObject<Item> SYRINGE = ITEMS.register("syringe",
             () -> new Item(new Item.Properties().stacksTo(1)));
     public static final RegistryObject<Item> SYRINGE_BLOODY_CONCENTRATE = ITEMS.register("syringe_bloody_concentrate",
             () -> new Item(new Item.Properties().stacksTo(1)));
 
-    // ==================== 粗制工具（简化：石级 Tier，配方/耐久等以后再调） ====================
     private static final Tier CRUDE_TIER = new Tier() {
         @Override public int getUses() { return 131; }
         @Override public float getSpeed() { return 4.0F; }
@@ -81,7 +78,6 @@ public class CorruptionItems {
     public static final RegistryObject<Item> CRUDE_HOE = ITEMS.register("crude_hoe",
             () -> new HoeItem(CRUDE_TIER, -2, -1.0F, new Item.Properties()));
 
-    // ==================== 刷怪蛋 ====================
     public static final RegistryObject<Item> CORRUPTION_ZOMBIE_SPAWN_EGG = egg("corruption_zombie", CorruptionEntityTypes.CORRUPTION_ZOMBIE);
     public static final RegistryObject<Item> CORRUPTION_PLAYER_SPAWN_EGG = egg("corruption_player", CorruptionEntityTypes.CORRUPTION_PLAYER);
     public static final RegistryObject<Item> CORRUPTION_COW_SPAWN_EGG = egg("corruption_cow", CorruptionEntityTypes.CORRUPTION_COW);

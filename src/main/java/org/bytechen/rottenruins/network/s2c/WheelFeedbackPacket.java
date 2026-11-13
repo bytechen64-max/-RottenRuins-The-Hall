@@ -39,9 +39,7 @@ public final class WheelFeedbackPacket {
     private WheelFeedbackPacket() {
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  发送端（服务端）
-    // ══════════════════════════════════════════════════════════════
 
     public static void send(ServerPlayer player, int action, CastResult result,
                             int page, int index, int heldTicks, float chargeRatio) {
@@ -59,9 +57,7 @@ public final class WheelFeedbackPacket {
                 new UniversalPacket(ACTION, UniversalPacketData.ofNbt(tag)));
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  接收端（客户端）
-    // ══════════════════════════════════════════════════════════════
 
     /** 在 {@code ClientPacketHandlers.init()} 里调用。 */
     public static void registerClient() {

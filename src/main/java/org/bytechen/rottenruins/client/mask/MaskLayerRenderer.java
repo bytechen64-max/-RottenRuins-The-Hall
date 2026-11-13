@@ -20,45 +20,15 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 逐层绘制 mask 效果。
- *
- * <h3>每一层做四件事</h3>
- * <ol>
- *   <li>向效果实现要这个上下文下的 RenderType（即时 / 延迟 / 延迟一手）；</li>
- *   <li>把遮罩 sprite 的三个几何 uniform 与该层参数交给效果实现去设；</li>
- *   <li>用遮罩烘出的物品 quad 填进该 RenderType 的缓冲；</li>
- *   <li><b>立刻 flush 这一层</b>。</li>
- * </ol>
- *
- * <h3>为什么必须每层单独 flush</h3>
- * <p>{@code Uniform.set()} 只是把值记在 {@code Uniform} 对象上，真正上传发生在
- * {@code ShaderInstance.apply()}，也就是 {@code endBatch} 的时候。如果把好几个层
- * 攒到一起再 flush，后一个层设的 uniform 会把前一个层的覆盖掉 —— 症状是
- * 「同一物品上两个泛光层出现了同一个颜色/同一个宽度」。所以顺序只能是
- * 「设 A → 画 A → flush A → 设 B → 画 B → flush B」，代价是每层多一次 draw call，
- * 而这正是 cosmic 那条路已经在付的成本。</p>
- *
- * <h3>为什么传 {@code ItemStack.EMPTY}</h3>
- * <p>{@code ItemRenderer.renderQuadList} 在收到非空且带附魔光泽的物品时，会顺手
- * 往同一个缓冲里再塞一个 glint quad。我们的层是叠在物品之上的独立效果，不需要
- * 那份光泽（而且它会被算进本层的 RenderType 里，颜色状态全不对）。传空栈把这一步
- * 关掉，也让「层」的语义干净。</p>
+ * 逐层绘制 mask 效果：要 RenderType → 设 uniform → 填 quad → 立刻 flush 该层。
+ * 必须每层单独 flush：{@code Uniform.set()} 只是记值，上传在 {@code endBatch}，攒批会让后一层覆盖前一层
+ * （症状：两个泛光层同色同宽）；传 {@code ItemStack.EMPTY} 是为了关掉 renderQuadList 顺手塞的光泽 quad。
  */
 public final class MaskLayerRenderer {
 
-    /**
-     * 画完一批已解析的层。
-     *
-     * @param layers     已由 {@link MaskLayerResolver} 过滤并排序的层
-     * @param baseSprite 物品本体贴图的 sprite：既是各层的<b>光源</b>，也是各层 quad 的
-     *                   <b>几何来源</b>（见下）。取不到时传 {@code null}
-     * @param lateRender true = 光影下的延迟回放（走 MAIN_TARGET / 一手不测深度）
-     *
-     * <h3>为什么几何取自本体贴图</h3>
-     * <p>{@code ItemModelGenerator} 按 alpha 裁几何：本体贴图轮廓外是透明的，所以用它
-     * 烘出来的 quad 精确等于武器轮廓。而遮罩图为了不漏掉轮廓外的像素，通常画成
-     * 「整张不透明」—— 拿它烘几何就会得到一整块矩形（虚空之剑的 32×32 遮罩正是如此）。</p>
-     */
+    /** @param baseSprite 本体贴图 sprite：既是各层的<b>光源</b>，也是 quad 的<b>几何来源</b> ——
+     *  {@code ItemModelGenerator} 按 alpha 裁几何，用它烘出的 quad 才等于武器轮廓（遮罩常整张不透明）。
+     *  @param lateRender true = 光影下的延迟回放（走 MAIN_TARGET / 一手不测深度）。 */
     public static void render(ItemStack stack, ItemDisplayContext ctx, PoseStack poseStack,
                               MultiBufferSource buffer, int light, int overlay,
                               List<MaskLayerResolver.Resolved> layers, boolean lateRender,
@@ -84,9 +54,7 @@ public final class MaskLayerRenderer {
             TextureAtlasSprite maskSprite = atlas.getSprite(layer.spec().mask());
             pass.apply(layer.spec(), maskSprite, baseSprite, time);
 
-            // 几何优先用本体贴图（= 武器轮廓）。只有拿不到本体贴图时才退回遮罩，
-            // 那种情况下如果遮罩是整张不透明的，会看到一块矩形 —— 这是可以接受的
-            // 降级，但日志里会点名，免得当成渲染 bug 查。
+            // 退回遮罩时可能看到一整块矩形（可接受的降级，日志会点名）
             TextureAtlasSprite geometry = baseSprite != null ? baseSprite : maskSprite;
             if (baseSprite == null) {
                 warnMissingBaseOnce(layer.spec());
@@ -102,7 +70,6 @@ public final class MaskLayerRenderer {
         }
     }
 
-    /** 拿不到本体贴图只每次都警告会很吵，按效果 id 各说一次。 */
     private static final Set<String> WARNED_NO_BASE = new HashSet<>();
 
     private static void warnMissingBaseOnce(MaskLayerSpec spec) {

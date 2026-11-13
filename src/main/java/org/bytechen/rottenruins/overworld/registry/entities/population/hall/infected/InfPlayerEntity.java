@@ -46,13 +46,10 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
     private static final EntityDataAccessor<Integer> LEAP_COOLDOWN =
             SynchedEntityData.defineId(InfPlayerEntity.class, EntityDataSerializers.INT);
 
-    /** 大跳冷却（tick），15s */
+    /** 大跳：冷却 15s（300 tick）、触发半径 8 格、垂直初速度 0.7、水平速度系数 0.18。 */
     private static final int LEAP_COOLDOWN_MAX = 300;
-    /** 大跳触发范围（半径格数） */
     private static final float LEAP_RANGE = 8.0f;
-    /** 大跳垂直初速度 */
     private static final float LEAP_UPWARD = 0.7f;
-    /** 大跳水平速度系数 */
     private static final float LEAP_H_SPEED = 0.18f;
 
     private int getMadnessCooldown()  { return entityData.get(MADNESS_COOLDOWN); }
@@ -68,11 +65,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
         this.setRunSpeed(0.5F);
         this.setDoHurtTime(20);
 
-        // ── 爆体 ──
-        // 所有非使徒生物默认参与爆体（基类：40% 概率、1.5 秒、10 次/秒脉冲、最大 1.4 倍、
-        // 逐 tick 抖动），hall_player 不再单独配置数值。
-        // 它没有 "die" 动画（hasDieAnim 默认 false）：爆体只缩放、不播死亡动画，
-        // idle / walk / run 照常播放（见 isBurstAnimating）。
+        // 爆体数值全走基类默认（40% 概率、1.5 秒、10 次/秒脉冲、最大 1.4 倍）；它没有 die 动画，爆体只缩放不播死亡动画。
         this.setBurstRenderMode(BurstRenderMode.SCALE_ONLY);
     }
 
@@ -88,9 +81,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
 
     @Override
     protected void registerGoals() {
-        // 追击占位（只占 MOVE）：位移与出手由 AbstractRottenEntity#tickChase 统一负责。
-        // 原版 MeleeAttackGoal 会再算一份路径，而它的出手走 doHurtTarget()，
-        // 在基类里被写死为 false —— 那部分一直是空转。
+        // 追击占位只占 MOVE：位移与出手由 AbstractRottenEntity#tickChase 负责，原版 MeleeAttackGoal 的出手在这里被写死为 false（空转）。
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
 
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
@@ -106,56 +97,39 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
     }
 
 
-    /** 剑气触发概率（百分比） */
+    /** 剑气：5% 触发概率（百分比）、缩小速度倍率 2.0、伤害倍率 5.0、缩放倍率 1.5。 */
     private static final int SWORD_AURA_CHANCE = 5;
-    /** 剑气缩小速度倍率 */
     private static final float SWORD_AURA_SHRINK = 2.0f;
-    /** 剑气伤害倍率 */
     private static final float SWORD_AURA_DAMAGE_MULT = 5.0f;
-    /** 剑气缩放倍率 */
     private static final float SWORD_AURA_SCALE = 1.5f;
 
-    /** GUI horror shader effect: total duration (ticks, ~5s) */
+    /** GUI horror shader：总时长 100 tick（~5s）、淡入 10、淡出 30。 */
     private static final int HORROR_SHADER_DURATION = 100;
-    /** GUI horror shader effect: fade-in (ticks) */
     private static final int HORROR_SHADER_FADE_IN = 10;
-    /** GUI horror shader effect: fade-out (ticks) */
     private static final int HORROR_SHADER_FADE_OUT = 30;
 
-    // ── 攻击动画 / 命中时机（attack_controller）──
-    //
-    // hall_player.animation.json 里的 attack（双手）、attack_left（左手）、attack_right（右手）
-    // 都是 thenPlay、animation_length = 1.2083s、不循环，三个招式共用同一套命中时刻。
-    //
-    // 需求是「动画真正开始播放后 0.58s 命中」。这里不能直接拿 0.58 * 20 = 11.6 tick 去倒计时，
-    // 因为 GeckoLib 4 的 AnimationController 第三个构造参数是 transitionLength（平滑切换 tick）：
-    // triggerAnim 之后的头 ATTACK_TRANSITION_TICKS 个 tick 只做骨骼混合，动画时钟被钉在 0，
-    // 过渡结束的那一 tick 才把时钟清零并真正开始播放。也就是说：
-    //     triggerAnim ──(transition)──> 动画时钟 0 ──(0.58s)──> 命中
-    // 从 triggerAnim 起算的真实延迟必须把 transition 补偿进来，否则会提前 transition 那么久就打中。
-    /** 攻击动画平滑切换 tick（0.15s）：给 movement_controller 留出混合时间，出手不突兀。 */
+    // 命中时机不是 0.58*20 tick：GeckoLib 4 的 AnimationController 第三个构造参数是 transitionLength，
+    // triggerAnim 后的头 ATTACK_TRANSITION_TICKS 个 tick 只做骨骼混合、动画时钟被钉在 0，过渡结束才开始播。
+    // 所以从 triggerAnim 起算的真实延迟 = transition + 动画内命中点；hall_player.animation.json 三个招式共用这套时序。
+    /** 攻击动画平滑切换 tick（0.15s）：给 movement_controller 留出混合时间。 */
     private static final int ATTACK_TRANSITION_TICKS = 3;
-    /** 动画真正开始播放后到命中的时间（秒）。 */
+    /** 动画真正开始播放后到命中的时间（秒），对应 attack 动画内的命中点。 */
     private static final float ATTACK_HIT_SECONDS = 0.58F;
-    /** 命中点落在动画内部的 tick 数：0.58 * 20 = 11.6，四舍五入取 12。 */
     private static final int ATTACK_HIT_TICK_IN_ANIM = Math.round(ATTACK_HIT_SECONDS * 20.0F);
-    /** 从 triggerAnim 到结算伤害的真实延迟 = transition 补偿 + 动画内命中点 = 3 + 12 = 15 tick（0.75s）。 */
+    /** 从 triggerAnim 到结算伤害的真实延迟 = transition 补偿 + 动画内命中点 = 15 tick（0.75s）。 */
     private static final int ATTACK_HIT_DELAY_TICKS = ATTACK_TRANSITION_TICKS + ATTACK_HIT_TICK_IN_ANIM;
     /** 攻击动画长度（秒），与 hall_player.animation.json 的 animation_length 保持一致。 */
     private static final float ATTACK_ANIM_LENGTH_SECONDS = 1.2083F;
-    /** 动画长度换算成 tick：ceil(1.2083 * 20) = ceil(24.166) = 25，向上取整宁可多等一 tick 也别提前打断。 */
+    /** 动画长度换算成 tick：向上取整，宁可多等一 tick 也别提前打断。 */
     private static final int ATTACK_ANIM_TICKS = (int) Math.ceil(ATTACK_ANIM_LENGTH_SECONDS * 20.0F);
-    /** 一次攻击从 triggerAnim 到动画彻底播完的总 tick = 3 + 25 = 28，用于「上一刀没播完不许重触发」。 */
+    /** 一次攻击的总 tick = 3 + 25 = 28，用于「上一刀没播完不许重触发」。 */
     private static final int ATTACK_TOTAL_TICKS = ATTACK_TRANSITION_TICKS + ATTACK_ANIM_TICKS;
 
     private static final RawAnimation ANIM_ATTACK       = RawAnimation.begin().thenPlay("attack");
     private static final RawAnimation ANIM_ATTACK_LEFT  = RawAnimation.begin().thenPlay("attack_left");
     private static final RawAnimation ANIM_ATTACK_RIGHT = RawAnimation.begin().thenPlay("attack_right");
 
-    /**
-     * 三种攻击招式：{@code attack} 双手、{@code attack_left} 左手、{@code attack_right} 右手。
-     * 每次出手随机三选一；{@code animationName} 同时也是 triggerableAnim 的注册名。
-     */
+    /** 三种招式（双手 / 左手 / 右手），每次出手随机三选一；{@code animationName} 同时是 triggerableAnim 的注册名。 */
     private enum AttackVariant {
         BOTH("attack"),
         LEFT("attack_left"),
@@ -168,50 +142,26 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
         }
     }
 
-    // ── 扇形范围伤害（AoE）参数 ──
-    //
-    // 命中瞬间不再是「只打 pendingAttackTarget 一个」，而是以起手锁定的方向为轴做一次扇形扫击：
-    // 三个招式本来就是横扫 / 单臂挥砍，一刀扫到身边一圈小怪才符合直觉；只打一个目标会出现
-    // 「手臂明明从旁边怪身上扫过去、它却一点血没掉」的错位观感。
-    /** 双手横扫（attack）的扇形全角：140°，覆盖身前大半圈，对应两手一起抡出去的横扫幅度。 */
+    // 命中瞬间不是只打 pendingAttackTarget 一个，而是以起手锁定的方向为轴扫一个扇形：
+    // 三个招式本来都是横扫 / 单臂挥砍，只打一个目标会出现「手臂从旁边怪身上扫过、它却一点血没掉」。
+    /** 双手横扫扇形全角 140°，单手挥击 90°（单臂覆盖更窄）。 */
     private static final float AOE_ANGLE_BOTH = 140.0F;
-    /** 单手挥击（attack_left / attack_right）的扇形全角：90°，单臂能覆盖的范围比双手横扫窄。 */
     private static final float AOE_ANGLE_SINGLE = 90.0F;
-    /**
-     * 单手招式的扇形中心相对「目标方向」的偏移（度）。
-     * <p>+ = 角色左手侧（attack_left），- = 角色右手侧（attack_right）：单臂挥砍真正扫过的区域
-     * 偏向出招那一侧，所以把整个扇形绕 Y 轴转过去，而不是仍以目标方向居中——
-     * 否则左手挥击会有一半扇面落在身体另一侧，看起来像打到了背后。</p>
-     */
+    /** 单手招式的扇形中心相对目标方向的偏移（度）：+ = 角色左手侧，- = 右手侧；不偏移会让一半扇面落在身体另一侧。 */
     private static final float AOE_SINGLE_SIDE_OFFSET = 30.0F;
-    /**
-     * 扇形垂直容差（格）：目标碰撞箱与 {@code origin.y ± 2.0} 相交就算命中。
-     * <p>用碰撞箱区间而不是目标中心，坡上 / 台阶上、比自己高一头的目标都不会被漏掉。</p>
-     */
+    /** 扇形垂直容差（格）：用碰撞箱区间而不是目标中心，坡上 / 台阶上的目标才不会被漏掉。 */
     private static final float AOE_VERTICAL_RANGE = 2.0F;
-    /**
-     * 扇形半径在基类触发距离（{@code doHurtDistance}）之上的额外放宽。
-     * <p>起手到命中有 0.75s 前摇，目标完全可能挪开半步；放宽命中半径是位移容差，
-     * <b>不会</b>放大触发距离——出手条件仍由基类按 {@code doHurtDistance} 卡。</p>
-     */
+    /** 扇形半径在基类触发距离之上的额外放宽（0.75s 前摇的位移容差）；不放大出手触发距离。 */
     private static final float AOE_RADIUS_EXTRA = 1.0F;
 
-    /** 命中倒计时：归零时结算一次伤害。仅服务端使用，不同步、不进 NBT（视觉由客户端动画自己播）。 */
+    /** 命中倒计时：归零时结算一次伤害。仅服务端使用，不同步、不进 NBT。 */
     private int attackHitTimer;
     /** 动画总时长倒计时：>0 表示上一刀还在播，期间不允许重新触发。仅服务端使用。 */
     private int attackAnimTimer;
-    /**
-     * 触发动画时锁定的目标：命中结算用它，而不是命中瞬间的 getTarget()。
-     * 否则 0.75s 前摇里目标一换人，动画还在往旧目标的方向挥、伤害却打到新目标身上。
-     */
+    /** 触发动画时锁定的目标：命中结算用它，否则前摇里目标一换人，动画朝旧目标挥、伤害却打到新目标。 */
     @Nullable
     private LivingEntity pendingAttackTarget;
-    /**
-     * 起手时锁定的扇形轴（水平单位向量），命中瞬间用它做扫击判定。
-     * <p>与 {@link #pendingAttackTarget} <b>同时</b>锁定：0.75s 前摇里目标换人 / 自己转身，
-     * 扇形仍然朝着「当初瞄准的方向」扫出去，动画与伤害判定不会各朝一边。</p>
-     * <p>仅服务端使用，不同步、不进 NBT。</p>
-     */
+    /** 起手时与 {@link #pendingAttackTarget} 同时锁定的扇形轴（水平单位向量），前摇里转身也不会让扇面跟着转。仅服务端使用。 */
     @Nullable
     private Vec3 pendingAttackDirection;
     /** 起手时锁定的扇形全角（度），与 {@link #pendingAttackDirection} 配套。仅服务端使用、不同步。 */
@@ -224,7 +174,6 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
         float baseDamage = HallDifficultyAttributes.effectiveAttackDamage(this, 15.0F);
 
         if (this.getRandom().nextInt(100) < SWORD_AURA_CHANCE) {
-            // 5% 概率：在目标碰撞箱中心生成剑气，1.5 倍大小，5 倍伤害
             target.hurt(this.damageSources().mobAttack(this), baseDamage * SWORD_AURA_DAMAGE_MULT);
             SwordAuraEntity.spawn(level(), target.getBoundingBox().getCenter(),
                     SWORD_AURA_SCALE, 40, SWORD_AURA_SHRINK);
@@ -232,7 +181,6 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
             target.hurt(this.damageSources().mobAttack(this), baseDamage);
         }
 
-        // 攻击玩家时发送全屏 GUI 恐怖着色器特效
         if (target instanceof ServerPlayer player && !level().isClientSide()) {
             NetworkHelper.sendGuiShaderToPlayer(player,
                     GuiShaderManager.TYPE_HORROR_VORONOI,
@@ -245,64 +193,38 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
         return true;
     }
 
-    // ── RangeAttackCallback：扇形扫击的逐目标回调 ──
-
-    /**
-     * 扇形扫击的准入判定：目标必须还活着。
-     *
-     * <p>几何命中与 {@link #canHitByAoeAttack} 已经筛过一遍，这里再判一次存活，
-     * 是因为候选目标列表是<b>快照</b>：前一个目标的 {@link #getAttack}（剑气倍伤）
-     * 完全可能顺手把后面的目标打死，此时不该再对它结算第二下。</p>
-     */
+    /** 扇形准入判定：候选目标是<b>快照</b>，前一个目标被剑气顺手打死时不该再结算第二下。 */
     @Override
     public boolean beforeHit(RangeAttackUtils.Options options, LivingEntity target) {
         return target.isAlive();
     }
 
     /**
-     * 单个目标被扫中之后的<b>唯一伤害出口</b>：统一走原有的 {@link #getAttack}。
-     *
-     * <p>这样 5% 剑气、剑气 5 倍伤害、命中玩家时的 GUI horror shader 等逻辑一字不动地复用，
-     * 不会因为改成 AoE 就丢掉原有表现。</p>
-     *
-     * <p>注意 {@link #performAoeAttack()} 里 {@code damage(0.0F)} 是<b>有意</b>的：
-     * 工具类不自己 hurt，伤害全部从这里逐目标结算，否则同一目标会被结算两次。</p>
+     * 单个目标被扫中之后的<b>唯一伤害出口</b>：统一走 {@link #getAttack}，好让剑气、倍伤、GUI horror shader 全部复用。
+     * <p>几何与过滤由工具类做，{@code damage(0.0F)} 是有意的 —— 若这里再给正数，同一目标会吃到两次伤害。</p>
      */
     @Override
     public void afterHit(RangeAttackUtils.Options options, LivingEntity target, boolean hurtSuccess) {
-        // 工具类的 hurt 没跑（damage = 0），hurtSuccess 恒为 false，不能拿它当"是否命中"用；
-        // 能走到 afterHit 就说明几何 + 过滤 + beforeHit 都通过了，这里只确认没被前面的结算打死。
+        // hurtSuccess 恒为 false（工具类的 hurt 没跑），能走到这里就说明几何 + 过滤 + beforeHit 都过了。
         if (target.isAlive()) {
             getAttack(target);
         }
     }
 
     /**
-     * 出手入口：由 {@link AbstractRottenEntity#tickChase()} 在贴身且视线通时调用。
-     *
-     * <p>这里<b>只触发动画 + 起倒计时 + 锁定扇形方向，不立刻造成伤害</b>。伤害统一在
-     * {@link #tickAttack()} 里、triggerAnim 之后 {@link #ATTACK_HIT_DELAY_TICKS} tick 结算，
-     * 对应「动画真正开始播放后 0.58s」；若在这里直接 hurt，就会出现「动画刚起手目标已经掉血」的错位。</p>
-     *
-     * <p>扇形轴在<b>起手这一 tick</b>就定下来：{@code aim = horizontalDirectionTo(target)}，
-     * 双手招式直接以 aim 为轴扫 {@link #AOE_ANGLE_BOTH}；左手 / 右手招式把轴绕 Y 轴偏
-     * {@link #AOE_SINGLE_SIDE_OFFSET}° 后再扫 {@link #AOE_ANGLE_SINGLE}，让扇面偏向真正挥出去的那一侧。
-     * 命中时不再重新读 getTarget()，避免「动画朝旧目标挥、伤害却扫到新方向」。</p>
-     *
-     * <p>返回 true 只是告诉基类「这次出手成立」，让基类照常进入 doHurtTime 冷却。</p>
+     * 出手入口：由 {@link AbstractRottenEntity#tickChase()} 在贴身且视线通时调用。<b>只触发动画 + 起倒计时 + 锁定扇形方向，
+     * 不立刻造成伤害</b>；伤害在 {@link #tickAttack()} 里 triggerAnim 之后 {@link #ATTACK_HIT_DELAY_TICKS} tick 结算。
+     * 扇形轴在起手这一 tick 就定下来（不读 {@code getYRot()}：FaceTargetGoal 是渐进转向，起手瞬间 yRot 还没对准）。
      */
     @Override
     protected boolean doHurtGoal(LivingEntity target) {
         if (isFakeDying() || isDeadOrDying()) return false;
-        // 上一刀动画还没播完：既不重触发（会打断动画并让倒计时错位，等于多结算一份伤害），
-        // 也不返回 true —— 返回 true 会让基类立刻进入 doHurtTime 冷却，白白吃掉一次出手窗口。
+        // 上一刀动画还没播完：既不重触发（会多结算一份伤害），也不返回 true（会让基类白吃一次出手窗口）。
         if (attackAnimTimer > 0) return false;
 
         AttackVariant[] variants = AttackVariant.values();
         AttackVariant variant = variants[this.getRandom().nextInt(variants.length)];
 
-        // 扇形轴对准目标所在方向，而不是 getYRot()：FaceTargetGoal 是渐进转向，
-        // 起手瞬间 yRot 往往还没完全对准，拿它当轴会把主目标甩出扇面。
         Vec3 aim = horizontalDirectionTo(target);
         pendingAttackTarget = target;
         switch (variant) {
@@ -310,7 +232,6 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
                 pendingAttackDirection = aim;
                 pendingAttackAngleDegrees = AOE_ANGLE_BOTH;
             }
-            // 单手招式：扇面中心朝出招那一侧偏 30°。正角 = 角色左手侧（见 rotateY），右手取负。
             case LEFT -> {
                 pendingAttackDirection = rotateY(aim, AOE_SINGLE_SIDE_OFFSET);
                 pendingAttackAngleDegrees = AOE_ANGLE_SINGLE;
@@ -327,24 +248,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
         return true;
     }
 
-    /**
-     * 把水平向量绕 Y 轴旋转 {@code degrees} 度（正角 = 朝角色左侧）。
-     *
-     * <p>Minecraft 是右手系、Y 轴朝上，水平面里角度从 +X 转向 +Z。绕 Y 轴旋转的公式是：</p>
-     * <pre>
-     *   x' =  x·cosθ + z·sinθ
-     *   z' = -x·sinθ + z·cosθ
-     * </pre>
-     * <p>代入 θ = +90°、v = +Z（朝南）可验证：结果 +X（朝东）。玩家面朝南时屏幕左侧正是东，
-     * 所以正角确实对应「角色左手侧」，与 {@link #AOE_SINGLE_SIDE_OFFSET} 的符号约定一致。</p>
-     *
-     * <p>Java 三角函数要的是<b>弧度</b>，而这里的参数是度，必须经 {@link Math#toRadians(double)}
-     * 换算一次 —— 直接把度数丢给 {@link Math#cos(double)} 会得到一个完全错误的扇形轴。</p>
-     *
-     * @param direction 水平方向向量（不要求是单位向量，旋转不改变长度）
-     * @param degrees   旋转角度（度），正 = 朝角色左侧
-     * @return 旋转后的水平向量（y 分量恒为 0）
-     */
+    /** 把水平向量绕 Y 轴旋转 {@code degrees} 度（正角 = 朝角色左侧）。参数是度，必须经 {@link Math#toRadians(double)} 换算。 */
     private static Vec3 rotateY(Vec3 direction, float degrees) {
         double radians = Math.toRadians(degrees);
         double cos = Math.cos(radians);
@@ -366,7 +270,6 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
 
     @Override
     public void tick() {
-        //Client
         if(this.level().isClientSide())
         {
             clientTick();
@@ -391,17 +294,14 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
 
     public void serverTick()
     {
-        // 攻击倒计时必须在 super.tick()（基类 tickChase → doHurtGoal 的触发点）之前推进：
-        // 触发动画的那一 tick 里 doHurtGoal 才把计时器置满，从下一 tick 起 tickAttack 每 tick 先走一步，
-        // 命中恰好落在 triggerAnim + ATTACK_HIT_DELAY_TICKS tick，不会被基类 tick 的先后顺序多拖一 tick。
+        // 攻击倒计时必须在 super.tick()（基类 tickChase → doHurtGoal 的触发点）之前推进，
+        // 这样命中恰好落在 triggerAnim + ATTACK_HIT_DELAY_TICKS tick，不会被基类先后顺序多拖一 tick。
         tickAttack();
-        // 爆体（假死）期间只播缩放：tickAttack 已在假死分支清掉残留出手状态，
-        // 这里直接停手，避免还在拆方块 / 大跳。
+        // 爆体（假死）期间只播缩放：tickAttack 已在假死分支清掉残留出手状态，这里直接停手。
         if (isFakeDying()) return;
         if (TickUtils.tickCountTimer(tickCount, 20)) {
             EntityBreakUtils.breakBlocksInRange(this, 1, 2f, false);
         }
-        // 大跳逻辑：8 格内有目标且冷却完毕时触发
         LivingEntity target = getTarget();
         if (target != null && getLeapCooldown() <= 0 && this.onGround()
                 && this.distanceToSqr(target) <= LEAP_RANGE * LEAP_RANGE) {
@@ -414,22 +314,12 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
     }
 
     /**
-     * 推进攻击倒计时，是这套「动画 + 延迟命中」的唯一伤害出口。
-     *
-     * <p>时序：doHurtGoal 在 tick T 触发动画并把 attackHitTimer 置为
-     * {@link #ATTACK_HIT_DELAY_TICKS}；之后每 tick 进入本方法先减一，正好到 tick T+15 减到 0 并结算。
-     * 而 GeckoLib 的动画时钟是在 triggerAnim 后先冻结 {@link #ATTACK_TRANSITION_TICKS} tick、
-     * 再从 0 开始播，所以结算时刻 = 动画时钟 0.58s 处，两头对齐。</p>
-     *
-     * <p>结算不再是「只打 pendingAttackTarget 一个」，而是调用 {@link #performAoeAttack()}：
-     * 在起手锁定的方向上做一次扇形扫击（双手 140°；左右手各 90° 且扇面中心偏 30°；
-     * 半径 = 触发距离 {@code doHurtDistance} + {@link #AOE_RADIUS_EXTRA}），
-     * 被扫到的每个目标各走一次原有的 {@link #getAttack}。</p>
+     * 推进攻击倒计时，是这套「动画 + 延迟命中」的唯一伤害出口：doHurtGoal 在 tick T 置满计时器，
+     * 之后每 tick 减一，正好到 tick T+15 减到 0 并做扇形扫击（双手 140°；左右手各 90° 且扇面中心偏 30°；
+     * 半径 = 触发距离 + {@link #AOE_RADIUS_EXTRA}），被扫到的每个目标各走一次 {@link #getAttack}。
      */
     private void tickAttack() {
-        // 假死（爆体）/ 真死亡：已经不该再出手，残留状态必须清干净，
-        // 否则复活或重进世界后旧的 pendingAttackTarget / pendingAttackDirection
-        // 可能在很远的地方炸出一刀。
+        // 假死（爆体）/ 真死亡：残留状态必须清干净，否则复活或重进世界后旧的锁存可能在很远的地方炸出一刀。
         if (isFakeDying() || isDeadOrDying()) {
             attackHitTimer = 0;
             attackAnimTimer = 0;
@@ -441,9 +331,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
         if (attackHitTimer > 0) {
             attackHitTimer--;
             if (attackHitTimer == 0) {
-                // 命中瞬间：朝起手锁定的方向做扇形扫击。原来的「单目标距离重检」逻辑已删除，
-                // 距离 / 角度统一交给 RangeAttackUtils 的扇面判定（半径 = doHurtDistance + 1，
-                // 既覆盖 0.75s 前摇里的位移容差，又不会把触发距离放大）。
+                // 命中瞬间：朝起手锁定的方向扫击，距离 / 角度全交给 RangeAttackUtils 的扇面判定（半径 = doHurtDistance + 1）。
                 performAoeAttack();
                 pendingAttackTarget = null;
                 pendingAttackDirection = null;
@@ -456,18 +344,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
         }
     }
 
-    /**
-     * 在起手锁定的方向上执行一次扇形扫击（服务端）。
-     *
-     * <p><b>为什么 damage 传 0</b>：真正的伤害必须走 {@link #getAttack}（5% 剑气、剑气 5 倍伤害、
-     * 命中玩家的 GUI horror shader 都在里面）。若这里再给一个正数，工具类会先 hurt 一次、
-     * {@link #afterHit} 里又 {@code getAttack} 一次，同一个目标就吃到两倍伤害。
-     * 所以几何判定 + 目标过滤交给 {@link RangeAttackUtils}，伤害全部由回调逐目标结算。</p>
-     *
-     * <p>半径取 {@code max(2, doHurtDistance + AOE_RADIUS_EXTRA)}：下限 2 是为了防止
-     * 配置把 doHurtDistance 调得极小时扇形退化成打不到人；上限方向由触发距离决定，
-     * 保证「能出手就一定能扫到」。方向为 null（没有锁定过、或已被清理）时直接返回。</p>
-     */
+    /** 在起手锁定的方向上扫一次扇形（服务端）。{@code damage} 传 0 是有意的：伤害全部由 {@link #afterHit} 逐目标结算，否则同一目标吃两倍。 */
     private void performAoeAttack() {
         if (pendingAttackDirection == null) return;
 
@@ -484,15 +361,8 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
     }
 
     /**
-     * 扇形扫击的目标过滤：在基类通用判定之上补一条<b>主目标例外</b>。
-     *
-     * <p>玩家能不能被范围攻击打中，{@link #canHitWithRangeAttack} 走的是威胁点数 / 还手窗口闸门。
-     * 0.75s 前摇里玩家完全可能脱离视线、或威胁点数掉回阈值以下，导致命中瞬间闸门关闭 ——
-     * 那就会出现「动画明明都挥到脸上了却一点伤害没有」。既然起手是 AI 已经选中它，
-     * 就对<b>这一个</b>主目标只要求存活，不再重跑威胁闸门。</p>
-     *
-     * <p>其它被扫到的目标一律走通用判定：玩家仍受威胁点数闸门约束，
-     * 感染生物之间不互相误伤。</p>
+     * 扇形过滤：主目标只要求存活 —— 0.75s 前摇里玩家可能脱离视线或威胁点数掉回阈值以下，
+     * 那会出现「动画都挥到脸上了却一点伤害没有」；其余目标一律走基类的通用判定。
      */
     private boolean canHitByAoeAttack(LivingEntity target) {
         if (target == pendingAttackTarget) {
@@ -505,29 +375,24 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
     private void performLeap(LivingEntity target) {
         Vec3 dest;
         if (this.getRandom().nextBoolean()) {
-            // 落点 = 目标位置
             dest = target.position();
         } else {
-            // 落点 = 目标背后 2.5 格
             Vec3 look = target.getLookAngle().scale(-2.5);
             dest = target.position().add(look.x, 0, look.z);
         }
 
         Vec3 diff = dest.subtract(this.position());
-        // 计算水平速度使落点距离匹配
         double hDist = Math.sqrt(diff.x * diff.x + diff.z * diff.z);
         double hSpeed = Math.min(hDist * LEAP_H_SPEED, 2.0);
         Vec3 vel = new Vec3(diff.x * LEAP_H_SPEED, LEAP_UPWARD, diff.z * LEAP_H_SPEED);
         this.setDeltaMovement(vel);
         this.hurtMarked = true; // 通知客户端
 
-        // 面向目标
         this.getLookControl().setLookAt(target, 30, 30);
         this.yBodyRot = this.getYRot();
 
         setLeapCooldown(LEAP_COOLDOWN_MAX);
 
-        // 起跳粒子
         if (level() instanceof ServerLevel serverLevel) {
             for (int i = 0; i < 20; i++) {
                 serverLevel.sendParticles(ParticleTypes.END_ROD,
@@ -568,10 +433,8 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
             state.setControllerSpeed(getWalkAnimSpeed());
             return state.setAndContinue(ANIM_WALK);
         }));
-        // 攻击控制器：stateHandler 恒返回 STOP，动画完全由 triggerAnim 驱动（三招都是 thenPlay、不循环），
-        // 播完自动回落到 movement_controller。放在 movement 之后、die 之前：
-        // GeckoLib 按注册顺序应用控制器、后者覆盖前者的骨骼，攻击必须压在移动之上，
-        // 否则走路动画会把手臂拽回去；die 仍排最后，爆体动画优先级最高。
+        // 攻击控制器：stateHandler 恒返回 STOP，动画全由 triggerAnim 驱动。放在 movement 之后、die 之前 ——
+        // GeckoLib 按注册顺序应用控制器、后者覆盖前者骨骼，攻击必须压在移动之上，否则走路会把手臂拽回去。
         AnimationController<AbstractRottenEntity> attackController =
                 new AnimationController<>(this, "attack_controller", ATTACK_TRANSITION_TICKS, state -> PlayState.STOP);
         attackController.triggerableAnim("attack", ANIM_ATTACK);

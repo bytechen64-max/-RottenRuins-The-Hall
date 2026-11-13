@@ -1,5 +1,4 @@
 package org.bytechen.rottenruins.datagen.gen;
-import org.bytechen.rottenruins.HallMod;
 
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.particles.ParticleTypes;
@@ -7,7 +6,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.data.worldgen.placement.VegetationPlacements;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.Music;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.MobCategory;
@@ -17,6 +15,7 @@ import org.bytechen.rottenruins.overworld.registry.EntityTypeRegistry;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * Hall 感染群系数据生成器。
@@ -29,11 +28,11 @@ public class HallBiomeData {
 
     /** Hall 废土群系 ResourceKey */
     public static final ResourceKey<Biome> HALL_WASTELAND = ResourceKey.create(
-            Registries.BIOME, new ResourceLocation(HallMod.MODID, "hall_wasteland"));
+            Registries.BIOME, ModUtils.modLoc("hall_wasteland"));
 
     /** 血肉庭园群系 ResourceKey（维度 hall:heall 的主体群系） */
     public static final ResourceKey<Biome> FLESH_MARROW = ResourceKey.create(
-            Registries.BIOME, new ResourceLocation(HallMod.MODID, "flesh_marrow"));
+            Registries.BIOME, ModUtils.modLoc("flesh_marrow"));
 
     /**
      * 在 datagen 的 bootstrap 阶段注册群系。

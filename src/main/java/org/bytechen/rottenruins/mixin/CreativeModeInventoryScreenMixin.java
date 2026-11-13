@@ -102,9 +102,7 @@ public abstract class CreativeModeInventoryScreenMixin implements SectionedCreat
         return Math.max((int) ((double) (this.scrollOffs * (float) rowCount) + 0.5D), 0);
     }
 
-    // ──────────────────────────────────────────────────────────────
     //  排版
-    // ──────────────────────────────────────────────────────────────
 
     @Inject(method = "selectTab", at = @At("TAIL"))
     private void splendiding$layoutAfterSelectTab(CreativeModeTab tab, CallbackInfo ci) {
@@ -197,9 +195,7 @@ public abstract class CreativeModeInventoryScreenMixin implements SectionedCreat
         picker.scrollTo(this.scrollOffs);
     }
 
-    // ──────────────────────────────────────────────────────────────
     //  隔断行不是"空地"
-    // ──────────────────────────────────────────────────────────────
 
     /**
      * 拦住落在隔断行上的点击。

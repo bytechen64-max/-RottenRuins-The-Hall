@@ -24,10 +24,8 @@ import java.util.function.Consumer;
 
 public class BonecrusherEntity extends BaseEcologicalEntity {
 
-    // ========== 新增：记录上次进入战斗的时间（用于脱战回血） ==========
     private int lastCombatTick = 0;
 
-    // ========== 冲撞相关字段 ==========
     private int chargeCooldown = 0;      // 冷却剩余 tick
     private int chargeDuration = 0;      // 冲撞持续剩余 tick（>0 表示正在冲撞）
 
@@ -53,7 +51,6 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
         super.tick();
     }
 
-    // ------------------ 服务端逻辑 ------------------
     private void serverTick() {
         // 破坏方块：常态每 5 tick 扫一次；冲撞中每 3 tick 扫一次。
         //
@@ -74,7 +71,6 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
             }
         }
 
-        // ========== 冲撞逻辑 ==========
         LivingEntity target = this.getTarget();
         if (chargeDuration > 0) {
             // 向目标快速移动（速度倍率 1.5）
@@ -105,12 +101,10 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
         }
     }
 
-    // ------------------ 客户端逻辑 ------------------
     private void clientTick() {
         // 客户端无需额外处理
     }
 
-    // ------------------ 属性 ------------------
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 80)
@@ -121,7 +115,6 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1f);
     }
 
-    // ------------------ AI 目标 ------------------
     @Override
     protected void registerGoals() {
         // 追击占位（只占 MOVE）：有目标时压住 RandomStrollGoal，
@@ -138,7 +131,6 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
         super.registerGoals();
     }
 
-    // ------------------ 攻击与剑气 ------------------
     private static final int SWORD_AURA_CHANCE = 20;
     private static final float SWORD_AURA_SHRINK = 3.0f;
     private static final float SWORD_AURA_DAMAGE_MULT = 5.0f;
@@ -159,7 +151,6 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
         return true;
     }
 
-    // ------------------ 动画注册 ------------------
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
         if (!defaultControllersEnabled) return;
@@ -192,14 +183,12 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
         registrar.add(dieController.triggerableAnim("die_trigger", ANIM_DIE));
     }
 
-    // ------------------ 受伤 ------------------
     @Override
     public boolean hurt(DamageSource source, float amount) {
         this.lastCombatTick = this.tickCount;   // 受到攻击也视为进入战斗
         return super.hurt(source, amount);
     }
 
-    // ------------------ 其他 ------------------
     @Override
     public boolean isPushable() {
         return false;

@@ -26,34 +26,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 画创造物品栏里的「分区隔断行」：一条色彩流动的色带（{@code hall:gui_tab_divider}）
- * + 压在上面的流动彩色标题。
- *
- * <h3>为什么挂在 Foreground 而不是 Background</h3>
- * <p>Forge 的 {@code ContainerScreenEvent.Render.Foreground} 在
- * 「槽位与悬停高亮都画完、tooltip 与手上拖着的物品还没画」的那个缝里触发
- * （见 {@code AbstractContainerScreen#render}）。隔断行的格子是空的，
- * 原版会给悬停的空槽画一个 16×16 的白色高亮方块 —— 挂在 Background
- * 会被那个方块盖在我们的色带上。挂在 Foreground 刚好反过来：色带压住白框，
- * 而 tooltip / 拖拽中的物品仍然在最上层。</p>
- *
- * <h3>为什么是"立即绘制"而不是 RenderType</h3>
- * <p>和 tooltip 底板（{@code client/tooltip/TooltipShaders}）、坍缩使徒血条走同一条路：
- * GUI 里画几块自绘内容，用 {@code BufferUploader.drawWithShader} 直接提交。
- * 少一套 StateShard，也就不用给剔除/深度/写掩码各配一遍默认值。三条规矩照抄那边：</p>
- * <ol>
- *   <li><b>先 {@code gui.flush()}。</b>GUI 批处理里可能还压着背景、标签页、格子高亮的顶点，
- *       不先刷出去它们会盖在我们这层之上。</li>
- *   <li><b>uniform 设完就画，中间不插别的绘制。</b>{@code Uniform.set()} 只是记值，
- *       真正上传发生在这次 draw 的 {@code ShaderInstance.apply()} 里。</li>
- *   <li><b>画完把 RenderSystem 状态还回去。</b>后面还要画 tooltip 和拖着的东西。</li>
- * </ol>
- * <p>还有一条从 tooltip 那边学来的：json 里的 {@code "blend"} 才是最终生效的混合，
- * 它发生在 {@code ShaderInstance.apply()} 里、比这里的 {@code RenderSystem} 调用更晚。</p>
- *
- * <h3>着色器加载失败时不许"消失"</h3>
- * <p>驱动老旧或资源包覆盖了 shader 时 {@link SplendidingShaders#guiTabDividerShader} 会是 null。
- * 那种情况退回一条纯色细线 + 同样的标题 —— 分区功能本身（找东西）不能因为着色器没了就失效。</p>
+ * 创造物品栏的「分区隔断行」：流动色带（{@code hall:gui_tab_divider}）+ 压在上面的流动彩色标题。
+ * 挂 Foreground 而非 Background：隔断行的空槽位会被原版画一个 16×16 白色悬停高亮，会盖住 Background 的色带。
+ * 立即绘制时先 {@code gui.flush()}、uniform 设完就画、画完还原 RenderSystem；最终混合由 json 的 {@code "blend"} 决定（在 {@code apply()} 里，晚于 RenderSystem）。
+ * 着色器为 null 时退回纯色细线 + 同款标题，分区功能不能因着色器缺失而失效。
  */
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = HallMod.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -61,23 +37,15 @@ public final class CreativeTabDividerRenderer {
 
     private CreativeTabDividerRenderer() {}
 
-    // ── 几何：与创造网格对齐 ──
-    //
-    // 这一组数不是"估"出来的，是从原版 tab_items.png 里量出来的：
-    //   槽位井每格 18×18，井内区正好 16×16 落在 (9 + 18j, 18 + 18i) 上，
-    //   于是井的左/上边框在 texture (8, 17)、右/下边框在 (25, 34)。
-    // 隔断行要"铺满一整行"就必须盖住这 9 个井的**外框**，也就是
-    //   x ∈ [8, 8 + 9*18) = [8, 170)、y ∈ [17 + 18i, 35 + 18i)。
-    // 只盖井内区（[9,169) × [18,36)）会在左、上各留 1px 缝，底下还多压 1px 到下一行。
-    /** 9 个槽位井的整体左边界（槽位 x = 9 + 列 * 18，井比槽位向左多 1px）。 */
+    // 几何数从原版 tab_items.png 量出：槽位井每格 18×18，井外框 x ∈ [8, 170)、y ∈ [17 + 18i, 35 + 18i)。
+    // 必须盖住井外框 —— 只盖井内区会在左、上各留 1px 缝，底下还多压 1px 到下一行。
     private static final int GRID_X = 8;
     /** 9 个井的总宽：9 × 18 = 162。 */
     private static final int GRID_W = 162;
-    /** 网格上沿的井边框（槽位 y = 18 + 行 * 18，井比槽位向上多 1px）。 */
     private static final int GRID_Y = 17;
     private static final int ROW_H = 18;
 
-    // ── 调色板（陈金 / 病绿青 / 暗绯红）──
+    // 调色板（陈金 / 病绿青 / 暗绯红）
     private static final float[] PALETTE_A = { 0.79F, 0.63F, 0.15F, 1.00F };
     private static final float[] PALETTE_B = { 0.27F, 0.78F, 0.62F, 0.85F };
     private static final float[] PALETTE_C = { 0.60F, 0.16F, 0.26F, 0.70F };
@@ -113,14 +81,12 @@ public final class CreativeTabDividerRenderer {
             return;
         }
 
-        // 时间用墙钟而不是游戏时间，理由和 GuiShaderRenderer 一样：
-        // 这里在单人游戏里开着界面就是暂停的，用 gameTime 会让色带整个冻住。
-        // 取模是为了别让 float 在大数值上丢精度（一小时后回绕一次，没人会盯着看）。
+        // 用墙钟而不是 gameTime：单人游戏里开着界面就是暂停的；取模避免 float 在大数值上丢精度。
         float time = (System.currentTimeMillis() % 3_600_000L) / 1000.0F;
 
         if (SplendidingShaders.guiTabDividerShader == null) {
-            // ↓↓ 注意这里是**面板相对坐标**，和上面 drawBars 的绝对坐标不是一个空间，见 drawFlowingText 的注释。
-            // 降级也铺满整行，和着色器那条缎带的占位保持一致（只画一条细线会让这一行读起来是空的）。
+            // 这里是**面板相对坐标**（gui.fill 走 PoseStack），与 drawBars 的绝对屏幕坐标不是一个空间；
+            // 降级也铺满整行，只画一条细线会让这一行读起来是空的。
             for (int local : visible) {
                 int y = GRID_Y + local * ROW_H;
                 gui.fill(GRID_X, y, GRID_X + GRID_W, y + ROW_H, FALLBACK_FILL);
@@ -141,20 +107,12 @@ public final class CreativeTabDividerRenderer {
         }
     }
 
-    // ──────────────────────────────────────────────────────────────
     //  色带
-    // ──────────────────────────────────────────────────────────────
 
     /**
-     * 一次 draw call 把视野里所有隔断行的色带画掉。
-     *
-     * <p><b>这里的 {@code left/top} 是绝对的屏幕 GUI 坐标</b>，因为它走
-     * {@code BufferUploader.drawWithShader}：顶点矩阵是单位阵，{@code ProjMat} /
-     * {@code ModelViewMat} 由 RenderSystem 给，{@code GuiGraphics} 的 PoseStack
-     * <b>完全没参与</b>。同一帧里 {@code gui.fill} / {@code gui.drawString} 却会把
-     * PoseStack 烘进顶点 —— 而 {@code AbstractContainerScreen#render} 在派发
-     * Foreground 之前已经 push 了一个 {@code (leftPos, topPos)} 平移。
-     * 两套坐标混用就是"色带位置对、文字整块飘到面板外"的原因，改的时候别只改一边。</p>
+     * 一次 draw call 把视野里所有隔断行的色带画掉。这里的 {@code left/top} 是绝对的屏幕 GUI 坐标：
+     * {@code drawWithShader} 走单位阵、PoseStack 没参与，而 Foreground 派发前已 push 了 {@code (leftPos, topPos)} 平移 ——
+     * 两套坐标混用就是「色带位置对、文字整块飘到面板外」，改的时候别只改一边。
      */
     private static void drawBars(GuiGraphics gui, ShaderInstance shader, int left, int top,
                                  List<Integer> visibleRows, float time) {
@@ -166,7 +124,7 @@ public final class CreativeTabDividerRenderer {
         set1(shader, "uIntensity", INTENSITY);
         set1(shader, "uGlow", GLOW);
 
-        // ① 先把自己人刷出去（见类注释第 1 条）
+        // 先把自己人刷出去，否则压着的背景/格子高亮会盖在这层之上
         gui.flush();
 
         RenderSystem.enableBlend();
@@ -193,37 +151,16 @@ public final class CreativeTabDividerRenderer {
         }
         BufferUploader.drawWithShader(buffer.end());
 
-        // ③ 还原状态，后面还有 tooltip / 拖拽物品要画
+        // 还原状态，后面还有 tooltip / 拖拽物品要画
         RenderSystem.depthMask(true);
         RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
     }
 
-    // ──────────────────────────────────────────────────────────────
     //  标题
-    // ──────────────────────────────────────────────────────────────
 
-    /**
-     * 画分区标题：用 § 分节符的 {@code rainbow} 效果让整行标题随时间流动。
-     *
-     * <h3>为什么从"自己逐字算 HSV"改成文本特效标记</h3>
-     * <p>旧实现是逐字 {@code gui.drawString} + 每字一次色相计算，等于把"彩虹文字"
-     * 在渲染器里又私有实现了一遍：色相速度/饱和度是写死的常量，和新的
-     * {@code §[rrs:rainbow]} 形成两套调参入口；而且每字一次 draw 调用会打断 GUI 批处理。
-     * 改成一次 {@code drawString(Component)} 之后：颜色/速度走统一配置，批处理少 ~15 次切分，
-     * 标题与 tooltip/聊天里的彩虹文字用的是同一套实现。</p>
-     *
-     * <p><b>{@code centerX / y} 是"相对面板左上角"的坐标，不是屏幕绝对坐标。</b>
-     * {@code GuiGraphics.drawString} 会把当前 PoseStack 烘进顶点，而 Foreground 事件
-     * 是在 {@code AbstractContainerScreen} push 了 {@code (leftPos, topPos)} 平移之后派发的
-     * —— 这里再传一次绝对坐标，文字就会被平移两次、整块飘到面板外面去
-     * （第一次做这个功能时就是这么翻的，截图里"畸骸与王庭生物"跑到了世界渲染区）。
-     * 同一屏里的 {@code renderLabels}（标签标题画在 8, 6）也是这个相对口径。</p>
-     *
-     * <p><b>开头垫一个原版 {@code §6}</b>：特效总开关关掉时标记会被剥离、正文按普通文本渲染，
-     * 那时标题仍应是金色而不是退成白色。宽度仍由 {@code Font.width(Component)} 计算，
-     * 标记零宽不会改变居中位置。</p>
-     */
+    // 标题走 § 分节符的 rainbow 特效（与 tooltip / 聊天文字同一套实现）。centerX / y 是「相对面板左上角」坐标：
+    // Foreground 在 push (leftPos, topPos) 之后才派发，传绝对坐标会被平移两次、飘到面板外。开头垫 §6 让特效关闭时标题仍是金色。
     private static void drawFlowingTitle(GuiGraphics gui, Font font, Component title,
                                          int centerX, int y) {
         String text = title.getString();
@@ -237,14 +174,8 @@ public final class CreativeTabDividerRenderer {
         gui.drawString(font, flowing, x, y, 0xFFFFFFFF, true);
     }
 
-    // ──────────────────────────────────────────────────────────────
-    //  uniform 写入
-    // ──────────────────────────────────────────────────────────────
-    //  两层保护，与 TooltipShaders 同写法：
-    //   ① 先查 getUniform(name) != null —— json 少声明一个 uniform 时
-    //      safeGetUniform 给的是"哑"对象，写进去毫无反应；
-    //   ② try/catch —— Uniform 按类型分配缓冲，给一个 int 型 uniform 写 float
-    //      会直接 NPE 把客户端带崩，判空挡不住（DifficultySelectScreen 踩过）。
+    //  uniform 写入：两层保护（与 TooltipShaders 同写法）。① 先查 getUniform != null —— json 少声明一个 uniform 时
+    //  safeGetUniform 给的是「哑」对象；② try/catch —— 给 int 型 uniform 写 float 会直接 NPE，判空挡不住。
 
     private static void set1(ShaderInstance shader, String name, float v) {
         if (shader.getUniform(name) == null) return;

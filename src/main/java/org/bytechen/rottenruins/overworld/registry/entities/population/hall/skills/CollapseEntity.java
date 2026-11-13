@@ -32,7 +32,6 @@ import java.util.List;
  */
 public class CollapseEntity extends Entity {
 
-    // ────────── 坍缩渲染类型 ──────────
     public enum CollapseType {
         ENDER_DRAGON,
         HYPERCUBE,
@@ -46,7 +45,6 @@ public class CollapseEntity extends Entity {
         }
     }
 
-    // ────────── 坍缩生命周期阶段 ──────────
     public enum CollapsePhase {
         SPAWN,      // 生成动画阶段
         MAINTAIN,   // 维持阶段
@@ -54,7 +52,6 @@ public class CollapseEntity extends Entity {
         DEAD        // 已结束
     }
 
-    // ────────── 同步数据 key ──────────
     private static final EntityDataAccessor<Integer> DATA_LIVE_TIME =
             SynchedEntityData.defineId(CollapseEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_MAX_LIVE_TIME =
@@ -72,7 +69,6 @@ public class CollapseEntity extends Entity {
     private static final EntityDataAccessor<Float> DATA_CALLBACK_RADIUS =
             SynchedEntityData.defineId(CollapseEntity.class, EntityDataSerializers.FLOAT);
 
-    // ────────── 默认值 ──────────
     private static final int DEF_SPAWN_DURATION = 20;
     private static final int DEF_END_DURATION = 20;
     private static final int DEF_MAINTAIN_DURATION = 60;
@@ -81,7 +77,6 @@ public class CollapseEntity extends Entity {
     private static final int DEF_COLOR2 = 0x8888FF;
     private static final float DEF_CALLBACK_RADIUS = 16.0f;
 
-    // ────────── 实例字段 ──────────
     private Entity owner;
     private final List<ICollapseCallback> callbacks = new ArrayList<>();
     /** 前一帧的阶段，用于检测阶段切换 */
@@ -101,9 +96,7 @@ public class CollapseEntity extends Entity {
         this.entityData.set(DATA_CALLBACK_RADIUS, DEF_CALLBACK_RADIUS);
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // Getters / Setters
-    // ═══════════════════════════════════════════════════════════════
 
     public Entity getOwner() { return owner; }
     public void setOwner(Entity owner) { this.owner = owner; }
@@ -138,7 +131,6 @@ public class CollapseEntity extends Entity {
     public float getCallbackRadius() { return this.entityData.get(DATA_CALLBACK_RADIUS); }
     public void setCallbackRadius(float v) { this.entityData.set(DATA_CALLBACK_RADIUS, v); }
 
-    // ────────── 预解包颜色分量（便于渲染器使用） ──────────
     public float color1R() { return ((getColor1() >> 16) & 0xFF) / 255f; }
     public float color1G() { return ((getColor1() >> 8) & 0xFF) / 255f; }
     public float color1B() { return (getColor1() & 0xFF) / 255f; }
@@ -146,9 +138,7 @@ public class CollapseEntity extends Entity {
     public float color2G() { return ((getColor2() >> 8) & 0xFF) / 255f; }
     public float color2B() { return (getColor2() & 0xFF) / 255f; }
 
-    // ═══════════════════════════════════════════════════════════════
     // 阶段判定
-    // ═══════════════════════════════════════════════════════════════
 
     /** 获取当前生命周期阶段 */
     public CollapsePhase getPhase() {
@@ -196,9 +186,7 @@ public class CollapseEntity extends Entity {
         return 1f;
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 回调系统
-    // ═══════════════════════════════════════════════════════════════
 
     public void addCallback(ICollapseCallback callback) {
         if (!callbacks.contains(callback)) callbacks.add(callback);
@@ -212,9 +200,7 @@ public class CollapseEntity extends Entity {
         return callbacks;
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // Tick
-    // ═══════════════════════════════════════════════════════════════
 
     @Override
     public void tick() {
@@ -268,9 +254,7 @@ public class CollapseEntity extends Entity {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 同步数据定义
-    // ═══════════════════════════════════════════════════════════════
 
     @Override
     public void defineSynchedData() {
@@ -284,9 +268,7 @@ public class CollapseEntity extends Entity {
         this.entityData.define(DATA_CALLBACK_RADIUS, DEF_CALLBACK_RADIUS);
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // NBT 持久化
-    // ═══════════════════════════════════════════════════════════════
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
@@ -312,9 +294,7 @@ public class CollapseEntity extends Entity {
         tag.putFloat("CallbackRadius", getCallbackRadius());
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 网络
-    // ═══════════════════════════════════════════════════════════════
 
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
@@ -332,9 +312,7 @@ public class CollapseEntity extends Entity {
     @Override
     public boolean isAttackable() { return false; }
 
-    // ═══════════════════════════════════════════════════════════════
     // 静态工厂方法
-    // ═══════════════════════════════════════════════════════════════
 
     /**
      * 生成坍缩实体（完整参数）。
@@ -398,9 +376,7 @@ public class CollapseEntity extends Entity {
                 color1, color2, DEF_CALLBACK_RADIUS, null, null);
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 回调接口
-    // ═══════════════════════════════════════════════════════════════
 
     public interface ICollapseCallback {
         /** 生成动画阶段，每 tick 对渲染范围内的每个生物调用 */

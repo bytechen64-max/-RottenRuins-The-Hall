@@ -13,43 +13,10 @@ import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
 /**
- * 绯红誓约「起誓」系特效的<b>共用零件</b>。
- *
- * <h3>为什么要有这一层</h3>
- * <p>蓄力法阵、巨型法阵、终末光柱这三样东西共用：</p>
- * <ul>
- *   <li>同一个圆盘/圆柱的几何生成器（只差"喂哪几个 uniform"）；</li>
- *   <li>同一套 uniform 写入工具（都要判空 —— 被 GLSL 优化掉的 uniform
- *       {@code getUniform()} 会返回 null，直接 set 就是 NPE）；</li>
- *   <li>同一套<b>视基</b>（把世界方向与视空间方向互相转换的三个向量）。</li>
- * </ul>
- *
- * <h3>视基：为什么不直接用 ModelViewMat</h3>
- * <p>本项目的世界空间特效都遵守同一条契约：Java 侧把
- * {@code translate(-camera)} 折进 pose，用 {@code pose.last().pose()} 变换
- * 顶点，于是顶点着色器里的 {@code Position} 已经是<b>视空间</b>坐标。
- * 片元阶段要从它反解"这条视线在世界空间指向哪"。</p>
- *
- * <p>这里刻意<b>不</b>依赖 Minecraft 自动绑定的 {@code ModelViewMat}：
- * 那个值是 {@code RenderSystem.getModelViewMatrix()} 的快照，而原版在整条
- * 世界渲染路径（地形 / 实体 / {@code AFTER_TRIPWIRE_BLOCKS}）上都没有更新
- * 过它 —— 它保留的是上一帧 GUI 那趟留下的近单位阵。用它做旋转会得到
- * "某些机器看起来能跑、另一些机器整块不可见"这种最难查的症状。</p>
- *
- * <p>于是这里从 {@code PoseStack} 的法线矩阵里直接取旋转部分 {@code R}
- * （pose 是刚体变换，法线矩阵就等于 R），再算出<b>视空间三个轴在世界空间里
- * 的方向</b> —— 也就是 R 的三行：</p>
- * <pre>
- *   uViewRight = (m00, m10, m20)   视空间 +X 在世界空间的方向
- *   uViewUp    = (m01, m11, m21)   视空间 +Y
- *   uViewFwd   = (m02, m12, m22)   视空间 +Z
- * </pre>
- * <p>有了这三个向量，两个方向就都通了（{@code Rᵀ·e_x = uViewRight}）：</p>
- * <pre>
- *   视空间方向 → 世界方向：  uViewRight*d.x + uViewUp*d.y + uViewFwd*d.z
- *   世界点     → 视空间：   (dot(uViewRight,d), dot(uViewUp,d), dot(uViewFwd,d))
- * </pre>
- * <p>两者用的是同一组基，所以不可能出现"方向对了、深度错一格"的错位。</p>
+ * 绯红誓约「起誓」系特效的共用零件：圆盘/圆柱几何、uniform 写入、视基换算。
+ * 视基取 pose 法线矩阵的旋转部分 R（pose 为刚体变换，R 的三行即视空间三轴的世界方向），
+ * 不用 ModelViewMat —— 原版世界渲染路径从不更新它，用它做旋转会整块不可见。
+ * uniform 一律判空：被 GLSL 优化掉的 uniform 在 getUniform() 上返回 null。
  */
 public final class CrimsonVowRenderSupport {
 
@@ -58,16 +25,12 @@ public final class CrimsonVowRenderSupport {
     /** 网格半径 / 逻辑半径（多出来的一圈留给 halo）。 */
     public static final float HALO_RATIO = 1.18f;
 
-    /** 圆盘分段数。 */
     public static final int DISC_SEGMENTS = 96;
-    /** 圆盘同心环数。 */
     public static final int DISC_RINGS = 6;
-    /** 圆柱侧面分段数。 */
     public static final int CYL_SEGMENTS = 56;
 
     private static final float TWO_PI = (float) (2.0 * Math.PI);
 
-    // ── 色板：与 CrimsonVow 的物品描边/名字同一套 ──
     /** 亮粉 0xFFFF4FB8。 */
     public static final float[] COLOR_A = { 1.000f, 0.310f, 0.722f };
     /** 紫 0xFF9B4DFF。 */
@@ -75,16 +38,9 @@ public final class CrimsonVowRenderSupport {
     /** 雾粉紫 0xFFE8A6FF。 */
     public static final float[] COLOR_C = { 0.910f, 0.651f, 1.000f };
 
-    // ══════════════════════════════════════════════════════════════
     //  视基
-    // ══════════════════════════════════════════════════════════════
 
-    /**
-     * 从"已经 translate 过 -camera 的 pose"里取出三个视基向量。
-     *
-     * @param pose   pose 栈顶（世界 → 视空间）
-     * @param out    长度 ≥ 9 的数组，依次写入 Right / Up / Fwd
-     */
+    /** 从"已经 translate 过 -camera 的 pose"里取三个视基向量，写入 out：Right / Up / Fwd（长度 ≥ 9）。 */
     public static void viewBasis(PoseStack.Pose pose, float[] out) {
         Matrix3f r = pose.normal();
         // JOML 的命名是 m<列><行>，所以 R 的第 0 行是 (m00, m10, m20)。
@@ -93,7 +49,7 @@ public final class CrimsonVowRenderSupport {
         out[6] = r.m02(); out[7] = r.m12(); out[8] = r.m22();
     }
 
-    /** 世界方向 {@code (0,1,0)} 在视空间下的表示（= R·e_y = R 的第 1 列）。 */
+    /** 世界方向 {@code (0,1,0)} 在视空间下的表示（= R 的第 1 列）。 */
     public static void worldUpInView(PoseStack.Pose pose, float[] out3) {
         Matrix3f r = pose.normal();
         out3[0] = r.m10(); out3[1] = r.m11(); out3[2] = r.m12();
@@ -107,10 +63,6 @@ public final class CrimsonVowRenderSupport {
         out3[1] = basis[3] * dx + basis[4] * dy + basis[5] * dz;
         out3[2] = basis[6] * dx + basis[7] * dy + basis[8] * dz;
     }
-
-    // ══════════════════════════════════════════════════════════════
-    //  uniform 工具（一律判空 —— 见类注释）
-    // ══════════════════════════════════════════════════════════════
 
     public static void setUniform(ShaderInstance sh, String name, float v) {
         if (sh == null) return;
@@ -141,21 +93,9 @@ public final class CrimsonVowRenderSupport {
         setUniform3(sh, "uColorC", COLOR_C);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  几何
-    // ══════════════════════════════════════════════════════════════
-
     /**
-     * 发一个水平圆盘（三角扇网格）。
-     *
-     * <p>属性打包：{@code Color.rg = (径向归一化, 角度归一化)}，
-     * {@code Normal.xy} 同值。片元只需要 r/g，Normal 留着是为了让
-     * 顶点着色器把同一份数据同时暴露成 vLocal 之外的通道（便于以后按径向做
-     * 方向性东西时不用改顶点格式）。</p>
-     *
-     * <p>⚠️ 最后一个扇区的 {@code a1} 必须是 <b>1.0</b>（而不是 0.0）——
-     * 片元里的 {@code cos(a*TAU)} 依赖 a 在整圈上单调递增。写 0.0 会在
-     * 接缝处出现一道永远修不掉的裂缝。</p>
+     * 发一个水平圆盘（三角扇网格）。Color.rg = (径向归一化, 角度归一化)，Normal.xy 同值。
+     * ⚠ 最后一个扇区的 a1 必须是 1.0（不是 0.0）：片元的 cos(a*TAU) 依赖 a 单调递增，写 0.0 会留下一道修不掉的接缝裂缝。
      */
     public static void emitDisc(BufferBuilder buffer, Matrix4f mat,
                                 float cx, float cy, float cz, float meshRadius) {
@@ -188,40 +128,11 @@ public final class CrimsonVowRenderSupport {
     }
 
     /**
-     * 发一个开口的（可带锥度的）圆柱侧面，沿高度分成若干环。
-     *
-     * <h3>属性打包（改过一次，原因很重要）</h3>
-     * <ul>
-     *   <li>{@code Normal.x = 顶点的世界 Y（格）} —— 光柱图案的唯一标尺；</li>
-     *   <li>{@code Color.g = 角度归一化} —— 片元里用来还原柱面法线与螺旋相位。</li>
-     * </ul>
-     * <p>端盖刻意不发：柱体的上下边界本来就该是软的（着色器里靠前缘光斑与
-     * 尾端淡出收口），加端盖只会得到两个硬边圆盘。</p>
-     *
-     * <p>⚠️ 高度<b>不能</b>放在 {@code Color.r} 里。{@code POSITION_COLOR_NORMAL}
-     * 的 Color 是 4 个 <b>ubyte</b>：写进去的值先乘 255 再截成字节。第一版把
-     * "柱长 34 格"写进 Color.r，存进去是 {@code (byte)(34*255) = 222}，读回来
-     * 0.8706 —— 一根柱子上所有顶点<b>同一个值</b>，片元里的 hN 恒为 0.87，
-     * 六条螺旋只剩一条、柱头光斑与枪口爆闪全灭，画面上是一根均匀发亮的管子。
-     * 离屏台子把 Color.r 直接输出成颜色时整根柱子是同一个灰值，一眼确认。</p>
-     *
-     * <p>Normal 是 3 个 <b>float</b>，0..100+ 格都精确，所以世界高度走 Normal.x。</p>
-     *
-     * <h3>为什么要 rings 分环</h3>
-     * <p>轮廓波动是<b>顶点阶段</b>把顶点沿半径推开来实现的。只有上下两条棱边的话
-     * 侧影仍然是直的（两个端点连一条线），推不出任何起伏。分环之后侧面才有
-     * 折点，波动才看得见 —— 这也正是本方法存在的理由。</p>
-     *
-     * <h3>为什么底半径与顶半径分开给</h3>
-     * <p>"上细下粗"的锥度必须由几何给出，不能只靠片元里按高度衰减亮度：
-     * 那样轮廓仍是直筒，只是上边暗一点。分开给之后，顶点阶段按环号直接插值，
-     * 是一根真的锥柱。顶半径给 0.01 就是一根锥（光柱底部的"枪尖"）。</p>
-     *
-     * @param baseY     底面中心的<b>世界</b> y（不是相对坐标）
-     * @param topY      顶面中心的<b>世界</b> y
-     * @param baseRadius 底面半径（格）
-     * @param topRadius  顶面半径（格）
-     * @param rings     沿高度的分段数（≥1；1 就退化成原来那种直筒四边形带）
+     * 发一个开口（可带锥度）的圆柱侧面，沿高度分 rings 环 —— 分环是轮廓波动的前提。
+     * Normal.x = 顶点的世界 Y（格），Color.g = 角度归一化；端盖刻意不发（上下边界靠着色器软化）。
+     * ⚠ 高度不能放 Color.r：POSITION_COLOR_NORMAL 的 Color 是 4 个 ubyte（值×255 后截断），
+     *    世界高度 34 写进去读回恒为 0.87，螺旋与光斑全丢；Normal 是 float，所以高度走 Normal.x。
+     * baseY / topY 是<b>世界</b> y（不是相对坐标）；rings ≥ 1，1 退化成直筒四边形带。
      */
     public static void emitCylinder(BufferBuilder buffer, Matrix4f mat,
                                     float cx, float baseY, float cz,
@@ -229,7 +140,6 @@ public final class CrimsonVowRenderSupport {
                                     int rings) {
         int rn = Math.max(1, rings);
         for (int ring = 0; ring < rn; ring++) {
-            // t0/t1 是这一环的上下参数；半径与高度都按它线性插值。
             float t0 = ring / (float) rn;
             float t1 = (ring + 1) / (float) rn;
             float r0 = Mth.lerp(t0, baseRadius, topRadius);
@@ -251,9 +161,7 @@ public final class CrimsonVowRenderSupport {
                 float x11 = cx + Mth.cos(ang1) * r1;
                 float z11 = cz + Mth.sin(ang1) * r1;
 
-                // ⚠️ 绕序必须与高度一起保持一致：环是从下往上发的，
-                //    所以每段的三个顶点也要"先下后上"，否则法线朝向会翻，
-                //    开着剔除时半根柱子就没了。
+                // 环从下往上发，每段顶点也要"先下后上"：绕序反了法线朝向会翻，开剔除时半根柱子就没了。
                 cylVertex(buffer, mat, x00, y0, z00, y0, a0);
                 cylVertex(buffer, mat, x01, y0, z01, y0, a1);
                 cylVertex(buffer, mat, x11, y1, z11, y1, a1);
@@ -266,15 +174,8 @@ public final class CrimsonVowRenderSupport {
     }
 
     /**
-     * 画一段**任意朝向**的圆管（斜着落下来的陨石拖尾）。
-     *
-     * <p>和 {@link #emitCylinder} 的区别只在顶点里那个"沿轴参数"：
-     * 竖直圆柱塞的是世界 Y，这里塞的是 <b>0..1 的轴向参数 t</b>
-     * （片元里把 {@code uHeadY=0, uSpan=1} 传进去，`rel` 就直接是 t）。
-     * 于是同一支拖尾着色器既能画竖直的火柱，也能画斜的尾迹。</p>
-     *
-     * <p>轴的正交基：先拿一个不平行的参考向量叉乘得到 u，再 u×axis 得到 v。
-     * 选参考向量时要避开与轴平行的情况，否则叉乘退化成零向量。</p>
+     * 画一段**任意朝向**的圆管（斜落下的陨石拖尾）。与 {@link #emitCylinder} 只差顶点里的沿轴参数：
+     * 这里塞的是 0..1 的轴向 t（片元传 uHeadY=0 / uSpan=1），所以同一支着色器也能画竖直火柱。
      */
     public static void emitTube(BufferBuilder buffer, Matrix4f mat,
                                 float x0, float y0, float z0,
@@ -285,17 +186,15 @@ public final class CrimsonVowRenderSupport {
         if (alen < 1.0e-4f) return;
         ax /= alen; ay /= alen; az /= alen;
 
-        // 参考向量：轴接近竖直时换一个，避免叉乘退化
+        // 参考向量：轴接近竖直时换一个，否则叉乘退化成零向量
         float rx = 0f, ry = 1f, rz = 0f;
         if (Math.abs(ay) > 0.99f) { rx = 1f; ry = 0f; }
-        // u = normalize(axis × ref)
         float ux = ay * rz - az * ry;
         float uy = az * rx - ax * rz;
         float uz = ax * ry - ay * rx;
         float ul = (float) Math.sqrt(ux * ux + uy * uy + uz * uz);
         if (ul < 1.0e-4f) return;
         ux /= ul; uy /= ul; uz /= ul;
-        // v = axis × u
         float vx = ay * uz - az * uy;
         float vy = az * ux - ax * uz;
         float vz = ax * uy - ay * ux;
@@ -338,7 +237,7 @@ public final class CrimsonVowRenderSupport {
         }
     }
 
-    /** 圆管顶点：Normal.x 放**轴向参数 t**（0 头 → 1 尾）。 */
+    /** 圆管顶点：Normal.x 放轴向参数 t（0 头 → 1 尾）。 */
     private static void tubeVertex(BufferBuilder buffer, Matrix4f mat,
                                    float x, float y, float z, float t, float aNorm) {
         buffer.vertex(mat, x, y, z)
@@ -350,20 +249,15 @@ public final class CrimsonVowRenderSupport {
     private static void cylVertex(BufferBuilder buffer, Matrix4f mat,
                                   float x, float y, float z, float worldY, float aNorm) {
         buffer.vertex(mat, x, y, z)
-                // Color.r 留 0：光柱这一路的高度不在这里（见上面的 8 bit 说明），
-                // 片元只读 Color.g 当角度。
+                // Color.r 留 0（ubyte 装不下世界高度，见上）；片元只读 Color.g 当角度。Normal.x = 世界 Y。
                 .color(0f, aNorm, 0f, 1f)
-                // Normal.x = 世界 Y（float，无数值回绕）
                 .normal(worldY, aNorm, 0f)
                 .endVertex();
     }
 
     /**
-     * 发一个世界空间轴对齐包围盒的<b>全部 12 个三角形</b>。
-     *
-     * <p>调用方会把它当"体积的包围壳"用：关深度测试、剔正面，
-     * 于是每个被覆盖的像素得到恰好一个片元，光栅阶段不参与遮挡判定
-     * （遮挡由片元里的 SDF 步进 + 深度纹理比较完成）。</p>
+     * 发一个世界空间 AABB 的全部 12 个三角形。调用方关深度测试、剔正面，
+     * 于是每个被覆盖的像素恰好得到一个片元，遮挡由片元里的 SDF 步进 + 深度纹理比较完成。
      */
     public static void emitBox(BufferBuilder buffer, Matrix4f mat,
                                float cx, float cy, float cz, float size) {
@@ -371,13 +265,10 @@ public final class CrimsonVowRenderSupport {
         float y0 = cy - size, y1 = cy + size;
         float z0 = cz - size, z1 = cz + size;
 
-        // -Z / +Z
         quad(buffer, mat, x0, y0, z0, x1, y0, z0, x1, y1, z0, x0, y1, z0);
         quad(buffer, mat, x0, y0, z1, x0, y1, z1, x1, y1, z1, x1, y0, z1);
-        // -X / +X
         quad(buffer, mat, x0, y0, z0, x0, y1, z0, x0, y1, z1, x0, y0, z1);
         quad(buffer, mat, x1, y0, z0, x1, y0, z1, x1, y1, z1, x1, y1, z0);
-        // -Y / +Y
         quad(buffer, mat, x0, y0, z0, x0, y0, z1, x1, y0, z1, x1, y0, z0);
         quad(buffer, mat, x0, y1, z0, x1, y1, z0, x1, y1, z1, x0, y1, z1);
     }
@@ -399,16 +290,9 @@ public final class CrimsonVowRenderSupport {
         b.vertex(mat, x, y, z).color(1f, 1f, 1f, 1f).normal(0f, 1f, 0f).endVertex();
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  地形采样
-    // ══════════════════════════════════════════════════════════════
-
     /**
-     * 求 {@code (x, z)} 处、从 {@code baseY} 向下第一块可站立表面的顶面高度。
-     *
-     * <p>用碰撞盒顶面而不是 {@code by + 1}：台阶、栅栏、雪层的顶面与整格
-     * 不同，只有碰撞盒高度才贴得准。找不到（悬空 / 未加载）时返回 {@code baseY}，
-     * 保证特效永远画得出来。</p>
+     * 求 {@code (x, z)} 处、从 {@code baseY} 向下第一块可站立表面的顶面高度（用碰撞盒顶面而非 by+1，
+     * 台阶/栅栏/雪层才贴得准）；找不到（悬空/未加载）时返回 {@code baseY}，保证特效永远画得出来。
      */
     public static float groundYAt(Level level, double x, double baseY, double z) {
         if (level == null) return (float) baseY;

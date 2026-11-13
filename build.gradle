@@ -146,10 +146,19 @@ dependencies {
 
     jarJar(group: 'me.shedaniel.cloth', name: 'cloth-config-forge', version: '[12.0.109,13)')
     jarJar(group: 'software.bernie.geckolib', name: 'geckolib-forge-1.20.1', version: '[4.8.4,4.9)')
+    // infcore 前置也内嵌进 -all.jar：发布时只发一个包就行，玩家不再需要单独装 infcore。
+    // 注意：内嵌之后 mods/ 里**不能**再放独立的 infcore jar —— 同 modid 重复会导致启动失败。
+    jarJar(group: 'org.bytechen', name: 'infcore', version: '[0.1.2,0.2)')
 
     // JEI (optional)
     compileOnly fg.deobf("mezz.jei:jei-1.20.1-forge:15.2.0.27")
     runtimeOnly fg.deobf("mezz.jei:jei-1.20.1-forge:15.2.0.27")
+
+    // Jade（可选集成）：只用它的 API 编译，jar 放在 libs/jade/（不入库，见 .gitignore）。
+    // 目录里没有 jar 时，下面 sourceSets 会排除 compat/jade 源码，工程照常构建。
+    if (file("libs/jade").exists()) {
+        compileOnly fg.deobf(fileTree("libs/jade") { include '*.jar' })
+    }
 
     // Curios（饰品栏）—— **硬前置**（mods.toml 里 mandatory = true）。
     //   compileOnly：只给我们的集成代码用，不打进产物 —— Curios 是独立模组，
@@ -165,6 +174,17 @@ dependencies {
     implementation fg.deobf("org.bytechen:infcore:0.1.2")
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}
+
+
+// 未完成的草稿文件：传 -PskipInProgress 时跳过（默认不跳过，正常构建不受影响）
+if (project.hasProperty("skipInProgress")) {
+    sourceSets.main.java.exclude "org/bytechen/rottenruins/overworld/registry/items/magic/its/SoulDrink.java"
+}
+
+// Jade 集成源码是可选：libs/jade/ 里没有 jar 就不编译它（编译依赖不存在）
+if (!file("libs/jade").exists() || !file("libs/jade").listFiles()?.any { it.name.endsWith(".jar") }) {
+    sourceSets.main.java.exclude "org/bytechen/rottenruins/compat/jade/**"
 }
 
 // ── Strip module-info from conflicting jars ─────────────────────────

@@ -41,29 +41,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.List;
 
 /**
- * Renders cosmic starfield and/or corruption (RGB split + scanlines)
- * shader layers on top of the base item texture.
- *
- * <h3>Render order</h3>
- * <ol>
- *   <li>Vanilla renders base item model</li>
- *   <li>Here: cosmic starfield layer (EQUAL depth)</li>
- *   <li>Here: corruption layer on top (EQUAL depth)</li>
- *   <li>ItemRendererMixin: outline + glint (ADDITIVE blend)</li>
- * </ol>
- *
- * <h3>Shader pack compatibility</h3>
- * When Oculus/Iris is active, both cosmic and corruption layers are
- * deferred to {@link CosmicItemLateRenderQueue} and replayed after
- * the world render completes, writing directly to the main framebuffer.
- *
- * <h3>Layer eligibility</h3>
- * <ul>
- *   <li><b>Cosmic</b>: {@link BakedModelCosmic} model, or
- *       {@link ICosmicLayer} on item / in {@link CosmicLayerRegistry}</li>
- *   <li><b>Corruption</b>: {@link BakedModelCosmic} model (uses same mask
- *       as cosmic), or {@link ITwitchItem} (uses item's own texture as mask)</li>
- * </ul>
+ * 在物品本体纹理之上叠加星空与崩坏（RGB 分离 + 扫描线）着色器层。
+ * 顺序：本体 → 星空 → 效果层 → 崩坏；光影包激活时星空/崩坏改走
+ * {@link CosmicItemLateRenderQueue} 帧末回放，直接写主帧缓冲。
+ * 资格：星空来自 {@link BakedModelCosmic} 或 {@link ICosmicLayer} / {@link CosmicLayerRegistry}；
+ * 崩坏来自 {@link BakedModelCosmic}（共用星空遮罩）或 {@link ITwitchItem}（用自身贴图当遮罩）。
  */
 @Mixin(ItemRenderer.class)
 public abstract class MixinItemRendererCosmic {
@@ -76,7 +58,6 @@ public abstract class MixinItemRendererCosmic {
                                     boolean leftHand, PoseStack poseStack,
                                     MultiBufferSource buffer, int light, int overlay,
                                     BakedModel model, CallbackInfo ci) {
-        // ── Resolve cosmic eligibility ──
         ResourceLocation cosmicMask = null;
         float opacity = 1.0f;
         int styleVal = 0;
@@ -94,17 +75,12 @@ public abstract class MixinItemRendererCosmic {
             }
         }
 
-        // ── Resolve corruption eligibility ──
         ResourceLocation corruptionMask = null;
         boolean hasCorruption = false;
 
         if (model instanceof BakedModelCosmic bc) {
-            // 关键：BakedModelCosmic 不一定想要崩坏层。
-            // 之前这里无条件 hasCorruption = true，于是：
-            //   • 立即路径（下方直接 getBuffer(CORRUPTION) 那段）会照画不误，
-            //     因为它根本不经过 renderCorruptionLayer，那道 corruptionEnabled 门够不着；
-            //   • 延迟路径入队时 wrapper.setCorruptionMask() 又会把开关重新打开。
-            // 所以崩坏层的总闸必须在这里——所有路径的共同上游。
+            // 崩坏层的总闸必须放在这里：它是立即路径与延迟入队路径的共同上游，
+            // 只看 renderCorruptionLayer 的门或只设 wrapper.setCorruptionMask() 都关不住。
             boolean corruptionAllowed = bc.isCorruptionEnabled()
                     && !(stack.getItem() instanceof ITwitchItem ti && ti.twitchDisabled());
             if (corruptionAllowed) {
@@ -118,25 +94,19 @@ public abstract class MixinItemRendererCosmic {
             }
         }
 
-        // ── Resolve mask effect layers（叠加在星空之上的独立效果层）──
-        // 两个来源：模型 JSON 声明的层（由 BakedModel 携带）+ 物品接口/注册表。
+        // 效果层两个来源：模型 JSON 声明的层（随 BakedModel 携带）+ 物品接口/注册表。
         List<MaskLayerSpec> jsonLayers = model instanceof IMaskLayerCarrier carrier
                 ? carrier.maskLayers()
                 : List.of();
         List<MaskLayerResolver.Resolved> maskLayers =
                 MaskLayerResolver.resolve(stack, context, jsonLayers);
 
-        // ── Resolve block-item mask layers（方块物品的整面表面层）──
-        // 这类物品的显示模型就是方块模型（cube），所以走的是方块侧那套
-        // 「按模型 quad + UV 重映射」的渲染，而不是物品贴图平面那条路。
+        // 方块物品的显示模型就是方块 cube，只能走方块侧「按模型 quad + UV 重映射」那套渲染。
         List<MaskLayerSpec> blockItemLayers = stack.getItem() instanceof BlockMaskLayerItem carrier
                 ? carrier.maskLayers(stack)
                 : List.of();
 
-        // ── Neither cosmic nor corruption nor mask layers → nothing to do ──
-        // 这里刻意用「降级」而不是「整段 return」：原来 cosmic 着色器一加载失败就会
-        // 直接返回，把跟它毫无关系的崩坏层和效果层一起吞掉 —— 症状是「改了个泛光
-        // 层，星空和崩坏一起不见了」，因果完全对不上。
+        // 着色器缺失时只降级对应层，不要整段 return —— 否则关联无关的层会被一起吞掉。
         if (cosmicMask != null && CosmicShaders.cosmicShader == null) cosmicMask = null;
         if (hasCorruption && CosmicShaders.corruptionShader == null) hasCorruption = false;
         if (cosmicMask == null && !hasCorruption && maskLayers.isEmpty()
@@ -144,33 +114,25 @@ public abstract class MixinItemRendererCosmic {
             return;
         }
 
-        // ── Flush base item so depth is in the GPU depth buffer ──
+        // 先把本体刷进 GPU 深度缓冲，后续 EQUAL 深度才叠得上去。
         if (buffer instanceof MultiBufferSource.BufferSource bs) {
             bs.endBatch();
         }
 
-        // ── Shader pack active → defer both layers ──
         if (!CosmicShaders.cosmicInventoryRender
                 && CosmicItemShaderCompat.shouldDeferItemShaderLayer(context)) {
 
-            // 光影的**阴影 pass** 里一律不入队。
-            // 用项目既有的 HeldItemOutlineCompat.isOculusShadowPass()（内部反射
-            // IrisApi.isRenderingShadowPass）—— BlackHole / Shockwave / CollapsarHalo /
-            // ApostleSlashWarp 四个延迟渲染器都是这个写法，见 docs/shader-pack-compat.md 第 361 行。
-            // 阴影那一遍是从光源方向看的（看到的是物品的"背面"），我们的层却是帧末按
-            // 入队时的矩阵回放的，让它入队就会把发光按光源视角盖回画面。
+            // 光影的阴影 pass 一律不入队：那一遍是从光源方向看物品背面，而我们的层是
+            // 帧末按入队矩阵回放的，入队会把发光按光源视角盖回画面。判定沿用项目既有的
+            // HeldItemOutlineCompat.isOculusShadowPass()（内部反射 IrisApi.isRenderingShadowPass）。
             if (HeldItemOutlineCompat.isOculusShadowPass()) return;
 
-            // cosmic / 崩坏层的入队逻辑保持原样，只是被套进「确实有东西要画」的判断里
-            // —— 一件只有 mask 效果层的物品不该被塞一个空 wrapper 进队列。
             if (cosmicMask != null || hasCorruption) {
                 BakedModelCosmic wrapper;
                 if (model instanceof BakedModelCosmic bc) {
                     wrapper = bc;
                 } else {
-                    // Create a wrapper for the queue.  Only enable cosmic
-                    // if we actually resolved a cosmic mask — otherwise this is
-                    // a corruption-only item (ITwitchItem) and cosmic must stay off.
+                    // 只有真正解析出星空遮罩才开 cosmic；仅崩坏物品（ITwitchItem）必须关掉。
                     ResourceLocation primaryMask = cosmicMask != null ? cosmicMask : corruptionMask;
                     wrapper = new BakedModelCosmic(model, primaryMask);
                     wrapper.setCosmicEnabled(cosmicMask != null);
@@ -179,7 +141,6 @@ public abstract class MixinItemRendererCosmic {
                         wrapper.setStyle(CosmicStyle.fromShaderValue(styleVal));
                     }
                 }
-                // Enable corruption layer if applicable
                 if (hasCorruption) {
                     wrapper.setCorruptionMask(corruptionMask);
                 } else {
@@ -189,8 +150,7 @@ public abstract class MixinItemRendererCosmic {
                         light, overlay, model);
             }
 
-            // 效果层同样延迟回放。它们各自的 RenderType 带 MAIN_TARGET 输出，
-            // 所以在这一相位写的是主帧缓冲，绕开了光影包的 GBuffer。
+            // 效果层同样帧末回放；其 RenderType 带 MAIN_TARGET 输出，写主帧缓冲绕开光影 GBuffer。
             if (!maskLayers.isEmpty()) {
                 MaskLayerLateRenderQueue.enqueue(stack, context, poseStack, light, overlay, maskLayers,
                         MaskLayerRenderUtils.baseSpriteOf(model));
@@ -198,20 +158,15 @@ public abstract class MixinItemRendererCosmic {
             return;
         }
 
-        // ── Immediate rendering (no shader pack, or GUI) ──
-
         Minecraft mc = Minecraft.getInstance();
         TextureAtlas blockAtlas = mc.getModelManager().getAtlas(InventoryMenu.BLOCK_ATLAS);
 
-        // ── 方块物品的整面表面层（death_core 等）──
-        // 放在 cosmic 之前：这是 REPLACE 层，会覆盖方块物品的表面；若该物品还有
-        // 星空层，星空仍会画在它上面（EQUAL 深度，与既有层序一致）。
+        // 方块物品表面层放在 cosmic 之前：它是 REPLACE 层，星空仍会以 EQUAL 深度画在它上面。
         if (!blockItemLayers.isEmpty()) {
             BlockMaskOverlayRenderer.renderItem(poseStack, buffer, light, overlay, model,
                     blockItemLayers, context, stack);
         }
 
-        // ── Cosmic layer ──
         if (cosmicMask != null) {
             CosmicShaders.markCosmicSpritesActive();
 
@@ -233,8 +188,8 @@ public abstract class MixinItemRendererCosmic {
             if (CosmicShaders.cosmicuvsUniform != null)   CosmicShaders.cosmicuvsUniform.set(CosmicShaders.COSMIC_UVS);
 
             TextureAtlasSprite cosmicSprite = blockAtlas.getSprite(cosmicMask);
-            // 遮罩 sprite 在图集里的 UV 矩形（水面湍流那道 style 用它把图集 UV 折回 0..1）。
-            // 延迟回放那条路在 BakedModelCosmic#renderShaderLayer 里另设一次，两处缺一不可。
+            // 遮罩 sprite 在图集里的 UV 矩形，水面湍流那类 style 用它把图集 UV 折回 0..1；
+            // 延迟回放路径在 BakedModelCosmic#renderShaderLayer 里另设一次，两处缺一不可。
             CosmicShaders.setMaskSlice(cosmicSprite);
             VertexConsumer cv = buffer.getBuffer(CosmicRenderType.COSMIC);
             mc.getItemRenderer().renderQuadList(poseStack, cv,
@@ -244,18 +199,14 @@ public abstract class MixinItemRendererCosmic {
             }
         }
 
-        // ── Mask effect layers ──
-        // 层序：本体 → 星空 → 效果层 → 崩坏。效果层排在崩坏之前，是为了保住
-        // 「崩坏是故障爆发时整片覆盖」的既有观感（它一直是最上面那层）。
-        // 层与层之间再按各自的 order 升序。
+        // 层序：本体 → 星空 → 效果层 → 崩坏（崩坏要保持在最上层的既有观感）；层内按 order 升序。
         MaskLayerRenderer.render(stack, context, poseStack, buffer, light, overlay,
                 maskLayers, false, MaskLayerRenderUtils.baseSpriteOf(model));
 
-        // ── Corruption layer (only during twitch burst) ──
         if (hasCorruption) {
             long gTime = mc.level != null ? mc.level.getGameTime() : 0;
             float intensity = ItemTwitchHelper.getTwitchIntensity(stack, gTime);
-            if (intensity < 0.005f) return; // outside burst — skip
+            if (intensity < 0.005f) return;
 
             float gameTime = (float) (gTime % Integer.MAX_VALUE);
             if (CosmicShaders.corruptionTimeUniform != null)
@@ -273,11 +224,7 @@ public abstract class MixinItemRendererCosmic {
         }
     }
 
-    /**
-     * Derive a corruption mask ResourceLocation from the item's registry name,
-     * following the standard {@code assets/<namespace>/textures/item/<path>.png}
-     * convention.
-     */
+    /** 按 assets/&lt;namespace&gt;/textures/item/&lt;path&gt;.png 约定从物品注册名推崩坏遮罩贴图。 */
     private static ResourceLocation twitchCorruptionMask(ItemStack stack) {
         ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(stack.getItem());
         if (itemId == null) {

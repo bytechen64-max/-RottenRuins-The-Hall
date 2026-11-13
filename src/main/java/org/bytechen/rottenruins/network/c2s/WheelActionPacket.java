@@ -46,9 +46,7 @@ public final class WheelActionPacket {
     private WheelActionPacket() {
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  发送端（客户端）
-    // ══════════════════════════════════════════════════════════════
 
     /** 保存一页轮盘映射（-1 = 空位）。 */
     public static void sendConfig(int page, int[] wheelSlots) {
@@ -91,9 +89,7 @@ public final class WheelActionPacket {
         NetworkHelper.sendToServer(new UniversalPacket(ACTION, UniversalPacketData.ofNbt(tag)));
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  接收端（服务端）
-    // ══════════════════════════════════════════════════════════════
 
     /** 在 {@code NetworkHelper.register()} 里调用（公共初始化阶段，两端都会加载）。 */
     public static void register() {

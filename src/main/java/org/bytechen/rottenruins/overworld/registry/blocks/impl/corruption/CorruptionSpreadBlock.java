@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bytechen.infcore.api.block.ISpreadBlock;
 import org.bytechen.infcore.core.blockspread.SpreadHelper;
-import org.bytechen.rottenruins.HallMod;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * 腐化扩散方块 —— 与王庭 {@code AbstractSpreadBlock} 相同的自我扩散逻辑。
@@ -33,7 +33,7 @@ public class CorruptionSpreadBlock extends Block implements ISpreadBlock {
 
     @Override
     public ResourceLocation getSpreadType() {
-        return new ResourceLocation(HallMod.MODID, "corruption");
+        return ModUtils.modLoc("corruption");
     }
 
     @Override

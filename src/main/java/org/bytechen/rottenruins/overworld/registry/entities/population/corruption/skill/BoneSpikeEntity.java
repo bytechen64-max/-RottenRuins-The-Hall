@@ -46,9 +46,7 @@ public class BoneSpikeEntity extends AbstractCorruptionProjectile {
         if (consumer != null) consumer.accept(this);
     }
 
-    // =========================================================================
     // 配置
-    // =========================================================================
 
     public BoneSpikeEntity setDamage(float damage) {
         this.damage = damage;
@@ -83,9 +81,7 @@ public class BoneSpikeEntity extends AbstractCorruptionProjectile {
         return spike;
     }
 
-    // =========================================================================
     // 飞行
-    // =========================================================================
 
     @Override
     public void tick() {
@@ -98,9 +94,7 @@ public class BoneSpikeEntity extends AbstractCorruptionProjectile {
         }
     }
 
-    // =========================================================================
     // 命中
-    // =========================================================================
 
     @Override
     protected void onHitLivingEntity(LivingEntity target) {
@@ -123,9 +117,7 @@ public class BoneSpikeEntity extends AbstractCorruptionProjectile {
         return super.canHitEntity(target) && target != this.getOwner();
     }
 
-    // =========================================================================
     // 朝向：让骨刺顺着飞行方向躺下
-    // =========================================================================
 
     /**
      * 按当前速度向量写回 yaw/pitch。

@@ -1,6 +1,5 @@
 package org.bytechen.rottenruins.overworld.registry.corruption;
 
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -45,6 +44,7 @@ import org.bytechen.rottenruins.overworld.registry.entities.population.corruptio
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * 腐化系（原 corruption 工程）生物注册表 —— 简化版移植。
@@ -75,13 +75,12 @@ public class CorruptionEntityTypes {
     /** 默认 GeckoLib 资源：geo/<name>.geo.json、textures/entity/<name>.png、animations/<name>.animation.json。 */
     private static <T extends AbstractRottenEntity> Consumer<T> defaultResources(String name) {
         return entity -> {
-            entity.model = new ResourceLocation(HallMod.MODID, "geo/" + name + ".geo.json");
-            entity.texture = new ResourceLocation(HallMod.MODID, "textures/entity/" + name + ".png");
-            entity.animation = new ResourceLocation(HallMod.MODID, "animations/" + name + ".animation.json");
+            entity.model = ModUtils.modLoc("geo/" + name + ".geo.json");
+            entity.texture = ModUtils.modLoc("textures/entity/" + name + ".png");
+            entity.animation = ModUtils.modLoc("animations/" + name + ".animation.json");
         };
     }
 
-    // ==================== 同化种（host，corruption_*） ====================
     public static final RegistryObject<EntityType<CorruptionZombieEntity>> CORRUPTION_ZOMBIE =
             registerMob("corruption_zombie", 0.6f, 1.95f,
                     (t, l) -> new CorruptionZombieEntity(t, l, defaultResources("corruption_zombie")),
@@ -127,7 +126,6 @@ public class CorruptionEntityTypes {
                     (t, l) -> new CorruptionChickenEntity(t, l, defaultResources("corruption_chicken")),
                     CorruptionChickenEntity::createAttributes);
 
-    // ==================== 腐化种（degenerate） ====================
     public static final RegistryObject<EntityType<DegeneratePigEntity>> DEGENERATE_PIG =
             registerMob("degenerate_pig", 1.35f, 1.35f,
                     (t, l) -> new DegeneratePigEntity(t, l, defaultResources("degenerate_pig")),
@@ -145,7 +143,6 @@ public class CorruptionEntityTypes {
                     (t, l) -> new DegenerateCowEntity(t, l, defaultResources("degenerate_cow")),
                     DegenerateCowEntity::createAttributes);
 
-    // ==================== 退化种 / 重构种 / 联结种 / 原虫 ====================
     public static final RegistryObject<EntityType<GrovelerEntity>> GROVELER =
             registerMob("groveler", 1.2f, 1.8f,
                     (t, l) -> new GrovelerEntity(t, l, defaultResources("groveler")),
@@ -179,33 +176,31 @@ public class CorruptionEntityTypes {
                     (t, l) -> new OriginalBugEntity(t, l, defaultResources("original_bug")),
                     OriginalBugEntity::createAttributes);
 
-    // ==================== 技能实体（腐化技能层，阶段 1） ====================
-
     /** 骨刺：死亡/技能时弹射的骨制飞刺（GeckoLib 模型） */
     public static final RegistryObject<EntityType<BoneSpikeEntity>> BONE_SPIKE =
             EntityTypeRegistry.registerProjectile("bone_spike", 0.3f, 0.3f,
                     (type, level) -> new BoneSpikeEntity(type, level, spike -> {
-                        spike.setModel(new ResourceLocation(HallMod.MODID, "geo/bone_spike.geo.json"));
-                        spike.setTexture(new ResourceLocation(HallMod.MODID, "textures/entity/bone_spike.png"));
-                        spike.setAnimation(new ResourceLocation(HallMod.MODID, "animations/bone_spike.animation.json"));
+                        spike.setModel(ModUtils.modLoc("geo/bone_spike.geo.json"));
+                        spike.setTexture(ModUtils.modLoc("textures/entity/bone_spike.png"));
+                        spike.setAnimation(ModUtils.modLoc("animations/bone_spike.animation.json"));
                     }));
 
     /** 酸球：腐化村民吐出的酸液弹（GeckoLib 模型） */
     public static final RegistryObject<EntityType<AcidBallProjectile>> ACID_BALL =
             EntityTypeRegistry.registerProjectile("acid_ball", 0.5f, 0.5f,
                     (type, level) -> new AcidBallProjectile(type, level, ball -> {
-                        ball.setModel(new ResourceLocation(HallMod.MODID, "geo/acid_ball.geo.json"));
-                        ball.setTexture(new ResourceLocation(HallMod.MODID, "textures/item/acid_ball.png"));
-                        ball.setAnimation(new ResourceLocation(HallMod.MODID, "animations/acid_ball.animation.json"));
+                        ball.setModel(ModUtils.modLoc("geo/acid_ball.geo.json"));
+                        ball.setTexture(ModUtils.modLoc("textures/item/acid_ball.png"));
+                        ball.setAnimation(ModUtils.modLoc("animations/acid_ball.animation.json"));
                     }));
 
     /** 毒箭：腐化骷髅的远程射击（GeckoLib 模型） */
     public static final RegistryObject<EntityType<PoisonArrowProjectile>> POISON_ARROW =
             EntityTypeRegistry.registerProjectile("poison_arrow", 0.5f, 0.5f,
                     (type, level) -> new PoisonArrowProjectile(type, level, arrow -> {
-                        arrow.setModel(new ResourceLocation(HallMod.MODID, "geo/poison_arrow.geo.json"));
-                        arrow.setTexture(new ResourceLocation(HallMod.MODID, "textures/entity/poison_arrow.png"));
-                        arrow.setAnimation(new ResourceLocation(HallMod.MODID, "animations/poison_arrow.animation.json"));
+                        arrow.setModel(ModUtils.modLoc("geo/poison_arrow.geo.json"));
+                        arrow.setTexture(ModUtils.modLoc("textures/entity/poison_arrow.png"));
+                        arrow.setAnimation(ModUtils.modLoc("animations/poison_arrow.animation.json"));
                     }));
 
     /** 通用腐蚀弹体：吐息/箭雨/喷吐/酸弹共用（运行时配置伤害/颜色/重力/效果） */

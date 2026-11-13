@@ -47,7 +47,6 @@ public class ItemTagData extends ItemTagsProvider {
 
     @Override
     protected void addTags(HolderLookup.Provider provider) {
-        // ========== 王庭木：原版木质物品标签 ==========
 
         // 木板 —— 解锁木棍 / 工作台 / 箱子 / 床 / 书架 / 木桶 / 全套木制工具等 39 条原版配方
         copy(BlockTags.PLANKS, ItemTags.PLANKS);
@@ -66,13 +65,9 @@ public class ItemTagData extends ItemTagsProvider {
         copy(BlockTags.WOODEN_BUTTONS, ItemTags.WOODEN_BUTTONS);
         copy(BlockTags.WOODEN_PRESSURE_PLATES, ItemTags.WOODEN_PRESSURE_PLATES);
 
-        // ========== 王庭石：原版石质物品标签 ==========
-
         // 注意：原版只有 stone_buttons 的物品标签，没有 stone_pressure_plates 的物品标签
         // （#minecraft:stone_pressure_plates 仅存在于方块标签侧），所以这里不能 copy 后者。
         copy(BlockTags.STONE_BUTTONS, ItemTags.STONE_BUTTONS);
-
-        // ========== 通用建筑方块标签（木 + 石一起）==========
 
         copy(BlockTags.STAIRS, ItemTags.STAIRS);
         copy(BlockTags.SLABS, ItemTags.SLABS);
@@ -82,7 +77,6 @@ public class ItemTagData extends ItemTagsProvider {
         copy(BlockTags.TRAPDOORS, ItemTags.TRAPDOORS);
         copy(BlockTags.FENCES, ItemTags.FENCES);
 
-        // ========== 其余已登记方块标签的镜像 ==========
         // 这两条和「木 / 石」无关，但方块标签已经在 BlockTagData 里登记过，
         // 复制一份才能让「按 #minecraft:sand / #minecraft:leaves 找物品」的逻辑也看到模组方块。
         copy(BlockTags.SAND, ItemTags.SAND);

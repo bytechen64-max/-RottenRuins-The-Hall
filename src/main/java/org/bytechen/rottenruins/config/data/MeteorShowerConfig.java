@@ -16,9 +16,7 @@ import org.bytechen.rottenruins.HallMod;
 @Config(name = HallMod.MODID + "/MeteorConfig")
 public class MeteorShowerConfig implements ConfigData {
 
-    // ═══════════════════════════════════════════════════════════════
     // 陨石落地行为参数（MeteoriteEntity 使用）
-    // ═══════════════════════════════════════════════════════════════
 
     @Comment("AoE 每 tick 魔法伤害")
     @ConfigEntry.Gui.Tooltip

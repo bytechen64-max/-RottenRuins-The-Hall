@@ -28,8 +28,6 @@ public class HallBlockSetTypes {
             )
     );
 
-    // ---- HALL_STONE（石制）BlockSetType / WoodType ----
-
     public static final BlockSetType HALL_STONE = BlockSetType.register(
             new BlockSetType(
                     "hall_stone",

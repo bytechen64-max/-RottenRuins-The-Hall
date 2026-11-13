@@ -28,7 +28,6 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
 
     private static final ResourceLocation DUMMY = ResourceLocation.withDefaultNamespace("textures/misc/white.png");
 
-    // ────────── 通用常量 ──────────
     private static final float TWO_PI = (float) (2.0 * Math.PI);
     private static final float PI = (float) Math.PI;
     private static final float HALF_PI = PI / 2f;
@@ -37,9 +36,7 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
         super(ctx);
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 实体渲染入口（no-op；实际渲染在 CollapseRenderHandler 中）
-    // ═══════════════════════════════════════════════════════════════
 
     @Override
     public void render(CollapseEntity entity, float entityYaw, float partialTick,
@@ -52,9 +49,7 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
         return DUMMY;
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 静态渲染入口（由 CollapseRenderHandler 调用）
-    // ═══════════════════════════════════════════════════════════════
 
     public static void renderOne(CollapseEntity entity, float partialTick, PoseStack ps,
                                   MultiBufferSource bufferSource) {
@@ -84,9 +79,7 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
         ps.popPose();
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 渲染类型 0: 末影龙死亡式光芒四射
-    // ═══════════════════════════════════════════════════════════════
 
     private static final int RING_COUNT = 6;
 
@@ -125,8 +118,6 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
         renderOrbitalArcs(buf, mat, age, scale, alpha, r1, g1, b1, r2, g2, b2, whiteR, whiteG, whiteB);
         renderGroundRaySpikes(buf, mat, age, scale, alpha, r1, g1, b1, whiteR, whiteG, whiteB);
     }
-
-    // ──── 上升光柱 ────
 
     private static void renderAscendingPillar(VertexConsumer buf, Matrix4f mat,
                                                float age, float scale, float alpha,
@@ -176,8 +167,6 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
         renderGlowSphere(buf, mat, 0, pillarHeight, 0, 0.5f * scale, wr, wg, wb, alpha * 0.8f, 12, 24);
     }
 
-    // ──── 汇聚光束 ────
-
     private static void renderConvergingBeams(VertexConsumer buf, Matrix4f mat,
                                                float age, float scale, float alpha,
                                                float convergeY, float r1, float g1, float b1,
@@ -215,8 +204,6 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
                     alpha * 0.5f, age * 0.05f + i, 8);
         }
     }
-
-    // ──── 旋转扫射光束 ────
 
     private static void renderSweepingBeams(VertexConsumer buf, Matrix4f mat,
                                               float age, float scale, float alpha,
@@ -256,8 +243,6 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
                     alpha * 0.6f, age * 0.03f + i, 10);
         }
     }
-
-    // ──── 底部能量环 ────
 
     private static void renderBaseEnergyRings(VertexConsumer buf, Matrix4f mat,
                                                 float age, float scale, float alpha,
@@ -308,8 +293,6 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
             }
         }
     }
-
-    // ──── 上升能量环 ────
 
     private static void renderAscendingRings(VertexConsumer buf, Matrix4f mat,
                                                float age, float scale, float alpha,
@@ -370,8 +353,6 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
         }
     }
 
-    // ──── 球形脉冲波 ────
-
     private static void renderPulseWaves(VertexConsumer buf, Matrix4f mat,
                                           float age, float scale, float alpha,
                                           float r1, float g1, float b1,
@@ -416,8 +397,6 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
             }
         }
     }
-
-    // ──── 环绕光弧 ────
 
     private static void renderOrbitalArcs(VertexConsumer buf, Matrix4f mat,
                                             float age, float scale, float alpha,
@@ -483,8 +462,6 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
         }
     }
 
-    // ──── 地面散射光刺 ────
-
     private static void renderGroundRaySpikes(VertexConsumer buf, Matrix4f mat,
                                                 float age, float scale, float alpha,
                                                 float r1, float g1, float b1,
@@ -522,8 +499,6 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
             ringVert(buf, mat, ox, 0.02f * scale, oz, wr, wg, wb, spikeAlpha * 0.1f);
         }
     }
-
-    // ──── 锥形光束渲染辅助 ────
 
     /** 绘制从 (sx,sy,sz) 到 (ex,ey,ez) 的锥形光束（近端粗，远端细） */
     private static void renderTaperedBeam(VertexConsumer buf, Matrix4f mat,
@@ -622,9 +597,7 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
         buf.vertex(mat, x, y, z).color(r, g, b, a).endVertex();
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 渲染类型 1: 四维超立方体投影
-    // ═══════════════════════════════════════════════════════════════
 
     /** 4D 超立方体 16 个顶点（所有 ±1 组合） */
     private static final float[][] TESSERACT_VERTICES_4D;
@@ -764,9 +737,7 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 渲染类型 2: 二十面体
-    // ═══════════════════════════════════════════════════════════════
 
     private static final float ICOSA_RADIUS = 2.5f;
     private static final float ICOSA_EDGE_THICK = 0.05f;
@@ -912,9 +883,7 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
         ps.popPose();
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 渲染类型 3: 变换多棱柱（3→20 棱连续变换）
-    // ═══════════════════════════════════════════════════════════════
 
     private static final float PRISM_HEIGHT = 4.0f;
     private static final float PRISM_RADIUS = 2.0f;
@@ -1051,9 +1020,7 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
         ps.popPose();
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 通用渲染辅助方法
-    // ═══════════════════════════════════════════════════════════════
 
     /** 渲染相机朝向的厚边（四边形） */
     private static void renderThickEdge(VertexConsumer buf, Matrix4f mat,
@@ -1126,9 +1093,7 @@ public class CollapseRenderer extends EntityRenderer<CollapseEntity> {
         buf.vertex(mat, x, y, z).color(r, g, b, a).endVertex();
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 动画辅助方法
-    // ═══════════════════════════════════════════════════════════════
 
     /** 获取生成阶段的缩放比例（0→1） */
     private static float getSpawnScale(float spawnProgress, CollapsePhase phase) {

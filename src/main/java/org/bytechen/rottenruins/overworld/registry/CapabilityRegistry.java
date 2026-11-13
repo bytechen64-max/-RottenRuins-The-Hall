@@ -33,47 +33,23 @@ public class CapabilityRegistry {
     public static final Capability<ThreatCapability> THREAT_CAP =
             CapabilityManager.get(new CapabilityToken<>(){});
 
-    /**
-     * 自定义效果容器（{@code CustomEffectHolder}）：挂在<b>所有</b> LivingEntity 上，
-     * 自带 NBT 序列化（{@code IModCapability}），所以效果会随实体一起存进存档。
-     *
-     * <p>它与原版 {@code MobEffect} 那套完全独立：不进 Forge 效果注册表、
-     * 不出现在原版效果列表里、{@code /effect clear} 与牛奶也清不掉它。</p>
-     */
+    /** 自定义效果容器：挂在所有 LivingEntity 上、自带 NBT；与原版 MobEffect 独立，/effect clear 与牛奶清不掉。 */
     public static final Capability<CustomEffectHolder> CUSTOM_EFFECT_CAP =
             CapabilityManager.get(new CapabilityToken<>(){});
 
-    /**
-     * 扭曲点（{@code TwistedPoint}）：一个 int 计数器，自带 capability provider 与 NBT 序列化。
-     *
-     * <p><b>注意</b>：它<b>没有</b>进下面的 {@code BY_KEY}/{@code BY_CAP} 映射表 ——
-     * {@link #register} 的类型上界是 {@code AbstractCapability<T>}，而
-     * {@link ByteNumberAbility} 不继承它。以后若要让它也参与"按 id 查 capability"，
-     * 要么让 {@code ByteNumberAbility} 继承 {@code AbstractCapability}，
-     * 要么把 {@link #register} 的上界放宽。</p>
-     */
+    /** 扭曲点（TwistedPoint，int 计数器）：不进 BY_KEY/BY_CAP，因 register 上界是 AbstractCapability<T> 而它不继承。 */
     public static final Capability<ByteNumberAbility> TWIST_CAP =
             CapabilityManager.get(new CapabilityToken<>(){});
 
-    /**
-     * 玩家的魔法物品槽（{@code PlayerMagicPool}，默认 5 格，可被属性修饰器扩容）。
-     * <p>这是旧的无类型入口，仅用于兼容；新代码请用 {@link #MAGIC_POOL_CAP}。</p>
-     */
+    /** 玩家的魔法物品槽（PlayerMagicPool，默认 5 格）；旧的无类型入口，仅用于兼容。 */
     public static final Capability<ByteItemHandle> ITEM_HANDLE_CAP =
             CapabilityManager.get(new CapabilityToken<>(){});
 
-    /**
-     * 带类型的魔法池入口：直接拿到 {@code PlayerMagicPool}，因此能调
-     * {@code getSelectedSlot()} / {@code addSpell()} / 冷却读写这些
-     * {@link ByteItemHandle} 之外的便利方法。与 {@link #ITEM_HANDLE_CAP} 指向同一个对象。
-     */
+    /** 带类型的魔法池入口，与 ITEM_HANDLE_CAP 指向同一对象，但能直调 getSelectedSlot()/addSpell()。 */
     public static final Capability<PlayerMagicPool> MAGIC_POOL_CAP =
             CapabilityManager.get(new CapabilityToken<>(){});
 
-    /**
-     * 带类型的法力池入口（{@code TwistedPoint}）。与旧的 {@link #TWIST_CAP} 指向同一个对象，
-     * 区别只是这里能直接调 {@code spend()} / {@code addKillRefund()}。
-     */
+    /** 带类型的法力池入口（TwistedPoint），与 TWIST_CAP 指向同一对象，可直调 spend()/addKillRefund()。 */
     public static final Capability<TwistedPoint> MANA_CAP =
             CapabilityManager.get(new CapabilityToken<>(){});
 
@@ -87,14 +63,7 @@ public class CapabilityRegistry {
         register(ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "mana"), MANA_CAP);
     }
 
-    /**
-     * 建立「id ↔ capability」双向映射。
-     *
-     * <p>参数类型从原来的 {@code Capability<T extends AbstractCapability<T>>} 放宽为
-     * {@code Capability<?>}：原来的上界把 {@code PlayerMagicPool}、{@code TwistedPoint}
-     * 这类没有继承 {@code AbstractCapability} 的实现挡在门外，于是它们无法参与按 id 查找 ——
-     * 而按 id 查找正是以后做客户端同步时最顺手的入口。</p>
-     */
+    /** 建立「id ↔ capability」双向映射；上界取 Capability<?> 让 TwistedPoint 这类实现也能按 id 查找。 */
     public static void register(ResourceLocation key, Capability<?> cap) {
         BY_KEY.put(key, cap);
         BY_CAP.put(cap, key);

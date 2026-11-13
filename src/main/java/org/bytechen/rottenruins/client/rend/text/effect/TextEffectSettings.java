@@ -4,6 +4,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.bytechen.rottenruins.config.ConfigHelper;
 import org.bytechen.rottenruins.config.data.SplendidingConfig;
+import net.minecraft.util.Mth;
 
 /**
  * 文本特效的<b>配置读取门面</b>（仿项目里的 {@code VerdictTuning}：配置拿不到/抛异常/值非法
@@ -81,8 +82,8 @@ public final class TextEffectSettings {
         return config == null ? 512 : Math.max(0, config.textEffectMaxAnimatedGlyphs);
     }
 
+    /** NaN 按 min 处理（配置写坏时别污染后续布局），其余交给 {@code Mth.clamp}。 */
     private static float clamp(float value, float min, float max) {
-        if (Float.isNaN(value)) return min;
-        return Math.max(min, Math.min(max, value));
+        return Float.isNaN(value) ? min : Mth.clamp(value, min, max);
     }
 }

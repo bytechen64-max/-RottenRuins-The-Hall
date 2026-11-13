@@ -25,9 +25,7 @@ import java.util.function.Consumer;
  */
 public class ShockerEntity extends BaseRefactoredEntity {
 
-    // =========================================================================
     // C6 过载脉冲
-    // =========================================================================
     private static final int PULSE_COOLDOWN = 200;
     private static final int PULSE_WINDUP = 36;
     private static final double PULSE_RADIUS = 6.5;

@@ -1,6 +1,5 @@
 package org.bytechen.rottenruins.overworld.registry.entities.population.corruption.skill;
 
-
 import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionEffects;
 import org.bytechen.rottenruins.utils.combat.CorruptionDamageUtil;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -32,20 +31,10 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * 腐蚀生物技能工具库
- *
- * <p>把原先 {@code AvilaEntity} 里私有的技能写法抽成普通生物也能直接调用的静态方法。
- * 所有方法内部自行判断服务端，客户端表现依赖粒子与同步实体，因此
- * <b>不需要生物具备专属技能动画</b>——这一点很关键，因为项目里绝大多数生物
- * 的动画文件只有 idle / walk / run。
- *
- * <h2>契约</h2>
- * <ul>
- *   <li>纯新增，不改动 {@code AbstractCorruptionEntity} 既有行为</li>
- *   <li>伤害默认走 {@link CorruptionDamageUtil} 或标准 hurt，遵守盾牌 / 不死图腾规则</li>
- *   <li>目标筛选统一排除 {@link ICorruptionEntity} 与创造 / 旁观玩家</li>
- *   <li>所有"先兆"类方法都保证：看得懂 = 躲得掉（先兆点即落点）</li>
- * </ul>
+ * 腐蚀生物技能工具库（静态方法，原本是 {@code AvilaEntity} 里的私有写法）。
+ * <p>方法内部自行判断服务端，客户端表现只靠粒子与同步实体，所以生物<b>不需要</b>专属技能动画。
+ * <p>契约：伤害走 {@link CorruptionDamageUtil} 或标准 hurt（遵守盾牌/图腾规则）；目标筛选排除同阵营与创造/旁观；
+ * 先兆点即落点，看得懂 = 躲得掉。
  */
 public final class CorruptionSkillUtil {
 
@@ -54,26 +43,12 @@ public final class CorruptionSkillUtil {
     /** 腐蚀主题红：粒子 / 先兆 / 冲击环统一用它，改一处即全局生效 */
     public static final int CORRUPTION_RED = 0xFFFF2020;
 
-    // =========================================================================
-    // 粒子 / 先兆
-    // =========================================================================
-
     /** 红色尘埃粒子（尺寸可调） */
     public static DustParticleOptions redDust(float scale) {
         return new DustParticleOptions(new Vector3f(1.0F, 0.12F, 0.12F), scale);
     }
 
-    /**
-     * 蓄力先兆：红色尘埃从四周向实体中心汇聚。
-     *
-     * <p>粒子生成在半径 {@code radius} 的球壳上，速度指向中心且大小恰好在约 4 tick 内抵达，
-     * 视觉上形成"吸入"感；释放瞬间配合 {@link #burst} 做一次外扩，收—放对比让技能读得清。
-     *
-     * @param entity   蓄力中的实体
-     * @param radius   汇聚半径（格）
-     * @param count    基准数量，实际会随进度加密
-     * @param progress 蓄力进度 0~1
-     */
+    /** 蓄力先兆：粒子生成在半径 {@code radius} 的球壳上，速度指向中心且约 4 tick 抵达，形成"吸入"感。 */
     public static void chargeIn(LivingEntity entity, double radius, int count, float progress) {
         if (!(entity.level() instanceof ServerLevel level)) return;
 
@@ -98,14 +73,7 @@ public final class CorruptionSkillUtil {
         }
     }
 
-    /**
-     * 释放帧：由中心向外炸开的粒子。
-     *
-     * @param entity 释放技能的实体
-     * @param radius 外扩半径（格）
-     * @param count  粒子数量
-     * @param speed  初速度（格/tick）
-     */
+    /** 释放帧：由中心向外炸开的粒子（{@code radius} 格、{@code speed} 格/tick）。 */
     public static void burst(LivingEntity entity, double radius, int count, double speed) {
         if (!(entity.level() instanceof ServerLevel level)) return;
 
@@ -126,15 +94,7 @@ public final class CorruptionSkillUtil {
         }
     }
 
-    /**
-     * 地面预警圈：在地面画一个圆环提示"这里马上要出事"。
-     *
-     * @param level  服务端世界
-     * @param center 圆心（建议取目标脚下）
-     * @param radius 半径
-     * @param count  采样点数量
-     * @param dust   粒子类型
-     */
+    /** 地面预警圈：在地面画一个圆环提示"这里马上要出事"（圆心建议取目标脚下）。 */
     public static void warningRing(Level level, Vec3 center, double radius, int count, ParticleOptions dust) {
         if (!(level instanceof ServerLevel serverLevel)) return;
 
@@ -152,9 +112,7 @@ public final class CorruptionSkillUtil {
     }
 
     /**
-     * 落点先兆：在目标脚下亮起预警圈，并返回预警点。
-     *
-     * <p>技能真正落点<b>必须</b>使用返回值而不是重新读取目标位置，
+     * 落点先兆：在目标脚下亮起预警圈并返回预警点。技能真正落点<b>必须</b>用返回值而不是重新读目标位置，
      * 否则玩家躲开了也会被打中，先兆就失去意义。
      */
     @Nullable
@@ -173,10 +131,6 @@ public final class CorruptionSkillUtil {
                 count, 0.25, 0.05, 0.25, 0.01);
     }
 
-    // =========================================================================
-    // 音效
-    // =========================================================================
-
     /** 以实体为中心播放音效（服务端广播，追踪客户端可听） */
     public static void playSound(LivingEntity entity, SoundEvent sound, float volume, float pitch) {
         if (sound == null) return;
@@ -192,11 +146,7 @@ public final class CorruptionSkillUtil {
         playSound(entity, sound, volume, Math.max(0.5F, p));
     }
 
-    // =========================================================================
-    // 目标筛选
-    // =========================================================================
-
-    /** 是否为合法技能目标：存活、非腐蚀生物、非创造 / 旁观玩家 */
+    /** 是否为合法技能目标：存活、非腐蚀阵营生物、非创造 / 旁观玩家 */
     public static boolean isValidTarget(@Nullable Entity attacker, @Nullable Entity candidate) {
         if (candidate == null || candidate == attacker) return false;
         if (!(candidate instanceof LivingEntity living) || !living.isAlive()) return false;
@@ -217,12 +167,7 @@ public final class CorruptionSkillUtil {
         return result;
     }
 
-    /**
-     * 前方扇区内的合法目标。
-     *
-     * @param range 半径
-     * @param angle 扇区总张角（度），180 = 半圆
-     */
+    /** 前方扇区内的合法目标（{@code angle} 是扇区总张角，度；180 = 半圆）。 */
     public static List<LivingEntity> findTargetsInSector(LivingEntity source, double range, double angle) {
         List<LivingEntity> result = new ArrayList<>();
         Vec3 forward = Vec3.directionFromRotation(0, source.getYRot());
@@ -257,10 +202,6 @@ public final class CorruptionSkillUtil {
         return list.isEmpty() ? null : list.get(0);
     }
 
-    // =========================================================================
-    // 技能结算
-    // =========================================================================
-
     /** 对单个目标造成可被盾牌格挡的物理伤害，并按 {@code knockback} 水平击退 */
     public static boolean strike(LivingEntity attacker, LivingEntity target,
                                  float damage, double knockback) {
@@ -278,11 +219,7 @@ public final class CorruptionSkillUtil {
         return hit;
     }
 
-    /**
-     * 范围物理伤害（可被格挡）+ 可选击退。
-     *
-     * @return 命中数量
-     */
+    /** 范围物理伤害（可被格挡）+ 可选击退；返回命中数量。 */
     public static int areaDamage(LivingEntity attacker, double radius, float damage, double knockback) {
         int count = 0;
         for (LivingEntity target : findTargets(attacker, radius)) {
@@ -291,11 +228,7 @@ public final class CorruptionSkillUtil {
         return count;
     }
 
-    /**
-     * 范围真伤：无视无敌帧的最小伤害 + 常规伤害，用于有明显前摇的重击。
-     *
-     * @return 命中数量
-     */
+    /** 范围真伤：无视无敌帧的最小伤害 + 常规伤害，用于有明显前摇的重击；返回命中数量。 */
     public static int areaTrueDamage(LivingEntity attacker, double radius,
                                      float minDamage, float commonDamage, double knockback) {
         int count = 0;
@@ -324,16 +257,7 @@ public final class CorruptionSkillUtil {
         victim.hurtMarked = true;
     }
 
-    // =========================================================================
-    // 位移
-    // =========================================================================
-
-    /**
-     * 朝目标突进（水平为主，保留少量垂直分量）。
-     *
-     * @param horizontal 水平初速度
-     * @param vertical   垂直初速度
-     */
+    /** 朝目标突进（水平为主，保留少量垂直分量）：{@code horizontal} / {@code vertical} 为初速度。 */
     public static void lungeAt(LivingEntity entity, LivingEntity target,
                                double horizontal, double vertical) {
         Vec3 dir = target.position().subtract(entity.position());
@@ -355,10 +279,6 @@ public final class CorruptionSkillUtil {
         entity.setYHeadRot(yaw);
     }
 
-    // =========================================================================
-    // 效果 / 增益
-    // =========================================================================
-
     public static void applyEffect(LivingEntity target, MobEffect effect, int duration, int amplifier) {
         if (target == null || effect == null) return;
         target.addEffect(new MobEffectInstance(effect, duration, amplifier, false, true));
@@ -377,11 +297,7 @@ public final class CorruptionSkillUtil {
         }
     }
 
-    /**
-     * 给半径内的同族腐蚀生物上增益（排除自己与非 AI 生物）。
-     *
-     * @return 受增益数量
-     */
+    /** 给半径内的同族腐蚀生物上增益（排除自己与非 AI 生物）；返回受增益数量。 */
     public static int buffAllies(Mob source, double radius, MobEffect effect,
                                  int duration, int amplifier) {
         int count = 0;
@@ -396,11 +312,7 @@ public final class CorruptionSkillUtil {
         return count;
     }
 
-    /**
-     * 净化半径内同族身上的负面效果（含腐蚀）。
-     *
-     * @return 被净化的盟友数量
-     */
+    /** 净化半径内同族身上的负面效果（含腐蚀）；返回被净化的盟友数量。 */
     public static int purifyAllies(Mob source, double radius) {
         int count = 0;
         AABB area = source.getBoundingBox().inflate(radius);
@@ -418,8 +330,6 @@ public final class CorruptionSkillUtil {
         }
         return count;
     }
-
-    // ---- 主题效果快捷入口，省去各生物重复 import 与常量 ----
 
     public static void corrupt(LivingEntity target, int duration, int amplifier) {
         applyEffect(target, CorruptionEffects.CORRUPTION.get(), duration, amplifier);
@@ -457,15 +367,7 @@ public final class CorruptionSkillUtil {
         applyEffect(target, MobEffects.HUNGER, duration, amplifier);
     }
 
-    // =========================================================================
-    // 吸取 / 回复
-    // =========================================================================
-
-    /**
-     * 汲血：按伤害比例回血，自身残血时效果翻倍。
-     *
-     * @param ratio 基础吸血比例（0~1）
-     */
+    /** 汲血：按伤害比例回血，自身残血（≤50%）时比例翻倍；{@code ratio} 为 0~1。 */
     public static void lifesteal(LivingEntity self, float damage, float ratio) {
         if (damage <= 0) return;
         float effective = ratio;
@@ -474,22 +376,7 @@ public final class CorruptionSkillUtil {
         if (heal > 0) self.heal(heal);
     }
 
-    // =========================================================================
-    // 腐蚀池 / 阵营查询
-    // =========================================================================
-
-    /**
-     * 生成一片腐蚀液池。
-     *
-     * @param pos      池中心（通常取技能落点）
-     * @param radius   半径
-     * @param lifetime 持续 tick
-     * @param damage   每跳伤害
-     */
-    /**
-     * 生成一片腐蚀液池。
-     * <p>TODO(批次 2)：等 CorruptionPoolEntity 移植后接回；当前批次使用的生物不依赖它。</p>
-     */
+    /** 生成一片腐蚀液池（{@code radius} 格、持续 {@code lifetime} tick、每 {@code interval} tick 打 {@code damage}）。 */
     public static void spawnPoolAt(Level level, Vec3 pos, double radius,
                                    int lifetime, float damage, int interval,
                                    @Nullable LivingEntity owner) {

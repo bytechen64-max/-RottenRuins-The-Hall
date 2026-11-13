@@ -25,26 +25,14 @@ import java.util.*;
 import java.util.concurrent.*;
 
 /**
- * Hall 群系扩散处理器。
- * <p>
- * 使用异步队列处理群系变更请求，每 tick 处理固定数量的任务以保护 TPS。
- * 核心群系写入委托给 infcore 的 {@link BiomeSpreadHelper}。
- * 方块快照通过异步 IO 写入磁盘，用于净化（回退）操作。
- *
- * <h2>多维度隔离</h2>
- * 本处理器为<b>每个维度维护独立的运行状态</b>（{@link DimensionState}）：
- * 快照存储、待处理坐标集合、任务队列、区块缓存均互不共享。
- * <p>
- * 这一点是必需的：不同维度会存在<b>完全相同的方块坐标</b>，
- * 若共用一套 PENDING_POS / CHUNK_CACHE，主世界与王庭之外的维度会互相
- * 覆盖快照，导致净化（回退）时把 A 维度的原始方块还原到 B 维度。
- * 同理，任务队列必须按维度隔离，否则 {@code processBatch} 在弹出
- * 其它维度的任务后会直接丢弃它们（旧实现即为此 bug）。
+ * Hall 群系扩散处理器：异步队列 + 每 tick 固定数量任务以保护 TPS，群系写入委托
+ * infcore 的 {@link BiomeSpreadHelper}，方块快照经异步 IO 落盘供净化（回退）使用。
+ * 状态按维度隔离（{@link DimensionState}）：不同维度存在相同方块坐标，共用
+ * PENDING_POS / CHUNK_CACHE 会让回退把 A 维度的原始方块还原到 B 维度。
  */
 @SuppressWarnings("removal")
 public final class HallBiomeProcessor {
 
-    /** 每个维度的独立运行状态 */
     private static final Map<ResourceKey<Level>, DimensionState> STATES = new ConcurrentHashMap<>();
 
     /** 快照 IO 线程池（全局共享，单线程串行写入） */
@@ -53,32 +41,20 @@ public final class HallBiomeProcessor {
     private static final int QUEUE_HARD_LIMIT = 10000;
     private static final int MAX_PER_TICK = 40;
 
-    /** 每个维度缓存的最大区块数 */
     private static final int MAX_CACHED_CHUNKS = 2000;
 
     private HallBiomeProcessor() {}
 
-    // ==================== 维度状态 ====================
-
-    /**
-     * 单个维度的扩散运行状态。
-     * <p>
-     * 所有字段都是维度私有的，构造时即为该维度创建独立的磁盘存储目录。
-     */
     private static final class DimensionState {
 
         final ResourceKey<Level> dimension;
 
-        /** 该维度的方块快照存储 */
         final HallDiskStorage storage;
 
-        /** 该维度中已入队、尚未处理的坐标（用于去重） */
         final Set<BlockPos> pendingPos = ConcurrentHashMap.newKeySet();
 
-        /** 该维度的群系变更任务队列 */
         final Queue<SpreadTask> taskQueue = new ConcurrentLinkedQueue<>();
 
-        /** 该维度的区块快照缓存（LRU） */
         final Map<ChunkPos, Map<BlockPos, String>> chunkCache;
 
         DimensionState(ServerLevel level) {
@@ -96,10 +72,8 @@ public final class HallBiomeProcessor {
     }
 
     /**
-     * 解析维度对应的数据目录：{@code <world>/hall_data/<namespace>_<path>}。
-     * <p>
-     * 旧版本使用裸的 {@code getPath()}（如 {@code hall_data/overworld}），
-     * 命名空间不同的两个模组可能撞名。此处保留裸路径目录的兼容迁移。
+     * 解析维度数据目录 {@code <world>/hall_data/<namespace>_<path>}。旧版用裸 {@code getPath()}，
+     * 命名空间不同的模组会撞名，故在旧目录存在且新目录未建时迁移一次，避免老存档丢快照。
      */
     private static Path resolveDimensionDir(ServerLevel level) {
         Path root = level.getServer().getWorldPath(LevelResource.ROOT).resolve("hall_data");
@@ -109,7 +83,6 @@ public final class HallBiomeProcessor {
         Path current = root.resolve(flatName);
         Path legacy = root.resolve(dimId.getPath());
 
-        // 旧目录存在且新目录尚未建立时，迁移一次，避免老存档丢失快照
         if (Files.isDirectory(legacy) && !Files.exists(current)) {
             try {
                 Files.move(legacy, current);
@@ -123,12 +96,9 @@ public final class HallBiomeProcessor {
         return current;
     }
 
-    /** 取得（必要时创建）指定维度的运行状态 */
     private static DimensionState state(ServerLevel level) {
         return STATES.computeIfAbsent(level.dimension(), k -> new DimensionState(level));
     }
-
-    // ==================== 线程池 ====================
 
     private static synchronized ExecutorService getExecutor() {
         if (IO_EXECUTOR == null || IO_EXECUTOR.isShutdown() || IO_EXECUTOR.isTerminated()) {
@@ -141,11 +111,7 @@ public final class HallBiomeProcessor {
         return IO_EXECUTOR;
     }
 
-    /**
-     * 初始化指定维度的存储路径与线程池。
-     * <p>
-     * 幂等：同一维度重复调用不会重建存储。
-     */
+    /** 幂等：同一维度重复调用不会重建存储。 */
     public static void initStorage(ServerLevel level) {
         state(level);
         getExecutor();
@@ -167,11 +133,6 @@ public final class HallBiomeProcessor {
         return (double) max / QUEUE_HARD_LIMIT;
     }
 
-    // ==================== 入队 ====================
-
-    /**
-     * 将方块位置入队以进行群系变更。
-     */
     public static void enqueueForward(ServerLevel level, BlockPos pos, Holder<Biome> targetBiome,
                                       BlockState originalState) {
         DimensionState st = state(level);
@@ -191,9 +152,6 @@ public final class HallBiomeProcessor {
         }
     }
 
-    /**
-     * 将方块位置入队以恢复原始群系（净化）。
-     */
     public static BlockState enqueueReverse(ServerLevel level, BlockPos pos, BlockState fallbackState) {
         DimensionState st = state(level);
         BlockState original = getOriginalState(level, pos);
@@ -209,13 +167,9 @@ public final class HallBiomeProcessor {
         return original != null ? original : fallbackState;
     }
 
-    // ==================== 每 Tick 处理 ====================
-
     /**
-     * 每 tick 从<b>该维度自己的</b>队列中取出并处理最多 {@value MAX_PER_TICK} 个群系变更任务。
-     * <p>
-     * 核心群系写入委托给 infcore 的 {@link BiomeSpreadHelper#setColumnQuartBiome}。
-     * 队列按维度隔离，因此这里无需（也不可能）误弹其它维度的任务。
+     * 每 tick 从该维度自己的队列取出并处理最多 {@value MAX_PER_TICK} 个任务，
+     * 群系写入委托 infcore 的 {@link BiomeSpreadHelper#setColumnQuartBiome}。
      */
     public static void processBatch(ServerLevel currentLevel) {
         DimensionState st = state(currentLevel);
@@ -230,9 +184,7 @@ public final class HallBiomeProcessor {
 
             st.pendingPos.remove(task.pos());
 
-            // 队列已按维度隔离，此处仅作防御性校验
             if (task.dimension().equals(currentLevel.dimension())) {
-                // 使用 infcore 的快捷群系写入方法
                 if (BiomeSpreadHelper.setColumnQuartBiome(currentLevel, task.pos(), task.targetBiome())) {
                     dirtyChunks.add(new ChunkPos(task.pos()));
                     processed++;
@@ -240,13 +192,10 @@ public final class HallBiomeProcessor {
             }
         }
 
-        // 使用 infcore 的快捷区块同步方法
         for (ChunkPos cp : dirtyChunks) {
             BiomeSpreadHelper.syncChunk(currentLevel, cp);
         }
     }
-
-    // ==================== 快照持久化 ====================
 
     private static void saveSnapshotAsync(DimensionState st, BlockPos pos, BlockState state) {
         ExecutorService executor = getExecutor();
@@ -287,8 +236,6 @@ public final class HallBiomeProcessor {
         }
     }
 
-    // ==================== 生命周期 ====================
-
     /** 清空指定维度的运行状态（不影响其它维度与磁盘数据） */
     public static void resetDimension(ServerLevel level) {
         DimensionState st = STATES.remove(level.dimension());
@@ -299,7 +246,6 @@ public final class HallBiomeProcessor {
         }
     }
 
-    /** 清空所有维度的运行状态 */
     public static void resetProcessor() {
         STATES.clear();
     }

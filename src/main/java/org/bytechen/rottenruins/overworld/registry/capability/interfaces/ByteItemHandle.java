@@ -36,9 +36,7 @@ public interface ByteItemHandle extends IItemHandler {
     /** 每 tick 推进冷却。等价于 {@link #tickCooldowns()}。 */
     void upDate();
 
-    // ══════════════════════════════════════════════════════════════
     // 槽位选择
-    // ══════════════════════════════════════════════════════════════
     // 选择由魔法星图界面（MagicScreen，默认 M 键）发起；
     // 这里只声明存取接口，外部（命令 / 其它界面）直接调 setSelectedSlot 即可。
 
@@ -60,9 +58,7 @@ public interface ByteItemHandle extends IItemHandler {
     /** 当前可用范围内的合法下标。 */
     boolean isValidSlot(int slot);
 
-    // ══════════════════════════════════════════════════════════════
     // 去重
-    // ══════════════════════════════════════════════════════════════
 
     /** 某个物品是否已经在任意一格（用于"槽位不能存重复魔法"）。 */
     boolean containsSpell(Item item);
@@ -71,9 +67,7 @@ public interface ByteItemHandle extends IItemHandler {
     @Nullable
     ResourceLocation magicIdAt(int slot);
 
-    // ══════════════════════════════════════════════════════════════
     // 冷却（按玩家 + 物品注册名，所以同名物品共享）
-    // ══════════════════════════════════════════════════════════════
 
     /** 该法术是否在冷却中。 */
     boolean onCooldown(@Nullable ResourceLocation magicId);

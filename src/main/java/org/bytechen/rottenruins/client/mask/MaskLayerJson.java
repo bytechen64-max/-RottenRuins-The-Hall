@@ -11,50 +11,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 把模型 JSON 里的 {@code "mask_layers"} 数组解析成 {@link MaskLayerSpec}。
- *
- * <pre>{@code
- * {
- *   "loader": "rotten_ruins:cosmic",
- *   "cosmic": { "mask": "rotten_ruins:item/void_sword_mask" },
- *   "mask_layers": [
- *     { "effect": "glow", "mask": "rotten_ruins:item/void_sword_mask",
- *       "color": "#FF66E0FF", "width": 2.0, "intensity": 1.0, "order": 120 }
- *   ]
- * }
- * }</pre>
- *
- * <h3>解析失败的单层只被丢弃，不牵连整件物品</h3>
- * <p>一层写错（少了 mask、mask 名字不合法）只丢这一层并点名，其余层和该物品的
- * 本体、cosmic 层照常。模型 JSON 是美术会直接改的文件，一处笔误导致整件物品
- * 变成紫黑方块是难以接受的失败模式。</p>
- *
- * <h3>字段</h3>
- * <table>
- *   <tr><th>字段</th><th>类型</th><th>默认</th></tr>
- *   <tr><td>{@code effect}</td><td>string</td><td>{@code "glow"}</td></tr>
- *   <tr><td>{@code mask}</td><td>string</td><td><b>必填</b>（如
- *       {@code "rotten_ruins:item/void_sword_mask"}）</td></tr>
- *   <tr><td>{@code color}</td><td>int 或 string</td><td>白。支持
- *       {@code "#AARRGGBB"} / {@code "0xAARRGGBB"} / {@code "AARRGGBB"} / 十进制数</td></tr>
- *   <tr><td>{@code intensity} / {@code width} / {@code speed}</td><td>number</td>
- *       <td>1.0 / 2.0 / 1.0</td></tr>
- *   <tr><td>{@code opacity} / {@code order} / {@code phase}</td><td>number</td>
- *       <td>1.0 / 100.0 / 0.0</td></tr>
- *   <tr><td>{@code gui} / {@code held} / {@code world}</td><td>boolean</td>
- *       <td>true（三个上下文的开关）</td></tr>
- * </table>
+ * 把模型 JSON 里的 {@code "mask_layers"} 数组解析成 {@link MaskLayerSpec}；单层写错只丢弃该层并点名，
+ * 不牵连整件物品（模型 JSON 是美术直接改的，一处笔误不该让整件物品变成紫黑方块）。
+ * 字段：{@code effect}（默认 {@code "glow"}）、{@code mask}（必填，如
+ * {@code "rotten_ruins:item/void_sword_mask"}）、{@code color}（默认白，支持
+ * {@code "#AARRGGBB"} / {@code "0xAARRGGBB"} / {@code "AARRGGBB"} / 十进制）；
+ * {@code intensity}/{@code width}/{@code speed} 默认 1.0/2.0/1.0，{@code opacity}/{@code order}/{@code phase}
+ * 默认 1.0/100.0/0.0，{@code gui}/{@code held}/{@code world} 三个上下文开关默认 true。
  */
 public final class MaskLayerJson {
 
     /** 模型 JSON 里承载层数组的键名。 */
     public static final String KEY = "mask_layers";
 
-    /**
-     * 解析一个模型 JSON 根对象里的层数组。
-     *
-     * @return 不可变列表；没有该键、类型不对、或全部层都不合法时返回空列表
-     */
+    /** @return 不可变列表；缺键、类型不对或全部层非法时返回空列表 */
     public static List<MaskLayerSpec> parse(JsonObject parent) {
         if (parent == null || !parent.has(KEY)) return List.of();
 
@@ -108,7 +78,7 @@ public final class MaskLayerJson {
                 .build();
     }
 
-    // ── 取值小工具：任何一个字段类型不对都退回默认值，不抛 ──────────
+    // 取值小工具：字段类型不对一律退回默认值并记日志，不抛异常
 
     private static String optString(JsonObject obj, String key, String fallback) {
         JsonElement e = obj.get(key);
@@ -128,10 +98,8 @@ public final class MaskLayerJson {
         return e.getAsBoolean();
     }
 
-    /**
-     * 解析颜色。写成字符串形式（{@code "#AARRGGBB"}）是推荐用法：ARGB 的
-     * 高位常常超出 int 表示范围，写成 JSON 数字在某些解析器下会直接报错。
-     */
+    /** 解析颜色。推荐写成 {@code "#AARRGGBB"} 字符串：ARGB 高位常超出 int 范围，
+     *  写成 JSON 数字在某些解析器下会直接报错。 */
     private static int optColor(JsonObject obj, String key, int fallback) {
         JsonElement e = obj.get(key);
         if (e == null || !e.isJsonPrimitive()) return fallback;

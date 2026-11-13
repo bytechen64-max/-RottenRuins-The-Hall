@@ -12,52 +12,23 @@ import org.bytechen.rottenruins.overworld.registry.items.magic.bases.MagicType;
 import org.bytechen.rottenruins.overworld.registry.items.magic.bases.UsingType;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * <b>审判之矛</b> —— 蓄力型法术：蓄满后从主人<b>身后 5 格、上方 5 格</b>降下一根长矛，
- * 笔直钉向准星指定的位置，途中<b>无视方块、穿透生物</b>，沿途造成伤害。
- *
- * <p>飞行、穿透与伤害判定都在 {@link SpearOfJudgmentEntity} 里，这里只决定
- * "从哪打到哪"：</p>
- * <ol>
- *   <li>射程 = {@code MagicStats.targetRange(player, stack)} —— 也就是
- *       {@link #baseTargetRange()}（这里覆写成了 48 格）经过属性/附魔折叠后的值；</li>
- *   <li>落点 = {@link MagicHandle#resolveAimPoint}：准星先打生物，没有就打方块，
- *       对着天就是"射程那么远的空中一点"；</li>
- *   <li>伤害倍率 = {@code ctx.chargeRatio()}。</li>
- * </ol>
- *
- * <h3>蓄力语义</h3>
- * <p>构造器里 {@code minChargeRatio = 1}，也就是<b>必须蓄满才放</b>
- * （不到 40 tick 松手 → {@code NOT_CHARGED}，不扣蓝不进冷却）。
- * 把那个值调低就会变成"提前放 = 弱化版"：伤害倍率这条线已经接好了
- * —— {@code cast} 把 {@code ctx.chargeRatio()} 传给 {@code SpearOfJudgmentEntity}，
- * 后者在每次命中时乘上它，不用再改实体。</p>
- */
+/** 审判之矛 — 蓄力型法术：蓄满后从主人身后 5 格、上方 5 格降下长矛钉向准星落点，无视方块穿透生物；实体逻辑在 {@link SpearOfJudgmentEntity}。 */
 public class SpearOfJudgment extends CMagicBaseItem {
 
-    /**
-     * 准星落点的最大距离（格）。
-     * <p>默认 {@code baseTargetRange()} 是 32；审判之矛是"从天而降的定点打击"，
-     * 给到 48 格才够打远处的目标。仍然可被属性/附魔折叠。</p>
-     */
+    /** 准星落点最大距离（格）：基类默认 32，定点打击给到 48，仍会被属性/附魔折叠。 */
     public static final double BASE_RANGE = 48.0d;
 
-    /**
-     * 注意是 {@code public} —— 法术要被 {@code RegisterItem} 里的
-     * {@code ITEMS.register("...", SpearOfJudgment::new)} 引用，那是在<b>另一个包</b>里，
-     * {@code protected} 构造器在那里访问不到。
-     */
+    /** 必须 public（RegisterItem 在别的包用 SpearOfJudgment::new）；末位参数 minChargeRatio=1 即必须蓄满 40 tick 才放。 */
     public SpearOfJudgment() {
         super(new Properties().stacksTo(1), MagicType.DEATH, UsingType.CHARGE,
-                100,    // 启动耗蓝
-                400,    // 冷却 tick —— 20 秒
-                40,     // 蓄力 tick —— 要按住 2 秒
-                5,      // 每秒维持耗蓝（非 KEEP 模式，基类会归零，填着不影响）
-                28,     // 每次穿透命中的伤害基值
-                1);     // 最低蓄力比例 1.0 = 必须蓄满
+                100,
+                400,
+                40,
+                5,
+                28,
+                1);
     }
 
-    /** 射程：48 格（会再被属性/附魔折叠）。 */
     @Override
     public double baseTargetRange() {
         return BASE_RANGE;
@@ -69,8 +40,7 @@ public class SpearOfJudgment extends CMagicBaseItem {
         double range = MagicStats.targetRange(player, stack);
         Vec3 aimPoint = MagicHandle.resolveAimPoint(player, range);
 
-        // 生成失败（落点几乎就在出生点上，没有可飞的距离）时返回 false：
-        // 法力与冷却已经在框架里扣过了，这里只是没打出实体。
+        // 返回 false 只表示没打出实体（落点几乎就在出生点，无可飞距离）；法力与冷却已在框架里扣过。
         return SpearOfJudgmentEntity.spawn(player, stack, aimPoint, castContext.chargeRatio()) != null;
     }
 }

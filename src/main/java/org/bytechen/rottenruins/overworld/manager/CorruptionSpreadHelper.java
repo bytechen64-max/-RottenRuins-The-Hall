@@ -4,8 +4,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
-import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionBlocks;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * 腐化方块扩散辅助（一阶召唤柱 / 腐化群系共用）。
@@ -14,7 +14,7 @@ public final class CorruptionSpreadHelper {
 
     /** 腐化扩散类型（与 {@code CorruptionBlockSpreadDataProvider} 对应） */
     public static final ResourceLocation SPREAD_TYPE =
-            new ResourceLocation(HallMod.MODID, "corruption");
+            ModUtils.modLoc("corruption");
 
     private CorruptionSpreadHelper() {}
 

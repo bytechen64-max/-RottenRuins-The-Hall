@@ -10,9 +10,9 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import org.bytechen.rottenruins.HallMod;
 import org.bytechen.infcore.api.block.ISpreadBlock;
 import org.bytechen.infcore.core.blockspread.SpreadHelper;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * 可扩散的柱状方块（RotatedPillarBlock + ISpreadBlock）。
@@ -32,14 +32,10 @@ public class SpreadPillarBlock extends RotatedPillarBlock implements ISpreadBloc
         super(properties);
     }
 
-    // ==================== ISpreadBlock ====================
-
     @Override
     public ResourceLocation getSpreadType() {
-        return new ResourceLocation(HallMod.MODID, "spread");
+        return ModUtils.modLoc("spread");
     }
-
-    // ==================== Tick ====================
 
     @Override
     public boolean isRandomlyTicking(BlockState state) {
@@ -60,8 +56,6 @@ public class SpreadPillarBlock extends RotatedPillarBlock implements ISpreadBloc
                 SPREAD_ATTEMPTS, SPREAD_CHANCE);
     }
 
-    // ==================== 燃烧特性 ====================
-
     /**
      * 王庭原木的燃烧特性 —— 对齐原版 {@code oak_log}（引燃 5 / 可燃 5）。
      * <p>
@@ -78,8 +72,6 @@ public class SpreadPillarBlock extends RotatedPillarBlock implements ISpreadBloc
     public int getFireSpreadSpeed(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
         return HallWoodBlocks.LOG_ENCOURAGEMENT;
     }
-
-    // ==================== 子类可重写 ====================
 
     protected boolean canSurvive(LevelReader level, BlockPos pos, BlockState state) {
         return true;

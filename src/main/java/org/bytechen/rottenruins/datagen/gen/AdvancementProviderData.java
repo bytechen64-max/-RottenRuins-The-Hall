@@ -22,6 +22,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * 成就树的数据生成（输出到 {@code data/rotten_ruins/advancements/}）。
@@ -55,11 +56,9 @@ public class AdvancementProviderData extends ForgeAdvancementProvider {
         super(output, registries, fileHelper, List.of(new RuinsAdvancements()));
     }
 
-    // ==================== 子节点 helper（新增成就树节点时直接用） ====================
-
     /** 拼出成就 id：{@code rotten_ruins:<path>}。 */
     public static ResourceLocation id(String path) {
-        return new ResourceLocation(HallMod.MODID, path);
+        return ModUtils.modLoc(path);
     }
 
     /** 成就标题的语言键；与 {@link #id(String)} 用同一个 path，避免两处手写不一致。 */
@@ -92,13 +91,11 @@ public class AdvancementProviderData extends ForgeAdvancementProvider {
                 .display(icon, title(path), description(path), null, frame, true, true, false);
     }
 
-    // ==================== 实际生成内容 ====================
-
     private static final class RuinsAdvancements implements AdvancementGenerator {
 
         /** 树根背景：沿用腐化地貌的感染圆石纹理（成就面板会把这张图平铺作背景）。 */
         private static final ResourceLocation BACKGROUND =
-                new ResourceLocation(HallMod.MODID, "textures/block/infection_cobblestone_block.png");
+                ModUtils.modLoc("textures/block/infection_cobblestone_block.png");
 
         @Override
         public void generate(HolderLookup.Provider registries, Consumer<Advancement> saver,
@@ -132,13 +129,11 @@ public class AdvancementProviderData extends ForgeAdvancementProvider {
          */
         private static void buildBranches(Advancement root, Consumer<Advancement> saver,
                                           ExistingFileHelper fileHelper) {
-            // ---- 死亡：获得死亡之星 ----
             node(root, DEATH_PATH, RegisterItem.DEATH_STAR.get(), FrameType.GOAL)
                     .addCriterion("death_star",
                             InventoryChangeTrigger.TriggerInstance.hasItems(RegisterItem.DEATH_STAR.get()))
                     .save(saver, id(DEATH_PATH), fileHelper);
 
-            // ---- 魔法：获得源荷砂，作为魔法分支的起点 ----
             Advancement magic=node(root, MAGIC_PATH, RegisterItem.SOURCE_CHARGE_SAND.get(), FrameType.GOAL)
                     .addCriterion("source_charge_sand",
                             InventoryChangeTrigger.TriggerInstance.hasItems(RegisterItem.SOURCE_CHARGE_SAND.get()))

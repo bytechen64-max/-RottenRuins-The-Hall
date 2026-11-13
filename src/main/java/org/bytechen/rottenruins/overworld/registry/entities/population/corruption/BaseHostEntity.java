@@ -27,25 +27,21 @@ import java.util.function.Consumer;
  */
 public abstract class BaseHostEntity extends BaseCorruptionEntity {
 
-    // ==================== B1 腐化唾液吐息 ====================
     protected boolean spitEnabled = false;
     protected float spitDamage = 6.0F;
     protected int spitCooldown = 50;
     protected double spitRange = 12.0;
     private int spitTimer = 20;
 
-    // ==================== B9 尸群践踏 ====================
     protected boolean hordeChargeEnabled = false;
     protected int hordeRequired = 3;
     protected double hordeRadius = 12.0;
     private int hordeTimer = 20;
 
-    // ==================== B10 濒死骨爆 ====================
     protected boolean boneBurstEnabled = false;
     protected int boneBurstCount = 10;
     protected float boneBurstDamage = 4.0F;
 
-    // ==================== B11 血肉牵引 / B12 汲血回复 ====================
     protected boolean fleshPullEnabled = false;
     protected double fleshPullStrength = 0.9;
     protected boolean lifestealEnabled = false;
@@ -55,8 +51,6 @@ public abstract class BaseHostEntity extends BaseCorruptionEntity {
                              Consumer<AbstractRottenEntity> resources) {
         super(entityType, level, resources);
     }
-
-    // ==================== 开关 ====================
 
     protected BaseHostEntity enableSpit(float damage, int cooldown, double range) {
         this.spitEnabled = true;
@@ -91,8 +85,6 @@ public abstract class BaseHostEntity extends BaseCorruptionEntity {
         this.lifestealRatio = ratio;
         return this;
     }
-
-    // ==================== 技能主循环 ====================
 
     @Override
     public void tick() {
@@ -199,9 +191,7 @@ public abstract class BaseHostEntity extends BaseCorruptionEntity {
         return true;
     }
 
-    // =========================================================================
     // 击杀进阶：同化种击杀 3 个生物后进化为对应的腐化种（degenerate）
-    // =========================================================================
 
     /** 击杀数达到该值触发进阶 */
     public static final int EVOLVE_KILL_THRESHOLD = 3;

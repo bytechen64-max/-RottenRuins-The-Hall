@@ -30,69 +30,28 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 法术投射物 —— <b>火球</b>。
- *
- * <p>继承原版 {@link Fireball}，所以飞行手感、
- * 火焰拖尾、被打偏（{@code hurt} 会把它推开）都是原版的；本类只负责三件事：
- * <b>怎么飞</b>（出生点与瞄准方向）、<b>命中谁掉多少血</b>、<b>炸多大并炸掉什么</b>。</p>
- *
- * <h3>为什么不用原版 {@code LargeFireball}</h3>
- * <ul>
- *   <li>原版的爆炸威力是个私有字段，且构造后改不了 —— 而我们的半径要按<b>法术强度</b>现算；</li>
- *   <li>原版直接命中的 6 点伤害走的是 {@code entity.hurt(...)}，绕过了本模组的
- *       {@code MagicDamageEvent}／{@code rotten_ruins:spell_power} 倍率／击杀归因那一条链；</li>
- *   <li>原版爆炸的伤害来源由 {@code Explosion} 自己推，我们要显式指定，
- *       才能保证"击杀回蓝"认得出是谁打死的（见下）。</li>
- * </ul>
- *
- * <h3>伤害是怎么分配出去的</h3>
- * <ol>
- *   <li><b>直接命中</b>：{@link #onHitEntity} → {@link SpellDamageUtil#}，
- *       带法术物品、走 {@code MagicDamageEvent}，因此
- *       {@code rotten_ruins:spell_power} 会乘进去、击杀会算在施法者头上、掉落不丢。</li>
- *   <li><b>爆炸范围</b>：交给原版 {@code Explosion} 结算。它的伤害
- *       <b>由半径推出</b>（见下），所以"法术强度 → 半径 → 伤害"是一条链；
- *       想独立控制范围伤害的话，得自己遍历实体调 {@code SpellDamageUtil}，
- *       而不是用原版爆炸。</li>
- * </ol>
- *
- * <h3>破坏方块</h3>
- * <p>用 {@link Level.ExplosionInteraction#MOB}，也就是和原版恶魂火球完全一致：
- * 地形破坏受 {@code mobGriefing} 游戏规则控制，抗爆方块（黑曜石、基岩）照旧炸不动。
- * 另外 {@code breaksBlocks == false} 时本次爆炸<b>任何方块都不破坏</b>（只伤害与击退），
- * 这是留给"安全版火球"的开关。</p>
- *
- * <p><b>注意</b>：施法者自己<b>不在</b>爆炸豁免名单里 —— 贴脸打墙会把自己炸到，
- * 和原版火球一样。想避免就改 {@link #spawn} 的出生距离或者把半径调小。</p>
+ * 法术投射物「火球」：继承原版 {@link Fireball} 保留飞行手感与火焰拖尾，本类只管三件事 ——
+ * 怎么飞（出生点与瞄准）、直接命中掉多少血（走 {@link SpellDamageUtil}，吃 spell_power 倍率与击杀归因）、
+ * 炸多大并炸掉什么（{@link Level.ExplosionInteraction#MOB}，受 mobGriefing 控制）。
+ * 注意施法者自己不在爆炸豁免名单里，贴脸打墙会炸到自己（与原版火球一致）。
  */
 public class FireBallEntity extends Fireball {
 
-    /** 爆炸半径的 NBT 键。 */
     private static final String TAG_RADIUS = "HallExplosionRadius";
-    /** 是否破坏方块的 NBT 键。 */
     private static final String TAG_BREAK_BLOCKS = "HallBreaksBlocks";
 
     /** 没走 {@link #spawn} 时的兜底爆炸半径（格）。 */
     public static final double DEFAULT_EXPLOSION_RADIUS = 2.0d;
 
-    /**
-     * 命中生物时点燃的秒数。
-     * <p>原版火球并不直接点燃生物（只靠爆炸的火焰与地形火），这里补上，
-     * 让"火球"这个名字名副其实。</p>
-     */
+    /** 命中生物时点燃的秒数（原版火球本身不点燃生物，这里补上）。 */
     public static final int FIRE_SECONDS_ON_HIT = 5;
 
-    /**
-     * 出生点离眼睛的距离（格）。
-     * <p>取 1.0 而不是 0：从眼睛位置直接生成会让火球和施法者的碰撞箱重叠，
-     * 而且贴脸打墙时爆炸中心就在脸上。</p>
-     */
+    /** 出生点离眼睛的距离（格）：取 1.0 而非 0，避免与施法者碰撞箱重叠、贴脸炸自己。 */
     private static final double SPAWN_OFFSET = 1.0d;
 
-    /** 爆炸半径（格）。由法术在生成时按法术强度算好。 */
+    /** 爆炸半径（格），由法术在生成时按法术强度算好。 */
     private double explosionRadius = DEFAULT_EXPLOSION_RADIUS;
 
-    /** 本次爆炸是否破坏方块。 */
     private boolean breaksBlocks = true;
 
     /** 幂等标记：一次飞行只炸一次。 */
@@ -103,18 +62,9 @@ public class FireBallEntity extends Fireball {
         super(type, level);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 生成
-    // ══════════════════════════════════════════════════════════════
-
     /**
-     * 在施法者的瞄准方向上生成一颗火球。
-     *
-     * @param caster          施法者（同时被设为 owner，击杀归因靠它）
-     * @param spellStack      法术物品堆 —— 既用于渲染（原版 {@code ThrownItemRenderer}
-     *                        画的就是它），也用于命中时的伤害计算
-     * @param explosionRadius 爆炸半径（格），由法术按自己的法术强度算好传进来
-     * @param breaksBlocks    这次爆炸是否破坏方块
+     * 在施法者的瞄准方向上生成火球：owner 用于击杀归因，spellStack 既用于渲染也用于伤害计算，
+     * 半径由法术按自己的法术强度算好传进来。
      */
     @NotNull
     public static FireBallEntity spawn(@NotNull ServerPlayer caster, @NotNull ItemStack spellStack,
@@ -128,9 +78,8 @@ public class FireBallEntity extends Fireball {
         ball.setRot(caster.getYRot(), caster.getXRot());
         ball.setOwner(caster);
 
-        // 瞄准方向：原版不是设置速度，而是设置一个"加速度方向"，
-        // 每 tick 由 AbstractHurtingProjectile 施加并乘 0.95 阻尼 —— 见它的 tick()。
-        // 所以这里刻意不调 setDeltaMovement，让原版那条加速曲线原样生效。
+        // 瞄准用原版的 xPower/yPower/zPower（AbstractHurtingProjectile 每 tick 施加并乘 0.95 阻尼），
+        // 刻意不调 setDeltaMovement，否则原版那条加速曲线会失效。
         ball.xPower = look.x * 0.1d;
         ball.yPower = look.y * 0.1d;
         ball.zPower = look.z * 0.1d;
@@ -156,26 +105,15 @@ public class FireBallEntity extends Fireball {
         }
     }
 
-    /** 本次爆炸半径（格）。 */
     public double getExplosionRadius() {
         return explosionRadius;
     }
 
-    /** 本次爆炸是否破坏方块。 */
     public boolean breaksBlocks() {
         return breaksBlocks;
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 命中
-    // ══════════════════════════════════════════════════════════════
-
-    /**
-     * 打不到自己人。
-     *
-     * <p>原版只排除"骑在同一载具上"的情况，所以从手上刚飞出去的火球是有可能
-     * 立刻打中自己的。这里直接把 owner 整个排除掉 —— 火球会从施法者身上穿过去。</p>
-     */
+    /** 打不到自己人：原版只排除同载具，刚出手的火球会立刻打中自己，这里把 owner 整个排除。 */
     @Override
     protected boolean canHitEntity(@NotNull Entity target) {
         return target != this.getOwner() && super.canHitEntity(target);
@@ -194,9 +132,7 @@ public class FireBallEntity extends Fireball {
             ItemStack spell = getItem();
             IMagicBaseItem item = MagicStats.spellOf(spell);
             if (caster != null && item != null) {
-                // 基值取法术物品声明的那一份，再交给 MagicStats 折叠；
-                // rotten_ruins:spell_power 的倍率不在这里乘 —— 它由 MagicDamageEvent 的
-                // 监听器乘，乘在这里会和它叠加成平方。
+                // 只传基值：rotten_ruins:spell_power 由 MagicDamageEvent 的监听器乘，乘在这里会变成平方
                 float damage = MagicStats.spellDamage(caster, spell, living, null, item.baseDamage());
                 SpellDamageUtil.hurt(living, spell, caster, damage);
                 living.setSecondsOnFire(FIRE_SECONDS_ON_HIT);
@@ -215,21 +151,9 @@ public class FireBallEntity extends Fireball {
         explode();
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 爆炸
-    // ══════════════════════════════════════════════════════════════
-
     /**
-     * 爆炸并销毁自己。
-     *
-     * <p>伤害来源显式指定为 {@code explosion(火球, 施法者)}，和原版爆炸完全同构
-     * （directEntity = 火球，causingEntity = 施法者），所以：</p>
-     * <ul>
-     *   <li>死亡信息是"被炸死"而不是"被魔法杀死"；</li>
-     *   <li>爆炸保护附魔照常生效（伤害类型还是 {@code explosion}）；</li>
-     *   <li>本模组的击杀回蓝认得出施法者（{@code LivingDeathEvent} 的 source 里
-     *       {@code getEntity()} 就是 owner）。</li>
-     * </ul>
+     * 爆炸并销毁自己。伤害源显式为 {@code explosion(火球, 施法者)}，保持三条链：死亡信息、
+     * 爆炸保护附魔、以及击杀回蓝认得出 owner。
      */
     private void explode() {
         if (exploded || !(level() instanceof ServerLevel serverLevel)) {
@@ -242,8 +166,7 @@ public class FireBallEntity extends Fireball {
 
         DamageSource source = serverLevel.damageSources().explosion(this, getOwner());
 
-        // 和原版恶魂火球一致：MOB 交互 → 地形破坏受 mobGriefing 控制；
-        // 是否点火也挂在这个规则上（原版 LargeFireball 就是这么传的）。
+        // 与恶魂火球一致：MOB 交互 → 地形破坏与是否点火都受 mobGriefing 控制
         boolean mobGriefing = serverLevel.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
 
         serverLevel.explode(this, source, new SpellExplosionCalculator(breaksBlocks),
@@ -260,11 +183,8 @@ public class FireBallEntity extends Fireball {
     }
 
     /**
-     * 爆炸策略：唯一的作用是按法术的要求决定"方块炸不炸"。
-     *
-     * <p>抗爆判定<b>不在这里</b> —— 原版 {@code Explosion} 会先按
-     * {@link ExplosionDamageCalculator#getBlockExplosionResistance} 把爆压扣掉，
-     * 扣成负数就走不到 {@link #shouldBlockExplode}。所以黑曜石/基岩不需要我们操心。</p>
+     * 爆炸策略：只决定方块炸不炸。抗爆判定不在这里 —— 原版 {@code Explosion} 会先用
+     * {@link ExplosionDamageCalculator#getBlockExplosionResistance} 扣爆压，扣成负数就走不到这里。
      */
     private static final class SpellExplosionCalculator extends ExplosionDamageCalculator {
 
@@ -281,10 +201,6 @@ public class FireBallEntity extends Fireball {
             return breakBlocks;
         }
     }
-
-    // ══════════════════════════════════════════════════════════════
-    // 存档
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     public void addAdditionalSaveData(@NotNull CompoundTag tag) {

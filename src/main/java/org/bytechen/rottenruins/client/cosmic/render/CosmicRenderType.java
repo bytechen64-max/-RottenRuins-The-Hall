@@ -9,20 +9,9 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Custom RenderType variants for cosmic starfield rendering,
- * matching {@code mystery_buding.live.render.CosmicRenderType} exactly.
- *
- * <h3>Three variants</h3>
- * <table>
- *   <tr><th>Variant</th><th>Depth test</th><th>Output</th><th>Write mask</th><th>Use case</th></tr>
- *   <tr><td>{@link #COSMIC}</td><td>EQUAL</td><td>(default)</td><td>(default)</td><td>Immediate render, no shader pack</td></tr>
- *   <tr><td>{@link #COSMIC_AFTER_LEVEL}</td><td>LEQUAL + polygon offset</td><td>MAIN_TARGET</td><td>COLOR_WRITE</td><td>Deferred world-space replay</td></tr>
- *   <tr><td>{@link #COSMIC_HAND_AFTER_LEVEL}</td><td>NO_DEPTH_TEST</td><td>MAIN_TARGET</td><td>COLOR_WRITE</td><td>Deferred first-person replay</td></tr>
- * </table>
- *
- * <p>The {@code EQUAL} depth test in {@code COSMIC} ensures the cosmic shader
- * only draws on pixels where the base item already wrote depth — perfectly
- * fitting the item silhouette without exceeding it.</p>
+ * Cosmic / Corruption 的 RenderType 变体。
+ * 即时变体用 EQUAL 深度测试，只在底物已写深度的像素上作画，正好贴合物品轮廓；
+ * {@code *_AFTER_LEVEL} 变体走延迟回放：LEQUAL + polygon offset + MAIN_TARGET + COLOR_WRITE。
  */
 public abstract class CosmicRenderType extends RenderType {
 
@@ -32,8 +21,7 @@ public abstract class CosmicRenderType extends RenderType {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
     }
 
-    /** Polygon offset that pushes cosmic geometry slightly toward the camera
-     *  to prevent z-fighting with the base item surface during late replay. */
+    /** Polygon offset：延迟回放时把 cosmic 几何推向相机，避免与底物表面 z-fighting。 */
     private static final RenderStateShard.LayeringStateShard SHADER_LAYER_DEPTH_BIAS =
             new RenderStateShard.LayeringStateShard(
                     "splendiding_cosmic_depth_bias",
@@ -47,17 +35,13 @@ public abstract class CosmicRenderType extends RenderType {
                     }
             );
 
-    /**
-     * Immediate cosmic layer render.  Uses {@code EQUAL} depth test so the cosmic
-     * starfield only appears on pixels where the base item has already written
-     * depth — precisely fitting the item silhouette.
-     */
+    /** 即时层：EQUAL 深度测试，只在底物已写深度处作画，精确贴合物品轮廓。 */
     public static final RenderType COSMIC = RenderType.create(
             ResourceLocation.fromNamespaceAndPath(HallMod.MODID,"cosmic").toString(),
             DefaultVertexFormat.BLOCK,
             VertexFormat.Mode.QUADS,
             2097152,
-            true,   // affectsCrumbling
+            true,
             false,
             RenderType.CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(() -> CosmicShaders.cosmicShader))
@@ -69,22 +53,15 @@ public abstract class CosmicRenderType extends RenderType {
     );
 
     /**
-     * Late-deferred world-space cosmic render.
-     * <ul>
-     *   <li>{@code LEQUAL} depth test — base item depth already written during
-     *       the main scene render, plus polygon offset to avoid z-fighting.</li>
-     *   <li>{@code MAIN_TARGET} output — forces render to the main framebuffer,
-     *       bypassing the shader pack's GBuffer pipeline.</li>
-     *   <li>{@code COLOR_WRITE} only — does not pollute the depth buffer.</li>
-     *   <li>{@code affectsCrumbling = false} — avoids unnecessary buffer rebuilds.</li>
-     * </ul>
+     * 世界空间延迟回放：LEQUAL + polygon offset 防 z-fighting；MAIN_TARGET 绕过光影 GBuffer；
+     * 只写 COLOR_WRITE 不污染深度；affectsCrumbling=false 避免多余的缓冲重建。
      */
     public static final RenderType COSMIC_AFTER_LEVEL = RenderType.create(
             ResourceLocation.fromNamespaceAndPath(HallMod.MODID,"cosmic_after_level").toString(),
             DefaultVertexFormat.BLOCK,
             VertexFormat.Mode.QUADS,
             2097152,
-            false,  // affectsCrumbling
+            false,
             false,
             RenderType.CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(() -> CosmicShaders.cosmicShader))
@@ -98,14 +75,7 @@ public abstract class CosmicRenderType extends RenderType {
                     .createCompositeState(false)
     );
 
-    /**
-     * Late-deferred first-person hand cosmic render.
-     * <ul>
-     *   <li>{@code NO_DEPTH_TEST} — the first-person hand does not write to
-     *       the main depth buffer under many shader packs.</li>
-     *   <li>{@code MAIN_TARGET} output + {@code COLOR_WRITE} only, same as above.</li>
-     * </ul>
-     */
+    /** 第一人称手部延迟回放：光影包下手部常不写主深度，所以用 NO_DEPTH_TEST。 */
     public static final RenderType COSMIC_HAND_AFTER_LEVEL = RenderType.create(
             ResourceLocation.fromNamespaceAndPath(HallMod.MODID,"cosmic_hand_after_level").toString(),
             DefaultVertexFormat.BLOCK,
@@ -124,13 +94,7 @@ public abstract class CosmicRenderType extends RenderType {
                     .createCompositeState(false)
     );
 
-    // ── Corruption shader RenderTypes ───────────────────────────
-
-    /**
-     * Immediate corruption layer (RGB split + scanlines + colour shift).
-     * Uses {@code EQUAL} depth so corruption only paints where the
-     * base item already wrote depth.
-     */
+    /** 即时腐化层（RGB 分离 + 扫描线 + 偏色）：EQUAL 深度，只画底物已写深度处。 */
     public static final RenderType CORRUPTION = RenderType.create(
             ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "corruption").toString(),
             DefaultVertexFormat.BLOCK,
@@ -147,11 +111,7 @@ public abstract class CosmicRenderType extends RenderType {
                     .createCompositeState(true)
     );
 
-    /**
-     * Late-deferred world-space corruption render.  Same strategy as
-     * {@link #COSMIC_AFTER_LEVEL}: LEQUAL depth, polygon offset,
-     * MAIN_TARGET output, COLOR_WRITE only.
-     */
+    /** 世界空间延迟回放：与 {@link #COSMIC_AFTER_LEVEL} 同一套策略。 */
     public static final RenderType CORRUPTION_AFTER_LEVEL = RenderType.create(
             ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "corruption_after_level").toString(),
             DefaultVertexFormat.BLOCK,
@@ -171,10 +131,7 @@ public abstract class CosmicRenderType extends RenderType {
                     .createCompositeState(false)
     );
 
-    /**
-     * Late-deferred first-person hand corruption render.
-     * NO_DEPTH_TEST, MAIN_TARGET output, COLOR_WRITE only.
-     */
+    /** 第一人称手部延迟回放：NO_DEPTH_TEST，MAIN_TARGET + COLOR_WRITE。 */
     public static final RenderType CORRUPTION_HAND_AFTER_LEVEL = RenderType.create(
             ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "corruption_hand_after_level").toString(),
             DefaultVertexFormat.BLOCK,

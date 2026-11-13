@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import net.minecraft.util.Mth;
 
 /**
  * 单个效果的<b>不可变参数块</b>（纯 Java，不引用任何 Minecraft 类 —— 解析/上色/位移
@@ -238,9 +239,9 @@ public final class EffectSpec {
         }
     }
 
+    /** NaN 按 min 处理（配置写坏时别让 NaN 传染动画），其余交给 {@code Mth.clamp}。 */
     private static float clamp(float value, float min, float max) {
-        if (Float.isNaN(value)) return min;
-        return Math.max(min, Math.min(max, value));
+        return Float.isNaN(value) ? min : Mth.clamp(value, min, max);
     }
 
     private static float clampSpeed(float value) {

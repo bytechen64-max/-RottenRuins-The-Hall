@@ -75,8 +75,6 @@ public class HallPlantBlock extends BushBlock implements IPlantable {
         return this.isSupportedBy(level.getBlockState(below), level, below);
     }
 
-    // ==================== Forge 种植类型 ====================
-
     @Override
     public PlantType getPlantType(BlockGetter level, BlockPos pos) {
         return PlantType.PLAINS;

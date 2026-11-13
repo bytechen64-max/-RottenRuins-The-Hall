@@ -26,14 +26,12 @@ public class MeteoriteRenderer extends EntityRenderer<MeteoriteEntity> {
     private static final ResourceLocation DUMMY_TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/misc/white.png");
 
-    // ────────── 水滴网格参数 ──────────
     private static final int RINGS = 20;
     private static final int SEGMENTS = 14;
     private static final int RING_SEGMENTS = 48;
     private static final float DROP_HEIGHT = 1.6f;
     private static final float DROP_MAX_RADIUS = 0.38f;
 
-    // ────────── 二十面体边框参数 ──────────
     /** 二十面体包围半径（明显大于水滴本体，确保边框清晰可见） */
     private static final float ICOSA_RADIUS = 1.0f;
     /** 边框线的视觉粗细（世界单位） */
@@ -43,7 +41,6 @@ public class MeteoriteRenderer extends EntityRenderer<MeteoriteEntity> {
     private static final float ICOSA_SPIN_Y = 0.05f;
     private static final float ICOSA_SPIN_Z = 0.02f;
 
-    // ────────── 二十面体坠地动画时间轴（fadeTimer 170→0） ──────────
     /** 总 fade 持续时间 = 30展开 + 60保持 + 20收缩 + 60停留 */
     private static final int FADE_TOTAL = 170;
     /** 展开阶段：3 次缓出脉冲，共 30 tick */
@@ -60,7 +57,6 @@ public class MeteoriteRenderer extends EntityRenderer<MeteoriteEntity> {
     /** 二十面体 30 条边（顶点索引对） */
     private static final int[][] ICOSA_EDGES = new int[30][2];
 
-    // ────────── 预计算的网格 ──────────
     private static final float[][][] RING_VERTICES = new float[RINGS][SEGMENTS][3];
 
     static {
@@ -72,9 +68,7 @@ public class MeteoriteRenderer extends EntityRenderer<MeteoriteEntity> {
         super(ctx);
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 水滴轮廓函数
-    // ═══════════════════════════════════════════════════════════════
 
     private static float dropRadius(float t) {
         double sinVal = Math.sin(Math.PI * t);
@@ -82,9 +76,7 @@ public class MeteoriteRenderer extends EntityRenderer<MeteoriteEntity> {
         return DROP_MAX_RADIUS * (float) (Math.pow(sinVal, 0.65) * asymmetry);
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 预计算水滴网格顶点
-    // ═══════════════════════════════════════════════════════════════
 
     private static void buildDropMesh() {
         for (int ring = 0; ring < RINGS; ring++) {
@@ -103,9 +95,7 @@ public class MeteoriteRenderer extends EntityRenderer<MeteoriteEntity> {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 二十面体预计算
-    // ═══════════════════════════════════════════════════════════════
 
     /**
      * 用三条黄金矩形构建正二十面体的 12 个顶点，
@@ -167,9 +157,7 @@ public class MeteoriteRenderer extends EntityRenderer<MeteoriteEntity> {
         edgeSet.add(((long) lo << 32) | (hi & 0xFFFFFFFFL));
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 主渲染入口
-    // ═══════════════════════════════════════════════════════════════
 
     @Override
     public void render(MeteoriteEntity entity, float entityYaw, float partialTick,
@@ -193,9 +181,7 @@ public class MeteoriteRenderer extends EntityRenderer<MeteoriteEntity> {
         super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 水滴多面体本体渲染
-    // ═══════════════════════════════════════════════════════════════
 
     private void renderDropBody(MeteoriteEntity entity, float partialTick, PoseStack poseStack) {
         Tesselator tesselator = Tesselator.getInstance();
@@ -245,9 +231,7 @@ public class MeteoriteRenderer extends EntityRenderer<MeteoriteEntity> {
         RenderSystem.disableBlend();
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 二十面体白色边框渲染（相机朝向厚边）
-    // ═══════════════════════════════════════════════════════════════
 
     private void renderIcosahedronBorder(MeteoriteEntity entity, float partialTick, PoseStack poseStack) {
         Tesselator tesselator = Tesselator.getInstance();
@@ -413,9 +397,7 @@ public class MeteoriteRenderer extends EntityRenderer<MeteoriteEntity> {
                 .rotateAxis((float) angle, (float) rotAxis.x, (float) rotAxis.y, (float) rotAxis.z));
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 拖尾渲染
-    // ═══════════════════════════════════════════════════════════════
 
     private void renderTrail(MeteoriteEntity entity, float partialTick, PoseStack poseStack) {
         List<Vec3> trail = entity.getTrailPositions();
@@ -488,9 +470,7 @@ public class MeteoriteRenderer extends EntityRenderer<MeteoriteEntity> {
         RenderSystem.disableBlend();
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 尾部圆环扩散渲染
-    // ═══════════════════════════════════════════════════════════════
 
     private void renderTailRings(MeteoriteEntity entity, float partialTick, PoseStack poseStack) {
         List<MeteoriteEntity.TailRing> rings = entity.getTailRings();
@@ -562,9 +542,7 @@ public class MeteoriteRenderer extends EntityRenderer<MeteoriteEntity> {
         RenderSystem.defaultBlendFunc();
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // AoE 扩散圆环渲染（水平，从中心向外扩散）
-    // ═══════════════════════════════════════════════════════════════
 
     private void renderAoeRings(MeteoriteEntity entity, float partialTick, PoseStack poseStack) {
         List<MeteoriteEntity.AoeRing> rings = entity.getAoeRings();
@@ -671,9 +649,7 @@ public class MeteoriteRenderer extends EntityRenderer<MeteoriteEntity> {
         buffer.vertex(matrix, x3, y3, z3).color(r, g, blu, alpha).endVertex();
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 纹理位置（占位）
-    // ═══════════════════════════════════════════════════════════════
 
     @Override
     @SuppressWarnings("deprecation")

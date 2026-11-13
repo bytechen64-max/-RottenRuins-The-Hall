@@ -11,6 +11,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
+import net.minecraft.util.Mth;
 
 /** Client-only HUD placement, stored independently of worlds and server settings. */
 @OnlyIn(Dist.CLIENT)
@@ -131,7 +132,8 @@ public final class WandHudLayout {
         }
     }
 
+    /** NaN/Inf 按 min 处理，其余交给 {@code Mth.clamp}。 */
     private static float clamp(float value, float min, float max) {
-        return Float.isFinite(value) ? Math.max(min, Math.min(max, value)) : min;
+        return Float.isFinite(value) ? Mth.clamp(value, min, max) : min;
     }
 }

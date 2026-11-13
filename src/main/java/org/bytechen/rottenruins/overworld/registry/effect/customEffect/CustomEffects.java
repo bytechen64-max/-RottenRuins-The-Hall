@@ -51,9 +51,7 @@ public final class CustomEffects {
     private CustomEffects() {
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 取容器
-    // ══════════════════════════════════════════════════════════════
 
     /** 取某个实体身上的效果容器；没挂载 capability 时返回 {@code null}。 */
     @Nullable
@@ -64,9 +62,7 @@ public final class CustomEffects {
         return CapabilityAttacher.getCapability(entity, CapabilityRegistry.CUSTOM_EFFECT_CAP, null);
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 施加 / 移除 / 查询（对应原版同名方法）
-    // ══════════════════════════════════════════════════════════════
 
     /**
      * 施加一个效果。与原版 {@code LivingEntity#addEffect(MobEffectInstance)} 对应。
@@ -179,9 +175,7 @@ public final class CustomEffects {
         return holder == null ? List.of() : holder.all();
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 每 tick 驱动
-    // ══════════════════════════════════════════════════════════════
 
     /**
      * 每 tick 驱动（双端都会调，但只有服务端会跑逻辑）。
@@ -242,9 +236,7 @@ public final class CustomEffects {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 同步
-    // ══════════════════════════════════════════════════════════════
 
     /**
      * 把当前快照发给追踪该实体的客户端。
@@ -265,7 +257,9 @@ public final class CustomEffects {
                 && holder.all().stream().noneMatch(i -> i.getEffect().isVisible())) {
             return;
         }
-        NetworkHelper.sendToClient(entity, new CustomEffectSyncPacket(entity.getId(),
+        // 必须用 TRACKING_AND_SELF：玩家不在"追踪自己"的集合里，只用 TRACKING 的话
+        // 玩家自己永远收不到自己的效果，HUD 就会一直是空的。
+        NetworkHelper.sendToTrackingAndSelf(entity, new CustomEffectSyncPacket(entity.getId(),
                 holder.serializeNBT()));
     }
 

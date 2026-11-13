@@ -21,56 +21,14 @@ import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 /**
- * <b>寂寒白日 · 寒气领域</b>的客户端表现：一颗小而蓝的<b>正三棱锥</b>绕着玩家转。
- *
- * <h3>为什么不用实体 / 不需要同步</h3>
- * <p>领域的状态就是"玩家正在举剑"（{@code isUsingItem()} + 正在用的是本剑），
- * 这两个条件<b>原版本来就同步</b>，所以客户端自己就能判定（见
- * {@link SilentDaylight#isWarding(Player)})—— 三棱锥与举剑姿势同时出现、同时消失。
- * 再开一个护盾实体只会多一条同步链路、多一份实体列表开销，
- * 还要处理"玩家换维度/退出时实体残留"。</p>
- *
- * <h3>为什么在这个阶段画</h3>
- * <p>{@link RenderLevelStageEvent.Stage#AFTER_ENTITIES} —— 实体已经全部画完，
- * 此时画半透明几何不会被前面实体的深度写入吃掉，也不会污染实体渲染阶段的 GL 状态
- * （混用 {@code MultiBufferSource} 的批次时改深度函数很容易把后面的实体画坏）。</p>
- *
- * <h3>轨迹：25° 倾斜的圆 + 自身多轴翻滚</h3>
- * <ul>
- *   <li><b>轨道</b>：以玩家腰为圆心、半径 {@link #ORBIT_RADIUS} 格的一个圆。
- *       圆所在平面与地面成 {@link #ORBIT_TILT_DEG}°（水平面的法线是 {@code +Y}，
- *       所以"面与地面的夹角"= 圆平面法线与 {@code +Y} 的夹角）。</li>
- *   <li><b>公转</b>：三棱锥沿这个圆匀速走，{@link #ORBIT_DEG_PER_SECOND}°/秒。</li>
- *   <li><b>进动</b>：圆的倾斜方向本身也在绕 Y 轴慢慢转（{@link #PRECESS_DEG_PER_SECOND}°/秒），
- *       于是轨道不是固定死的一块，而是缓慢扫过整个球面 —— 需求里的"多向旋转"。</li>
- *   <li><b>自转</b>：三棱锥自己同时绕 X / Y / Z 三个轴以不同角速度翻滚，
- *       三个速度互质程度越高越不容易读成"周期性的重复"。</li>
- * </ul>
- *
- * <h3>几何</h3>
- * <p>正四面体取"顶点朝上、底面水平"的那一支（局部坐标）：外接球半径 R 时顶点在
- * {@code +R}，底面在 {@code -R/3}、半径 {@code R·√8/3}。翻滚之后再平移到轨道点上，
- * 所以"顶点朝上"只是它转到的某一个姿态，不是常驻朝向。</p>
- *
- * <p>只画<b>棱</b>：六条棱各自用两片互相垂直的四边形拼成一条"十字 ribbons"，
- * 从任何角度看都有厚度，不需要 {@code glLineWidth}（1.20 已移除，且不同显卡上限不同）。
- * 面完全透明 —— 需求是"仅棱有颜色，其他透明"。</p>
- *
- * <p>配色两层叠加：外层宽一点的靛蓝（{@code #4F8CFF}）做辉光，
- * 内层细一点的冰白（{@code #E4FAFF}）做芯 —— 与这把剑的描边、名字渐变是同一组色，
- * 加法混合下读作"蓝到发白的棱"。</p>
+ * <b>寂寒白日 · 寒气领域</b>：一颗小而蓝的正三棱锥绕玩家转（只画棱，十字 ribbons，面全透明）。
+ * <p>不开实体、不新增同步（状态就是"正在举剑"，原版本就同步）；画在 {@code AFTER_ENTITIES}，半透明几何不被深度写入吃掉。
+ * <p>{@code glLineWidth} 在 1.20 已移除，故棱用四边形拼。
  */
 @Mod.EventBusSubscriber(modid = HallMod.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class SilentDaylightWardRenderer {
 
-    /**
-     * 三棱锥的外接球半径（格）—— 对应需求里的"大小 0.3 格"。
-     *
-     * <p>取 0.22 而不是 0.3：正四面体的<b>外接球直径</b>是 {@code 2R}，而"大小 0.3 格"
-     * 读作"这玩意大概 0.3 格"。按顶点朝上的姿态算，它的高度是 {@code 4R/3}、
-     * 底面宽度是 {@code 2R·√8/3}，取 {@code R = 0.22} 时高度 0.293、宽度 0.415，
-     * 正好是"0.3 格量级"的小晶体。</p>
-     */
+    /** 三棱锥外接球半径（格）：需求"大小 0.3 格"指的是高度/宽度量级，{@code R = 0.22} 时高 0.293、宽 0.415。 */
     private static final float TETRA_RADIUS = 0.22f;
 
     /** 环绕圆的半径（格）：以玩家腰为圆心。 */
@@ -79,13 +37,7 @@ public final class SilentDaylightWardRenderer {
     /** 环绕平面与地面的夹角（度）。 */
     private static final float ORBIT_TILT_DEG = 25.0f;
 
-    /**
-     * 环绕中心相对玩家脚底的高度（格）。
-     *
-     * <p>不能更低：倾斜 25° 时圆的最低点在 {@code center − ORBIT_RADIUS·sin25°}
-     * （≈ −0.68），再减去三棱锥自己的 0.22 半径 —— 中心给到 1.15 才能保证
-     * 它全程不扎进地面（最低 ≈ 脚下 0.25 格）。</p>
-     */
+    /** 环绕中心相对脚底的高度（格）。不能再低：倾斜 25° 时圆最低点约 −0.68，再减 0.22 半径仍要不扎进地面。 */
     private static final float CENTER_LIFT = 1.15f;
 
     /** 公转角速度（度/秒）：约 3.6 秒一圈。 */
@@ -183,15 +135,7 @@ public final class SilentDaylightWardRenderer {
         RenderSystem.disableBlend();
     }
 
-    /**
-     * 画一个玩家的三棱锥。
-     *
-     * <p>数量：<b>手持这把剑 = 1 颗常驻</b>；<b>举剑维持寒气领域 = 3 颗</b>
-     * （沿同一条轨道均分 120°，所以三颗永远围成一圈）。</p>
-     *
-     * <p>两层（辉光 / 芯）各用一次 {@code begin/end}，与三棱锥个数无关 ——
-     * 三颗时总共也只有两次绘制调用。</p>
-     */
+    /** 画一个玩家的三棱锥：手持 = 1 颗，举剑 = 3 颗（沿轨道均分 120°）；两层各一次 begin/end，与个数无关。 */
     private static void renderWard(BufferBuilder buffer, Tesselator tesselator, Matrix4f matrix,
                                    Player player, float partialTick) {
         Vec3 center = player.getPosition(partialTick).add(0.0D, CENTER_LIFT, 0.0D);
@@ -204,7 +148,6 @@ public final class SilentDaylightWardRenderer {
         // 呼吸：亮度在 0.75~1.0 之间轻微起伏，静止时也不会像"贴图"
         float pulse = 0.75f + 0.25f * (float) Math.sin(seconds * 1.8D);
 
-        // ── ① 辉光层 ──
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         for (int i = 0; i < count; i++) {
             Vec3[] vertices = tetrahedronVertices(orbitPosition(center, seconds, i, count), seconds, i);
@@ -215,7 +158,6 @@ public final class SilentDaylightWardRenderer {
         }
         tesselator.end();
 
-        // ── ② 芯层 ──
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         for (int i = 0; i < count; i++) {
             Vec3[] vertices = tetrahedronVertices(orbitPosition(center, seconds, i, count), seconds, i);
@@ -228,17 +170,8 @@ public final class SilentDaylightWardRenderer {
     }
 
     /**
-     * 三棱锥此刻所在的轨道点（世界坐标）。
-     *
-     * <p>圆的法线 {@code n} 与 {@code +Y} 的夹角就是"圆面与地面的夹角"，
-     * 所以 {@code n = (sin(tilt)·cosφ, cos(tilt), sin(tilt)·sinφ)}；
-     * 再用 {@code n} 与 {@code +Y} 叉出圆的第一条基向量 {@code u}，{@code v = n × u}，
-     * 圆上一点就是 {@code R·(cosθ·u + sinθ·v)}。</p>
-     *
-     * <p>φ 随时间进动 → 倾斜方向在变，整个轨道缓慢扫过球面（"多向旋转"的一半）。</p>
-     *
-     * @param index  第几颗（0 起）
-     * @param count  这一帧一共画几颗：轨道上均分 {@code 360°/count}
+     * 三棱锥此刻所在的轨道点：{@code u = n × +Y}、{@code v = n × u}，圆上一点 {@code R·(cosθ·u + sinθ·v)}；
+     * φ 随时间进动，轨道缓慢扫过球面。
      */
     private static Vec3 orbitPosition(Vec3 center, double seconds, int index, int count) {
         double tilt = Math.toRadians(ORBIT_TILT_DEG);
@@ -263,16 +196,7 @@ public final class SilentDaylightWardRenderer {
                 .add(v.scale(ORBIT_RADIUS * Math.sin(theta))));
     }
 
-    /**
-     * 正四面体的四个顶点（世界坐标）。
-     *
-     * <p>先在<b>局部坐标</b>建出"顶点朝上"的正四面体：顶点 {@code (0, R, 0)}，
-     * 底面三点在 {@code y = -R/3} 的平面上、落在半径 {@code R·√8/3} 的圆上（间隔 120°）。
-     * 这样六条棱等长 —— 是<b>正</b>三棱锥，不是随手拼的锥。
-     * 再按三个轴的角速度翻滚，最后平移到轨道点。</p>
-     *
-     * @param index 第几颗：给翻滚一个相位偏移，三颗同时存在时不会读到"同一个东西复制三份"
-     */
+    /** 正四面体四个顶点：局部"顶点朝上"形态（顶点 {@code (0,R,0)}、底面 {@code y=-R/3}、半径 {@code R·√8/3}）翻滚后平移到轨道点。 */
     private static Vec3[] tetrahedronVertices(Vec3 anchor, double seconds, int index) {
         float baseRadius = TETRA_RADIUS * BASE_RING_RATIO;
         float baseY = -TETRA_RADIUS / 3.0f;
@@ -294,26 +218,18 @@ public final class SilentDaylightWardRenderer {
         return out;
     }
 
-    /**
-     * 绕 X → Y → Z 依次旋转（角度为弧度）。
-     *
-     * <p>三个轴<b>都</b>转，所以姿态不会出现"只有一个轴在动"那种一眼假的旋转；
-     * 顺序固定为 X→Y→Z 只是为了结果可复现（客户端每帧重算，不需要序列化）。</p>
-     */
+    /** 绕 X → Y → Z 依次旋转（弧度）。三个轴都转，避免"只有一个轴在动"那种一眼假的旋转；顺序固定只为结果可复现。 */
     private static Vec3 tumble(Vec3 v, double ax, double ay, double az) {
-        // 绕 X
         double cx = Math.cos(ax), sx = Math.sin(ax);
         double y1 = v.y * cx - v.z * sx;
         double z1 = v.y * sx + v.z * cx;
         double x1 = v.x;
 
-        // 绕 Y
         double cy = Math.cos(ay), sy = Math.sin(ay);
         double x2 = x1 * cy + z1 * sy;
         double z2 = -x1 * sy + z1 * cy;
         double y2 = y1;
 
-        // 绕 Z
         double cz = Math.cos(az), sz = Math.sin(az);
         double x3 = x2 * cz - y2 * sz;
         double y3 = x2 * sz + y2 * cz;
@@ -321,13 +237,7 @@ public final class SilentDaylightWardRenderer {
         return new Vec3(x3, y3, z2);
     }
 
-    /**
-     * 把一条棱画成两片互相垂直的四边形（十字截面）。
-     *
-     * <p>为什么不用 {@code VertexFormat.Mode.DEBUG_LINES}：那只有 1 像素，
-     * 既看不清、也没有"辉光"可言；而 {@code glLineWidth} 在 1.20 已被移除。
-     * 十字 ribbons 无论从哪个角度看都有厚度，且总共只有 2 个四边形 / 棱。</p>
-     */
+    /** 把一条棱画成两片互相垂直的四边形（十字截面）：{@code DEBUG_LINES} 只有 1 像素、无辉光，且 {@code glLineWidth} 已移除。 */
     private static void emitEdge(BufferBuilder buffer, Matrix4f matrix, Vec3 a, Vec3 b,
                                  float halfWidth, float r, float g, float bl, float alpha) {
         Vec3 axis = b.subtract(a);

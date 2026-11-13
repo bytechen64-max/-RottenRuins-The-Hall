@@ -69,9 +69,7 @@ public class CorruptionPoolEntity extends Entity {
         this.noPhysics = true;
     }
 
-    // =========================================================================
     // 配置
-    // =========================================================================
 
     public void setOwner(@Nullable LivingEntity owner) {
         this.cachedOwner = owner;
@@ -124,9 +122,7 @@ public class CorruptionPoolEntity extends Entity {
         return this.entityData.get(INTERVAL);
     }
 
-    // =========================================================================
     // 尺寸 / 生命周期
-    // =========================================================================
 
     @Override
     public EntityDimensions getDimensions(Pose pose) {
@@ -217,9 +213,7 @@ public class CorruptionPoolEntity extends Entity {
         return result;
     }
 
-    // =========================================================================
     // 客户端表现（纯粒子，无需渲染器与贴图）
-    // =========================================================================
 
     private void clientTick() {
         int count = 3 + (int) (getRadius() * 2);
@@ -262,9 +256,7 @@ public class CorruptionPoolEntity extends Entity {
         return new Vec3(this.getX(), this.getY(), this.getZ());
     }
 
-    // =========================================================================
     // 同步数据 / 存档
-    // =========================================================================
 
     @Override
     public void defineSynchedData() {

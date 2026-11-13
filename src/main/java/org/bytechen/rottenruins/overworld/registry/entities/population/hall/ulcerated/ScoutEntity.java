@@ -33,21 +33,9 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * 溃烂斥候 —— 小型生物被感染后的兜底形态。
- * <p>
- * 用途：当作感染（{@code hall:inf}）作用于一个<b>没有专属感染形态</b>（进化表里查不到规则）
- * 且碰撞体积较小（宽 × 高 &lt; 2）的生物时，转化为斥候；
- * 体积在 2 ~ 8 之间的生物则会转化为 <b>2 只</b>斥候。
- * 判定与转化由 infcore 的感染流程
- * （{@code EvolutionManager#applyEvolution} → 兜底档位）完成，
- * 档位在 {@link UlceratedConversionRules#register()} 中注册。
- * <p>
- * 属性：生命 12、伤害 5、移动缓慢（0.15），碰撞箱 1.0 × 1.2，可以攀爬墙体。
- * <p>
- * 小机制：无索敌 20 秒后开始互相聚集（{@link GatherGoal}），聚满 5 只就在中心合体成一只巨碑。
- * <p>
- * 模型 / 贴图 / 动画：{@code geo/scout.geo.json}、{@code textures/entity/scout.png}、
- * {@code animations/scout.animation.json}（只有 idle 和 walk 两段动画）。
+ * 溃烂斥候 —— 小型生物被感染后的兜底形态：进化表里查不到规则且宽×高 &lt; 2 时转化为斥候，体积 2~8 则转化成 2 只
+ * （档位在 {@link UlceratedConversionRules#register()} 注册）。
+ * <p>属性：生命 12、伤害 5、移速 0.15、碰撞箱 1.0×1.2，可攀爬墙体。无索敌 20 秒后开始聚集，聚满 5 只合体成一只巨碑。
  */
 public class ScoutEntity extends BaseUlceratedEntity {
 
@@ -77,24 +65,19 @@ public class ScoutEntity extends BaseUlceratedEntity {
     /** 前方失去墙体后的持续 tick 数（用于限制翻越墙顶的时间） */
     private int climbTransitionTicks;
 
-    // ---------- 聚集 / 合体 ----------
     /** 连续无索敌多少 tick 后开始寻找同类聚集：20 秒 */
     private static final int GATHER_IDLE_TICKS = 20 * 20;
     /** 扫描同类间隔（tick）——再按实体 id 错开，避免同一 tick 集体扫描 */
     private static final int GATHER_SCAN_INTERVAL = 20;
     /** 搜索同类的水平半径（格） */
     private static final double GATHER_SEARCH_RADIUS = 12.0D;
-    /** 搜索同类的垂直半径（格） */
     private static final double GATHER_SEARCH_HEIGHT = 6.0D;
-    /** 合体需要的斥候数量 */
     private static final int MERGE_COUNT = 5;
     /** 判定「已聚到一起」的水平距离（格）：略大于拥挤时的实际间距 */
     private static final double MERGE_RADIUS = 4.0D;
-    /** 判定「已聚到一起」允许的高度差（格） */
     private static final double MERGE_HEIGHT = 2.0D;
     /** 走到聚团中心点这么近就停下，避免互相推挤 */
     private static final double GATHER_HOLD_RADIUS = 1.2D;
-    /** 聚集时的寻路速度倍率 */
     private static final double GATHER_PATH_SPEED = 1.0D;
     /** 寻路没动起来时直接推的速度（格/tick） */
     private static final double GATHER_PUSH_SPEED = 0.08D;
@@ -102,31 +85,24 @@ public class ScoutEntity extends BaseUlceratedEntity {
     private static final double GATHER_STUCK_SPEED_SQR = 1.0E-4D;
     /** 聚团中心点超出该距离（格）才重新寻路 */
     private static final double GATHER_REPATH_DISTANCE = 3.0D;
-    /** 聚集寻路的常规重算间隔（tick）。 */
+    /** 聚集寻路的常规重算间隔（tick） */
     private static final int GATHER_REPATH_COOLDOWN = 10;
 
-    /** 搜索半径平方（避免重复相乘） */
     private static final double GATHER_SEARCH_RADIUS_SQR = GATHER_SEARCH_RADIUS * GATHER_SEARCH_RADIUS;
-    /** 聚在一起后的停止半径平方 */
     private static final double GATHER_HOLD_RADIUS_SQR = GATHER_HOLD_RADIUS * GATHER_HOLD_RADIUS;
-    /** 判定聚到一起的距离平方 */
     private static final double MERGE_RADIUS_SQR = MERGE_RADIUS * MERGE_RADIUS;
-    /** 重新寻路阈值平方 */
     private static final double GATHER_REPATH_SQR = GATHER_REPATH_DISTANCE * GATHER_REPATH_DISTANCE;
 
-    /** 连续无索敌的 tick 数 */
     private int idleTicks;
-    /** 上次为聚集寻路的目标点（用于避免频繁重算路径） */
+    /** 上次为聚集寻到过的目标点，避免频繁重算路径 */
     private double lastGatherPathX, lastGatherPathY, lastGatherPathZ;
     /** 当前聚团中心点（每 {@link #GATHER_SCAN_INTERVAL} tick 更新一次） */
     private double gatherCenterX, gatherCenterZ;
-    /** 是否有可用的聚团中心点 */
     private boolean hasGatherCenter;
     /** 已加入一次合体：防止同一 tick 被两只斥候重复计入 */
     private boolean merging;
-    /** 聚集寻路的冷却（tick）——见 {@link #tickGather()} 里的说明。 */
     private int gatherRepathCooldown;
-    /** 聚集寻路连续失败次数（指数退避）。 */
+    /** 聚集寻路连续失败次数（指数退避） */
     private int gatherRepathFailures;
 
     public ScoutEntity(EntityType<? extends BaseInfectedEntity> entityType, Level level,
@@ -134,17 +110,14 @@ public class ScoutEntity extends BaseUlceratedEntity {
         super(entityType, level, consumer);
         // 只有 idle / walk 两段动画，没有 run 动画
         this.setHasWalkAnim(false);
-        // 移动缓慢
         this.setWalkSpeed(0.15F);
         this.setRunSpeed(0.15F);
         this.setIdleAnimSpeed(1.0F);
         this.setWalkAnimSpeed(1.0F);
-        // 攻击节奏比普通感染生物更慢
         this.setDoHurtTime(25);
         this.setDoHurtDistance(1);
     }
 
-    // ---------- 属性 ----------
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 12)
@@ -153,13 +126,10 @@ public class ScoutEntity extends BaseUlceratedEntity {
                 .add(Attributes.FOLLOW_RANGE, 32.0);
     }
 
-    // ---------- 目标与行为 ----------
     @Override
     protected void registerGoals() {
-        // 追击占位（只占 MOVE）：有目标时压住 RandomStrollGoal，
-        // 免得"追击路径"被随机散步顶掉（位移本身仍由 AbstractRottenEntity#tickChase 发起）
+        // 追击占位（只占 MOVE）：有目标时压住 RandomStrollGoal，位移本身仍由 tickChase 发起
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
-        // 索敌：与其它王庭生物一致 —— goalSelector 优先级 2，40 格内无需视线
         this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .targetOtherInfected(true)   // 王庭 vs 腐化：跨阵营索敌（同阵营仍被 infcore 过滤）
                 .range(40.0)
@@ -168,7 +138,6 @@ public class ScoutEntity extends BaseUlceratedEntity {
                 .filter(this)
                 .build());
         this.goalSelector.addGoal(2, new FaceTargetGoal(this, 4));
-        // 无索敌 20 秒后开始聚集，聚满 5 只合体成巨碑
         this.goalSelector.addGoal(4, new GatherGoal());
         this.goalSelector.addGoal(5, new RandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
@@ -176,11 +145,7 @@ public class ScoutEntity extends BaseUlceratedEntity {
         super.registerGoals();
     }
 
-    // ---------- 爬墙 ----------
-    /**
-     * 贴墙 / 攀爬时视为「可攀爬」（与蜘蛛一致），
-     * 这样既不会被摔落伤害影响，下落速度也会被限制住。
-     */
+    /** 贴墙 / 攀爬时视为「可攀爬」（与蜘蛛一致）：不吃摔落伤害，下落速度也被限制住。 */
     @Override
     public boolean onClimbable() {
         return this.climbing || this.horizontalCollision;
@@ -190,15 +155,12 @@ public class ScoutEntity extends BaseUlceratedEntity {
     public void tick() {
         super.tick();
         if (this.level().isClientSide()) return;
-        // 爆体期间只播缩放与 idle：停止爬行/聚集逻辑。
+        // 爆体期间只播缩放与 idle：停止爬行/聚集逻辑
         if (this.isFakeDying()) return;
         tickClimb();
         tickGatherIdle();
     }
 
-    // ==================== 聚集 / 合体 ====================
-
-    /** 无索敌计时：有目标就清零，否则每 tick +1（达到 {@link #GATHER_IDLE_TICKS} 后不再自增） */
     private void tickGatherIdle() {
         if (this.isFakeDying()) return;
 
@@ -210,12 +172,7 @@ public class ScoutEntity extends BaseUlceratedEntity {
         if (this.idleTicks < GATHER_IDLE_TICKS) this.idleTicks++;
     }
 
-    /**
-     * 聚集 goal：无索敌 20 秒后互相聚拢，聚满 {@link #MERGE_COUNT} 只就在中心合体成一只巨碑。
-     * <p>
-     * 占用 {@code MOVE} 标记，所以会自动顶掉随机游荡，不会和游荡互相抢路径。
-     * 一旦重新找到目标，{@link #canUse()} 立即为 false → 立刻恢复追击/打架。
-     */
+    /** 聚集 goal：占 {@code MOVE} 标记，所以会自动顶掉随机游荡；重新找到目标时 {@link #canUse()} 立刻为 false 恢复追击。 */
     private class GatherGoal extends Goal {
 
         GatherGoal() {
@@ -247,16 +204,8 @@ public class ScoutEntity extends BaseUlceratedEntity {
     }
 
     /**
-     * 聚集逻辑（由 {@link GatherGoal} 每 tick 调用）。
-     * <p>
-     * 性能要点：
-     * <ul>
-     *   <li>扫描间隔 {@link #GATHER_SCAN_INTERVAL} tick，并按实体 id 错开，避免同 tick 大批量扫描</li>
-     *   <li>单次遍历求出聚团中心点，同时收集已聚到一起的同伴，不排序、够数即停</li>
-     *   <li>只在路径走完或中心点明显移动后才重新寻路；走到中心点就停下不再寻路</li>
-     *   <li>寻路没动起来时直接推一把（平地比寻路可靠），避免个别斥候卡住导致永远聚不齐</li>
-     *   <li>合体一次性完成：5 只变 1 只，实体数净减少</li>
-     * </ul>
+     * 聚集逻辑（由 {@link GatherGoal} 每 tick 调用）。单次遍历求中心点并收集同伴、够数即停；
+     * 寻路没动起来时直接推一把（平地比寻路可靠），避免个别斥候卡住导致永远聚不齐。
      */
     private void tickGather() {
         if (this.merging || this.isFakeDying()) return;
@@ -309,11 +258,7 @@ public class ScoutEntity extends BaseUlceratedEntity {
         }
     }
 
-    /**
-     * 扫描一次附近的同类：凑够 {@link #MERGE_COUNT} 只就合体，否则记录聚团中心点。
-     *
-     * @return 是否应该继续聚集（false = 附近没有同伴 / 已经合体）
-     */
+    /** 扫描一次附近的同类：凑够 {@link #MERGE_COUNT} 只就合体，否则记录聚团中心点；返回 false = 没有同伴 / 已合体。 */
     private boolean scanIdleScouts() {
         AABB area = this.getBoundingBox().inflate(GATHER_SEARCH_RADIUS, GATHER_SEARCH_HEIGHT, GATHER_SEARCH_RADIUS);
         List<ScoutEntity> candidates =
@@ -339,14 +284,12 @@ public class ScoutEntity extends BaseUlceratedEntity {
             }
         }
 
-        // 凑够 5 只 → 合体
         if (groupSize >= MERGE_COUNT && group != null) {
             this.hasGatherCenter = false;
             mergeIntoMonolith(group);
             return false;
         }
 
-        // 附近没有同伴
         if (groupNum <= 1) {
             this.hasGatherCenter = false;
             return false;
@@ -374,12 +317,8 @@ public class ScoutEntity extends BaseUlceratedEntity {
     }
 
     /**
-     * 合体：消耗自己 + {@code group}（共 {@link #MERGE_COUNT} 只）在中心生成一只巨碑。
-     * <p>
-     * 先把所有参与者标记为 {@code merging}（同一 tick 内不会被别的斥候重复计入），
-     * 巨碑放置成功后才回收参与者；失败则解除标记，大家继续聚。
-     *
-     * @param group 已聚在一起的同类，数量为 {@code MERGE_COUNT - 1}
+     * 合体：消耗自己 + {@code group} 在中心生成一只巨碑。先全部标记 {@code merging}（同一 tick 不会被别的斥候重复计入），
+     * 放置成功才回收参与者，失败则解除标记继续聚。
      */
     private void mergeIntoMonolith(List<ScoutEntity> group) {
         if (!(this.level() instanceof ServerLevel serverLevel)) return;
@@ -425,14 +364,13 @@ public class ScoutEntity extends BaseUlceratedEntity {
             return;
         }
 
-        // 反馈：粒子 + 血肉融合的音效
+        // 反馈：粒子 + 血肉融合的音效，然后回收参与者
         serverLevel.sendParticles(ParticleTypes.EXPLOSION,
                 spawnPos.x, spawnPos.y + 1.5D, spawnPos.z,
                 8, 0.6D, 0.6D, 0.6D, 0.02D);
         serverLevel.playSound(null, spawnPos.x, spawnPos.y, spawnPos.z,
                 SoundEvents.ZOMBIE_INFECT, SoundSource.HOSTILE, 1.2F, 0.8F);
 
-        // 回收参与者
         for (ScoutEntity scout : group) {
             scout.discard();
         }
@@ -468,10 +406,7 @@ public class ScoutEntity extends BaseUlceratedEntity {
     }
 
     /**
-     * 爬墙：目标在自身上方时，先朝它靠过去，贴到墙后沿着墙面往上爬，最后翻上墙顶。
-     * <p>
-     * 只依赖目标高度与墙体探测，不依赖寻路
-     * —— 站在塔上的目标对地面寻路来说是不可达的，寻路会停在墙脚不动。
+     * 爬墙：只依赖目标高度与墙体探测、<b>不依赖寻路</b> —— 站在塔上的目标对地面寻路不可达，寻路会停在墙脚不动。
      */
     private void tickClimb() {
         LivingEntity target = this.getTarget();
@@ -507,7 +442,6 @@ public class ScoutEntity extends BaseUlceratedEntity {
             if (wallDistance <= CLIMB_CONTACT_DISTANCE) {
                 climbUp(flat, delta); // 贴墙 → 向上爬
             } else {
-                // 还没贴到墙 → 朝目标方向走过去
                 this.setDeltaMovement(flat.x * CLIMB_APPROACH_SPEED, delta.y, flat.z * CLIMB_APPROACH_SPEED);
             }
             return;
@@ -529,12 +463,7 @@ public class ScoutEntity extends BaseUlceratedEntity {
         this.climbing = true;
     }
 
-    /**
-     * 沿水平方向探测前方是否有墙体（从脚下平面开始探）。
-     *
-     * @param dir 水平单位方向
-     * @return 探测到的墙体距离（格），前方没有墙则返回 {@code -1}
-     */
+    /** 沿水平方向探测前方墙体（从脚下平面开始探）；返回距离（格），没有墙返回 {@code -1}。 */
     private double probeWallDistance(Vec3 dir) {
         for (double d = CLIMB_PROBE_STEP; d <= CLIMB_PROBE_RANGE; d += CLIMB_PROBE_STEP) {
             AABB probe = this.getBoundingBox().move(dir.x * d, CLIMB_PROBE_LIFT, dir.z * d);
@@ -543,11 +472,9 @@ public class ScoutEntity extends BaseUlceratedEntity {
         return -1.0D;
     }
 
-    // ---------- 普通攻击 ----------
     @Override
     protected boolean getAttack(LivingEntity target) {
-        // 必须走 effectiveAttackDamage（含属性修饰符），
-        // 不能用 getAttributeBaseValue —— 那样会绕开难度倍率，详见该方法注释
+        // 必须走 effectiveAttackDamage（含属性修饰符与难度倍率），不能用 getAttributeBaseValue
         float baseDamage = HallDifficultyAttributes.effectiveAttackDamage(this, 5.0F);
         target.hurt(this.damageSources().mobAttack(this), baseDamage);
         return true;

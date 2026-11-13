@@ -1,5 +1,7 @@
 package org.bytechen.rottenruins.client.rend.text.effect;
 
+import net.minecraft.util.Mth;
+
 /**
  * 颜色类效果的逐字取色（纯 Java）。
  *
@@ -84,9 +86,9 @@ public final class EffectColor {
 
     /** 线性光空间的两色插值。 */
     public static int lerpLinear(int from, int to, float t) {
-        float r = lerp(linear(from >> 16 & 0xFF), linear(to >> 16 & 0xFF), t);
-        float g = lerp(linear(from >> 8 & 0xFF), linear(to >> 8 & 0xFF), t);
-        float b = lerp(linear(from & 0xFF), linear(to & 0xFF), t);
+        float r = Mth.lerp(t, linear(from >> 16 & 0xFF), linear(to >> 16 & 0xFF));
+        float g = Mth.lerp(t, linear(from >> 8 & 0xFF), linear(to >> 8 & 0xFF));
+        float b = Mth.lerp(t, linear(from & 0xFF), linear(to & 0xFF));
         return (toSrgb(r) << 16) | (toSrgb(g) << 8) | toSrgb(b);
     }
 
@@ -100,10 +102,6 @@ public final class EffectColor {
         float s = c <= 0.0031308F ? 12.92F * c
                 : 1.055F * (float) Math.pow(c, 1F / 2.4F) - 0.055F;
         return Math.max(0, Math.min(255, Math.round(s * 255F)));
-    }
-
-    private static float lerp(float a, float b, float t) {
-        return a + (b - a) * t;
     }
 
     private static int scale(int rgb, float k) {

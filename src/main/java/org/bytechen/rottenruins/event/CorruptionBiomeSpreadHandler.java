@@ -15,6 +15,7 @@ import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionBlocks;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * 腐化方块扩散 → 腐化群系扩散。
@@ -56,7 +57,7 @@ public final class CorruptionBiomeSpreadHandler {
 
     /** 腐化群系 key（与 {@code CorruptionBiomeData} 一致）。 */
     private static final ResourceKey<Biome> CORRUPTION_WASTELAND = ResourceKey.create(
-            Registries.BIOME, new ResourceLocation(HallMod.MODID, "corruption_wasteland"));
+            Registries.BIOME, ModUtils.modLoc("corruption_wasteland"));
 
     /** 解析腐化群系（{@code rotten_ruins:corruption_wasteland}）。 */
     private static Holder<Biome> resolveBiome(ServerLevel level) {

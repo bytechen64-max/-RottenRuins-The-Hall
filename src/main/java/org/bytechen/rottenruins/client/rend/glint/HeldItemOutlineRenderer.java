@@ -256,7 +256,6 @@ public final class HeldItemOutlineRenderer {
         return !(minecraft.getCameraEntity() instanceof LivingEntity le && le.isSleeping());
     }
 
-    // --- internal helpers (same logic, condensed) ---
     private static void addHandTarget(List<HandEffectTarget> t, InteractionHand h, boolean en, ItemStack s) { HandEffectTarget r = resolveHandTarget(h, en, s); if (r != null) t.add(r); }
     @Nullable private static HandEffectTarget resolveHandTarget(InteractionHand h, boolean en, ItemStack s) { CaptureState st = stateFor(h); ItemStack os = en ? s : ItemStack.EMPTY; ResolvedRenderState ns = resolveCachedRenderState(st, en, os, s); long now = System.currentTimeMillis(); if (st.transitionEndMillis != 0L && (!HeldItemOutlineSettings.isRuleSwitchDelayEnabled() || now >= st.transitionEndMillis)) completePendingTransition(st); if (st.lastObservedHandEnabled != en || !ItemStack.isSameItemSameTags(st.lastObservedStack, os)) { st.lastObservedHandEnabled = en; st.lastObservedStack = os.copy(); beginRenderTransition(st, ns, now); } if (st.transitionEndMillis != 0L) return toHandEffectTarget(h, st.lastEffectiveState); st.lastEffectiveState = ns; return toHandEffectTarget(h, st.lastEffectiveState); }
     @Nullable private static ResolvedRenderState createResolvedRenderState(ItemStack s, @Nullable HeldItemOutlineEffectProfile p) { return p == null ? null : new ResolvedRenderState(p, resolveSampledColors(s, p)); }
@@ -274,7 +273,6 @@ public final class HeldItemOutlineRenderer {
         else if (s.outlineMaskTarget.width != mt.width || s.outlineMaskTarget.height != mt.height) { s.outlineMaskTarget.resize(mt.width, mt.height, Minecraft.ON_OSX); s.outlineMaskTarget.setFilterMode(9729); }
     }
 
-    // --- bloom / scissor / blur chain (unchanged) ---
     private static void ensureBloomTargets(RenderTarget mt, HeldItemOutlineEffectProfile p) {
         int bw = Math.max(MIN_BLOOM_TARGET_SIZE, Math.max(1, mt.width / Math.max(1, p.bloomResolution().downsampleFactor())));
         int bh = Math.max(MIN_BLOOM_TARGET_SIZE, Math.max(1, mt.height / Math.max(1, p.bloomResolution().downsampleFactor())));

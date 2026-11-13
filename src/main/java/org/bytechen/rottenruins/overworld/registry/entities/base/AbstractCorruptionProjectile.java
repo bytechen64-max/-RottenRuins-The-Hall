@@ -81,7 +81,6 @@ public abstract class AbstractCorruptionProjectile extends ThrowableProjectile i
         // 默认无额外效果，可被子类覆盖
     }
 
-    // ========== GeckoLib 实现 ==========
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
         // 提供一个简单的飞行动画控制器（可选）
@@ -98,7 +97,6 @@ public abstract class AbstractCorruptionProjectile extends ThrowableProjectile i
         return cache;
     }
 
-    // ========== IGeoResources 实现 ==========
     @Override
     public ResourceLocation model() { return model; }
     @Override
@@ -106,7 +104,6 @@ public abstract class AbstractCorruptionProjectile extends ThrowableProjectile i
     @Override
     public ResourceLocation animation() { return animation; }
 
-    // ========== NBT 持久化 ==========
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
@@ -119,7 +116,6 @@ public abstract class AbstractCorruptionProjectile extends ThrowableProjectile i
         setAdaptationCount(tag.getInt("CorruptionProjAdaptCount"));
     }
 
-    // ========== 适应计数（可选，用于渐进难度） ==========
     public int getAdaptationCount() {
         return this.entityData.get(DATA_ADAPTATION_COUNT);
     }

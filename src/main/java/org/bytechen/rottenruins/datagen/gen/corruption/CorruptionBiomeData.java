@@ -5,7 +5,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.biome.AmbientParticleSettings;
 import net.minecraft.world.level.biome.Biome;
@@ -14,8 +13,8 @@ import net.minecraft.world.level.biome.BiomeSpecialEffects;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
-import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionEntityTypes;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * 腐化群系（{@code rotten_ruins:corruption_wasteland}）。
@@ -27,7 +26,7 @@ import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionEntityTy
 public class CorruptionBiomeData {
 
     public static final ResourceKey<Biome> CORRUPTION_WASTELAND = ResourceKey.create(
-            Registries.BIOME, new ResourceLocation(HallMod.MODID, "corruption_wasteland"));
+            Registries.BIOME, ModUtils.modLoc("corruption_wasteland"));
 
     public static void bootstrap(BootstapContext<Biome> context) {
         HolderGetter<PlacedFeature> placedFeatures = context.lookup(Registries.PLACED_FEATURE);

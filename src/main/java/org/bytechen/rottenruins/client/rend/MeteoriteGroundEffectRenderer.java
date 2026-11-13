@@ -53,9 +53,7 @@ public class MeteoriteGroundEffectRenderer
         return new GroundEffectInstance(id, data);
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 渲染
-    // ═══════════════════════════════════════════════════════════════
 
     @Override
     protected void doRender(PoseStack poseStack, GroundEffectInstance inst, float partialTick) {
@@ -166,9 +164,7 @@ public class MeteoriteGroundEffectRenderer
         b.vertex(m, p2[0], p2[1], p2[2]).color(1f, 1f, 1f, p2[3]).endVertex();
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // 实例数据
-    // ═══════════════════════════════════════════════════════════════
 
     public static class GroundEffectInstance extends EffectInstance {
         public RectData[] rectangles;
@@ -231,8 +227,6 @@ public class MeteoriteGroundEffectRenderer
         public float halfWidth, halfHeight;
         public float normalX, normalZ;
     }
-
-    // ═══════════════════════════════════════════════════════════════
 
     public static void handleSyncPacket(UUID instanceId, CompoundTag data) {
         INSTANCE.applySyncData(instanceId, data);

@@ -23,22 +23,8 @@ import org.lwjgl.opengl.GL11;
 import java.util.List;
 
 /**
- * 电弧（electric arcs）—— 框架效果，<b>无状态</b>。
- *
- * <h3>为什么它是一个正式效果，而不是描边着色器里的一段 if</h3>
- * <p>因为它需要一张<b>自己的场</b>：一个"到剪影轮廓有多远"的距离代理 {@code arcEdge}。
- * 早先我把电弧的 reach 挂在描边光雾链的模糊图上，而那张图的模糊跨度只有 52px ——
- * 于是电弧的带宽被**旧算法的中间产物**锁死，"怎么调都扩散不出去"。
- * 场归自己之后，跨度就是这里说了算：1/{@value #EDGE_DEN} 分辨率 + 两步大步长模糊
- * ≈ 200px 跨度，带宽才真正可以用像素来调。</p>
- *
- * <h3>场的构成</h3>
- * <ul>
- *   <li>{@code arcEdgeH} —— 第一趟（横向）模糊的中间结果，1/{@value #EDGE_DEN} 分辨率；</li>
- *   <li>{@code arcEdge} —— 第二趟（纵向）结果，就是合成时采样的距离代理：
- *       {@code 0 = 远在外侧，0.5 = 恰在轮廓上，1 = 深入内部}。</li>
- * </ul>
- * <p>两者都是每帧重建的（{@code scaled}），因为剪影本身每帧都在变。</p>
+ * 电弧效果（无状态）。自建距离代理 {@code arcEdge}（0 = 远在外侧，0.5 = 轮廓上，1 = 内部），
+ * 场自持后带宽才不被描边模糊链的 52px 跨度锁死；两张场每帧重建（剪影每帧都在变）。
  */
 public final class ArcFxEffect implements ItemFxEffect {
 
@@ -96,19 +82,7 @@ public final class ArcFxEffect implements ItemFxEffect {
         return 180.0F;
     }
 
-    // ──────────────────────────────────────────────────────────────
-    //  场：把剪影模糊成"大跨度距离代理"
-    // ──────────────────────────────────────────────────────────────
-
-    /**
-     * 用全分辨率剪影搭出 {@code arcEdge}。
-     *
-     * <p>复用描边那支模糊着色器（它已经吃了 {@code TexelStep} / {@code BlurScale}），
-     * 所以不需要新的模糊程序 —— 需要换的只是<b>步长</b>：在 1/{@value #EDGE_DEN} 分辨率上
-     * 用 4 ~ 6 个纹素的步长，两趟就得到约 200px 的跨度。</p>
-     *
-     * @return 是否成功（着色器或场不可用时返回 false，调用方跳过合成）
-     */
+    /** 用全分辨率剪影搭出 {@code arcEdge}；着色器或场不可用时返回 false（调用方跳过合成）。 */
     public static boolean buildEdge(RenderTarget main, @Nullable TextureTarget mask) {
         ShaderInstance blur = SplendidingShaders.outlineHaloBlurShader;
         TextureTarget a = ItemFxFieldPool.get(ID,
@@ -131,14 +105,8 @@ public final class ArcFxEffect implements ItemFxEffect {
         int dw = Math.max(1, fw / EDGE_DEN);
         int dh = Math.max(1, fh / EDGE_DEN);
 
-        // ── 一趟降采样 + 三趟原地扩散（步长逐趟加倍，全程都很小）──
-        //
-        // ★ 为什么不再用"一趟 5 个目标纹素"去一次跨出 200px：
-        //   那样采样点会被 CLAMP_TO_EDGE 抓住，把远处的边缘内容拖进来，
-        //   整片场看起来就像**平移**了（用户看到的就是这个）。
-        //   模糊核本身是对称的（中心 + ±s…±4s，我读过 outline_halo_blur.fsh 确认），
-        //   所以偏移只可能来自"步长过大 + 边界吸附"。
-        //   逐趟 1 源纹素 → 2 → 4 → 8 目标纹素，累计跨度 ≈ 120px，居中且无边界拖拽。
+        // 降采样 + 三趟原地扩散，步长必须逐趟加倍（1 → 2 → 4 → 8 目标纹素）。
+        // 单趟跨大步会被 CLAMP_TO_EDGE 吸附、把远处边缘拖进来，整片场看起来像平移。
         blur.setSampler("Source", mask.getColorTextureId());
         ItemFxQuad.setVec2(blur, "TexelStep", 1.0F / fw, 1.0F / fh);
         ItemFxQuad.setFloat(blur, "BlurScale", 1.0F);
@@ -157,19 +125,13 @@ public final class ArcFxEffect implements ItemFxEffect {
             src = dst;
         }
 
-        // ★ bindWrite 过就必须把 framebuffer 和 viewport 一起还原（项目里为此崩过、也出现过 GUI 画到左下角）
+        // bindWrite 后必须把 framebuffer 与 viewport 一起还原（否则崩溃、或 GUI 画到左下角）
         org.lwjgl.opengl.GL30.glBindFramebuffer(org.lwjgl.opengl.GL30.GL_FRAMEBUFFER, previousFramebuffer);
         RenderSystem.viewport(previousViewport[0], previousViewport[1], previousViewport[2], previousViewport[3]);
         return true;
     }
 
-    /**
-     * 数字诊断（{@code arcDebugView = 2} 时每帧一次）：把"距离场轮廓的位置"和
-     * "剪影轮廓的位置"对比着打进日志。
-     *
-     * <p>偏移问题不能靠眼睛判 —— 细丝本身是乱的。这里直接读回距离场中间那一行：
-     * 高值区间应当与剪影在那一行上的范围对应。对不上 = 场偏了；对得上 = 偏移在合成阶段。</p>
-     */
+    /** 诊断（{@code arcDebugView = 2} 时每帧一次）：读回距离场中间行，与剪影实际范围比对，定位偏移来源。 */
     public static void logEdgeScan(RenderTarget main) {
         TextureTarget edge = ItemFxFieldPool.get(ID,
                 ItemFxFieldSpec.scaled(FIELD_EDGE, ItemFxFormat.RGBA8, EDGE_DEN, 320), main);
@@ -202,15 +164,9 @@ public final class ArcFxEffect implements ItemFxEffect {
                 EDGE_DEN, dh / 2, dh, first, last, first * EDGE_DEN, last * EDGE_DEN, mid, mid * EDGE_DEN);
     }
 
-    // ──────────────────────────────────────────────────────────────
-    //  合成
-    // ──────────────────────────────────────────────────────────────
-
     /**
      * 把电弧合成到主 RT。调用方负责：绑定主 RT、设置剪裁框、开启加法混合。
-     *
-     * @param originU 该物品屏幕中心的 UV（噪声坐标原点 —— 用屏幕 UV 当噪声坐标的话，
-     *                镜头一动图案就会从物品上滑过去）
+     * {@code originU/V} 是该物品的屏幕中心 UV —— 拿屏幕 UV 当噪声坐标，图案会随镜头滑移。
      */
     public static void composite(RenderTarget main, float originU, float originV,
                                  float colorR, float colorG, float colorB,

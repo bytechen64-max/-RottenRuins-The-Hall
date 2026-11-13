@@ -24,38 +24,31 @@ import java.util.function.Consumer;
 
 public class InfEndermanEntity extends BaseInfectedEntity {
 
-    // ---------- 同步数据 ----------
     private static final EntityDataAccessor<Boolean> IS_CRAWLING =
             SynchedEntityData.defineId(InfEndermanEntity.class, EntityDataSerializers.BOOLEAN);
 
-    // ---------- 攻击相关 ----------
     private final int attackKeyTime = 17;   // 普通攻击动画持续时间（tick）
-    private int attackKeyTimer = 0;         // 普通攻击计时器，0 表示未攻击
+    private int attackKeyTimer = 0;
 
-    // ---------- 爬行触发（血量驱动）----------
     private static final float CRAWL_HP_THRESHOLD = 0.3f;    // 生命值低于 30% 进入爬行
     private static final float CRAWL_HP_RECOVER = 0.8f;      // 生命值恢复到 80% 退出爬行
-    private int noTargetTime = 0;                             // 爬行状态无目标计时
+    private int noTargetTime = 0;
 
-    // ---------- 动画定义 ----------
     private static final RawAnimation ANIM_ATTACK = RawAnimation.begin().thenPlay("attack");
     private static final RawAnimation ANIM_CRAWL  = RawAnimation.begin().thenLoop("crawl");
-    /** 爬行且静止时的待机动画（资源文件 hall_enderman.animation.json 中的 idle_crawl） */
+    /** 爬行且静止时的待机动画（资源 hall_enderman.animation.json 的 idle_crawl） */
     private static final RawAnimation ANIM_CRAWL_IDLE = RawAnimation.begin().thenLoop("idle_crawl");
 
-    // ---------- 构造函数 ----------
     public InfEndermanEntity(EntityType<? extends BaseInfectedEntity> entityType, Level level, Consumer<AbstractRottenEntity> consumer) {
         super(entityType, level);
         consumer.accept(this);
         this.setHasWalkAnim(false);
         this.setWalkSpeed(0.22F);
         this.setDoHurtTime(30);
-        // 原来由 MeleeAttackGoal(this, 1.2, true) 提供的追击速度倍率，
-        // 现在追击统一由 AbstractRottenEntity#tickChase 发起，倍率在这里声明
+        // 追击速度倍率：原先由 MeleeAttackGoal 提供，现在由 AbstractRottenEntity#tickChase 发起
         this.setChaseSpeed(1.2F);
     }
 
-    // ---------- 属性 ----------
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 50)
@@ -66,42 +59,32 @@ public class InfEndermanEntity extends BaseInfectedEntity {
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.8f);
     }
 
-    // ---------- 目标与行为（修正：目标选择器必须添加到 targetSelector） ----------
     @Override
     protected void registerGoals() {
-        // === 目标选择器（targetSelector）===
-        // 使用 InfectedTargetGoal 选择最近的玩家或指定目标
         // 追击占位（只占 MOVE）：位移与出手由 AbstractRottenEntity#tickChase 统一负责。
-        // 原来的 MeleeAttackGoal 在这里是重复劳动 —— 它会再算一份路径，
-        // 而它的 doHurtTarget 在基类里被写死为 false，攻击部分一直空转。
+        // 别换回 MeleeAttackGoal：它会再算一份路径，且 doHurtTarget 在基类恒为 false。
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
         this.targetSelector.addGoal(1, new InfectedTargetGoal.Builder(this)
                 .targetOtherInfected(true)   // 王庭 vs 腐化：跨阵营索敌（同阵营仍被 infcore 过滤）
-                .range(40.0)          // 搜索范围
-                .mustSee(false)       // 无需视线
+                .range(40.0)
+                .mustSee(false)
                 // 威胁点数过滤器：玩家威胁 < 5 不主动索敌；非玩家生物照常索敌
                 .filter(this)
                 .build());
 
-        // === 行为选择器（goalSelector）===
-        // 面向目标（辅助）
         this.goalSelector.addGoal(2, new FaceTargetGoal(this, 40));
-        // 随机游走
         this.goalSelector.addGoal(5, new RandomStrollGoal(this, 1.0D));
-        // 随机环顾
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
 
-        super.registerGoals(); // 如果有父类目标，保留
+        super.registerGoals();
     }
 
-    // ---------- 同步数据定义 ----------
     @Override
     public void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(IS_CRAWLING, false);
     }
 
-    // ---------- 爬行状态 getter/setter ----------
     public boolean isCrawling() {
         return this.entityData.get(IS_CRAWLING);
     }
@@ -116,7 +99,6 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         }
     }
 
-    // ---------- 碰撞箱（通过 Pose 控制） ----------
     @Override
     public EntityDimensions getDimensions(Pose pose) {
         if (isCrawling()) {
@@ -125,13 +107,11 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         return EntityDimensions.fixed(0.6f, 2.9f); // 末影人默认
     }
 
-    // ---------- 爬墙 ----------
     @Override
     public boolean onClimbable() {
         return isCrawling();
     }
 
-    // ---------- 移动速度 ----------
     @Override
     public float getCurrentMoveSpeed() {
         if (isCrawling()) {
@@ -149,7 +129,6 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         }
     }
 
-    // ---------- 每 Tick 逻辑 ----------
     @Override
     public void tick() {
         super.tick(); // 父类 tick 会处理普通攻击的距离检测并调用 doHurtGoal
@@ -158,7 +137,6 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         // 爆体（假死）期间不再结算延迟攻击 / 爬行状态，只播缩放与 idle。
         if (this.isFakeDying()) return;
 
-        // 攻击动画计时器递减，归零时造成伤害
         if (attackKeyTimer > 0) {
             attackKeyTimer--;
             if (attackKeyTimer == 0) {
@@ -169,7 +147,6 @@ public class InfEndermanEntity extends BaseInfectedEntity {
             }
         }
 
-        // ---- 爬行状态检测（血量驱动 + 无目标退出）----
         float healthPct = this.getHealth() / this.getMaxHealth();
         if (!isCrawling() && healthPct <= CRAWL_HP_THRESHOLD) {
             setCrawling(true);
@@ -192,7 +169,6 @@ public class InfEndermanEntity extends BaseInfectedEntity {
             noTargetTime = 0;
         }
 
-        // ---- 爬行状态（持续高频攻击）----
         if (isCrawling()) {
             LivingEntity crawlTarget = this.getTarget();
             if (crawlTarget != null && crawlTarget.isAlive()) {
@@ -204,26 +180,23 @@ public class InfEndermanEntity extends BaseInfectedEntity {
                         && this.hasLineOfSight(crawlTarget)) {
                     getAttack(crawlTarget);
                 }
-                // 追击寻路交给 AbstractRottenEntity#tickChase（已带节流 + 失败退避）。
-                // 这里原来写的是 `isDone() || tickCount % 10 == 0` —— 但寻路失败时
-                // isDone() 恒为 true，等于每 tick 跑一次 A*，目标卡在墙里时直接把 TPS 打穿。
+                // 追击寻路交给 AbstractRottenEntity#tickChase（带节流 + 失败退避）。
+                // 别改回 `isDone() || tickCount % 10 == 0`：寻路失败时 isDone() 恒为 true。
             }
         }
     }
 
-    // ---------- 普通攻击（非爬行）----------
     @Override
     protected boolean doHurtGoal(LivingEntity target) {
         if (isCrawling()) {
             return false; // 爬行攻击由 tick 直接处理
         }
-        // 触发攻击动画和计时器，伤害在计时器归零时由 tick 执行
+        // 只起动画与计时器，伤害在计时器归零时由 tick 结算
         attackKeyTimer = attackKeyTime;
         triggerAnim("attack_controller", "attack");
         return true; // 返回 true 让父类重置冷却
     }
 
-    // 实际伤害方法
     @Override
     protected boolean getAttack(LivingEntity target) {
         // 必须走 effectiveAttackDamage（含属性修饰符），不能用 getAttributeBaseValue
@@ -232,20 +205,17 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         return true;
     }
 
-    // ---------- 动画控制器 ----------
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
         if (!defaultControllersEnabled) return;
 
-        // 移动/待机/爬行控制器
         AnimationController<InfEndermanEntity> movementController =
                 new AnimationController<>(this, "movement_controller", 5, state -> {
                     if (isDeadOrDying() || isBurstAnimating()) return PlayState.STOP;
 
                     if (isCrawling()) {
-                        // 爬行模式：移动时播放爬行动画，静止时播放爬行待机动画。
-                        // isActuallyMoving 由基类每 tick 在客户端按水平位移更新（带 5 tick 缓冲，
-                        // 避免刚停下 / 起步的瞬间来回抖动）。
+                        // 爬行模式：移动播 crawl，静止播 idle_crawl。isActuallyMoving 由基类
+                        // 每 tick 按客户端水平位移更新（5 tick 缓冲，避免起步/停下时抖动）。
                         if (!isActuallyMoving) {
                             state.setControllerSpeed(getIdleAnimSpeed());
                             return state.setAndContinue(ANIM_CRAWL_IDLE);
@@ -278,7 +248,6 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         attackController.triggerableAnim("attack", ANIM_ATTACK);
         registrar.add(attackController);
 
-        // 死亡控制器
         AnimationController<AbstractRottenEntity> dieController =
                 new AnimationController<>(this, "die_controller", 3, state ->
                         isBurstAnimating() ? state.setAndContinue(ANIM_DIE) : PlayState.STOP);
@@ -286,7 +255,6 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         registrar.add(dieController.triggerableAnim("die_trigger", ANIM_DIE));
     }
 
-    // ---------- 同步更新回调 ----------
     @Override
     public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
         super.onSyncedDataUpdated(key);
@@ -296,7 +264,6 @@ public class InfEndermanEntity extends BaseInfectedEntity {
         }
     }
 
-    // ---------- NBT ----------
     @Override
     public void addAdditionalSaveData(net.minecraft.nbt.CompoundTag nbt) {
         super.addAdditionalSaveData(nbt);

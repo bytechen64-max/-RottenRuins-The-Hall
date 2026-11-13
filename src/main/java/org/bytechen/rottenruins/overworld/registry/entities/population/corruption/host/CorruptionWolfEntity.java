@@ -77,9 +77,7 @@ public class CorruptionWolfEntity extends BaseHostEntity {
         if (latchTicks <= 0 && latchWindup < 0) tickHowl();
     }
 
-    // =========================================================================
     // B2 感染嚎叫
-    // =========================================================================
 
     private void tickHowl() {
         if (howlCooldown > 0) return;
@@ -112,9 +110,7 @@ public class CorruptionWolfEntity extends BaseHostEntity {
         howlCooldown = HOWL_COOLDOWN;
     }
 
-    // =========================================================================
     // B3 扑咬锁喉
-    // =========================================================================
 
     private void tickLatch() {
         if (latchTicks > 0) {

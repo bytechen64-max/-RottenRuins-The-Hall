@@ -7,10 +7,10 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import org.bytechen.rottenruins.HallMod;
 import org.bytechen.infcore.api.block.ISpreadBlock;
 import org.bytechen.infcore.core.blockspread.BlockSpreadManager;
 import org.bytechen.infcore.core.blockspread.SpreadHelper;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * 可扩散方块的抽象基类。
@@ -34,14 +34,10 @@ public abstract class AbstractSpreadBlock extends Block implements ISpreadBlock 
         super(properties);
     }
 
-    // ==================== ISpreadBlock ====================
-
     @Override
     public ResourceLocation getSpreadType() {
-        return new ResourceLocation(HallMod.MODID, "spread");
+        return ModUtils.modLoc("spread");
     }
-
-    // ==================== Tick ====================
 
     @Override
     public boolean isRandomlyTicking(BlockState state) {
@@ -65,8 +61,6 @@ public abstract class AbstractSpreadBlock extends Block implements ISpreadBlock 
         // 子类自定义额外逻辑
         extraTickLogic(state, level, pos, random);
     }
-
-    // ==================== 子类可重写 ====================
 
     /**
      * 额外的 tick 逻辑，子类可重写。
@@ -98,8 +92,6 @@ public abstract class AbstractSpreadBlock extends Block implements ISpreadBlock 
     protected boolean canSpreadTo(LevelReader level, BlockPos pos, BlockState state) {
         return SpreadHelper.canSpreadTo(level, pos, state, this);
     }
-
-
 
     /**
      * 检查是否可以扩散到目标方块。

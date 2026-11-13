@@ -5,24 +5,9 @@ import org.bytechen.rottenruins.config.ConfigHelper;
 import org.bytechen.rottenruins.config.data.SplendidingConfig;
 
 /**
- * 天穹裁决技能组的配置读取点。
- *
- * <h3>为什么要单独包一层，而不是各处直接读 ConfigHelper</h3>
- * <p>三个理由，都是这个项目里已经吃过亏的：</p>
- * <ol>
- *   <li><b>配置可能没就绪。</b>{@code ConfigHelper.configHolder} 在
- *       {@code ConfigHelper.registry()} 之前是 null；物品的 {@code use()} 与
- *       实体渲染器的 {@code render()} 都可能在那之前被碰到（尤其是数据生成与
- *       渲染线程首帧）。这里所有读取都做空值兜底，返回默认值而不是抛 NPE。</li>
- *   <li><b>解析可能抛异常。</b>配置 DLL 是外部类（cloth-autoconfig），
- *       它抛出来的 {@code Throwable} 如果一路冒到渲染线程，
- *       会把整个帧搞崩。所以每条读取都包了 try/catch。</li>
- *   <li><b>想让"关掉"这件事是可靠的。</b>总开关 {@code verdictSkillsEnabled}
- *       为 false 时，三个技能都必须彻底不触发 —— 而不是"试着触发然后失败"。</li>
- * </ol>
- *
- * <p>这也是 {@code ShockwaveRenderer.refractionScale()} 已经在用的写法，
- * 这里只是把它统一到一处，免得三个技能各自抄一遍。</p>
+ * 天穹裁决技能组的配置读取点。所有读取都做三重兜底：配置未就绪返回默认值、
+ * cloth-autoconfig 解析抛的 {@code Throwable} 就地吞掉（冒到渲染线程会崩整帧）、
+ * 总开关关闭时三个技能彻底不触发。
  */
 public final class VerdictTuning {
 

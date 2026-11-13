@@ -16,44 +16,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 玩家的<b>法力池</b>（扭曲点）。
- *
- * <h3>规则</h3>
- * <ul>
- *   <li>初始与上限：<b>1000</b>（{@link MagicStats#BASE_MAX_MANA}）。
- *       上限不是写死的 —— 每次读都走 {@link MagicStats#maxMana(Player)}，
- *       所以属性修饰器与附魔改了上限之后立刻生效。</li>
- *   <li>回复：每秒 <b>+1</b>（{@link MagicStats#BASE_REGEN_PER_SECOND}）。</li>
- *   <li>消耗：{@link #spend(int)} —— <b>不够就不扣、返回 false</b>，
- *       调用方（{@code MagicHandle}）据此取消这次释放。</li>
- *   <li>击杀回复：按被击杀生物的最大生命值折算（{@link MagicStats#killMana}），
- *       由死亡事件驱动，见 {@code MagicEventHandlers}。</li>
- *   <li><b>所有</b>回复都会抛 {@link ManaRestoreEvent}（可取消、可改数值）。</li>
- * </ul>
- *
- * <h3>为什么回复量走 float + 小数累加器</h3>
- * <p>自然回蓝"每秒 1 点"换算到每 tick 是 {@code 0.05}。如果在这里就取整，
- * 那 0.05 永远攒不成 1，"每秒 +1" 会彻底回不上蓝。<br>
- * 更重要的：{@link ManaRestoreEvent} 的监听器会把数值乘一个倍率
- * （例如属性 {@code hall:mana_restore} 给 1.5），
- * {@code 1 × 1.5 = 1.5} —— 如果每次取整，得到的是"每秒 2 或 1"，
- * 而不是精确的 1.5。<br>
- * 所以顺序是：<b>事件先作用在小数上 → 累加进 {@link #restoreBuffer} →
- * 攒够整点才真正进 {@link #mana}</b>。这样 1.5/秒 就是精确的 1.5/秒。</p>
- *
- * <h3>相对早期版本修掉的问题</h3>
- * <ol>
- *   <li>NBT 键原来叫 {@code "hell:twisted"} —— 命名空间 {@code hell} 在本模组里根本不存在
- *       （模组 id 是 {@code hall}）。现在用 {@code hall} 命名空间，并且<b>兼容读取旧键</b>。</li>
- *   <li>原来 {@code LazyOptional.of(() -> this)} 建了个自引用却没有 {@code invalidate()}，
- *       实体卸载后这条 optional 一直活着。现在由 {@link #invalidate()} 交还。</li>
- *   <li>原来那个 {@code @SubscribeEvent TickingHealMagic} 是个空方法体，
- *       而且所在类没有被注册成事件订阅者 —— 永远不可能被调用。回蓝改为由
- *       {@code MagicEventHandlers} 在玩家 tick 里驱动。</li>
- * </ol>
- *
- * <p>同时仍然实现 {@link ByteNumberAbility} 并响应旧的 {@code TWIST_CAP}，
- * 所以既有调用点不会失效。</p>
+ * 玩家的法力池（扭曲点）。上限每次现算走 {@link MagicStats#maxMana(Player)}，修饰器/附魔改了即刻生效；
+ * {@link #spend(int)} 是全有或全无（不够就不扣），调用方据返回值取消释放。
+ * 回复走 float + 小数累加器：每 tick 仅 0.05，先抛 {@link ManaRestoreEvent} 让倍率作用在小数上，
+ * 攒够整点才写进 {@link #mana} —— 否则 ×1.5 会被逐次取整吃掉，"每秒 1.5"退化成 1 或 2。
+ * 仍实现 {@link ByteNumberAbility} 并响应旧的 {@code TWIST_CAP}，既有调用点不会失效。
  */
 public class TwistedPoint implements ByteNumberAbility, ICapabilitySerializable<CompoundTag> {
 
@@ -68,25 +35,15 @@ public class TwistedPoint implements ByteNumberAbility, ICapabilitySerializable<
     private int mana;
     /** 任何回复都先累到这里，攒够 1 点才进 {@link #mana}。 */
     private double restoreBuffer;
-    /**
-     * 服务端推过来的法力上限；{@code -1} 表示"还没收到过，用本地现算的"。
-     * <p>只在客户端起作用：属性修饰器/附魔若引用了只有服务端才准的数据，
-     * 客户端自己算出来的上限会和实际不符，法力条就会画错。</p>
-     */
+    /** 服务端推来的上限；-1 = 还没收到。只在客户端用：本地现算可能与实际不符，法力条会画错。 */
     private int syncedMaxMana = -1;
 
     private final LazyOptional<TwistedPoint> self = LazyOptional.of(() -> this);
     private boolean dirty;
 
     /**
-     * 建池：初始法力 = 当前上限（新角色见面就是满蓝）。
-     *
-     * <p><b>这个构造函数是在 {@code AttachCapabilitiesEvent} 里被调用的</b>，
-     * 也就是 {@code Entity} 的构造函数内部 —— 那一刻 {@code LivingEntity} 的属性表
-     * 还没建出来，所以 {@link MagicStats#maxMana(Player)} 折到属性 provider 时
-     * 只能拿到基值 1000（细节见 {@code RegisterAttributes#valueOf} 的注释）。
-     * 这里不影响正确性：此刻玩家身上不可能有任何属性修饰器，而旧存档的
-     * {@link #deserializeNBT} 随后会把真实法力覆盖回来。</p>
+     * 建池：初始法力 = 当前上限。本构造在 {@code AttachCapabilitiesEvent} 里被调用（Entity 构造期间，
+     * 属性表还没建出来，故此刻必无修饰器）；旧存档的真实法力随后由 {@link #deserializeNBT} 覆盖。
      */
     public TwistedPoint(@NotNull Player owner) {
         this.owner = owner;
@@ -104,10 +61,6 @@ public class TwistedPoint implements ByteNumberAbility, ICapabilitySerializable<
         return owner;
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 上限 / 回复速率（每次现算，所以修饰器改了立刻生效）
-    // ══════════════════════════════════════════════════════════════
-
     /** 当前法力上限。客户端在收到过服务端数值之后以服务端为准。 */
     public int getMaxMana() {
         if (syncedMaxMana > 0 && owner.level().isClientSide()) {
@@ -121,11 +74,6 @@ public class TwistedPoint implements ByteNumberAbility, ICapabilitySerializable<
         return MagicStats.manaRegenPerSecond(owner);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 法力读写
-    // ══════════════════════════════════════════════════════════════
-
-    /** 当前法力。 */
     public int getMana() {
         return mana;
     }
@@ -139,14 +87,7 @@ public class TwistedPoint implements ByteNumberAbility, ICapabilitySerializable<
         }
     }
 
-    /**
-     * <b>扣除法力</b>：不够就一点都不扣，返回 {@code false}。
-     *
-     * <p>语义刻意做成"全有或全无"，而不是"扣到 0 为止" ——
-     * 因为调用方要靠返回值决定"取消这次释放"。扣一半再取消会让玩家白掉法力。</p>
-     *
-     * @param amount 要扣的量；{@code <= 0} 视为成功且不改变法力
-     */
+    /** 扣除法力：不够就一点都不扣并返回 false（调用方据此取消释放，扣一半会白掉法力）。 */
     public boolean spend(int amount) {
         if (amount <= 0) {
             return true;
@@ -159,11 +100,7 @@ public class TwistedPoint implements ByteNumberAbility, ICapabilitySerializable<
         return true;
     }
 
-    /**
-     * 增加法力（来源记为 {@link ManaRestoreEvent.Cause#OTHER}）。
-     *
-     * @return <b>实际</b>加进去的整数点（被事件削减、或法力已满时会更少）
-     */
+    /** 增加法力（来源 OTHER）；返回实际加进去的整数点。 */
     public int addMana(int amount) {
         return applyRestore(amount, ManaRestoreEvent.Cause.OTHER, null);
     }
@@ -196,14 +133,9 @@ public class TwistedPoint implements ByteNumberAbility, ICapabilitySerializable<
         return Math.max(0f, Math.min(1f, mana / (float) max));
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 每 tick 回蓝
-    // ══════════════════════════════════════════════════════════════
-
     /**
-     * 推进一 tick 的自然回蓝。由 {@code MagicEventHandlers} 在服务端玩家 tick 里调用。
-     *
-     * <p>换算成"每 tick {@code N/20} 点"，交给 {@link #applyRestore} 走事件与小数累加。</p>
+     * 推进一 tick 自然回蓝（由 {@code MagicEventHandlers} 在服务端玩家 tick 调用）：
+     * 换算成每 tick {@code N/20} 点交给 {@link #applyRestore} 走事件与小数累加。
      */
     public void tickRegen() {
         if (isFull()) {
@@ -218,18 +150,7 @@ public class TwistedPoint implements ByteNumberAbility, ICapabilitySerializable<
         applyRestore(perTick, ManaRestoreEvent.Cause.REGEN, null);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 统一的回复入口（事件 → 小数累加 → 取整进法力）
-    // ══════════════════════════════════════════════════════════════
-
-    /**
-     * 所有回复的唯一实现。
-     *
-     * <p>顺序：抛 {@link ManaRestoreEvent}（可取消 / 可改数值）→ 把最终小数累加进
-     * {@link #restoreBuffer} → 攒够整点才写进 {@link #mana} → 抛 {@code Post}。</p>
-     *
-     * @return 实际加进法力的整数点
-     */
+    /** 所有回复的唯一入口：事件（可取消 / 可改数值）→ 小数累加 → 攒够整点进 mana → 抛 Post。 */
     private int applyRestore(double amount, @NotNull ManaRestoreEvent.Cause cause,
                              @Nullable LivingEntity victim) {
         if (amount <= 0.0d) {
@@ -270,9 +191,7 @@ public class TwistedPoint implements ByteNumberAbility, ICapabilitySerializable<
         return added;
     }
 
-    // ══════════════════════════════════════════════════════════════
     // ByteNumberAbility（保留以兼容既有调用点）
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     public int getNumber() {
@@ -294,10 +213,6 @@ public class TwistedPoint implements ByteNumberAbility, ICapabilitySerializable<
         setMana(mana - i);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 同步钩子
-    // ══════════════════════════════════════════════════════════════
-
     /** 是否有未同步到客户端的改动（由 {@code MagicSync} 消费）。 */
     public boolean isDirty() {
         return dirty;
@@ -308,23 +223,13 @@ public class TwistedPoint implements ByteNumberAbility, ICapabilitySerializable<
         dirty = false;
     }
 
-    /**
-     * 客户端应用服务端推来的状态。
-     *
-     * <p>刻意<b>不</b>标脏：这是"接收"而不是"修改"，标脏会让客户端以为自己有
-     * 待同步的改动，语义就乱了。同时把小数缓存清零，
-     * 免得服务端的整数值和本地的零点几叠加出跳变。</p>
-     */
+    /** 客户端应用服务端状态：刻意不标脏（接收而非修改），并清零小数缓存避免叠加出跳变。 */
     public void applyServerState(int serverMana, int serverMaxMana) {
         this.syncedMaxMana = serverMaxMana > 0 ? serverMaxMana : -1;
         this.mana = clamp(serverMana);
         this.restoreBuffer = 0.0d;
         this.dirty = false;
     }
-
-    // ══════════════════════════════════════════════════════════════
-    // 能力提供者 / 序列化
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     @NotNull

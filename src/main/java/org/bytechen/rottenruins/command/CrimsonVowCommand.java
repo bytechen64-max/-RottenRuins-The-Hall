@@ -69,9 +69,7 @@ public final class CrimsonVowCommand {
                         .executes(CrimsonVowCommand::ready)));
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  /crimsonvow field
-    // ══════════════════════════════════════════════════════════════
 
     /**
      * 在<b>视线所指的地面</b>上直接展开法阵。
@@ -114,9 +112,7 @@ public final class CrimsonVowCommand {
         return 1;
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  /crimsonvow charge
-    // ══════════════════════════════════════════════════════════════
 
     /**
      * 在脚下起一个蓄力法阵。
@@ -140,9 +136,7 @@ public final class CrimsonVowCommand {
         return 1;
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  /crimsonvow ready
-    // ══════════════════════════════════════════════════════════════
 
     /** 清掉起誓冷却，省得调试时每次都要等 30 秒。 */
     private static int ready(CommandContext<CommandSourceStack> ctx) {

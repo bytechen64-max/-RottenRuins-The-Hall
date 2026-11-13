@@ -28,9 +28,7 @@ import java.util.function.Consumer;
  */
 public class OriginalBugEntity extends BaseOriginalEntity {
 
-    // =========================================================================
     // C11 酸液喷射参数
-    // =========================================================================
     private static final int SPRAY_COOLDOWN = 130;
     private static final double SPRAY_RANGE = 5.5;
     /** 喷射锥的角宽（度） */
@@ -62,9 +60,7 @@ public class OriginalBugEntity extends BaseOriginalEntity {
                 .add(Attributes.FOLLOW_RANGE, 40.0D);
     }
 
-    // =========================================================================
     // C11 酸液喷射
-    // =========================================================================
 
     @Override
     public void tick() {

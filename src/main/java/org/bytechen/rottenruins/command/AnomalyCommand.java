@@ -138,8 +138,6 @@ public final class AnomalyCommand {
         dispatcher.register(root);
     }
 
-    // ══════════════════════════════════════════════════════ Helper ══════════════════════════════════════════════════════
-
     @javax.annotation.Nullable
     private static ServerPlayer getSelf(CommandContext<CommandSourceStack> ctx) {
         return ctx.getSource().getPlayer();
@@ -165,8 +163,6 @@ public final class AnomalyCommand {
         }
         throw new IllegalArgumentException("未知异常类型: " + raw + "。可选: heat, cold, acid");
     }
-
-    // ══════════════════════════════════════════════════════ add ════════════════════════════════════════════════════════
 
     private static int addProgress(CommandContext<CommandSourceStack> ctx, Collection<ServerPlayer> targets,
                                     AnomalyType type, int amount) {
@@ -198,8 +194,6 @@ public final class AnomalyCommand {
         return 1;
     }
 
-    // ══════════════════════════════════════════════════════ set ════════════════════════════════════════════════════════
-
     private static int setProgress(CommandContext<CommandSourceStack> ctx, Collection<ServerPlayer> targets,
                                     AnomalyType type, int value) {
         for (ServerPlayer p : targets) {
@@ -223,8 +217,6 @@ public final class AnomalyCommand {
                 () -> Component.literal("§a已设置 " + typeName(type) + info(type, cap)), true);
         return 1;
     }
-
-    // ══════════════════════════════════════════════════════ get ═══════════════════════════════════════════════════════
 
     private static int getAllSelf(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer self = getSelf(ctx);
@@ -260,8 +252,6 @@ public final class AnomalyCommand {
                 () -> Component.literal(typeName(type) + info(type, cap)), false);
         return 1;
     }
-
-    // ══════════════════════════════════════════════════════ clear ═════════════════════════════════════════════════════
 
     private static int clearAllSelf(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer self = getSelf(ctx);
@@ -303,8 +293,6 @@ public final class AnomalyCommand {
         return 1;
     }
 
-    // ══════════════════════════════════════════════════════ trigger ═══════════════════════════════════════════════════
-
     private static int forceTrigger(CommandContext<CommandSourceStack> ctx, Collection<ServerPlayer> targets,
                                      AnomalyType type) {
         for (ServerPlayer p : targets) {
@@ -329,8 +317,6 @@ public final class AnomalyCommand {
         return 1;
     }
 
-    // ══════════════════════════════════════════════════════ adapt ════════════════════════════════════════════════════
-
     private static int giveAdaptSelf(CommandContext<CommandSourceStack> ctx, AnomalyType type) {
         ServerPlayer self = getSelf(ctx);
         if (self == null) return 0;
@@ -340,8 +326,6 @@ public final class AnomalyCommand {
                 () -> Component.literal("§a已给予" + typeName(type) + "适应 Buff§a（15s）"), true);
         return 1;
     }
-
-    // ══════════════════════════════════════════════════════ format ════════════════════════════════════════════════════
 
     private static String info(AnomalyType type, AnomalyCapability cap) {
         return "§7 进度: §f" + cap.getProgress(type) + "§7/" + type.getMaxProgress();

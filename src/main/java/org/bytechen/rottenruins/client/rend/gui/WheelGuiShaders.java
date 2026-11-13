@@ -52,9 +52,7 @@ public final class WheelGuiShaders {
         return SplendidingShaders.wheelSdfShader != null;
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  轮盘三支着色器
-    // ══════════════════════════════════════════════════════════════
 
     /** 一个扇区的渲染状态（由 WheelRenderer 按槽位算好）。 */
     public record Slice(float startAngle, float endAngle,
@@ -167,9 +165,7 @@ public final class WheelGuiShaders {
         end();
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  SDF 通用形状
-    // ══════════════════════════════════════════════════════════════
 
     /** 实心圆 / 圆盘（颜色按竖直方向渐变，可同色）。 */
     public static void sdfDisc(GuiGraphics gui, float cx, float cy, float radius,
@@ -305,9 +301,7 @@ public final class WheelGuiShaders {
         end();
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  内部：状态 / uniform / quad
-    // ══════════════════════════════════════════════════════════════
 
     private static void begin(GuiGraphics gui, ShaderInstance shader) {
         gui.flush();

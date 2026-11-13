@@ -63,7 +63,6 @@ public class MonolithEntity extends BaseUlceratedEntity {
         super.tick();
     }
 
-    // ---------- 属性 ----------
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 80)
@@ -74,7 +73,6 @@ public class MonolithEntity extends BaseUlceratedEntity {
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0F);
     }
 
-    // ---------- 目标与行为 ----------
     @Override
     protected void registerGoals() {
         // 索敌：与其它王庭生物一致 —— goalSelector 优先级 2，40 格内无需视线
@@ -93,7 +91,6 @@ public class MonolithEntity extends BaseUlceratedEntity {
         super.registerGoals();
     }
 
-    // ---------- 普通攻击 ----------
     @Override
     protected boolean getAttack(LivingEntity target) {
         // 必须走 effectiveAttackDamage（含属性修饰符），不能用 getAttributeBaseValue

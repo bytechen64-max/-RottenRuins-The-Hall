@@ -23,25 +23,9 @@ import java.util.Deque;
 import java.util.List;
 
 /**
- * <b>奥数立方</b>的渲染器 —— 和寂寒白日那颗三棱锥同一套画法：<b>只画棱</b>、
- * 辉光 + 芯两层、加法混合、面全透明。三种形态各一套棱线：
- *
- * <ul>
- *   <li>{@link OlympiadCubeEntity#FORM_TETRA 三棱锥}：4 顶点 / 6 棱；</li>
- *   <li>{@link OlympiadCubeEntity#FORM_CUBE 立方体}：8 顶点 / 12 棱；</li>
- *   <li>{@link OlympiadCubeEntity#FORM_ICO 正二十面体}：12 顶点 / 30 棱 / <b>20 个正三角面</b>
- *       —— 五个柏拉图立体之一，是最"球"的那个多面体，展开成大范围时边缘也不会显得方。</li>
- * </ul>
- *
- * <h3>两种状态</h3>
- * <ul>
- *   <li><b>飞行中</b>：半径 {@value #FLY_RADIUS} 格（和寂寒白日周身那颗一个量级），
- *       自转，尾迹由实体自己撒粒子；</li>
- *   <li><b>展开后</b>：整体放大到 {@code OlympiadCubeEntity.EXPAND_RADIUS}（3 格），
- *       再补三圈水平"纬线"，读起来是一团正在张开的领域而不是一颗大石头。</li>
- * </ul>
- *
- * <p>尺寸不自己算：直接读实体上的同步字段，所以服务端的判定半径与画面必然一致。</p>
+ * 奥数立方渲染器：只画棱（辉光层 + 芯层，加法混合，面全透明），三棱锥 / 立方体 / 正二十面体各一套棱线。
+ * 尺寸直接读实体上的同步字段（飞行 FLY_RADIUS，展开 OlympiadCubeEntity.EXPAND_RADIUS），
+ * 所以服务端的判定半径与画面必然一致。
  */
 public class OlympiadCubeRenderer extends EntityRenderer<OlympiadCubeEntity> {
 
@@ -57,12 +41,10 @@ public class OlympiadCubeRenderer extends EntityRenderer<OlympiadCubeEntity> {
     /** 芯层棱宽（格，半宽）。 */
     private static final float CORE_HALF_WIDTH = 0.011f;
 
-    /** 辉光层颜色：奥术紫。 */
     private static final float GLOW_R = 0.45f;
     private static final float GLOW_G = 0.27f;
     private static final float GLOW_B = 0.95f;
 
-    /** 芯层颜色：淡紫白。 */
     private static final float CORE_R = 0.90f;
     private static final float CORE_G = 0.82f;
     private static final float CORE_B = 1.00f;
@@ -73,34 +55,25 @@ public class OlympiadCubeRenderer extends EntityRenderer<OlympiadCubeEntity> {
     /** 展开后每秒自转角度（度）—— 慢下来，读作"领域"而不是"陀螺"。 */
     private static final float EXPANDED_SPIN_DEG_PER_SECOND = 18.0f;
 
-    // ── 拖尾 ──
-
     /** 拖尾辉光层半宽（格）：比立方体的棱粗一截，形成"光晕尾巴"。 */
     private static final float TRAIL_GLOW_HALF_WIDTH = 0.055f;
 
     /** 拖尾芯层半宽（格）。 */
     private static final float TRAIL_CORE_HALF_WIDTH = 0.018f;
 
-    /** 拖尾辉光层不透明度。 */
     private static final float TRAIL_GLOW_ALPHA = 0.30f;
 
-    /** 拖尾芯层不透明度。 */
     private static final float TRAIL_CORE_ALPHA = 0.75f;
 
     /** 兜底直尾的长度（格）：只在刚发射、还没攒到轨迹采样的那 1~2 tick 用。 */
     private static final float FALLBACK_TRAIL_LENGTH = 0.9f;
 
-    // ── 正二十面体的顶点（必须声明在 ICO_EDGES 之前） ──
-    //
-    //  ⚠ 顺序是有意义的：静态字段按<b>声明顺序</b>初始化，
-    //  而 ICO_EDGES = buildIcosaEdges() 要读 ICO_RAW。
-    //  把 ICO_RAW 写在它后面会读到 null，<clinit> 直接抛 NPE
-    //  （真实踩过一次：整个客户端在 EntityRenderers 注册阶段崩掉）。
+    // ⚠ 声明顺序有意义：静态字段按声明顺序初始化，而 ICO_EDGES = buildIcosaEdges() 要读 ICO_RAW，
+    // 把 ICO_RAW 挪到后面会读到 null，<clinit> 直接抛 NPE（客户端在渲染器注册阶段崩掉）。
 
-    /** 正二十面体的顶点数。 */
     private static final int ICO_VERTEX_COUNT = 12;
 
-    /** 黄金比 {@code φ = (1+√5)/2}：正二十面体顶点的构造常数。 */
+    /** 黄金比 φ = (1+√5)/2：正二十面体顶点的构造常数。 */
     private static final float PHI = (1.0f + (float) Math.sqrt(5.0d)) / 2.0f;
 
     /** 正二十面体的 12 个顶点（未归一化；棱表按这组坐标的最近距离算）。 */
@@ -112,8 +85,6 @@ public class OlympiadCubeRenderer extends EntityRenderer<OlympiadCubeEntity> {
             new Vec3(PHI, 0.0d, 1.0d), new Vec3(-PHI, 0.0d, 1.0d),
             new Vec3(PHI, 0.0d, -1.0d), new Vec3(-PHI, 0.0d, -1.0d)
     };
-
-    // ── 各形态的棱（顶点索引对） ──
 
     /** 三棱锥：0 顶点 + 1..3 底角。 */
     private static final int[][] TETRA_EDGES = {
@@ -138,9 +109,19 @@ public class OlympiadCubeRenderer extends EntityRenderer<OlympiadCubeEntity> {
     public void render(OlympiadCubeEntity entity, float entityYaw, float partialTick,
                        PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         boolean expanded = entity.isExpanded();
-        float radius = expanded ? (float) OlympiadCubeEntity.EXPAND_RADIUS : FLY_RADIUS;
-        // 棱宽<b>不随尺寸变化</b>：展开到 8 格时棱还是飞行时那么细。
-        // 按比例放大的话 3 格→8 格的场会出现几十格长、几十厘米粗的光柱，糊满屏幕。
+        boolean bursting = entity.isBursting();
+
+        // 命中爆开：0 → 1 的进度。尺寸"先猛后缓"地涨到 ~4.5 倍，同时整体淡出。
+        float burstT = bursting
+                ? 1.0f - entity.getBurstLife() / (float) OlympiadCubeEntity.BURST_TICKS
+                : 0.0f;
+        float burstScale = bursting ? 1.0f + 3.5f * (float) Math.sqrt(burstT) : 1.0f;
+        float burstAlpha = bursting ? Math.max(0.0f, 1.0f - burstT * burstT) : 1.0f;
+
+        float radius = expanded
+                ? (float) OlympiadCubeEntity.EXPAND_RADIUS
+                : FLY_RADIUS * burstScale;
+        // 棱宽不随尺寸变化：按比例放大会让展开态出现糊满屏幕的光柱；爆开态也只放大整体，棱宽不变。
 
         double seconds = (entity.level().getGameTime() + partialTick) / 20.0d;
         float spinDeg = expanded ? EXPANDED_SPIN_DEG_PER_SECOND : SPIN_DEG_PER_SECOND;
@@ -167,16 +148,15 @@ public class OlympiadCubeRenderer extends EntityRenderer<OlympiadCubeEntity> {
 
         float pulse = 0.75f + 0.25f * (float) Math.sin(seconds * 3.0d);
 
-        // ① 拖尾（画在棱线之前，让立方体压在拖尾上）
-        if (!expanded) {
+        // ① 拖尾（画在棱线之前，让立方体压在拖尾上）；爆开时不再拖尾
+        if (!expanded && !bursting) {
             renderTrail(buffer, tesselator, poseStack, entity, partialTick);
         }
 
-        // ② 辉光层
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         for (int[] edge : edges) {
             emitEdge(buffer, matrix, vertices[edge[0]], vertices[edge[1]],
-                    GLOW_HALF_WIDTH, GLOW_R, GLOW_G, GLOW_B, 0.40f * pulse);
+                    GLOW_HALF_WIDTH, GLOW_R, GLOW_G, GLOW_B, 0.40f * pulse * burstAlpha);
         }
         if (expanded) {
             // 展开态补三圈纬线：读作张开的领域，而不是一颗大石头
@@ -184,11 +164,10 @@ public class OlympiadCubeRenderer extends EntityRenderer<OlympiadCubeEntity> {
         }
         tesselator.end();
 
-        // ③ 芯层
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         for (int[] edge : edges) {
             emitEdge(buffer, matrix, vertices[edge[0]], vertices[edge[1]],
-                    CORE_HALF_WIDTH, CORE_R, CORE_G, CORE_B, 0.80f * pulse);
+                    CORE_HALF_WIDTH, CORE_R, CORE_G, CORE_B, 0.80f * pulse * burstAlpha);
         }
         tesselator.end();
 
@@ -199,10 +178,6 @@ public class OlympiadCubeRenderer extends EntityRenderer<OlympiadCubeEntity> {
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
     }
-
-    // ══════════════════════════════════════════════════════════════
-    // 几何
-    // ══════════════════════════════════════════════════════════════
 
     private static int[][] edgesOf(int form) {
         return switch (form) {
@@ -250,13 +225,8 @@ public class OlympiadCubeRenderer extends EntityRenderer<OlympiadCubeEntity> {
     }
 
     /**
-     * <b>正二十面体</b>的 12 个顶点。
-     *
-     * <p>顶点取经典构造：{@code (0, ±1, ±φ)}、{@code (±1, ±φ, 0)}、{@code (±φ, 0, ±1)}
-     * （{@code φ = (1+√5)/2}），归一化到外接球半径 {@code radius}。
-     * 这 12 个点两两之间只有三种距离，最短的那一档恰好构成 <b>30 条棱</b>、
-     * 每个顶点连 5 条 —— 也就是标准正二十面体的棱图，所以棱表由
-     * {@link #buildIcosaEdges()} 按"最短距离"自动生成，不用手抄 30 对索引。</p>
+     * 正二十面体顶点：经典构造 (0, ±1, ±φ) / (±1, ±φ, 0) / (±φ, 0, ±1)，归一化到外接球半径；
+     * 棱表由 buildIcosaEdges 按最短距离自动生成。
      */
     private static Vec3[] icoVertices(float radius, float spin, float tilt) {
         Vec3[] out = new Vec3[ICO_VERTEX_COUNT];
@@ -267,12 +237,7 @@ public class OlympiadCubeRenderer extends EntityRenderer<OlympiadCubeEntity> {
         return out;
     }
 
-    /**
-     * 正二十面体的 30 条棱：在 12 个顶点里取所有"距离 = 最短距离"的顶点对。
-     *
-     * <p>只用几何判据而不是手抄索引表，是为了让"顶点集合 → 棱图"这条推导留在代码里：
-     * 改顶点顺序或换成别的多面体时，棱会自动跟着走。</p>
-     */
+    /** 30 条棱 = 12 顶点里所有"距离 = 最短距离"的顶点对；用几何判据而非手抄索引表，换顶点顺序时棱会自动跟着走。 */
     private static int[][] buildIcosaEdges() {
         double minSqr = Double.MAX_VALUE;
         double[][] dist = new double[ICO_VERTEX_COUNT][ICO_VERTEX_COUNT];
@@ -307,7 +272,7 @@ public class OlympiadCubeRenderer extends EntityRenderer<OlympiadCubeEntity> {
         return new Vec3(x, y2, z2);
     }
 
-    /** 展开态的三圈"纬线"（y = 0 / ±R/2），让 3 格大的场看起来是满的。 */
+    /** 展开态的三圈"纬线"（y = 0 / ±0.55R），让 3 格大的场看起来是满的。 */
     private static void emitLatitudeRings(BufferBuilder buffer, Matrix4f matrix, float radius,
                                           float alpha) {
         float[] heights = {0.0f, 0.55f, -0.55f};
@@ -326,43 +291,17 @@ public class OlympiadCubeRenderer extends EntityRenderer<OlympiadCubeEntity> {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 拖尾（自己画的细长尾迹）
-    // ══════════════════════════════════════════════════════════════
-
     /**
-     * 画<b>细长拖尾</b> —— 替代原来那颗借来的潜影贝 {@code END_ROD} 粒子。
-     *
-     * <h3>数据从哪来</h3>
-     * <p>实体在客户端每 tick 往 {@code getClientTrail()} 里记一个位置（最近
-     * {@code OlympiadCubeEntity.TRAIL_POINTS} 个 tick）。这里按同一套插值规则把
-     * 世界坐标换算成"相对实体"的坐标，再接上实体<b>当前</b>的插值位置作为最新一点 ——
-     * 于是拖尾是一条跟着真实飞行轨迹（包括追踪时的拐弯）的折线，而不是一条直线。</p>
-     *
-     * <h3>关于坐标系：<b>不要</b>再补任何旋转</h3>
-     * <p>{@code EntityRenderDispatcher.render(...)} 的字节码里只有
-     * {@code pushPose() → translate(位置 + getRenderOffset)}，然后就调用
-     * {@code EntityRenderer.render(...)} —— <b>没有</b> yaw 旋转（那个旋转在
-     * {@code LivingEntityRenderer} 里，只有生物模型才有）。本渲染器继承的是
-     * {@code EntityRenderer}，所以拿到的 pose 已经是"原点在实体位置、坐标轴与世界轴平行"。</p>
-     *
-     * <p>之前这里多补了一次 {@code rotate(Y, -(180 - entityYaw))} 想"抵消"，结果反而把整条
-     * 尾巴绕 Y 转了 {@code 180 - yaw}。而 {@code yaw} 是发射时按视线设好、之后再没更新过的
-     * 常量 —— 于是拖尾变成一条<b>方向固定、贴在侧面、完全不跟飞行轨迹</b>的直线。
-     * 记住这条：<b>这里的 pose 是世界的，世界坐标差可以直接当本地坐标用。</b></p>
-     *
-     * <h3>形状</h3>
-     * <p>从尾部（最旧、最细、全透明）渐变到立方体（最新、最粗、最亮），
-     * 每段画成两片互相垂直的细长梯形（十字截面）—— 从任何角度看都是一条线，
-     * 不需要镜头方向的公告板计算。辉光层（粗、紫）+ 芯层（细、近白）两层相加
-     * 就是"一道发光的细长尾"。</p>
+     * 细长拖尾：按实体在客户端记的轨迹点（OlympiadCubeEntity.TRAIL_POINTS 个 tick）接上当前插值位置，
+     * 每段画成两片互相垂直的细长梯形（十字截面），辉光层 + 芯层两层相加。
+     * 坐标系：EntityRenderer 拿到的 pose 原点在实体位置、坐标轴与世界轴平行（yaw 旋转只在
+     * LivingEntityRenderer 里），所以世界坐标差可直接当本地坐标用 —— 不要再补任何旋转。
      */
     private void renderTrail(BufferBuilder buffer, Tesselator tesselator, PoseStack poseStack,
                              OlympiadCubeEntity entity, float partialTick) {
         Deque<Vec3> trail = entity.getClientTrail();
 
-        // 渲染原点 = 插值后的实体位置（与 EntityRenderDispatcher 用的那个一致；
-        // 本渲染器没有覆写 getRenderOffset，所以偏移恒为 0）
+        // 渲染原点 = 插值后的实体位置（本渲染器没有覆写 getRenderOffset，所以偏移恒为 0）
         Vec3 origin = new Vec3(
                 Mth.lerp(partialTick, entity.xOld, entity.getX()),
                 Mth.lerp(partialTick, entity.yOld, entity.getY()),
@@ -375,8 +314,7 @@ public class OlympiadCubeRenderer extends EntityRenderer<OlympiadCubeEntity> {
         points.add(Vec3.ZERO);          // 最新一点永远落在立方体中心
 
         if (points.size() < 3) {
-            // 兜底：刚发射的 1~2 tick 还没攒到轨迹，用当前速度方向补一条短直尾，
-            // 免得"发射瞬间没有拖尾"显得突兀。
+            // 兜底：刚发射的 1~2 tick 还没攒到轨迹，用当前速度方向补一条短直尾，免得发射瞬间显得突兀。
             Vec3 dir = entity.getDeltaMovement();
             if (dir.lengthSqr() < 1.0E-6d) {
                 return;
@@ -414,7 +352,7 @@ public class OlympiadCubeRenderer extends EntityRenderer<OlympiadCubeEntity> {
         }
     }
 
-    /** 一段拖尾：两片互相垂直的梯形（十字截面），宽度在两端分别是 {@code wa} / {@code wb}。 */
+    /** 一段拖尾：两片互相垂直的梯形（十字截面），宽度在两端分别是 wa / wb。 */
     private static void emitTaperedSegment(BufferBuilder buffer, Matrix4f matrix,
                                            Vec3 a, Vec3 b, float wa, float wb,
                                            float r, float g, float bl, float aa, float ab) {
@@ -445,10 +383,6 @@ public class OlympiadCubeRenderer extends EntityRenderer<OlympiadCubeEntity> {
         vertex(buffer, matrix, b.add(ob), r, g, bl, ab);
         vertex(buffer, matrix, a.add(oa), r, g, bl, aa);
     }
-
-    // ══════════════════════════════════════════════════════════════
-    // 棱的绘制（十字 ribbons）
-    // ══════════════════════════════════════════════════════════════
 
     private static void emitEdge(BufferBuilder buffer, Matrix4f matrix, Vec3 a, Vec3 b,
                                  float halfWidth, float r, float g, float bl, float alpha) {

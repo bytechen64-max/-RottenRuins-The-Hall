@@ -14,23 +14,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 把「这个物品有哪些层」（注册表 / 物品接口 / 模型 JSON）收敛成
- * 「这一帧、这个渲染上下文，实际该画哪些层」。
- *
- * <h3>做三件事</h3>
- * <ol>
- *   <li><b>合并</b>三个来源：模型 JSON 的层 + {@link MaskLayerRegistry}
- *       （物品接口与谓词注册）</li>
- *   <li><b>排序</b>：按 {@link MaskLayerSpec#order()} 升序。排序是<b>稳定</b>的，
- *       而且 JSON 层排在注册表层之前 —— 所以 order 相同的层，JSON 在前。</li>
- *   <li><b>过滤</b>：上下文开关（GUI / 手持 / 世界）与效果可用性
- *       （id 没注册、着色器没加载 → 该层整层跳过）</li>
- * </ol>
- *
- * <h3>为什么要显式过滤「着色器没加载」</h3>
- * <p>着色器加载失败时 {@code shader()} 返回 null。这时若不跳过，我们会照常
- * 烘 quad、照常往缓冲里塞，最后画出来的是另一套状态下的东西或一片空白 ——
- * 排查起来像「物品变透明了」。跳过并<b>点名一次</b>，症状就直接指向着色器。</p>
+ * 把「这个物品有哪些层」收敛成「这一帧、这个渲染上下文实际该画哪些层」：合并 → 按 order 升序 → 过滤上下文开关。
+ * 排序是稳定的且 JSON 层先入列，所以同 order 时 JSON 在前。着色器未加载必须显式跳过并点名一次：
+ * 否则照常烘 quad、照常塞缓冲，画出来是空白或另一套状态，症状像「物品变透明了」，极难反查。
  */
 public final class MaskLayerResolver {
 
@@ -40,12 +26,7 @@ public final class MaskLayerResolver {
     /** 已警告过的原因，避免每帧刷屏。 */
     private static final Set<String> WARNED = new HashSet<>();
 
-    /**
-     * @param stack      正在渲染的物品
-     * @param ctx        渲染上下文
-     * @param jsonLayers 模型 JSON 声明的层（没有就传 {@link List#of()}）
-     * @return 按 order 升序、已过滤的层列表；没有可画的层时返回共享空列表（不分配）
-     */
+    /** @return 按 order 升序、已过滤的层；没有可画的层时返回共享空列表（不分配） */
     public static List<Resolved> resolve(ItemStack stack, ItemDisplayContext ctx,
                                          List<MaskLayerSpec> jsonLayers) {
         List<MaskLayerSpec> registered = MaskLayerRegistry.resolve(stack);
@@ -54,7 +35,6 @@ public final class MaskLayerResolver {
         List<MaskLayerSpec> all = new ArrayList<>(jsonLayers.size() + registered.size());
         all.addAll(jsonLayers);
         all.addAll(registered);
-        // sort 是稳定排序（TimSort），加上 JSON 层先入列，于是同 order 时 JSON 在前。
         if (all.size() > 1) {
             all.sort(Comparator.comparingDouble(MaskLayerSpec::order));
         }
@@ -81,17 +61,8 @@ public final class MaskLayerResolver {
         return out.isEmpty() ? List.of() : out;
     }
 
-    /**
-     * 每个「物品 + 效果 + 遮罩」只记一次：这一层到底解析到了没有、用的是哪张遮罩。
-     *
-     * <p>这条日志是补课的产物：排查「加了层却看不出效果 / 效果糊满整把武器」时，
-     * 第一件要确认的事就是「层有没有被解析、mask 指的是哪张图」。没有它就只能靠猜，
-     * 而这两种症状（层没解析 / 遮罩本身盖住了整把武器）从画面上看是一样的。</p>
-     *
-     * <p><b>故意用 INFO、不挂 isDebugEnabled</b>：第一版挂在 isDebugEnabled 上，
-     * 结果开发环境里这个 logger 的 DEBUG 并没有开，诊断日志<b>一次都没打出来</b>——
-     * 一个「排查时才需要、平时最多几行」的日志，用 INFO 更安全。</p>
-     */
+    /** 每个「物品 + 效果 + 遮罩」只记一次：这一层到底解析到了没有、用的是哪张遮罩。
+     *  故意用 INFO 且不挂 isDebugEnabled —— 开发环境 DEBUG 没开，第一版一次都没打出来。 */
     private static void logFirstResolution(ItemStack stack, MaskLayerSpec spec) {
         ResourceLocation item = ForgeRegistries.ITEMS.getKey(stack.getItem());
         String key = item + "|" + spec.effectId() + "|" + spec.mask();
@@ -101,7 +72,6 @@ public final class MaskLayerResolver {
                 item, spec.effectId(), spec.mask(), spec.order());
     }
 
-    /** 已记过日志的「物品+效果+遮罩」组合。 */
     private static final Set<String> LOGGED_RESOLUTIONS = new HashSet<>();
 
     private static void warnOnce(String key, String message) {
@@ -110,7 +80,6 @@ public final class MaskLayerResolver {
         }
     }
 
-    /** 资源重载后允许重新警告一次（比如着色器改了之后又失败）。 */
     public static void resetWarnings() {
         WARNED.clear();
     }

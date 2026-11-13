@@ -47,7 +47,6 @@ public class InfEnderPearItem extends Item implements ITwitchItem {
         // 1. 射线追踪：检测玩家看向的是实体还是方块
         HitResult hitResult = player.pick(REACH_DISTANCE, 1.0F, false);
 
-        // ----- 情况 A：瞄准了实体（生物或玩家） -> 交换位置 -----
         if (hitResult.getType() == HitResult.Type.ENTITY) {
             EntityHitResult entityHit = (EntityHitResult) hitResult;
             Entity target = entityHit.getEntity();
@@ -91,7 +90,6 @@ public class InfEnderPearItem extends Item implements ITwitchItem {
             }
         }
 
-        // ----- 情况 B：瞄准了方块（地面/墙壁） -> 瞬移并释放冲击波 -----
         else if (hitResult.getType() == HitResult.Type.BLOCK) {
             BlockHitResult blockHit = (BlockHitResult) hitResult;
             // 获取点击到的方块坐标，并传送到该方块的上方 1.5 格处（避免卡进地板）

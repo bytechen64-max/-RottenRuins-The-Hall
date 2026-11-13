@@ -87,7 +87,6 @@ public class HitboxCubeRenderer extends AbstractStaticEffectRenderer<HitboxCubeR
         buffer.vertex(matrix, (float) v4.x, (float) v4.y, (float) v4.z).color(r, g, b, a).endVertex();
     }
 
-    // ========== Instance ==========
     public static class CubeInstance extends EffectInstance {
         public AABB box;
 

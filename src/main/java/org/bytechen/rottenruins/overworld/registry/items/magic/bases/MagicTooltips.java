@@ -8,21 +8,7 @@ import net.minecraft.network.chat.TextColor;
 import org.bytechen.rottenruins.HallMod;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * 魔法物品的<b>介绍行</b>构造器 —— 法术与饰品共用。
- *
- * <p>目前只有三项：<b>冷却 / 消耗 / 类型</b>。需求里"不同类型的法术用不同的颜色"指的
- * 就是最后一项：每一项的<b>数值</b>用该流派的颜色（{@link MagicType#rgb()}），
- * 标签用深灰色 —— 只给数值上色，整行都染色反而看不清。</p>
- *
- * <p>为什么单独一个类而不是写在两个基类里：法术（{@code CMagicBaseItem}）和饰品
- * （{@code MagicCurioItem}）是两条继承线，但要显示的东西必须一致，
- * 否则同一个流派在两个物品上会显示成两种颜色。颜色和文案只在这里定义一次。</p>
- *
- * <h3>加一行新的介绍</h3>
- * <p>照着 {@link #cooldownLine} 写一个方法，键名统一 {@code tooltip.<modid>.magic.<项>}，
- * 再去两个语言文件里补译文即可。参数用 {@code %s}。</p>
- */
+/** 魔法物品的「介绍行」构造器（冷却/消耗/类型，法术与饰品共用）；只给数值上流派色、标签深灰，颜色与文案只在此定义一次。 */
 public final class MagicTooltips {
 
     /** 标签色：深灰，不抢数值的颜色。 */
@@ -35,11 +21,7 @@ public final class MagicTooltips {
         return "tooltip." + HallMod.MODID + ".magic." + suffix;
     }
 
-    /**
-     * 「类型：火焰」—— 数值部分是<b>该流派的颜色</b>。
-     *
-     * <p>译名键是 {@code magic_type.<modid>.<小写流派名>}（见 {@link MagicType#translationKey}）。</p>
-     */
+    /** 「类型：火焰」，数值用该流派颜色；译名键为 magic_type.<modid>.<小写流派名>（见 {@link MagicType#translationKey}）。 */
     @NotNull
     public static Component typeLine(@NotNull MagicType type) {
         MutableComponent value = Component.translatable(type.translationKey(HallMod.MODID))
@@ -47,11 +29,7 @@ public final class MagicTooltips {
         return Component.translatable(key("type"), value).withStyle(LABEL);
     }
 
-    /**
-     * 「冷却：1.5 秒」。
-     *
-     * @param ticks 冷却 tick；{@code <= 0} 时显示"无冷却"
-     */
+    /** 「冷却：1.5 秒」；ticks <= 0 时显示"无冷却"。 */
     @NotNull
     public static Component cooldownLine(int ticks, @NotNull MagicType type) {
         if (ticks <= 0) {
@@ -64,11 +42,7 @@ public final class MagicTooltips {
         return Component.translatable(key("cooldown"), value).withStyle(LABEL);
     }
 
-    /**
-     * 「消耗：40 法力」。
-     *
-     * @param mana 启动耗蓝；{@code <= 0} 时显示"无消耗"
-     */
+    /** 「消耗：40 法力」；mana <= 0 时显示"无消耗"。 */
     @NotNull
     public static Component manaLine(int mana, @NotNull MagicType type) {
         if (mana <= 0) {
@@ -79,9 +53,7 @@ public final class MagicTooltips {
         return Component.translatable(key("mana"), value).withStyle(LABEL);
     }
 
-    /**
-     * 维持耗蓝那一行（{@code KEEP} 模式专用；其它模式由调用方决定不要加）。
-     */
+    /** 维持耗蓝那一行（KEEP 模式专用；其它模式由调用方决定不要加）。 */
     @NotNull
     public static Component keepCostLine(int perSecond, @NotNull MagicType type) {
         MutableComponent value = Component.literal(Integer.toString(perSecond))

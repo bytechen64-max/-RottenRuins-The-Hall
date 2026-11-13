@@ -19,44 +19,15 @@ import org.bytechen.rottenruins.overworld.registry.items.magic.bases.UsingType;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * <b>魔法轮盘施法界面</b> —— 按住施法键（默认 {@code R}）打开、鼠标方向瞄准、
- * 松手释放 / 结束。
- *
- * <h3>为什么是 Screen（而不是纯 HUD）</h3>
- * <p>本界面用 {@code Screen} 承接键盘与鼠标事件（松手 / 右键 / {@code Esc}），
- * 但 {@link #isPauseScreen()} 返回 {@code false}：世界继续 tick，受击、冷却、
- * 法力回复与正在维持的法术都照常推进；也<b>不</b>调用 {@code renderBackground}
- * 让世界变黑，只在世界之上铺一层半透明压暗 + 深空星野，让轮盘成为视觉焦点。</p>
- *
- * <h3>手势映射（{@code docs/spell-wheel-design.md} §6.2）</h3>
- * <ul>
- *   <li><b>IMMEDIATELY</b>：不需要停留确认，松手时发 {@code CAST}；</li>
- *   <li><b>CHARGE</b>：选中并停留 {@value #CHARGE_DWELL_TICKS} tick（120 ms）后发
- *       {@code BEGIN} 开始蓄力（服务端进 {@code CHARGING}），松手发 {@code END}；
- *       鼠标移出该扇区发 {@code CANCEL} 并回到瞄准；</li>
- *   <li><b>KEEP</b>：选中并停留 {@value #KEEP_DWELL_TICKS} tick（250 ms）后发
- *       {@code BEGIN} 起手；服务端回执成功后 {@code WheelFeedbackPacket} 会把本 Screen
- *       关掉并把客户端相位切到 {@code MAINTAINING}，之后由 {@code MagicClientHandler}
- *       在松开 R 时发 {@code END}。</li>
- * </ul>
- *
- * <h3>关闭规则</h3>
- * <p>松手：瞄准态 IMMEDIATELY → {@code CAST}；蓄力中 → {@code END}；空位 / 死区 → 直接关。
- * 右键 / {@code Esc} / 被外部关闭：蓄力中补 {@code CANCEL}（零代价作废），
- * 已发送过终态动作（CAST/END）时不重复发；{@code MAINTAINING} 时不发 {@code CANCEL}
- * —— 此时轮盘已经收拢成底部维持条，松开 R 由别人收尾。</p>
- *
- * <h3>渲染</h3>
- * <p>轮盘的几何、扇区状态（hover/selected/冷却/蓝不足/蓄力环）、核心文字与 HUD chrome
- * 全部由共享的 {@link WheelRenderer} 画；这里只负责背景与把本帧的交互状态传进去。
- * 星野用项目已有的 {@link MagicGuiShaders#drawStarfield}，失败时半透明压暗就是全部背景。</p>
+ * 魔法轮盘施法界面：按施法键（默认 R）打开、鼠标瞄准扇区、左键点击施法。
+ * 用 Screen 承接键盘/鼠标事件，但 isPauseScreen() 返回 false（世界继续 tick），
+ * 也不调 renderBackground，只叠半透明压暗 + 星野，让轮盘成为视觉焦点。
+ * 手势：IMMEDIATELY 松手 CAST；CHARGE 停留 {@value #CHARGE_DWELL_TICKS} tick 发 BEGIN、
+ * 松手 END；KEEP 停留 {@value #KEEP_DWELL_TICKS} tick 发 BEGIN，回执成功即关界面并转 MAINTAINING。
+ * 轮盘几何、扇区状态与 HUD chrome 全由 {@link WheelRenderer} 画，这里只管背景与本帧交互状态。
  */
 @OnlyIn(Dist.CLIENT)
 public final class SpellWheelScreen extends Screen {
-
-    // ══════════════════════════════════════════════════════════════
-    //  常量
-    // ══════════════════════════════════════════════════════════════
 
     /** CHARGE：停留 3 tick（120 ms）后发 BEGIN 开始蓄力。 */
     private static final int CHARGE_DWELL_TICKS = 3;
@@ -69,10 +40,6 @@ public final class SpellWheelScreen extends Screen {
     /** KEEP 的 BEGIN 回执最长等待：超时视为没起手，回到瞄准。 */
     private static final int KEEP_CONFIRM_TIMEOUT_TICKS = 20;
 
-    // ══════════════════════════════════════════════════════════════
-    //  运行时状态
-    // ══════════════════════════════════════════════════════════════
-
     /** 当前轮盘页（由 {@code MagicClientHandler} 打开时传入）。 */
     private final int page;
     /** 打开时刻（墙钟，ms），用于 180 ms 展开动画。 */
@@ -84,39 +51,31 @@ public final class SpellWheelScreen extends Screen {
 
     /** 鼠标指向的方位（-1 = 死区 / 越界 / 未移动）。 */
     private int hovered = -1;
-    /** 当前选中方位，跟随 {@link #hovered}；-1 允许。 */
     private int selected = -1;
 
     /** 在同一个扇区上停留了多少 tick（用于 CHARGE / KEEP 的停留阈值）。 */
     private int dwellTicks;
-    /** 上一次停留计数的扇区；变化时清零。 */
     private int lastDwellIndex = Integer.MIN_VALUE;
     /** 在这个 tick 之前不重试 BEGIN（服务端刚拒绝过）。 */
     private int beginBlockedUntilTick;
-    /** 刚被服务端拒绝过的扇区；不主动重试，等鼠标换方向。 */
     private int failedIndex = -1;
 
-    // ── CHARGE 蓄力会话（本地预测；服务端另有权威时钟）──
+    // CHARGE 会话（本地预测；服务端另有权威时钟）
     private boolean charging;
     private int chargeIndex = -1;
     private int chargeStartTick;
     private int chargeTotalTicks;
     private float chargeFraction;
 
-    // ── KEEP 起手等待（BEGIN 已发、回执未到）──
+    // KEEP 起手等待（BEGIN 已发、回执未到）
     private boolean keepPending;
     private int keepIndex = -1;
     private int keepPendingUntilTick;
 
-    // ── 关闭 / 终态动作 ──
     /** 已经发出 CAST / END 这类终态动作，关闭时不要再补 CANCEL。 */
     private boolean terminalActionSent;
     /** 关闭清理只做一次（onClose 与 removed 都会进来）。 */
     private boolean closeHandled;
-
-    // ══════════════════════════════════════════════════════════════
-    //  生命周期
-    // ══════════════════════════════════════════════════════════════
 
     public SpellWheelScreen(int page) {
         super(Component.translatable("rotten_ruins.gui.wheel.title"));
@@ -131,12 +90,10 @@ public final class SpellWheelScreen extends Screen {
         if (WheelClientState.phase() == WheelClientState.Phase.NONE) {
             WheelClientState.beginSession(page);
         }
-        // Minecraft.setScreen() 在打开任何 Screen 前都会 KeyMapping.releaseAll()，
-        // 把"施法键还按着"这件事丢了。KEEP 起手后 MagicClientHandler 靠
-        // OPEN_WHEEL.isDown() 判断玩家是否已松手，所以这里把物理按键状态补回去。
+        // setScreen() 打开任何 Screen 前都会 KeyMapping.releaseAll()，把"施法键还按着"丢了；
+        // KEEP 起手后要靠 OPEN_WHEEL.isDown() 判断玩家是否松手，所以把物理按键状态补回去。
         syncWheelKeyState();
         if (frameMouseX == 0 && frameMouseY == 0) {
-            // 首帧尚未 render 时先把"鼠标"放在屏幕中心（死区，不会误选）。
             frameMouseX = width / 2;
             frameMouseY = height / 2;
         }
@@ -162,10 +119,6 @@ public final class SpellWheelScreen extends Screen {
         return elapsed / (float) OPEN_ANIMATION_MS;
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  每 tick：选中 / 停留 / 蓄力 / 起手
-    // ══════════════════════════════════════════════════════════════
-
     @Override
     public void tick() {
         super.tick();
@@ -177,8 +130,7 @@ public final class SpellWheelScreen extends Screen {
         Player player = mc.player;
         WheelClientState.Phase phase = WheelClientState.phase();
 
-        // KEEP 起手成功后 WheelFeedbackPacket 已经把 Screen 关了并切到 MAINTAINING；
-        // 这里只是兜底（例如界面由别的路径重新打开）。
+        // MAINTAINING 兜底：正常路径下回执已关界面并切相位
         if (phase == WheelClientState.Phase.MAINTAINING) {
             closeNow();
             return;
@@ -188,14 +140,13 @@ public final class SpellWheelScreen extends Screen {
             phase = WheelClientState.phase();
         }
 
-        // 鼠标方向 → 扇区；选中跟随悬停。只有左键点击才会真正起手，
-        // 这样轮盘打开后可以慢慢看，不需要一直按住 R。
+        // 鼠标方向 → 扇区，选中跟随悬停；只有左键点击才真正起手，所以能慢慢看
         float[] layout = WheelRenderer.layout(width, height);
         hovered = WheelRenderer.hoveredIndex(frameMouseX, frameMouseY,
                 layout[0], layout[1], layout[2], layout[3]);
         selected = hovered;
 
-        // ② KEEP 起手等待：只要回执没来（成功会关界面），这里保持不动；超时视为没起手。
+        // KEEP 起手等待：回执没来的话保持不动（成功会关界面），超时视为没起手
         if (keepPending) {
             if (player.tickCount - keepPendingUntilTick > 0) {
                 failAndReturnToAiming(player, keepIndex);
@@ -203,8 +154,7 @@ public final class SpellWheelScreen extends Screen {
             return;
         }
 
-        // ③ CHARGE 蓄力中：服务端不在 CHARGING 说明 BEGIN 被拒/会话被取消；
-        //    蓄力进度只在本地表现，松开左键时发 END。
+        // 蓄力中：服务端不在 CHARGING 说明 BEGIN 被拒 / 会话被取消；进度只在本地表现
         if (charging) {
             if (phase != WheelClientState.Phase.CHARGING) {
                 failAndReturnToAiming(player, chargeIndex);
@@ -263,10 +213,6 @@ public final class SpellWheelScreen extends Screen {
         beginBlockedUntilTick = player.tickCount + BEGIN_RETRY_BLOCK_TICKS;
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  渲染
-    // ══════════════════════════════════════════════════════════════
-
     @Override
     public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
         frameMouseX = mouseX;
@@ -278,18 +224,16 @@ public final class SpellWheelScreen extends Screen {
         float time = WheelRenderer.timeSeconds();
         float openT = openProgress();
 
-        // ① 半透明压暗世界：不调用 renderBackground（世界不暂停，也不该被涂黑）。
+        // 半透明压暗世界：不调 renderBackground（世界不暂停，也不该被涂黑）
         gui.fill(0, 0, width, height, 0xB602040A);
 
-        // ② 深空星野（着色器不可用时，上面的压暗就是全部背景）。
+        // 深空星野；着色器不可用时上面的压暗就是全部背景
         float mouseNormX = width <= 0 ? 0.0F : mouseX / (float) width * 2.0F - 1.0F;
         float mouseNormY = height <= 0 ? 0.0F : mouseY / (float) height * 2.0F - 1.0F;
         if (MagicGuiShaders.drawStarfield(gui, width, height, time, mouseNormX, mouseNormY)) {
-            // 星野之上再盖一层薄暗，保证轮盘、图标与文字对比度。
             gui.fill(0, 0, width, height, 0x6E000000);
         }
 
-        // ③ 轮盘 + HUD chrome（标题 / 法力条 / 提示 / 页指示）
         float[] layout = WheelRenderer.layout(width, height);
         WheelData.Slot[] slots = WheelData.page(page);
         WheelRenderer.render(gui, layout[0], layout[1], layout[2], layout[3],
@@ -298,18 +242,9 @@ public final class SpellWheelScreen extends Screen {
                 layout[2], layout[3], openT, time);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  输入：松手释放 / 右键取消 / ESC
-    // ══════════════════════════════════════════════════════════════
-
     /**
-     * 轮盘是「按 R 打开，右键 / 再按 R 关闭」的开关式界面，不需要长按施法键。
-     * 施法改为鼠标左键点击方位：
-     * <ul>
-     *   <li>IMMEDIATELY：左键点击 → 立即施放并关闭；</li>
-     *   <li>CHARGE：按住左键蓄力、松开左键释放；</li>
-     *   <li>KEEP：左键起手维持，回执成功关界面；之后右键 / 再按 R 结束维持。</li>
-     * </ul>
+     * 开关式界面：R / 右键关闭，不必长按施法键。施法走左键 —— IMMEDIATELY 点击即放并关闭，
+     * CHARGE 按住蓄力、松开释放，KEEP 左键起手维持、之后右键或再按 R 结束。
      */
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
@@ -391,18 +326,9 @@ public final class SpellWheelScreen extends Screen {
     }
 
     /**
-     * 把施法键的 {@code KeyMapping} 状态同步回物理按键的真实状态。
-     *
-     * <p>1.20.1 的 {@code Minecraft#setScreen(Screen)} 在打开 Screen 之前会调用
-     * {@code KeyMapping.releaseAll()}（防止菜单里残留"还按着 W"的移动状态），
-     * 这对"按住施法键"的交互是致命的：轮盘一关，{@code OPEN_WHEEL.isDown()} 恒为 false。
-     * 而 {@code KEEP} 起手成功后 {@code WheelFeedbackPacket} 会先从回执里关掉本界面，
-     * {@code MagicClientHandler} 再用 {@code !OPEN_WHEEL.isDown()} 判断"玩家松手没有"
-     * —— 不补回真实按键状态的话，维持条会在起手的下一个 tick 就被误判成松手而结束。</p>
-     *
-     * <p>因此打开 / 关闭 Screen 时都按物理按键写回一次：打开时恢复"按着"；
-     * 关闭时如果玩家已经松开（正常 CAST / 松手结束）立刻恢复 false，如果是回执关的界面
-     * 则保持 true，直到玩家真正松开（那时 Screen 已关，原版会自己更新映射）。</p>
+     * 把施法键的 KeyMapping 状态同步回物理按键：setScreen(Screen) 打开界面前会调
+     * KeyMapping.releaseAll()，于是 OPEN_WHEEL.isDown() 恒为 false，KEEP 维持会在下一 tick
+     * 被当成松手结束。打开 / 关闭时各写回一次。
      */
     private void syncWheelKeyState() {
         Minecraft mc = this.minecraft != null ? this.minecraft : Minecraft.getInstance();
@@ -421,10 +347,6 @@ public final class SpellWheelScreen extends Screen {
         MagicClientHandler.OPEN_WHEEL.setDown(down);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  关闭清理
-    // ══════════════════════════════════════════════════════════════
-
     private void closeNow() {
         Minecraft mc = this.minecraft;
         if (mc != null) {
@@ -441,20 +363,14 @@ public final class SpellWheelScreen extends Screen {
     @Override
     public void removed() {
         cleanupOnClose();
-        // 关闭后把施法键的按下状态还给物理现实：KEEP 维持在关了界面之后
-        // 还要靠 OPEN_WHEEL.isDown() 判断"玩家是不是还按着"。
+        // 关界面后把施法键状态还给物理现实：KEEP 维持仍要靠 OPEN_WHEEL.isDown()
         syncWheelKeyState();
         super.removed();
     }
 
     /**
-     * 关闭清理：
-     * <ul>
-     *   <li>蓄力中（且没发过 CAST/END）：发 {@code CANCEL} 作废、零代价；</li>
-     *   <li>{@code MAINTAINING}：<b>不</b>取消也不用 reset —— 维持条还要靠这份相位，
-     *       松开 R 由 {@code MagicClientHandler} 发 {@code END}；</li>
-     *   <li>其余情况把客户端相位清干净，避免下次打开界面时读到上一次的会话。</li>
-     * </ul>
+     * 关闭清理：蓄力中补发 CANCEL（零代价作废）；MAINTAINING 不动相位（松开 R 由别人发 END）；
+     * 其余情况重置客户端相位，避免下次打开界面读到旧会话。
      */
     private void cleanupOnClose() {
         if (closeHandled) {

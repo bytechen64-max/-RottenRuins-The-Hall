@@ -59,14 +59,18 @@ public abstract class CustomEffectBase {
         this.color = color;
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 基本信息
-    // ══════════════════════════════════════════════════════════════
 
     /** 唯一 id（注册表键，也是 NBT 里存的名字）。 */
     @NotNull
     public final ResourceLocation getId() {
         return id;
+    }
+
+    /** 语言键，格式与原版效果一致：{@code effect.<命名空间>.<路径>}。 */
+    @NotNull
+    public final String getTranslationKey() {
+        return "effect." + id.getNamespace() + "." + id.getPath();
     }
 
     @NotNull
@@ -111,9 +115,7 @@ public abstract class CustomEffectBase {
         return true;
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 计时与周期回调（全部服务端）
-    // ══════════════════════════════════════════════════════════════
 
     /**
      * 本次 tick 要不要触发 {@link #applyEffectTick}。
@@ -146,9 +148,7 @@ public abstract class CustomEffectBase {
     public void onRemoved(@NotNull LivingEntity entity, @NotNull CustomEffectInstance instance) {
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 属性
-    // ══════════════════════════════════════════════════════════════
 
     /**
      * 挂上属性修饰器。默认什么都不做。

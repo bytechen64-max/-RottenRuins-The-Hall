@@ -4,24 +4,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 
 /**
- * 一个 mask 效果层的完整配置（不可变值对象）。
- *
- * <h3>「层」是什么</h3>
- * <p>一张遮罩贴图 + 一个效果着色器 + 一组参数。渲染时每个层都用遮罩烘一个
- * 物品 quad，交给该效果自己的着色器画一遍；层与层之间只共用物品本体写下的
- * 深度，彼此不覆盖 —— 于是 cosmic 星空、泛光、以及以后新增的任何效果可以
- * <b>同时挂在一件物品上</b>，而不是互相顶掉。</p>
- *
- * <h3>遮罩约定</h3>
- * <p>与 cosmic 层完全一致：遮罩贴图的 <b>红通道</b>决定该层在哪里生效
- * （白 = 生效，黑 = 不生效），alpha 通道不参与运算。同一张遮罩可以同时喂给
- * 多个层（比如星空和泛光共用一把剑的剪影）。</p>
- *
- * <h3>order 与绘制顺序</h3>
- * <p>同一物品上的多个层按 {@code order} <b>升序</b>绘制，默认
- * {@value #DEFAULT_ORDER}。整个物品的层序是固定的：
- * 本体纹理 → cosmic 星空 → 本系统的各层（按 order）→ 崩坏层。
- * 想让某个层压在别的层下面，把 order 调小即可。</p>
+ * 一个 mask 效果层的完整配置（不可变值对象）：遮罩贴图 + 效果着色器 + 一组参数。
+ * 遮罩的<b>红通道</b>决定该层在哪生效（白 = 生效），alpha 不参与；同一张遮罩可喂多个层。
+ * 同一物品的层序固定：本体纹理 → cosmic 星空 → 各层（按 {@code order} 升序，默认 {@value #DEFAULT_ORDER}）→ 崩坏层。
  *
  * @see org.bytechen.rottenruins.api.mask.MaskLayerProvider
  * @see org.bytechen.rottenruins.client.mask.MaskLayerRegistry
@@ -37,13 +22,11 @@ public record MaskLayerSpec(
         float intensity,
         /** 效果的作用宽度（像素，效果自己解释；泛光里是光晕外扩半径）。 */
         float width,
-        /** 动画速度倍率。0 表示"静止"，具体静止在什么值由效果自己决定（glow 是满亮度）。 */
+        /** 动画速度倍率。0 = 静止，具体静止在什么值由效果自己决定（glow 是满亮度）。 */
         float speed,
-        /** 整体不透明度（0–1）。 */
         float opacity,
-        /** 同物品内多个层的绘制顺序，升序。 */
         float order,
-        /** 相位偏移（弧度），用来错开同一物品上多个同id层的动画。 */
+        /** 相位偏移（弧度），用来错开同一物品上多个同 id 层的动画。 */
         float phase,
         boolean showInGui,
         boolean showWhenHeld,

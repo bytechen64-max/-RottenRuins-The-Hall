@@ -54,7 +54,6 @@ public class RegisterTab {
                     .title(Component.translatable("itemGroup." + HallMod.MODID + ".main"))
                     .icon(() -> new ItemStack(RegisterItem.EXAMPLE_ITEM.get()))
 
-                    // ─────────────────────────── 刷怪蛋（33） ───────────────────────────
                     .section(section("creatures"), (params, output) -> {
                         // 王庭系（原 Hall，畸骸种 hall_*）
                         items(output,
@@ -96,7 +95,6 @@ public class RegisterTab {
                         CorruptionItems.ORIGINAL_BUG_SPAWN_EGG.get());
                     })
 
-                    // ─────────────────────────── 材料（23） ───────────────────────────
                     .section(section("materials"), (params, output) -> {
                         // 王庭材料
                         items(output,
@@ -128,7 +126,6 @@ public class RegisterTab {
 
                     })
 
-                    // ─────────────────────────── 魔法（13） ───────────────────────────
                     .section(section("magic"), (params, output) -> {
                         items(output,RegisterBlock.SOURCE_FILTER.get().asItem(),RegisterBlock.SOURCE_COLLECTOR.get().asItem());
                         items(output, RegisterBlock.GROUNDING_STAKE.get().asItem(), RegisterBlock.SOURCE_WIRE.get().asItem());
@@ -175,10 +172,10 @@ public class RegisterTab {
                         RegisterItem.TIDAL_PULSE.get(),
                         RegisterItem.BRIAR_SNARE.get(),
                         RegisterItem.PURIFYING_LIGHT.get(),
-                        RegisterItem.ARCANE_STEP.get());
+                        RegisterItem.ARCANE_STEP.get(),
+                        RegisterItem.SOUL_DRINK.get());
                     })
 
-                    // ─────────────────────── 武器与工具（16） ───────────────────────
                     .section(section("gear"), (params, output) -> {
                         // 王庭武器与工具
                         items(output,
@@ -203,7 +200,6 @@ public class RegisterTab {
                         CorruptionItems.SYRINGE_BLOODY_CONCENTRATE.get());
                     })
 
-                    // ─────────────────────── 方块（54） ───────────────────────
                     .section(section("blocks"), (params, output) -> {
                         // 王庭：地表 / 石系
                         items(output,
@@ -270,7 +266,6 @@ public class RegisterTab {
                         Item.byBlock(CorruptionBlocks.REFACTORED_REMAINS_LARGE.get()));
                     })
 
-                    // ─────────────────────── 其它（兜底） ───────────────────────
                     .section(section("misc"), (params, output) -> {
                         // 先放已经明确归入"其它"的物品
                         items(output,

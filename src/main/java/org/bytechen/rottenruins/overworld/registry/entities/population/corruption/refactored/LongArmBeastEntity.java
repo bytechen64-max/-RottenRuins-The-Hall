@@ -25,9 +25,7 @@ import java.util.function.Consumer;
  */
 public class LongArmBeastEntity extends BaseRefactoredEntity {
 
-    // =========================================================================
     // C7 钩刺拖拽参数
-    // =========================================================================
     private static final int HOOK_COOLDOWN = 140;
     private static final double HOOK_MIN_RANGE = 4.0;
     private static final double HOOK_MAX_RANGE = 13.0;
@@ -63,9 +61,7 @@ public class LongArmBeastEntity extends BaseRefactoredEntity {
                 .add(Attributes.FOLLOW_RANGE, 40.0D);
     }
 
-    // =========================================================================
     // C7 钩刺拖拽
-    // =========================================================================
 
     @Override
     public void tick() {

@@ -14,27 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Deferred shockwave render queue for shader-pack (Oculus/Iris) compatibility.
- *
- * <h3>Why</h3>
- * Shockwave rendering needs a scene-copy texture (blit from main framebuffer)
- * and draws custom-shaded sphere geometry.  Under shader packs the main
- * framebuffer at {@code AFTER_TRIPWIRE_BLOCKS} time contains raw GBuffer data,
- * not the composed final scene.  By deferring the scene copy + draw to
- * {@code GameRenderer.renderLevel()} TAIL, we capture the fully composed
- * scene and write directly to the main framebuffer (bypassing GBuffers).
- *
- * <h3>Flow</h3>
- * <ol>
- *   <li>{@link ShockwaveRenderer#renderOne} detects shader pack →
- *       snapshots all computed params and enqueues here.</li>
- *   <li>{@code CosmicAfterLevelMixin} TAIL calls {@link #renderAll()}.</li>
- *   <li>Replay: do scene copy from the (now composed) main framebuffer,
- *       then draw the shockwave sphere with late-deferred GL state.</li>
- * </ol>
- *
- * @see ShockwaveRenderer
- * @see org.bytechen.rottenruins.mixin.CosmicAfterLevelMixin
+ * Deferred shockwave render queue for shader-pack (Oculus/Iris) compatibility: at {@code AFTER_TRIPWIRE_BLOCKS}
+ * the main framebuffer holds raw GBuffer data, so scene copy + sphere draw defer to {@code renderLevel()} TAIL.
+ * Flow: {@link ShockwaveRenderer#renderOne} snapshots params and enqueues; the TAIL replay draws to it.
  */
 public final class ShockwaveLateRenderQueue {
 
@@ -42,10 +24,7 @@ public final class ShockwaveLateRenderQueue {
 
     private ShockwaveLateRenderQueue() {}
 
-    /**
-     * Enqueue a shockwave for deferred rendering.
-     * Must be called on the render thread.
-     */
+    /** Enqueue a shockwave for deferred rendering. Must be called on the render thread. */
     public static void enqueue(Matrix4f pose, Matrix3f normal,
                                 float cx, float cy, float cz,
                                 float radius, float maxRadius,
@@ -56,12 +35,7 @@ public final class ShockwaveLateRenderQueue {
                 cx, cy, cz, radius, maxRadius, alpha, lifeProgress, ringPosition, ringWidth));
     }
 
-    /**
-     * Replay all enqueued shockwaves.  Called from
-     * {@code CosmicAfterLevelMixin} at {@code renderLevel()} TAIL,
-     * after the shader pack has composed the final scene to the
-     * main framebuffer.
-     */
+    /** Replay all enqueued shockwaves; called at {@code renderLevel()} TAIL after the pack composed the scene. */
     public static void renderAll() {
         if (ENTRIES.isEmpty()) return;
 
@@ -84,8 +58,6 @@ public final class ShockwaveLateRenderQueue {
             ENTRIES.clear();
         }
     }
-
-    // ── internal ──────────────────────────────────────────────
 
     private record Entry(Matrix4f pose, Matrix3f normal,
                          float cx, float cy, float cz,

@@ -19,7 +19,6 @@ public class BlockTagData extends BlockTagsProvider {
 
     @Override
     protected void addTags(HolderLookup.Provider provider) {
-        // ========== 矿石 ==========
 
         tag(BlockTags.MINEABLE_WITH_PICKAXE)
                 .add(RegisterBlock.DOMITE_MINERAL.get());
@@ -38,8 +37,6 @@ public class BlockTagData extends BlockTagsProvider {
         tag(BlockTags.MINEABLE_WITH_PICKAXE).add(RegisterBlock.SOURCE_FILTER.get(),RegisterBlock.SOURCE_COLLECTOR.get());
         // 势能合成台：铁质设备手感，同样用镐挖
         tag(BlockTags.MINEABLE_WITH_PICKAXE).add(RegisterBlock.POTENTIAL_CRAFTING_TABLE.get());
-
-        // ========== HALL_PLANKS 建筑方块 ==========
 
         // 工具类型：木板类方块使用斧
         tag(BlockTags.MINEABLE_WITH_AXE)
@@ -74,8 +71,6 @@ public class BlockTagData extends BlockTagsProvider {
         tag(BlockTags.DOORS).add(RegisterBlock.HALL_DOOR.get());
         tag(BlockTags.TRAPDOORS).add(RegisterBlock.HALL_TRAPDOOR.get());
 
-        // ========== HALL_STONE 建筑方块 ==========
-
         // 工具类型：石质方块使用镐
         tag(BlockTags.MINEABLE_WITH_PICKAXE)
                 .add(RegisterBlock.HALL_STONE.get())
@@ -93,8 +88,6 @@ public class BlockTagData extends BlockTagsProvider {
         tag(BlockTags.BUTTONS).add(RegisterBlock.HALL_STONE_BUTTON.get());
         tag(BlockTags.STONE_BUTTONS).add(RegisterBlock.HALL_STONE_BUTTON.get());
         tag(BlockTags.STONE_PRESSURE_PLATES).add(RegisterBlock.HALL_STONE_PRESSURE_PLATE.get());
-
-        // ========== 王庭遗迹自然方块 ==========
 
         // 工具类型：草方块 / 泥土 / 沙子系用锹，原木 / 树叶 / 藤蔓用斧
         tag(BlockTags.MINEABLE_WITH_SHOVEL)

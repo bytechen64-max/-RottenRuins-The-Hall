@@ -104,9 +104,7 @@ public class CorruptionBatEntity extends BaseHostEntity {
         CorruptionSkillUtil.playSoundPitched(this, SoundEvents.BAT_HURT, 1.0F, 1.6F, 0.2F);
     }
 
-    // =========================================================================
     // 动画：模型只有 idle / fly / speed_fly（没有 walk / run）
-    // =========================================================================
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {

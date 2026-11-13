@@ -15,6 +15,7 @@ import org.bytechen.rottenruins.overworld.crafting.PotentialCraftingRecipe;
 import org.bytechen.rottenruins.overworld.crafting.PotentialCraftingRecipeSerializer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * 势能合成台配方的注册与查找。
@@ -43,7 +44,7 @@ public final class PotentialCraftingRecipes {
 
     @NotNull
     public static ResourceLocation modLoc() {
-        return new ResourceLocation(HallMod.MODID, PATH);
+        return ModUtils.modLoc(PATH);
     }
 
     /** 找第一条匹配的配方（注册顺序优先）；服务端调用。 */

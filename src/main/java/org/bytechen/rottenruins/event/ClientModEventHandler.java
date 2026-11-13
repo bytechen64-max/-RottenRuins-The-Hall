@@ -75,7 +75,6 @@ public class ClientModEventHandler {
         for (EntityType<?> type : HallProjectileManager.consumeProjectileTypes())
             registerGeoProjectileRenderer(event, type);
 
-        // ---- 腐化技能实体渲染（简单粒子弹体 / 自绘立方体 / 自绘护盾） ----
         event.registerEntityRenderer(CorruptionEntityTypes.CORRUPTION_DART.get(), SkillProjectileRenderer::new);
         event.registerEntityRenderer(CorruptionEntityTypes.CORRUPTION_POOL.get(), SkillProjectileRenderer::new);
         event.registerEntityRenderer(CorruptionEntityTypes.CUBOID.get(), CuboidRenderer::new);
@@ -83,50 +82,36 @@ public class ClientModEventHandler {
         for (EntityType<?> type : EntityManager.consumeSkillEntityTypes())
             registerGeoEntityRenderer(event, type);
 
-        // 自定义渲染器 —— 陨石（无 GeckoLib 模型，程序化水滴网格）
         event.registerEntityRenderer(EntityTypeRegistry.METEORITE.get(), MeteoriteRenderer::new);
 
-        // 自定义渲染器 —— 冲击波（warp 着色器，Möbius 条带 + 屏幕空间光线追踪）
         event.registerEntityRenderer(EntityTypeRegistry.SHOCKWAVE.get(), ShockwaveRenderer::new);
 
-        // 自定义渲染器 —— 剑气（双锥体白色发光，逐渐缩小淡出）
         event.registerEntityRenderer(EntityTypeRegistry.SWORD_AURA.get(), SwordAuraRenderer::new);
 
-        // 自定义渲染器 —— 坍缩（多类型坍缩渲染：末影龙式/超立方体/二十面体/变换多棱柱）
         event.registerEntityRenderer(EntityTypeRegistry.COLLAPSE.get(), CollapseRenderer::new);
 
-        // 自定义渲染器 —— 黑洞（光线追踪引力透镜，视空间 billboard，光影兼容）
         event.registerEntityRenderer(EntityTypeRegistry.BLACK_HOLE.get(), BlackHoleRenderer::new);
 
-        // 自定义渲染器 —— 天穹裁决的光柱（自主发光体积光束，加法混合）
         event.registerEntityRenderer(EntityTypeRegistry.VERDICT_BEAM.get(), VerdictBeamRenderer::new);
 
-        // 自定义渲染器 —— 裁决领域（地面光纹圆盘 + 悬浮二十面体棱片）
         event.registerEntityRenderer(EntityTypeRegistry.VERDICT_FIELD.get(), VerdictFieldRenderer::new);
 
-        // 自定义渲染器 —— 裁决落剑（从天而降、落地插入地面的剑气）
         event.registerEntityRenderer(EntityTypeRegistry.VERDICT_SWORD_DROP.get(),
                 VerdictSwordDropRenderer::new);
 
-        // 自定义渲染器 —— 绯红誓约的蓄力法阵（贴地圆盘 + 上升的立柱）
         event.registerEntityRenderer(EntityTypeRegistry.CRIMSON_VOW_CHARGE.get(),
                 CrimsonVowChargeRenderer::new);
 
-        // 自定义渲染器 —— 绯红誓约的巨型法阵（地面图案 + 立方体核心 + 上方扭曲 + 终末光柱）
         event.registerEntityRenderer(EntityTypeRegistry.CRIMSON_VOW_FIELD.get(),
                 CrimsonVowFieldRenderer::new);
         event.registerEntityRenderer(EntityTypeRegistry.METEOR_EVENT.get(),
                 MeteorEventRenderer::new);
 
-        // 方块实体渲染器 —— 方块版 mask 效果层的唯一接入点。
-        // 想给新方块挂层：加一个 BlockEntity（实现 BlockMaskLayerProvider）+ 一个
-        // 同样三行的 BER，然后在这里注册即可，不需要新增 mixin。
+        // 方块版 mask 效果层的唯一接入点：新方块只需加 BlockEntity（实现 BlockMaskLayerProvider）
+        // + 一个同样三行的 BER，然后在这里注册，不需要新增 mixin。
         event.registerBlockEntityRenderer(RegisterBlockEntities.DEATH_CORE.get(),
                 DeathCoreRenderer::new);
-        // 法术投射物 —— 火球。
-        // 用原版 ThrownItemRenderer：它把 Fireball#getItem() 的那张贴图billboard 出来，
-        // 也就是"火球的贴图 = 火球法术物品的贴图"（见 FireBallEntity#spawn 里的 setItem）。
-        // 参数依次是 context / 缩放 2.0（原版恶魂火球是 3.0）/ 全亮（火球自带发光感）。
+        // 火球用原版 ThrownItemRenderer：把 Fireball#getItem() 的贴图 billboard 出来（缩放 2.0、全亮）。
         event.registerEntityRenderer(EntityTypeRegistry.FIRE_BALL.get(),
                 ctx -> new ThrownItemRenderer<>(ctx, 2.0F, true));
 
@@ -134,7 +119,6 @@ public class ClientModEventHandler {
         event.registerEntityRenderer(EntityTypeRegistry.SPEAR_OF_JUDGMENT.get(),
                 SpearOfJudgmentRenderer::new);
 
-        // 奥数立方：三形态（三棱锥 / 立方体 / 八角双锥），只画棱、辉光 + 芯两层
         event.registerEntityRenderer(EntityTypeRegistry.OLYMPIAD_CUBE.get(),
                 org.bytechen.rottenruins.client.entity.render.impl.OlympiadCubeRenderer::new);
     }
@@ -145,17 +129,10 @@ public class ClientModEventHandler {
     }
 
     /**
-     * 玩家渲染层：绯红誓约的背板。
-     *
-     * <h3>为什么是 {@code AddLayers} 而不是 {@code RegisterRenderers}</h3>
-     * <p>玩家的渲染器不是我们注册的（原版自己注册），能插手的只有"往里加一层" ——
-     * 这正是 {@code AddLayers} 的用途。它同时给了皮肤表，而玩家渲染器在
-     * {@code "default"}（粗手臂）与 {@code "slim"}（细手臂）两个皮肤下是
-     * <b>两个不同的实例</b>，所以两个都得挂 —— 只挂 default 的症状是
-     * "细手臂皮肤背板不显示"，很容易被当成"没生效"。</p>
-     *
-     * <p>用 {@code getSkin} 而不是 {@code getPlayerSkin}：后者返回的是
-     * 泛化的 {@code EntityRenderer}，加层需要 {@code LivingEntityRenderer}。</p>
+     * 玩家渲染层（绯红誓约背板）。必须用 {@code AddLayers}：玩家渲染器是原版注册的，只能往里加层；
+     * 且 {@code "default"}（粗手臂）与 {@code "slim"}（细手臂）是两个不同实例，两个都得挂 ——
+     * 只挂 default 的症状是「细手臂皮肤背板不显示」。用 {@code getSkin}（返回 PlayerRenderer），
+     * 不用返回泛化 EntityRenderer 的 {@code getPlayerSkin}。
      */
     @SubscribeEvent
     public static void onAddLayers(EntityRenderersEvent.AddLayers event) {
@@ -185,42 +162,24 @@ public class ClientModEventHandler {
 
     @SubscribeEvent
     public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
-        // 溃烂肉屑
         event.registerSpriteSet(RegisterParticles.ULCERATED_MEAT.get(), UlceratedMeatParticle.Provider::new);
-        // 失心粒子 —— 序列帧，5 张（heart_lose0..4），按顺序播放
         event.registerSpriteSet(RegisterParticles.HEART_LOSE.get(), HeartLoseParticle.Provider::new);
-        // 血滴 —— 单张贴图（blood.png），有方块碰撞、会弹跳，存活约 6 秒
         event.registerSpriteSet(RegisterParticles.BLOOD.get(), BloodParticle.Provider::new);
-        // 肉块 —— 单张贴图（meat.png），会弹跳、随寿命缩小
         event.registerSpriteSet(RegisterParticles.MEAT.get(), MeatParticle.Provider::new);
-        // 血腥爆炸 —— 序列帧，16 张（explosion_bloody0..15），按顺序播放
         event.registerSpriteSet(RegisterParticles.EXPLOSION_BLOODY.get(), ExplosionBloodyParticle.Provider::new);
     }
 
     /**
-     * 格挡武器 tooltip 里的自绘减伤条（绯红誓约 / 寂寒白日共用）。
-     *
-     * <h3>为什么必须按类型注册，而不是让物品自己去画</h3>
-     * <p>Forge 的工厂表是按 {@code TooltipComponent.getClass()} <b>精确匹配</b>的
-     * （见 {@code ClientTooltipComponentManager}），而物品侧只能给出数据
-     * （{@code Item#getTooltipImage} 是公共代码，不能碰 {@code ClientTooltipComponent}）。
-     * 两边的对接点就是这里：数据类 {@link BlockBarTooltip}
-     * → 绘制类 {@link ClientBlockBarTooltip}。</p>
-     *
-     * <p>本事件挂在 <b>mod 总线</b>上（不是 Forge 总线），所以它和旁边的渲染器注册
-     * 一样写在本类里；漏注册的症状是打开背包就崩，异常信息里那句
-     * "Unknown TooltipComponent" 就是它。</p>
+     * 格挡武器减伤条的 tooltip 绘制类注册。Forge 工厂表按 {@code TooltipComponent.getClass()} 精确匹配，
+     * 物品侧只能给数据（{@link BlockBarTooltip}），两边对接点在这里，对应绘制类 {@link ClientBlockBarTooltip}；
+     * 漏注册的症状是打开背包就崩，异常里那句 "Unknown TooltipComponent" 就是它。
      */
     @SubscribeEvent
     public static void onRegisterClientTooltipComponents(RegisterClientTooltipComponentFactoriesEvent event) {
         event.register(BlockBarTooltip.class, ClientBlockBarTooltip::new);
     }
 
-    /**
-     * 注册按键。必须挂在 <b>mod 总线</b>的 {@link RegisterKeyMappingsEvent} 上
-     * （不是 Forge 总线的 {@code InputEvent}）—— 这是 1.20.1 唯一正确的时机，
-     * 早了 {@code Options} 还没建好，晚了键位不会出现在「控制」里。
-     */
+    /** 按键必须挂在 mod 总线的 {@link RegisterKeyMappingsEvent} 上，这是 1.20.1 唯一正确的时机。 */
     @SubscribeEvent
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(MagicClientHandler.OPEN_MAGIC);
@@ -258,7 +217,6 @@ public class ClientModEventHandler {
     }
 
     private static void registerGlintProfiles() {
-        // example_item — glint + tinted warp_fbm outline
         GlintRenderManager.registerForItem(RegisterItem.EXAMPLE_ITEM.get(),
                 GlintEffectProfile.builder()
                         .colorMode(GlintEffectProfile.ColorMode.AUTO_SAMPLE_SCROLL)
@@ -267,10 +225,8 @@ public class ClientModEventHandler {
                         .outlineShaderKey("warp_fbm")
                         .build());
 
-        // void_sword 不在这里注册。它走 ICustomOutline 接口（见 VoidSword 类），
-        // 因为 GlintEffectProfile 是"描边 + GUI 辉光"打包的 —— 注册一个 profile
-        // 顺带会把辉光画到物品表面，把那层宇宙星空糊掉。
-        // 接口路径下 glintSettings() 返回 null，就只描边、不动表面。
+        // void_sword 不在这里注册：它走 ICustomOutline 接口（glintSettings() 返回 null），
+        // 因为注册 profile 会顺带把 GUI 辉光画到物品表面，糊掉那层宇宙星空。
     }
 
 }

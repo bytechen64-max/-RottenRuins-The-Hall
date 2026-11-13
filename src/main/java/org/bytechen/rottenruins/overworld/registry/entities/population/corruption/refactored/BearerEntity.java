@@ -68,9 +68,7 @@ public class BearerEntity extends BaseRefactoredEntity {
         this.entityData.define(DATA_DEVOUR_VALUE, 1.0F);
     }
 
-    // =========================================================================
     // 吞噬
-    // =========================================================================
 
     @Override
     public void aiStep() {
@@ -180,9 +178,7 @@ public class BearerEntity extends BaseRefactoredEntity {
         super.onSyncedDataUpdated(key);
     }
 
-    // =========================================================================
     // 收尾 / 属性
-    // =========================================================================
 
     @Override
     protected boolean getAttack(LivingEntity target) {

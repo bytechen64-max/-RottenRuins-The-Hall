@@ -18,28 +18,15 @@ import org.bytechen.rottenruins.network.c2s.WheelActionPacket;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * 魔法星图的<b>客户端入口</b>：负责注册按键、以及按下时打开界面。
- *
- * <h3>按键</h3>
- * <p>{@code M}，冲突上下文 {@link KeyConflictContext#IN_GAME} —— 在聊天栏 /
- * 物品栏里按 M 不会被吃掉。键位可以在原版「控制」里改，分类归到本模组名下。</p>
- *
- * <h3>为什么打开界面前先发一个同步请求</h3>
- * <p>客户端那份魔法池是服务端推过来的镜像，正常情况下最多滞后
- * {@code MagicSync.POOL_INTERVAL_TICKS} 个 tick。但玩家可能刚登录、刚重生、
- * 或者刚在别处改过槽位，界面一打开就显示旧内容会很像 bug。所以打开前让服务端
- * <b>无条件</b>推一次（{@link MagicPoolActionPacket#sendSyncRequest()}），
- * 界面先按手里的镜像画，包到了自然刷新。</p>
- *
- * <h3>为什么循环 consumeClick 而不是只判断一次</h3>
- * <p>{@link KeyMapping#consumeClick()} 会清空队列。如果不消费就走，
- * 界面关闭后的下一个 tick 会立刻又弹出来。这里<b>无论界面开没开都消费</b>，
- * 只在"当前没有其他界面"时真正打开。</p>
+ * 魔法星图的客户端入口：注册按键、按下时打开界面。键位冲突上下文用 {@link KeyConflictContext#IN_GAME}，
+ * 在聊天栏/物品栏里按 M 不会被吃掉。
+ * 打开界面前先发一次无条件同步请求（{@link MagicPoolActionPacket#sendSyncRequest()}）：
+ * 客户端魔法池是服务端镜像、最多滞后 {@code MagicSync.POOL_INTERVAL_TICKS} tick，刚登录/重生时会显示旧内容。
+ * {@link KeyMapping#consumeClick()} 会清空队列，故无论界面开没开都消费，只在没有其他界面时真正打开。
  */
 @OnlyIn(Dist.CLIENT)
 public final class MagicClientHandler {
 
-    /** 打开魔法星图的按键。 */
     public static final KeyMapping OPEN_MAGIC = new KeyMapping(
             "key.rotten_ruins.open_magic",
             KeyConflictContext.IN_GAME,
@@ -55,7 +42,6 @@ public final class MagicClientHandler {
             GLFW.GLFW_KEY_R,
             "key.categories.rotten_ruins");
 
-    /** 打开魔法装载界面（配置轮盘方位）。默认 V。 */
     public static final KeyMapping OPEN_LOADOUT = new KeyMapping(
             "key.rotten_ruins.open_loadout",
             KeyConflictContext.IN_GAME,
@@ -83,10 +69,7 @@ public final class MagicClientHandler {
         MinecraftForge.EVENT_BUS.addListener(MagicClientHandler::onInteraction);
     }
 
-    /**
-     * R 同时也是原版「交换副手」键。轮盘可用时按住 R 要把交换副手吞掉，
-     * 否则每次开轮盘都会顺手把副手物品换掉。
-     */
+    /** R 同时也是原版「交换副手」键：轮盘可用时按住 R 要吞掉交换副手，否则每次开轮盘都会顺手换掉副手物品。 */
     private static void onInteraction(net.minecraftforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
         Minecraft mc = Minecraft.getInstance();
         // 维持中：右键 = 结束维持（同时拦掉这次世界交互）
@@ -119,8 +102,7 @@ public final class MagicClientHandler {
             }
         }
 
-        // 轮盘：R 开关。打开后由 SpellWheelScreen 负责左键施法、右键/R 关闭；
-        // 维持（KEEP）期间界面已关，再按 R / 右键结束维持。
+        // 轮盘：R 开关；打开后由 SpellWheelScreen 负责左键施法、右键/R 关闭，维持期间界面已关。
         while (OPEN_WHEEL.consumeClick()) {
             if (WheelClientState.phase() == WheelClientState.Phase.MAINTAINING) {
                 WheelActionPacket.sendEnd();
@@ -132,7 +114,6 @@ public final class MagicClientHandler {
             }
         }
 
-        // 装载界面：V 打开，改完保存回服务端。
         while (OPEN_LOADOUT.consumeClick()) {
             if (mc.screen == null && mc.player != null) {
                 MagicPoolActionPacket.sendSyncRequest();
@@ -140,8 +121,7 @@ public final class MagicClientHandler {
             }
         }
 
-        // KEEP 维持在界面关闭后继续；结束方式统一为"右键 / 再按 R"，
-        // 不再依赖"松开 R"（开关式轮盘没有长按语义）。
+        // KEEP 维持界面关闭后继续；结束方式统一为"右键 / 再按 R"（开关式轮盘没有长按语义）。
     }
 
     /** 打开轮盘前的本地前置检查：有法杖、轮盘上有主动法术。 */

@@ -7,19 +7,8 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.reflect.Method;
 
 /**
- * Single detection entry point for shader pack compatibility.
- * Replaces the multi-layer detection in {@link HeldItemOutlineCompat}
- * and the conditional mixin loading in {@code ItemGlintMixinPlugin}.
- *
- * <p>Architecture (inspired by ArcaneVortex's {@code Helper.isShaderPackActive}):
- * <ol>
- *   <li>Try Iris API ({@code net.irisshaders.iris.api.v0.IrisApi}) via reflection</li>
- *   <li>Fall back to OptiFine class existence check</li>
- *   <li>Returns {@code Boolean} with three-state semantics:
- *       {@code TRUE} = shader pack active,
- *       {@code FALSE} = loader present but no pack,
- *       {@code null} = no shader loader at all</li>
- * </ol>
+ * Single detection entry point for shader pack compatibility: Iris API via reflection,
+ * OptiFine class-existence fallback, three-state result (TRUE / FALSE / null).
  */
 public final class ShaderPackDetector {
 
@@ -80,8 +69,6 @@ public final class ShaderPackDetector {
 
     private ShaderPackDetector() {}
 
-    // ── detection queries ──────────────────────────────────────────
-
     public static boolean isEmbeddiumLoaded() {
         return EMBEDDIUM_LOADED;
     }
@@ -90,22 +77,14 @@ public final class ShaderPackDetector {
         return OCULUS_LOADED;
     }
 
-    /**
-     * Three-state result:
-     * <ul>
-     *   <li>{@code Boolean.TRUE} — shader pack is active right now</li>
-     *   <li>{@code Boolean.FALSE} — shader loader installed but no pack loaded</li>
-     *   <li>{@code null} — no shader loader present at all</li>
-     * </ul>
-     */
+    /** Three-state: TRUE = pack active, FALSE = loader present without pack, null = no shader loader. */
     @Nullable
     public static Boolean isShaderPackActive() {
         if (IRIS_AVAILABLE) {
             return invokeIrisBoolean(IRIS_SHADER_PACK_IN_USE);
         }
         if (OPTIFINE_AVAILABLE) {
-            // OptiFine detected — we can't query runtime status via reflection,
-            // so assume active when the class exists.
+            // OptiFine runtime status is not queryable via reflection, so treat class existence as active
             return Boolean.TRUE;
         }
         return null;
@@ -115,29 +94,14 @@ public final class ShaderPackDetector {
         return invokeIrisBoolean(IRIS_SHADOW_PASS);
     }
 
-    /**
-     * Returns {@code true} when Embeddium + active Oculus shader pack pipeline
-     * should be used (the combination that previously required special handling).
-     */
     public static boolean shouldUseShaderPackPipeline() {
         Boolean active = isShaderPackActive();
         return active != null && active;
     }
 
-    // ── effective mode resolution ──────────────────────────────────
-
-    /**
-     * Resolves the effective outline mode for the current environment.
-     * When {@link HeldItemOutlineSettings.OutlineMode#AUTO} is selected,
-     * this determines whether FBO or simplified post-processing should be used.
-     *
-     * @return {@code true} for FBO path (no shader pack), {@code false} for post-process path
-     */
     public static boolean shouldUseFboPipeline() {
         return !shouldUseShaderPackPipeline();
     }
-
-    // ── reflection helpers ─────────────────────────────────────────
 
     private static boolean invokeIrisBoolean(@Nullable Method method) {
         if (!IRIS_AVAILABLE || IRIS_GET_INSTANCE == null || method == null) {

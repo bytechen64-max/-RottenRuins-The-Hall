@@ -8,23 +8,20 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import org.bytechen.rottenruins.overworld.inventory.PotentialCraftingMenu;
+import org.bytechen.rottenruins.overworld.registry.PotentialCraftingRecipes;
 import org.bytechen.rottenruins.overworld.registry.blockentity.PotentialCraftingTableBlockEntity;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 势能合成台界面。目前无贴图，全部用几何绘制。
+ * 奥秘仪台界面。暂无贴图，全部几何绘制。
  *
- * <p>合成时 16 个环形槽一边自转、一边向圆心靠拢：直接改写 {@link Slot} 的 {@code x/y}
- * （这两个字段由 AT 放开了 final），所以物品与点击判定一起动。
- * 静止时半径/角度与菜单给的布局一致，不会有形变。</p>
+ * <p>15 个材料槽围成一圈、圆心是产物槽；点「开始合成」按钮才校验材料并开始。
+ * 合成时环上的槽自转并逐渐向圆心收拢（直接改写 {@link Slot} 的 x/y，由 AT 放开）。</p>
  */
 public final class PotentialCraftingScreen extends AbstractContainerScreen<PotentialCraftingMenu> {
 
-    /** 收缩到位的半径（像素）。 */
     private static final float CONVERGED_RADIUS = 20.0f;
-    /** 环形自转的基础角速度（弧度/秒）。 */
     private static final float SPIN_SPEED = 1.5f;
-    /** 外圈进度弧半径（像素）。 */
     private static final float ARC_RADIUS = 70.0f;
 
     private static final int COLOR_PANEL = 0xF0161B26;
@@ -37,8 +34,11 @@ public final class PotentialCraftingScreen extends AbstractContainerScreen<Poten
     private static final int COLOR_ARC = 0xFF43C8FF;
     private static final int COLOR_POWER = 0xFF7FE3FF;
     private static final int COLOR_WARN = 0xFFFF5A5A;
+    private static final int COLOR_BUTTON = 0xFF1D4E6B;
+    private static final int COLOR_BUTTON_EDGE = 0xFF5FD3FF;
+    private static final int COLOR_BUTTON_OFF = 0xFF1A2028;
+    private static final int COLOR_BUTTON_OFF_EDGE = 0xFF2E3A48;
 
-    /** 帧间平滑后的进度，避免 20Hz 同步带来的跳动。 */
     private float smoothedProgress;
 
     public PotentialCraftingScreen(PotentialCraftingMenu menu, @NotNull Inventory inventory,
@@ -49,7 +49,7 @@ public final class PotentialCraftingScreen extends AbstractContainerScreen<Poten
         this.titleLabelX = 8;
         this.titleLabelY = 6;
         this.inventoryLabelX = 8;
-        this.inventoryLabelY = PotentialCraftingMenu.IMAGE_HEIGHT - 94;
+        this.inventoryLabelY = 172;
         updateRingLayout();
     }
 
@@ -67,7 +67,6 @@ public final class PotentialCraftingScreen extends AbstractContainerScreen<Poten
         float progress = crafting ? Mth.clamp(smoothedProgress, 0.0f, 1.0f) : 0.0f;
 
         float seconds = (float) ((System.currentTimeMillis() % 1_000_000L) / 1000.0d);
-        // 越接近完成转得越快：0.5 倍速起步，满进度 1.5 倍速
         float spin = crafting ? seconds * SPIN_SPEED * (0.5f + progress) : 0.0f;
         float radius = Mth.lerp(progress, PotentialCraftingMenu.RING_RADIUS, CONVERGED_RADIUS);
 
@@ -78,6 +77,37 @@ public final class PotentialCraftingScreen extends AbstractContainerScreen<Poten
             slot.y = PotentialCraftingMenu.RING_CENTER_Y + Mth.floor(Math.sin(angle) * radius) - 8;
         }
     }
+
+    // ── 按钮 ──
+
+    private boolean insideButton(double mouseX, double mouseY) {
+        double x = leftPos + PotentialCraftingMenu.BUTTON_X;
+        double y = topPos + PotentialCraftingMenu.BUTTON_Y;
+        return mouseX >= x && mouseX < x + PotentialCraftingMenu.BUTTON_WIDTH
+                && mouseY >= y && mouseY < y + PotentialCraftingMenu.BUTTON_HEIGHT;
+    }
+
+    /** 客户端也判得了：客户端有配方表，容器内容也已同步。 */
+    private boolean canStart() {
+        if (menu.isCrafting() || menu.power() <= 0 || minecraft == null || minecraft.level == null) {
+            return false;
+        }
+        return PotentialCraftingRecipes.findMatch(minecraft.level, menu.container()) != null;
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0 && insideButton(mouseX, mouseY) && canStart()
+                && minecraft != null && minecraft.gameMode != null) {
+            // 只发按钮点击包：材料校验与开始都在服务端做
+            minecraft.gameMode.handleInventoryButtonClick(menu.containerId,
+                    PotentialCraftingMenu.BUTTON_START);
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    // ── 绘制 ──
 
     @Override
     protected void renderBg(@NotNull GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
@@ -105,7 +135,18 @@ public final class PotentialCraftingScreen extends AbstractContainerScreen<Poten
             drawArc(graphics, cx, cy, ARC_RADIUS, -90.0f, -90.0f + 360.0f * smoothedProgress, COLOR_ARC);
         }
 
-        int invLineY = top + 152;
+        // 按钮
+        boolean enabled = canStart();
+        boolean hovered = insideButton(mouseX, mouseY);
+        int bx = left + PotentialCraftingMenu.BUTTON_X;
+        int by = top + PotentialCraftingMenu.BUTTON_Y;
+        int bw = PotentialCraftingMenu.BUTTON_WIDTH;
+        int bh = PotentialCraftingMenu.BUTTON_HEIGHT;
+        graphics.fill(bx, by, bx + bw, by + bh, enabled ? COLOR_BUTTON_EDGE : COLOR_BUTTON_OFF_EDGE);
+        graphics.fill(bx + 1, by + 1, bx + bw - 1, by + bh - 1,
+                enabled ? (hovered ? brighten(COLOR_BUTTON) : COLOR_BUTTON) : COLOR_BUTTON_OFF);
+
+        int invLineY = top + 176;
         graphics.fill(left + 7, invLineY, left + imageWidth - 7, invLineY + 1, COLOR_LINE);
     }
 
@@ -122,6 +163,18 @@ public final class PotentialCraftingScreen extends AbstractContainerScreen<Poten
         graphics.drawString(font, powerText, cx - font.width(powerText) / 2, 22,
                 power > 0 ? COLOR_POWER : COLOR_WARN, false);
 
+        // 按钮文字
+        Component buttonText = Component.translatable(menu.isCrafting()
+                ? "gui.rotten_ruins.potential_crafting.crafting"
+                : "gui.rotten_ruins.potential_crafting.start");
+        boolean enabled = canStart();
+        graphics.drawString(font, buttonText,
+                PotentialCraftingMenu.BUTTON_X
+                        + (PotentialCraftingMenu.BUTTON_WIDTH - font.width(buttonText)) / 2,
+                PotentialCraftingMenu.BUTTON_Y + 5,
+                enabled ? 0xE8F8FF : 0x6C7A88, false);
+
+        // 状态行
         Component status;
         int color = 0xAFC4D8;
         if (menu.isCrafting()) {
@@ -138,12 +191,19 @@ public final class PotentialCraftingScreen extends AbstractContainerScreen<Poten
             status = Component.translatable("gui.rotten_ruins.potential_crafting.no_recipe");
             color = 0xFFD27A;
         }
-        graphics.drawString(font, status, cx - font.width(status) / 2, 144, color, false);
+        graphics.drawString(font, status, cx - font.width(status) / 2, 168, color, false);
     }
 
     private int remainingSeconds() {
         float left = menu.totalTicks() * (1.0f - Mth.clamp(smoothedProgress, 0.0f, 1.0f));
         return Math.max(1, Mth.ceil(left / 20.0f));
+    }
+
+    private static int brighten(int argb) {
+        int r = Math.min(255, ((argb >> 16) & 0xFF) + 24);
+        int g = Math.min(255, ((argb >> 8) & 0xFF) + 24);
+        int b = Math.min(255, (argb & 0xFF) + 24);
+        return (argb & 0xFF000000) | (r << 16) | (g << 8) | b;
     }
 
     private static void drawSlotFrame(@NotNull GuiGraphics graphics, int x, int y,

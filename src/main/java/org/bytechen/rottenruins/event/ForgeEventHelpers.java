@@ -60,8 +60,6 @@ public class ForgeEventHelpers {
 
     private static final int SYNC_INTERVAL = 20; // 每秒同步一次（20 tick）
 
-    // ==================== 能力附加 ====================
-
     public static void handleAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
         if (event.getObject() instanceof Player player) {
             AnomalyCapability cap = new AnomalyCapability();
@@ -91,8 +89,6 @@ public class ForgeEventHelpers {
                                     .CustomEffectHolder()));
         }
     }
-
-    // ==================== Tick 逻辑 ====================
 
     public static void handleLivingTick(Entity entity) {
         if (entity.level().isClientSide()) return;
@@ -167,8 +163,6 @@ public class ForgeEventHelpers {
                 new AnomalySyncPacket(entity.getId(), cap.serializeNBT()));
     }
 
-    // ==================== 伤害 / 死亡 ====================
-
     public static void handleLivingHurt(LivingHurtEvent event) {
         // hall 感染生物之间无友伤
         if (!isHallInfected(event.getEntity())) return;
@@ -189,8 +183,6 @@ public class ForgeEventHelpers {
         if ((event.getEntity() instanceof HeavyBombEntity bomb)) HeavyBombDeathEffect.trigger(bomb);
         handleThreatOnDeath(event);
     }
-
-    // ==================== 威胁点数 ====================
 
     /**
      * 死亡事件里的威胁点数结算。

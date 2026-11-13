@@ -28,9 +28,7 @@ import java.util.function.Consumer;
  */
 public class DegeneratePigEntity extends BaseDegenerateEntity {
 
-    // =========================================================================
     // C3 蓄力冲锋参数
-    // =========================================================================
 
     private static final int TOTAL_CHARGES = 3;
     private static final double CHARGE_MIN_RANGE = 3.0;
@@ -73,9 +71,7 @@ public class DegeneratePigEntity extends BaseDegenerateEntity {
                 .add(Attributes.FOLLOW_RANGE, 40.0D);
     }
 
-    // =========================================================================
     // C3 腐化猪蓄力冲锋
-    // =========================================================================
 
     @Override
     public void tick() {

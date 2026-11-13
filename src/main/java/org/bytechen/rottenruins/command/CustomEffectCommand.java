@@ -21,6 +21,7 @@ import java.util.Collection;
 
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * 自定义效果调试命令 —— {@code /rotten_ruins ce ...}
@@ -105,8 +106,6 @@ public final class CustomEffectCommand {
                                         })))));
     }
 
-    // ══════════════════════════════════════════════════════════════
-
     private static int list(com.mojang.brigadier.context.CommandContext<CommandSourceStack> ctx,
                             Entity entity) {
         if (!(entity instanceof LivingEntity living)) {
@@ -174,7 +173,7 @@ public final class CustomEffectCommand {
         if (effect != null) {
             return effect;
         }
-        return CustomEffectRegistry.get(new ResourceLocation(HallMod.MODID, rawId));
+        return CustomEffectRegistry.get(ModUtils.modLoc(rawId));
     }
 
     private static void send(com.mojang.brigadier.context.CommandContext<CommandSourceStack> ctx,

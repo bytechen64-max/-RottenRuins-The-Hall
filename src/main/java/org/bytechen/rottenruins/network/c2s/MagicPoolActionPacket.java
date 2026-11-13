@@ -52,9 +52,7 @@ public final class MagicPoolActionPacket {
     private MagicPoolActionPacket() {
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 发送端（客户端）
-    // ══════════════════════════════════════════════════════════════
 
     /** 打开界面前请求一次全量同步。 */
     public static void sendSyncRequest() {
@@ -85,9 +83,7 @@ public final class MagicPoolActionPacket {
         NetworkHelper.sendToServer(new UniversalPacket(ACTION, UniversalPacketData.ofNbt(tag)));
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 接收端（服务端）
-    // ══════════════════════════════════════════════════════════════
 
     /** 在 {@code NetworkHelper.register()} 里调用（公共初始化阶段，两端都会加载）。 */
     public static void register() {

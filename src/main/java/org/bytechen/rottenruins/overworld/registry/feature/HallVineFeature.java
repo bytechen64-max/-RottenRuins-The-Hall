@@ -16,32 +16,15 @@ import org.bytechen.rottenruins.overworld.registry.blocks.impl.HallVineBlock;
 import org.bytechen.infcore.api.block.ISpreadBlock;
 
 /**
- * 王庭藤蔓地物 —— 让藤蔓从王庭方块上自然附着生长，支持向上与向下两种形态。
- * <p>
- * {@link HallVineBlock} 的 {@code canSurvive} 要求支撑方块是王庭藤蔓自身、
- * 或是 {@code getSpreadType()} 命名空间为 {@code hall} 的 {@link ISpreadBlock}
- * （王庭石块 / 泥土 / 草方块 / 原木）。
- *
- * <h2>两种形态的状态差异（很容易设错）</h2>
- * 由 {@code HallVineBlock.getStateForPlacement} 可推出初始状态：
- * <ul>
- *   <li><b>向下生长</b>：附着面在<b>上方</b>，初始 {@code SECTION = BOTTOM}</li>
- *   <li><b>向上生长</b>：附着面在<b>下方</b>，初始 {@code SECTION = TOP}</li>
- * </ul>
- * 两者的 {@code AGE} 都必须为 0 —— {@code isRandomlyTicking} 要求
- * {@code AGE < 25}，设成 25 就变成「已成熟」，永远不再生长。
- *
- * <h2>为什么地物只放一段</h2>
- * 藤蔓是 {@code randomTick} 自生长的：向上最长 4 格、向下最长 10 格。
- * 地物只负责「播下种子」，其余交给游戏内的生长逻辑 —— 既省生成期开销，
- * 玩家也能看到藤蔓慢慢长开的过程。
+ * 王庭藤蔓地物：让藤蔓从王庭方块上自然附着生长，支持向上与向下两种形态。
+ * 支撑须是王庭藤蔓自身或命名空间为 {@code hall} 的 {@link ISpreadBlock}；形态差异易设错：向下长附着面
+ * 在上方、初始 {@code SECTION = BOTTOM}，向上长反之；两者 {@code AGE} 必须为 0（{@code AGE < 25} 才随机生长）。
  */
 public class HallVineFeature extends Feature<HallVineFeature.Config> {
 
     /** 每棵尝试次数 */
     private static final int ATTEMPTS = 16;
 
-    /** 水平散布半径 */
     private static final int SPREAD_RADIUS = 5;
 
     /** 搜索的最大距离（向下或向上） */
@@ -49,11 +32,7 @@ public class HallVineFeature extends Feature<HallVineFeature.Config> {
 
     private static final int SET_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
 
-    /**
-     * 地物配置。
-     *
-     * @param upward {@code true} = 从地面向上竖着长；{@code false} = 从崖壁/洞顶向下垂挂
-     */
+    /** 地物配置：{@code upward} 为 true 表示从地面向上竖着长，false 表示从崖壁 / 洞顶向下垂挂。 */
     public record Config(boolean upward) implements FeatureConfiguration {
 
         public static final Codec<Config> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -86,9 +65,7 @@ public class HallVineFeature extends Feature<HallVineFeature.Config> {
             int dx = random.nextInt(SPREAD_RADIUS * 2 + 1) - SPREAD_RADIUS;
             int dz = random.nextInt(SPREAD_RADIUS * 2 + 1) - SPREAD_RADIUS;
 
-            // 从基点出发，朝生长方向的「附着面」一侧寻找第一个空气格
-            //   向下长：附着面在上方 → 从基部向下找空气
-            //   向上长：附着面在下方 → 从基点向上找空气
+            // 从基点朝「附着面」一侧找第一个空气格：向下长时附着面在上方，向上长反之
             BlockPos target = findTarget(level, origin.offset(dx, 0, dz), upward);
             if (target == null) continue;
 
@@ -96,10 +73,8 @@ public class HallVineFeature extends Feature<HallVineFeature.Config> {
             BlockPos supportPos = upward ? target.below() : target.above();
             if (!isHallSupport(level.getBlockState(supportPos))) continue;
 
-            // 初始自然段：SECTION 不硬编码，也无需在此处算 ——
-            // 放置后由 HallVineBlock.updateShape 依据上下邻居自行判定。
-            // 早期版本硬编码了初始段（向下 BOTTOM / 向上 TOP），
-            // 结果整条藤蔓只保留初始段的状态、贴图不随连接关系变化。
+            // SECTION 不硬编码，由 HallVineBlock.updateShape 依据上下邻居判定；
+            // 早期硬编码初始段会让整条藤蔓贴图不随连接关系变化。
             BlockState vine = RegisterBlock.HALL_VINE.get().defaultBlockState()
                     .setValue(HallVineBlock.GROWTH_DIR,
                             upward ? HallVineBlock.GrowthDirection.UP
@@ -116,11 +91,6 @@ public class HallVineFeature extends Feature<HallVineFeature.Config> {
         return placedAny;
     }
 
-    /**
-     * 从基点出发，沿生长方向寻找第一个可放置的空气格。
-     * <p>
-     * 向下长时从基点上方向下扫；向上长时从基点向上扫。
-     */
     private static BlockPos findTarget(WorldGenLevel level, BlockPos base, boolean upward) {
         BlockPos cursor = upward ? base : base.above();
         for (int step = 0; step < MAX_SEARCH; step++) {
@@ -132,7 +102,6 @@ public class HallVineFeature extends Feature<HallVineFeature.Config> {
         return null;
     }
 
-    /** 支撑方块是否为「王庭化」方块（藤蔓只能附着在这类方块上） */
     private static boolean isHallSupport(BlockState state) {
         Block block = state.getBlock();
         if (block instanceof HallVineBlock) {

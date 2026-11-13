@@ -20,8 +20,6 @@ public class HallWorldData extends SavedData {
         this.difficultySelected = false;
     }
 
-    // ==================== 工厂 ====================
-
     /**
      * 从 NBT 加载或创建新实例。
      * 由 {@link net.minecraft.world.level.storage.DimensionDataStorage#computeIfAbsent} 调用。
@@ -36,8 +34,6 @@ public class HallWorldData extends SavedData {
         return new HallWorldData();
     }
 
-    // ==================== 存取 ====================
-
     public boolean isDifficultySelected() {
         return difficultySelected;
     }
@@ -48,8 +44,6 @@ public class HallWorldData extends SavedData {
             setDirty();
         }
     }
-
-    // ==================== NBT ====================
 
     @Override
     public CompoundTag save(CompoundTag tag) {

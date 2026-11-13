@@ -33,71 +33,31 @@ import java.util.EnumSet;
 import java.util.function.Consumer;
 
 /**
- * <b>死亡猎手</b> —— 完全照<b>恼鬼（Vex）</b>做的飞行单位：数值全部取恼鬼的 {@value #SCALE} 倍，
- * 索敌与飞行沿用恼鬼那一套（穿墙飞行、冲刺、随机游荡）。
- *
- * <h3>数值：恼鬼 × {@value #SCALE}</h3>
- * <table border="1">
- *   <tr><th>属性</th><th>恼鬼</th><th>本实体</th></tr>
- *   <tr><td>生命</td><td>14.0</td><td>{@value #MAX_HEALTH}</td></tr>
- *   <tr><td>攻击力</td><td>4.0</td><td>{@value #ATTACK_DAMAGE}</td></tr>
- *   <tr><td>移动速度</td><td>0.7</td><td>{@value #MOVEMENT_SPEED}</td></tr>
- *   <tr><td>跟随范围</td><td>16.0</td><td>{@value #FOLLOW_RANGE}</td></tr>
- *   <tr><td>碰撞箱</td><td>0.4 × 0.8</td><td>0.48 × 0.96</td></tr>
- * </table>
- * <p>护甲与击退抗性在恼鬼身上本来就是 0，乘 1.2 仍是 0，所以不显式写。</p>
- *
- * <h3>飞行与索敌：照抄恼鬼</h3>
- * <ul>
- *   <li><b>穿墙飞行</b>：每 tick 临时把 {@code noPhysics} 打开（这正是恼鬼"能穿方块"的原因），
- *       tick 结束立刻关掉；同时 {@code setNoGravity(true)}。</li>
- *   <li><b>移动控制</b>：{@link HunterMoveControl} 就是恼鬼的 {@code VexMoveControl} ——
- *       朝目标点持续叠加加速度（{@code speed × 0.05 / 距离}），到达后一半速度滑行，
- *       并把朝向转向速度或目标。</li>
- *   <li><b>冲刺</b>：{@link ChargeAttackGoal} 对应恼鬼的 {@code VexChargeAttackGoal} ——
- *       冲刺时锁定目标眼睛、把速度提到 1.0；伤害由基类的近战钩子结算。</li>
- *   <li><b>游荡</b>：{@link RandomMoveGoal} 对应 {@code VexRandomMoveGoal} ——
- *       随机找一个空气方块飞过去。</li>
- *   <li><b>索敌</b>：{@code HurtByTargetGoal}（被打就还手）+
- *       {@code NearestAttackableTargetGoal(Player)}（要看见），和恼鬼一致；
- *       恼鬼的"复制主人目标"那条不适用（本实体没有主人）。</li>
- * </ul>
- *
- * <h3>和基类的分工</h3>
- * <p>伤害走 {@link AbstractRottenEntity} 的近战钩子：{@link #getAttack} 里调
- * {@code doHurtTarget}，触发距离由 {@code setDoHurtDistance} 控制。
- * 冲刺目标只负责<b>移动</b>，不自己结算伤害 —— 否则会和基类各打一次。</p>
- *
- * <p>美术资源按小写命名：{@code geo/death_hunter.geo.json}、
- * {@code textures/entity/death_hunter.png}、{@code animations/death_hunter.animation.json}
- * （动画文件缺失不影响运行，只是不会播表情动作）。</p>
+ * 死亡猎手 —— 照恼鬼（Vex）做的飞行单位：数值取恼鬼的 {@value #SCALE} 倍，
+ * 穿墙飞行、冲刺与随机游荡也沿用恼鬼那一套。
  */
 public class DeathHunter extends AbstractRottenEntity {
 
     /** 相对恼鬼的数值倍率。 */
     public static final double SCALE = 1.2D;
 
-    // ── 恼鬼原值 × SCALE ──
-    private static final double MAX_HEALTH = 14.0D * SCALE;        // 16.8
-    private static final double ATTACK_DAMAGE = 4.0D * SCALE;      // 4.8
-    private static final double MOVEMENT_SPEED = 0.7D * SCALE;     // 0.84
-    private static final double FOLLOW_RANGE = 16.0D * SCALE;      // 19.2
-    private static final int XP_REWARD = (int) Math.round(3 * SCALE);   // 4
+    private static final double MAX_HEALTH = 14.0D * SCALE;
+    private static final double ATTACK_DAMAGE = 4.0D * SCALE;
+    private static final double MOVEMENT_SPEED = 0.7D * SCALE;
+    private static final double FOLLOW_RANGE = 16.0D * SCALE;
+    private static final int XP_REWARD = (int) Math.round(3 * SCALE);
 
     /** 碰撞箱：恼鬼 0.4 × 0.8 放大到 1.2 倍。 */
     public static final float WIDTH = 0.48F;
     public static final float HEIGHT = 0.96F;
 
-    /**
-     * 眼睛高度相对碰撞箱顶部的偏移（恼鬼是 0.28125，按倍率放大）。
-     * <p>它比"身高的一半"低 —— 恼鬼的模型是悬空的一小团，眼睛不在几何中心。</p>
-     */
+    /** 眼睛高度相对碰撞箱顶部的偏移（恼鬼是 0.28125，按倍率放大）；恼鬼模型悬空，眼睛不在几何中心。 */
     private static final float EYE_OFFSET_FROM_TOP = 0.28125F * (float) SCALE;
 
-    /** 近战判定距离（格，箱到箱）。恼鬼是"碰撞箱相交就打到"，这里给一点点余量。 */
+    /** 近战判定距离（格，箱到箱）。 */
     private static final float HURT_DISTANCE = 1.2F;
 
-    /** 冲刺时朝目标瞄准的距离上限（格）—— 和恼鬼一样取 3 格。 */
+    /** 冲刺时朝目标瞄准的距离上限（格）；和恼鬼一样取 3 格。 */
     private static final double CHARGE_CHASE_DISTANCE = 3.0D;
 
     /** 是否正在冲刺（同步给客户端，供渲染/动画用）。 */
@@ -106,14 +66,12 @@ public class DeathHunter extends AbstractRottenEntity {
 
     public DeathHunter(@NotNull EntityType<? extends Monster> entityType, @NotNull Level level) {
         super(entityType, level);
-        // 恼鬼的飞行：自定义移动控制 + 无重力
         this.moveControl = new HunterMoveControl(this);
         this.setNoGravity(true);
         this.xpReward = XP_REWARD;
-        // 伤害交给基类的近战钩子（见 getAttack）；冲刺目标只管移动
         this.setDoHurtDistance(HURT_DISTANCE);
-        // 基类会在构造期用 walk/run 速度覆盖 MOVEMENT_SPEED（默认 0.6 / 1.2），
-        // 所以必须把两者都设成"恼鬼 × 1.2"，否则属性表里那个 0.84 立刻被冲掉。
+        // 基类构造期会用 walk/run 速度覆盖 MOVEMENT_SPEED（默认 0.6 / 1.2），两者都要设成"恼鬼 × 1.2"，
+        // 否则属性表里那个 0.84 立刻被冲掉。
         this.setWalkSpeed((float) MOVEMENT_SPEED);
         this.setRunSpeed((float) MOVEMENT_SPEED);
     }
@@ -129,13 +87,7 @@ public class DeathHunter extends AbstractRottenEntity {
         return EntityTypeRegistry.defaultResources("death_hunter");
     }
 
-    /**
-     * 属性表：以恼鬼的 {@code createAttributes()} 为底，再按 {@value #SCALE} 倍覆盖。
-     *
-     * <p>恼鬼只显式声明了生命 14 与攻击 4，速度 0.7 与跟随范围 16 都是
-     * {@code Monster.createMonsterAttributes()} 的默认值 —— 这里把它们也显式写出来，
-     * 免得以后原版改默认值时本实体跟着漂移。</p>
-     */
+    /** 属性表：以恼鬼的 createAttributes() 为底按 SCALE 覆盖；速度与跟随范围也显式写出，免得原版改默认值时跟着漂移。 */
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, MAX_HEALTH)
@@ -150,14 +102,7 @@ public class DeathHunter extends AbstractRottenEntity {
         this.entityData.define(DATA_CHARGING, false);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 恼鬼式飞行
-    // ══════════════════════════════════════════════════════════════
-
-    /**
-     * 恼鬼的 tick：整段逻辑里把 {@code noPhysics} 打开，所以它<b>无视碰撞</b>
-     * （能穿墙、不会卡在方块边上），tick 结束立刻还原，不会影响别的系统。
-     */
+    /** 恼鬼式飞行：整段逻辑里 noPhysics 打开所以无视碰撞（穿墙、不卡方块边），tick 结束立刻还原。 */
     @Override
     public void tick() {
         this.noPhysics = true;
@@ -173,7 +118,7 @@ public class DeathHunter extends AbstractRottenEntity {
         this.checkInsideBlocks();
     }
 
-    /** 眼睛高度：碰撞箱顶部往下 {@value #EYE_OFFSET_FROM_TOP} 格（照恼鬼的算法）。 */
+    /** 眼睛高度：碰撞箱顶部往下 EYE_OFFSET_FROM_TOP 格（照恼鬼的算法）。 */
     @Override
     public float getStandingEyeHeight(@NotNull Pose pose, @NotNull EntityDimensions dimensions) {
         return dimensions.height - EYE_OFFSET_FROM_TOP;
@@ -194,40 +139,28 @@ public class DeathHunter extends AbstractRottenEntity {
         this.entityData.set(DATA_CHARGING, charging);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 恼鬼式索敌
-    // ══════════════════════════════════════════════════════════════
-
     @Override
     protected void registerGoals() {
-        // 与恼鬼同序：先浮水，再冲刺、游荡，最后两个"看着玩家/生物"
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(4, new ChargeAttackGoal());
         this.goalSelector.addGoal(8, new RandomMoveGoal());
         this.goalSelector.addGoal(9, new LookAtPlayerGoal(this, Player.class, 3.0F, 1.0F));
         this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Mob.class, 8.0F));
 
-        // 恼鬼的 targetSelector 还有一条"复制主人目标"，本实体没有主人所以不适用
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, true));
     }
 
-    /** 近战：伤害由基类按 {@code doHurtDistance} 调用（冲刺时不重复结算）。 */
+    /** 近战：伤害由基类按 doHurtDistance 调用（冲刺时不重复结算）。 */
     @Override
     protected boolean getAttack(@NotNull LivingEntity target) {
         return this.doHurtTarget(target);
     }
 
     /**
-     * 基类每 tick 的"追击"里其实混了两件事：<b>寻路位移</b>和<b>贴身出手</b>。
-     *
-     * <p>本实体是恼鬼式飞行，位移必须由 {@link HunterMoveControl} 独家负责 —— 于是这里
-     * <b>只保留出手</b>，把 {@code getNavigation().moveTo(...)} 那条路砍掉。不砍的话会有两个后果：
-     * 两条位移逻辑同 tick 抢 {@code moveControl}；而且寻路会把 {@code hasWanted()} 常置为真，
-     * 导致 {@link ChargeAttackGoal} 几乎永远进不了"开始冲刺"的判定。</p>
-     *
-     * <p>另外这里<b>不要求视线</b>（基类原版要求 {@code hasLineOfSight}）：恼鬼是穿墙飞行的，
-     * 隔着方块贴到目标身上却打不到会很怪。</p>
+     * 只保留出手，砍掉基类的 getNavigation().moveTo：位移必须由 HunterMoveControl 独家负责，
+     * 否则两条位移逻辑同 tick 抢 moveControl，且寻路会把 hasWanted() 常置真、冲刺判定几乎进不去。
+     * 这里也不要求视线 —— 穿墙飞行时隔方块打到会很怪。
      */
     @Override
     protected void tickChase() {
@@ -244,20 +177,7 @@ public class DeathHunter extends AbstractRottenEntity {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 恼鬼式移动控制
-    // ══════════════════════════════════════════════════════════════
-
-    /**
-     * 恼鬼的移动控制：不是寻路，而是"每 tick 朝目标点叠加速度"。
-     *
-     * <p>关键两点和恼鬼一致：</p>
-     * <ol>
-     *   <li>加速度大小是 {@code speed × 0.05 / 距离} —— 越远加得越多，但因为是<b>加</b>
-     *       到速度上、每 tick 都算一次，最终速度会收敛到由 {@code speed} 决定的上限；</li>
-     *   <li>到达目标点后速度乘 0.5 滑行（不是急停），读起来是"漂浮着刹住"。</li>
-     * </ol>
-     */
+    /** 恼鬼式移动控制：每 tick 朝目标点叠加 speed × 0.05 / 距离 的加速度（速度因此收敛到 speed 上限），到点后半速滑行。 */
     private final class HunterMoveControl extends MoveControl {
 
         private HunterMoveControl(@NotNull Mob mob) {
@@ -296,16 +216,7 @@ public class DeathHunter extends AbstractRottenEntity {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 恼鬼式两个 Goal
-    // ══════════════════════════════════════════════════════════════
-
-    /**
-     * 冲刺：锁定目标眼睛、把速度提到 1.0 冲过去（伤害由基类结算）。
-     *
-     * <p>触发条件是"离得比较远（&gt;2 格）且这一 tick 掷到 1/7"，和恼鬼一样是随机节奏，
-     * 不冲刺的时候看起来是在飘。</p>
-     */
+    /** 冲刺：锁定目标眼睛、把速度提到 1.0；触发条件是距离 > CHARGE_CHASE_DISTANCE 且每 tick 掷 1/7（恼鬼的随机节奏）。 */
     private final class ChargeAttackGoal extends Goal {
 
         private ChargeAttackGoal() {
@@ -365,12 +276,7 @@ public class DeathHunter extends AbstractRottenEntity {
         }
     }
 
-    /**
-     * 随机游荡：没目标时随机挑一个附近的空气方块飞过去（和恼鬼一致）。
-     *
-     * <p>只"执行一 tick"（{@code canContinueToUse} 恒 false）—— 恼鬼本来就是
-     * 隔一会儿丢一个目标点，靠移动控制自己飘过去。</p>
-     */
+    /** 随机游荡：挑一个附近空气方块飞过去；只执行一 tick，靠移动控制自己飘过去（和恼鬼一致）。 */
     private final class RandomMoveGoal extends Goal {
 
         private RandomMoveGoal() {
@@ -408,7 +314,6 @@ public class DeathHunter extends AbstractRottenEntity {
             }
         }
     }
-
 
     /** 冲刺状态要跟着存档走（读档后不至于一直"冲刺中"）。 */
     @Override

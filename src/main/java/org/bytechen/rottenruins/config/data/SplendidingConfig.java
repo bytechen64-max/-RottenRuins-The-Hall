@@ -9,48 +9,13 @@ import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
 @Config(name = HallMod.MODID + "/SplendidingConfig")
 public class SplendidingConfig implements ConfigData {
 
-    /**
-     * 当前配置版本（<b>代码里的最新版本号</b>）。
-     *
-     * <ul>
-     *   <li>0 —— 引入裁决技能时的初版（基础冷却 3.0 秒）</li>
-     *   <li>1 —— 冷却重调：基础 1.5 秒（这一次的迁移实现有 bug：写了版本号却没重置值）</li>
-     *   <li>2 —— 修正上一条：真正把基础冷却重置为 1.5 秒</li>
-     *   <li>3 —— 描边距离自适应的比例默认值 0.15 → 0.04。必须靠迁移重置：0.15 已经被
-     *       写进过配置文件，而 cloth-config 以文件为准，光改代码里的默认值不生效
-     *       （详见 {@code ConfigHelper.migrateSplendidingConfig}）</li>
-     *   <li>4 —— 火焰高度三个参数重调（rise 0.30→0.16、buoyancy 0.55→0.30、
-     *       cooling 2.10→4.0），同样是"已写进文件、必须迁移"的那一类</li>
-     *   <li>5 —— 火焰高度<b>再配平一次</b>：版本 4 那组压过头了，小物品上几乎看不见火
-     *       （rise 0.16→0.20、buoyancy 0.30→0.35、cooling 4.0→3.4），配合
-     *       可见性包络门槛下调与尺寸比例下限放宽</li>
-     *   <li>6 —— 电弧密度拉满（scale 9→16、threshold 0.22→0.10、gain 1.0→2.2、
-     *       reach 0.06→0.12）：用户要求"尽量每一个地方都有电弧"。同样必须迁移</li>
-     *   <li>7 —— 电弧改成<b>软椭圆带</b>（scale 30、threshold 0.15、gain 1.8、
-     *       reach 弃用）+ 新增 arcBandPx(150) 与剪裁框放大：修"只有贴着轮廓一条缝"</li>
-     *   <li>8 —— 修正电弧带的错配：v7 把 {@code arcReach} 设成 0（当时改用包围盒椭圆带），
-     *       但着色器里 {@code ArcReach > 0} 才是「锚定剪影」的开关 —— 0 等于完全不限，
-     *       电弧会铺满整个剪裁框（实测就是一大团离散圈圈）。回到剪影锚定 + 重新配亮度</li>
-     *   <li>10 —— 电弧正式启用（arcEnabled）：这个键曾以 false 的默认值写进文件，改代码默认值不生效，必须迁移</li>
-     * </ul>
-     */
+    /** 代码里的最新配置版本号：改动任何已发布过的默认值都必须 bump 它并在 ConfigHelper 里写迁移（文件值优先，光改代码不生效）。 */
     public static final int CONFIG_VERSION = 12;
 
     /**
-     * 本文件的配置版本号。
-     *
-     * <h3>为什么这里的默认值必须是 0，而不是 {@link #CONFIG_VERSION}</h3>
-     * <p>踩过一次：写成 {@code = CONFIG_VERSION} 时，迁移<b>永远不会执行</b>。
-     * 原因是 Java 字段初始化器的执行时机 —— gson 反序列化会
-     * <b>先跑字段初始化器</b>（把值设成当前版本），<b>再</b>用文件内容覆盖。
-     * 于是迁移里的 {@code if (configVersion >= CONFIG_VERSION) return;}
-     * 在读取任何真实版本之前就已经为真，直接返回了。</p>
-     *
-     * <p>写成 0 的效果正好相反：文件里没有这个键时拿到 0（= 需要迁移），
-     * 文件里有旧版本号时也小于最新版（= 需要迁移），
-     * 而迁移成功后由 {@code ConfigHelper} 写回真实版本号并存盘。</p>
-     *
-     * <p><b>因此：以后提升 {@link #CONFIG_VERSION} 时，不要动这一行的值（保持 0）。</b></p>
+     * 本文件的配置版本号：默认值必须保持 0 —— 写成 CONFIG_VERSION 时 gson 先跑字段初始化器、再被文件内容覆盖，
+     * 迁移里的 {@code if (configVersion >= CONFIG_VERSION) return;} 提前为真，迁移永远不执行。
+     * 迁移成功后由 ConfigHelper 写回真实版本号；提升 CONFIG_VERSION 时不要动这一行。
      */
     @Comment("配置版本号（内部使用，改动裁决技能默认值时请提升 CONFIG_VERSION，详见代码注释）")
     @ConfigEntry.Gui.Excluded
@@ -126,16 +91,6 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public float outlineMinPixelWidth = DEFAULT_OUTLINE_MIN_PIXEL_WIDTH;
 
-    // ──────────────────────────────────────────────────────────────
-    //  描边光雾（体积感）
-    //
-    //  硬环之外再叠一层"由剪影遮罩降采样模糊出来"的雾，并用噪声把它打散成团块。
-    //  雾的颜色来自遮罩本身 —— 所以配火焰颜色模式（outlineShaderKey() = "fire"）
-    //  就是"沿着物品边缘燃烧"的效果。
-    //
-    //  关掉它（false 或强度 0）就完全回到纯硬环，其余一切不变。
-    // ──────────────────────────────────────────────────────────────
-
     @Comment("描边光雾总开关。true = 硬环之外再叠一层模糊出来的雾；"
             + "false = 只剩等宽硬环（光雾出现之前的行为）。")
     @ConfigEntry.Gui.Tooltip
@@ -156,16 +111,8 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public float outlineAuraNoise = 0.8f;
 
-    // ──────────────────────────────────────────────────────────────
-    //  框架效果：火焰（inject + advect + dissipate 的有状态场）
-    //
-    //  与描边的本质差别：描边是"每帧重算的图案"，火焰是"上一帧的密度被搬运过来"。
-    //  下面这几个值就是那个动力系统的全部参数 —— 它们决定"像不像火"：
-    //    Rise / Cooling 决定火焰高度（≈ Rise/Cooling 个屏幕高）
-    //    Buoyancy 决定拉伸与断裂（热的地方升得更快 → 颈缩 → 断开成余烬）
-    //    Turbulence 决定卷曲舔舐，Inject 决定根部有多旺
-    //  哪个物品会烧由物品侧声明（ItemFxProvider），不是这里。
-    // ──────────────────────────────────────────────────────────────
+    //  火焰是有状态场（inject + advect + dissipate）：Rise/Cooling 决定高度，Buoyancy 决定拉伸断裂，
+    //  Turbulence 决定卷曲；哪个物品会烧由物品侧 ItemFxProvider 声明，不是这里。
 
     @Comment("火焰效果总开关。false = 完全不跑平流场（物品侧声明了也不烧）。")
     @ConfigEntry.Gui.Tooltip
@@ -214,14 +161,8 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public float flameSparkle = 0.55f;
 
-    // ──────────────────────────────────────────────────────────────
-    //  框架效果：电弧（arc，无状态的 SILHOUETTE 算子）
-    //
-    //  和火焰互补：火焰靠"有状态的平流"得到流体感，电弧靠"噪声场的等值线"
-    //  （col += 宽度 / |阈值 − fbm(p,t)|）得到会分叉、会抖的细丝。它**无状态**，
-    //  所以没有场、没有 ping-pong，成本只是几次 fbm。
+    //  电弧是无状态的 SILHOUETTE 算子（噪声场的等值线）：没有场、没有 ping-pong，成本只是几次 fbm；
     //  需要物品侧声明 arc 才会亮（ArcStrength 由绑定决定），下面只是全局参数。
-    // ──────────────────────────────────────────────────────────────
 
     @Comment("电弧密度：噪声尺度。越大细丝越短越密。30 = 默认（1600p 下特征尺度约 50px）。")
     @ConfigEntry.Gui.Tooltip
@@ -261,7 +202,6 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public int arcDebugView = 0;
 
-    // ── 框架效果：裂纹（fracture）────────────────────────────
     @Comment("裂纹总开关。")
     @ConfigEntry.Gui.Tooltip
     public boolean fractureEnabled = true;
@@ -309,13 +249,8 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public float arcTonemap = 1.0f;
 
-    // ──────────────────────────────────────────────────────────────
-    //  火焰调试视图（给"火焰看起来不对"用的，正常游玩保持 0）
-    //
-    //  它把火焰管线里那三张场直接画在屏幕上（灰度、不参与硬裁/包络/色调映射），
-    //  于是"场里没密度"和"密度被某个 gate 抹掉了"这两种完全不同的病因一眼可分。
-    //  这是被"改参数→进游戏→还是不对"循环折腾了好几轮之后加的。
-    // ──────────────────────────────────────────────────────────────
+    //  火焰调试视图：把火焰管线里的场直接画在屏幕上（灰度、不参与硬裁/包络/色调映射），
+    //  于是"场里没密度"和"密度被某个 gate 抹掉了"两种病因一眼可分。
 
     @Comment("火焰调试视图：0 = 正常合成（默认）；"
             + "1 = 显示 1/4 分辨率平流场密度（火羽到底长没长出来）；"
@@ -324,16 +259,8 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.CollapsibleObject
     public int flameDebugView = 0;
 
-    // ──────────────────────────────────────────────────────────────
-    //  物品栏图标（GUI 槽位）专用的一组描边微调
-    //
-    //  为什么需要单独一组：描边颜色是按「模型空间坐标」算的
-    //  （outline_mask.fsh 的 resolveColor(modelPos.xy)，频率 18/12）。
-    //  物品在手里/世界里占的屏幕面积大，那个波长看起来是柔和的宽带；
-    //  但物品栏图标只有 16px，同一个波长就等于「一圈描边里要过 3~4 次黑白」，
-    //  再叠上 4.5px 的环宽，就成了忽黑忽白的粗黑边 —— 反而把渐变盖住了。
-    //  所以 GUI 单独用：更宽的波段 + 更慢的流动 + 抬起来的暗端 + 略细的环。
-    // ──────────────────────────────────────────────────────────────
+    //  物品栏图标专用微调：描边颜色按「模型空间坐标」算（频率 18/12），物品栏图标只有 16px，
+    //  同一波长上一圈描边要过 3~4 次黑白，所以 GUI 单独用更宽波段 + 更慢流动 + 抬起的暗端 + 略细的环。
 
     @Comment("物品栏图标里，描边渐变的空间频率倍率。1.0 = 与手持/世界一致（一圈描边过 3~4 次黑白）；"
             + "0.18 左右 ≈ 一圈描边只走大半个周期（推荐）。")
@@ -354,16 +281,8 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public float guiOutlineWidthScale = 0.75f;
 
-    // ──────────────────────────────────────────────────────────────
-    //  天穹裁决（domerite_longsword）的单键三态右键技能
-    //
-    //  三个技能共用同一个冷却池（见 VerdictCooldown），所以它们是"一套操作"，
-    //  这组开关也统一放在一起。每一项都可以单独关掉：
-    //  关掉某个技能后它就不再触发，冷却池照常工作（剩下两个技能仍能计价）。
-    //
-    //  要整体关掉这套系统（比如怀疑它和别的模组冲突），把 verdictSkillsEnabled
-    //  设为 false —— 那时右键会退回原版剑的行为，其余一切（描边、面板、Y 缩放）照常。
-    // ──────────────────────────────────────────────────────────────
+    //  天穹裁决（domerite_longsword）的单键三态右键技能：三个技能共用同一个冷却池（VerdictCooldown），
+    //  各项可单独关掉；整体关掉用 verdictSkillsEnabled = false，那时右键退回原版剑行为。
 
     @Comment("天穹裁决右键技能总开关。false = 右键完全退回原版剑行为。")
     @ConfigEntry.Gui.Tooltip
@@ -421,24 +340,10 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public int verdictFieldMaxTargets = 3;
 
-    // ──────────────────────────────────────────────────────────────
-    //  难度系数：王庭生物的最大生命值 / 攻击伤害倍率
-    //
-    //  作用对象：实现 infcore IInfectedEntity 且命名空间为 hall 的生物
-    //  （畸骸玩家、畸骸骷髅、畸骸末影人、溃烂纠察/追蹤者/巨岩、
-    //   王庭碎骨、王庭重型轰炸、萨米使徒），玩家不受影响。
-    //
-    //  施加方式：实体加入世界（EntityJoinLevelEvent）时挂一个固定 UUID 的
-    //  AttributeModifier，而不是改 createAttributes —— 属性表在
-    //  EntityAttributeCreationEvent 里注册，全服只有一份，不能按难度烤死。
-    //  因此这四个值可以随时改，改完重进世界/重载配置即生效。
-    //
-    //  生命值倍率会按比例保留当前血量：一只满血生物改档后仍是满血，
-    //  半血生物改档后仍是半血。
-    //
-    //  注意：难度为「普通」时并不是 1.0 —— 本模组的基准平衡就按普通档写，
-    //  普通档的系数即全局基准；想完全关掉难度加成，把四项都设成 1.0。
-    // ──────────────────────────────────────────────────────────────
+    //  难度系数：王庭生物（实现 IInfectedEntity 且命名空间为 hall）的最大生命值 / 攻击伤害倍率。
+    //  施加方式：实体加入世界（EntityJoinLevelEvent）时挂一个固定 UUID 的 AttributeModifier ——
+    //  属性表在 EntityAttributeCreationEvent 里注册、全服只有一份，不能按难度烤死，因此改完重进世界即生效。
+    //  生命值倍率按比例保留当前血量；普通档不是 1.0（本模组的平衡基准就按普通档写），想关掉把六项都设成 1.0。
 
     @Comment("【难度】简单档：王庭生物最大生命值倍率")
     @ConfigEntry.Gui.Tooltip
@@ -472,13 +377,7 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public float difficultyIncomprehensibleDamageScale = 12.0f;
 
-    // ──────────────────────────────────────────────────────────────
-    //  绯红誓约背板（手持 crimson_vow 时出现在身后的血月誓约纹章）
-    //
-    //  这一组是给实机调参用的：改完存盘即生效，不需要重新编译。
-    //  纹章永远正对镜头、永远落在"从镜头看过去的玩家身后"，
-    //  下面三个数就是全部的调节维度。
-    // ──────────────────────────────────────────────────────────────
+    //  绯红誓约背板：手持 crimson_vow 时身后正对镜头的血月纹章，三个数是全部的调节维度，改完存盘即生效。
 
     @Comment("背板总开关。false = 完全不出现在身后。")
     @ConfigEntry.Gui.Tooltip
@@ -500,11 +399,8 @@ public class SplendidingConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public float crimsonBackplateHeadOffset = 0.65f;
 
-    // ──────────────────────────────────────────────────────────────
-    //  § 分节符文本特效（渐变 / 彩色 / 抖动 / 波浪 / 故障）
-    //  这些是"新键"：老配置文件里不存在时由 Jankson 保留类内默认值，不需要迁移；
-    //  只有以后修改这里已经发布过的默认值，才需要 bump CONFIG_VERSION + 写迁移。
-    // ──────────────────────────────────────────────────────────────
+    //  § 分节符文本特效（渐变 / 彩色 / 抖动 / 波浪 / 故障）：这些是新键，老配置文件里不存在时
+    //  由 Jankson 保留类内默认值，不需要迁移；只有修改已发布的默认值才需要 bump CONFIG_VERSION。
 
     @Comment("§ 文本特效总开关。false = 标记被剥离、按普通文本渲染（不会露出 rrs:… 字样），"
             + "但不上色、不位移。")

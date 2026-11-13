@@ -39,16 +39,14 @@ public class RecipeProviderData extends RecipeProvider {
                 .requires(RegisterItem.SOURCE_CHARGE_SAND.get(), 2)
                 .unlockedBy("has_source_charge_sand", has(RegisterItem.SOURCE_CHARGE_SAND.get()))
                 .save(consumer);
-        // 原木 -> 4 个木板
+        // 原木 -> 4 个木板（无定形）
         addPlanksRecipe(consumer, RegisterBlock.HALL_LOG.get(), Item.byBlock(RegisterBlock.HALL_PLANKS.get()));
 
-        // ---- HALL_PLANKS 建筑方块合成配方 ----
         addHallPlanksBuildingRecipes(consumer);
 
-        // ---- HALL_STONE 建筑方块合成配方 ----
         addHallStoneBuildingRecipes(consumer);
 
-        // 为每种矿石生成烧炼 + 高炉配方
+        // 矿石 -> 晶体/锭：烧炼与高炉各一条
         addCookingRecipes(consumer,
                 RegisterItem.DOMITE_ORE.get(),
                 RegisterItem.DOMITE_CRYSTAL.get(),
@@ -59,16 +57,13 @@ public class RecipeProviderData extends RecipeProvider {
                 RegisterItem.DOMERITE_INGOT.get(),
                 0.7f, 200, 100);
 
-        // ── domerite 工具合成（domerite_ingot 为刃材，domite_crystal 为柄材）──
+        // domerite 工具：domerite_ingot 为刃材，domite_crystal 为柄材
         addDomeriteToolRecipes(consumer);
 
-        // ── 王庭烬痕砂岩系列合成 ──
         addSandstoneVariantRecipes(consumer);
 
-        // ── 血肉裂隙：通往血肉庭园的门 ──
         addFleshRiftRecipe(consumer);
 
-        // ── 死亡之星：下界之星 + 一圈凋零玫瑰 ──
         addDeathStarRecipe(consumer);
     }
 
@@ -87,7 +82,7 @@ public class RecipeProviderData extends RecipeProvider {
         addInfusedManaPlateRecipe(consumer,RegisterItem.MYSTERIOUS_MANA_PLATE.get(),RegisterItem.MYSTERIOUS_MANA_BOTTLE.get());
     }
 
-    /** 八个同系储魔瓶包围一块源荷板材，产出一块对应板材。 */
+    /** 八个同系储魔瓶围住一块源荷板材，产出对应元素板材（消耗材料，形状有序）。 */
     private void addInfusedManaPlateRecipe(Consumer<FinishedRecipe> consumer,Item result,Item bottle) {
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC,result)
                 .define('P',RegisterItem.SOURCE_MANA_PLATE.get()).define('B',bottle)
@@ -132,14 +127,14 @@ public class RecipeProviderData extends RecipeProvider {
     }
 
     private void addChipRecipes(Consumer<FinishedRecipe> consumer) {
-        // 蓝色空白芯片是三种功能芯片的共同基底。
+        // 空白芯片是三种功能芯片的共同基底（无定形）。
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, RegisterItem.CHIP_NULL.get())
                 .requires(RegisterItem.SOURCE_CHARGE_SAND.get())
                 .requires(Items.COPPER_INGOT)
                 .requires(Items.REDSTONE)
                 .unlockedBy("has_source_charge_sand", has(RegisterItem.SOURCE_CHARGE_SAND.get()))
                 .save(consumer);
-        // 增强：金质导体与红石电路围绕空白芯片布置。
+        // 增强芯片：金导体 + 红石围空白芯片。
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, RegisterItem.CHIP_ENHANCED.get())
                 .define('C', RegisterItem.CHIP_NULL.get())
                 .define('G', Items.GOLD_INGOT)
@@ -148,7 +143,7 @@ public class RecipeProviderData extends RecipeProvider {
                 .unlockedBy("has_chip_null", has(RegisterItem.CHIP_NULL.get()))
                 .save(consumer);
 
-        // 扫描：紫水晶与石英作为感应材料，指南针作为定位部件。
+        // 扫描芯片：紫水晶/石英作感应材料，指南针作定位件。
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, RegisterItem.CHIP_SCAN.get())
                 .define('C', RegisterItem.CHIP_NULL.get())
                 .define('A', Items.AMETHYST_SHARD)
@@ -158,7 +153,7 @@ public class RecipeProviderData extends RecipeProvider {
                 .unlockedBy("has_chip_null", has(RegisterItem.CHIP_NULL.get()))
                 .save(consumer);
 
-        // 提取：漏斗与活塞代表收集和搬运部件，铁锭构成外壳。
+        // 提取芯片：漏斗 + 活塞为搬运件，铁锭为外壳。
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, RegisterItem.CHIP_EXTRACT.get())
                 .define('C', RegisterItem.CHIP_NULL.get())
                 .define('H', Items.HOPPER)
@@ -185,13 +180,7 @@ public class RecipeProviderData extends RecipeProvider {
         }
     }
 
-    /**
-     * 血肉裂隙配方。
-     * <p>
-     * 用「穹顶胚晶 + 王庭骨」拼成 —— 两种材料都来自现有的战斗循环
-     * （穹顶矿 + 碎骨掉落），因此不需要为开门额外新增资源链。
-     * 阵型参考原版末地传送门的「虚空感」：中心放胚晶，四角放骨。
-     */
+    /** 血肉裂隙：中心胚晶、四角王庭骨；两种材料都来自既有战斗循环，不新增资源链。 */
     private void addFleshRiftRecipe(Consumer<FinishedRecipe> consumer) {
         ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, RegisterBlock.FLESH_RIFT.get().asItem())
                 .define('B', RegisterItem.HALL_BONE_FRAGMENTS.get())
@@ -204,22 +193,7 @@ public class RecipeProviderData extends RecipeProvider {
                 .save(consumer);
     }
 
-    /**
-     * 为「王庭烬痕沙漠系列」的砂岩变体补齐配方。
-     * <p>
-     * 对照原版砂岩全家桶（{@code data/minecraft/recipes/}）逐条对齐：
-     * <ul>
-     *   <li>{@code sandstone}        ← 4 × sand（2×2）</li>
-     *   <li>{@code cut_sandstone}    ← 4 × sandstone（2×2）</li>
-     *   <li>{@code chiseled_sandstone} ← 2 × sandstone_slab（竖向 1×2）</li>
-     *   <li>{@code smooth_sandstone} ← 烧炼 {@code sandstone}（0.1 exp / 200 tick）</li>
-     *   <li>切石机：{@code sandstone} → {@code cut / chiseled / smooth}（各 1 个，方便批量出料）</li>
-     * </ul>
-     * 与「王庭烬痕沙子 / 王庭砂岩」互为主副材料，玩家不必先去找原版沙漠。
-     * <p>
-     * 注意：模组里没有自定义砂岩台阶，{@code chiseled} 因此沿用原版
-     * {@code minecraft:sandstone_slab} 作为材料（与原版配方一致）。
-     */
+    /** 对齐原版砂岩全家桶；模组没有自定义砂岩台阶，chiseled 因此沿用 minecraft:sandstone_slab。 */
     private void addSandstoneVariantRecipes(Consumer<FinishedRecipe> consumer) {
         Block sand = RegisterBlock.HALL_ASH_SAND.get();
         Block sandstone = RegisterBlock.HALL_SANDSTONE.get();
@@ -227,8 +201,7 @@ public class RecipeProviderData extends RecipeProvider {
         Block smoothSandstone = RegisterBlock.HALL_ASH_SMOOTH_SANDSTONE.get();
         Block chiseledSandstone = RegisterBlock.HALL_ASH_COLLAPSED_CHISELED_SANDSTONE.get();
 
-        // 王庭烬痕沙子 ×4 → 王庭砂岩
-        // 配方 ID 与输出物品同名（hall:hall_sandstone），所以不传自定义 ID
+        // 沙子 ×4 → 砂岩（2×2）；配方 ID 与输出同名，故不传自定义 ID
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, sandstone)
                 .pattern("##")
                 .pattern("##")
@@ -244,7 +217,7 @@ public class RecipeProviderData extends RecipeProvider {
                 .unlockedBy("has_hall_sandstone", has(sandstone))
                 .save(consumer);
 
-        // 原版砂岩 ×4 → 王庭切制砂岩（废墟里捡到原版砂岩也能用）
+        // 原版砂岩 ×4 → 王庭切制砂岩（废墟里捡到的原版砂岩也能用）
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, cutSandstone, 4)
                 .pattern("##")
                 .pattern("##")
@@ -260,14 +233,13 @@ public class RecipeProviderData extends RecipeProvider {
                 .unlockedBy("has_hall_ash_cut_sandstone", has(cutSandstone))
                 .save(consumer);
 
-        // 烧炼王庭砂岩 → 王庭平滑砂岩
-        // 与原版 smooth_sandstone.json 同名（默认 ID：hall:hall_ash_smooth_sandstone）
+        // 烧炼王庭砂岩 → 王庭平滑砂岩（0.1 exp / 200 tick）
         SimpleCookingRecipeBuilder.smelting(Ingredient.of(sandstone), RecipeCategory.BUILDING_BLOCKS,
                         smoothSandstone, 0.1F, 200)
                 .unlockedBy("has_hall_sandstone", has(sandstone))
                 .save(consumer);
 
-        // 烧炼原版砂岩 → 王庭平滑砂岩（与原版 smooth_sandstone 同源，走自定义 ID 区分）
+        // 烧炼原版砂岩 → 王庭平滑砂岩（走自定义 ID 与原版 smooth_sandstone 区分）
         SimpleCookingRecipeBuilder.smelting(Ingredient.of(Blocks.SANDSTONE), RecipeCategory.BUILDING_BLOCKS,
                         smoothSandstone, 0.1F, 200)
                 .unlockedBy("has_sandstone", has(Blocks.SANDSTONE))
@@ -290,9 +262,6 @@ public class RecipeProviderData extends RecipeProvider {
                 .save(consumer, "rotten_ruins:hall_ash_smooth_sandstone_from_stonecutting");
     }
 
-    /**
-     * 为 HALL_PLANKS 生成所有建筑方块合成配方。
-     */
     private void addHallPlanksBuildingRecipes(Consumer<FinishedRecipe> consumer) {
         Block planks = RegisterBlock.HALL_PLANKS.get();
         String unlock = "has_hall_planks";
@@ -348,7 +317,7 @@ public class RecipeProviderData extends RecipeProvider {
                 .unlockedBy(unlock, has(planks))
                 .save(consumer);
 
-        // 按钮：1 木板 → 1 按钮（无定形合成）
+        // 按钮：1 木板 → 1 按钮（无定形）
         ShapelessRecipeBuilder.shapeless(RecipeCategory.REDSTONE, RegisterBlock.HALL_BUTTON.get().asItem(), 1)
                 .requires(planks)
                 .unlockedBy(unlock, has(planks))
@@ -362,15 +331,11 @@ public class RecipeProviderData extends RecipeProvider {
                 .save(consumer);
     }
 
-    /**
-     * 为 HALL_STONE 生成石制建筑方块合成配方（含切石机）。
-     */
     private void addHallStoneBuildingRecipes(Consumer<FinishedRecipe> consumer) {
         Block stone = RegisterBlock.HALL_STONE.get();
         String unlock = "has_hall_stone";
 
-        // 石柱：4 石块 → 4 石柱（2×2）
-        // 对应原版「4 石块 → 4 石砖」这一步，让王庭石也有「基础石 → 细加工石」的合成层级
+        // 石柱：4 石块 → 4 石柱（2×2），对应原版「石块 → 石砖」那一层加工
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, RegisterBlock.HALL_PILLAR.get().asItem(), 4)
                 .pattern("SS")
                 .pattern("SS")
@@ -384,7 +349,7 @@ public class RecipeProviderData extends RecipeProvider {
                 .unlockedBy(unlock, has(stone))
                 .save(consumer, "rotten_ruins:hall_pillar_from_stonecutting");
 
-        // 楼梯：6 石块 → 4 楼梯
+        // 楼梯：6 石块 → 4 楼梯；切石机 1 石块 → 1 楼梯
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, RegisterBlock.HALL_STONE_STAIRS.get().asItem(), 4)
                 .pattern("S  ")
                 .pattern("SS ")
@@ -392,32 +357,29 @@ public class RecipeProviderData extends RecipeProvider {
                 .define('S', stone)
                 .unlockedBy(unlock, has(stone))
                 .save(consumer);
-        // 楼梯切石机：1 石块 → 1 楼梯
         SingleItemRecipeBuilder.stonecutting(Ingredient.of(stone), RecipeCategory.BUILDING_BLOCKS,
                         RegisterBlock.HALL_STONE_STAIRS.get().asItem(), 1)
                 .unlockedBy(unlock, has(stone))
                 .save(consumer, "rotten_ruins:stone_stairs_from_stonecutting");
 
-        // 台阶：3 石块 → 6 台阶
+        // 台阶：3 石块 → 6 台阶；切石机 1 石块 → 2 台阶
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, RegisterBlock.HALL_STONE_SLAB.get().asItem(), 6)
                 .pattern("SSS")
                 .define('S', stone)
                 .unlockedBy(unlock, has(stone))
                 .save(consumer);
-        // 台阶切石机：1 石块 → 2 台阶
         SingleItemRecipeBuilder.stonecutting(Ingredient.of(stone), RecipeCategory.BUILDING_BLOCKS,
                         RegisterBlock.HALL_STONE_SLAB.get().asItem(), 2)
                 .unlockedBy(unlock, has(stone))
                 .save(consumer, "rotten_ruins:stone_slab_from_stonecutting");
 
-        // 石墙：6 石块 → 6 墙
+        // 石墙：6 石块 → 6 墙；切石机 1 石块 → 1 墙
         ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, RegisterBlock.HALL_STONE_WALL.get().asItem(), 6)
                 .pattern("SSS")
                 .pattern("SSS")
                 .define('S', stone)
                 .unlockedBy(unlock, has(stone))
                 .save(consumer);
-        // 石墙切石机：1 石块 → 1 墙
         SingleItemRecipeBuilder.stonecutting(Ingredient.of(stone), RecipeCategory.DECORATIONS,
                         RegisterBlock.HALL_STONE_WALL.get().asItem(), 1)
                 .unlockedBy(unlock, has(stone))
@@ -533,20 +495,7 @@ public class RecipeProviderData extends RecipeProvider {
                 .save(consumer);
     }
 
-    /**
-     * 为一个输入物品生成烧炼（smelting）和高炉（blasting）配方。
-     * 配方 ID 自动根据输出物品的注册名生成，例如：
-     *   - hall:domite_crystal_from_smelting
-     *   - hall:domite_crystal_from_blasting
-     * 解锁条件使用输入物品的名称。
-     *
-     * @param consumer   配方消费者
-     * @param input      输入物品（矿石）
-     * @param output     输出物品（晶体/锭）
-     * @param exp        经验值
-     * @param smeltTime  烧炼时间（tick）
-     * @param blastTime  高炉时间（tick）
-     */
+    /** 生成烧炼 + 高炉两条配方；ID 由输出物品注册名推出，解锁条件取输入物品名。 */
     private void addCookingRecipes(Consumer<FinishedRecipe> consumer,
                                    Item input,
                                    Item output,
@@ -556,7 +505,6 @@ public class RecipeProviderData extends RecipeProvider {
         String inputName = BuiltInRegistries.ITEM.getKey(input).getPath();
         String outputName = BuiltInRegistries.ITEM.getKey(output).getPath();
 
-        // 烧炼配方
         SimpleCookingRecipeBuilder.smelting(
                         Ingredient.of(input),
                         RecipeCategory.MISC,
@@ -567,7 +515,7 @@ public class RecipeProviderData extends RecipeProvider {
                 .unlockedBy("has_" + inputName, has(input))
                 .save(consumer, "rotten_ruins:" + outputName + "_from_smelting");
 
-        // 高炉配方（速度加倍）
+        // 高炉时间由调用方单独给（速度加倍）
         SimpleCookingRecipeBuilder.blasting(
                         Ingredient.of(input),
                         RecipeCategory.MISC,
@@ -579,11 +527,7 @@ public class RecipeProviderData extends RecipeProvider {
                 .save(consumer, "rotten_ruins:" + outputName + "_from_blasting");
     }
 
-    /**
-     * 死亡之星配方。
-     * <p>
-     * 中心一颗下界之星，四周八朵凋零玫瑰（3×3 全包）。
-     */
+    /** 死亡之星：中心一颗下界之星，四周八朵凋零玫瑰（3×3 全包）。 */
     private void addDeathStarRecipe(Consumer<FinishedRecipe> consumer) {
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, RegisterItem.DEATH_STAR.get())
                 .define('W', Items.WITHER_ROSE)

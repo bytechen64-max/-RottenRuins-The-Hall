@@ -1,6 +1,5 @@
 package org.bytechen.rottenruins.client.rend;
 
-
 import org.bytechen.rottenruins.network.NetworkHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
@@ -144,7 +143,6 @@ public class LightningEffectRenderer extends AbstractStaticEffectRenderer<Lightn
         return points;
     }
 
-    // ========== 实例数据类 ==========
     public static class LightningInstance extends EffectInstance {
         public Vec3 start;
         public Vec3 end;
@@ -183,8 +181,6 @@ public class LightningEffectRenderer extends AbstractStaticEffectRenderer<Lightn
             tag.putInt("maxAge", maxAge);
         }
     }
-
-    // ========== 便捷生成方法（供服务端调用） ==========
 
     /**
      * 处理来自服务端的同步包（由 EffectSyncPacket 调用）

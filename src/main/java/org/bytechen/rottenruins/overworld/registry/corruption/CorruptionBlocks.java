@@ -64,7 +64,6 @@ public class CorruptionBlocks {
                 .noOcclusion();
     }
 
-    // ==================== 腐化地貌 ====================
     public static final RegistryObject<Block> SPREAD_DIRT =
             block("spread_dirt", () -> new CorruptionSpreadBlock(soil().randomTicks()));
     public static final RegistryObject<Block> SPREAD_STONE =
@@ -90,7 +89,6 @@ public class CorruptionBlocks {
                     () -> new CorruptionVariableHeightCropBlock(plant().randomTicks()));
     public static final RegistryObject<Block> SPIRACLE_BLOCK = block("spiracle_block", () -> new Block(organic()));
 
-    // ==================== 遗骸（腐化/同化/重构 × 小/中/大，六向 facing） ====================
     public static final RegistryObject<Block> DEGENERATE_REMAINS_SMALL = block("degenerate_remains_small", RemainsBlock::new);
     public static final RegistryObject<Block> DEGENERATE_REMAINS_MEDIUM = block("degenerate_remains_medium", RemainsBlock::new);
     public static final RegistryObject<Block> DEGENERATE_REMAINS_LARGE = block("degenerate_remains_large", RemainsBlock::new);

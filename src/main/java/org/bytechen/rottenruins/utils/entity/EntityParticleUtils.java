@@ -1,6 +1,5 @@
 package org.bytechen.rottenruins.utils.entity;
 
-
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -15,40 +14,20 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Random;
 
 /**
- * 实体粒子生成工具类，用于在实体的碰撞箱范围内生成自定义粒子，
- * 支持速度控制、范围缩放、声音播放等功能。
- * <p>
- * 使用方式：
- * <pre>
- * ParticleConfig config = CorruptionEntityParticleUtil.builder()
- *         .particle(ParticleTypes.PORTAL)
- *         .count(50)
- *         .rangeScale(1.5f)                // 碰撞箱放大1.5倍
- *         .velocityRandomRange(0.2, 0.1, 0.2)  // 速度范围 (±0.2, ±0.1, ±0.2)
- *         .sound(SoundEvents.ENDERMAN_TELEPORT, 0.5f, 1.0f)
- *         .build();
- *
- * // 在客户端执行（例如实体所在客户端侧）
- * CorruptionEntityParticleUtil.spawnParticles(entity, config);
- * </pre>
+ * 实体粒子生成工具：在实体碰撞箱范围内随机播撒粒子，支持速度策略、范围缩放与伴随音效。
+ * 用法：{@code EntityParticleUtils.builder().particle(...).count(50).rangeScale(1.5f).build()}，
+ * 再调 {@code spawnParticles(entity, config)}。
  */
 public final class EntityParticleUtils {
 
     private EntityParticleUtils() {}
 
-    /**
-     * 开始构建粒子配置
-     */
+    /** 开始构建粒子配置。 */
     public static Builder builder() {
         return new Builder();
     }
 
-    /**
-     * 根据配置为指定实体生成粒子（仅在客户端生效）
-     *
-     * @param entity 目标实体
-     * @param config 粒子配置
-     */
+    /** 按配置为实体生成粒子（仅客户端生效）；rangeScale 缩放碰撞箱，音效只播一次。 */
     public static void spawnParticles(Entity entity, ParticleConfig config) {
         Level level = entity.level();
         if (!level.isClientSide) {
@@ -63,7 +42,6 @@ public final class EntityParticleUtils {
 
         Random random = new Random();
 
-        // 播放声音（可选，只播放一次）
         if (config.soundEvent != null) {
             level.playSound(null,
                     entity.getX(), entity.getY(), entity.getZ(),
@@ -72,33 +50,24 @@ public final class EntityParticleUtils {
                     config.volume, config.pitch);
         }
 
-        // 生成粒子
         for (int i = 0; i < config.count; i++) {
-            // 在缩放后的碰撞箱内随机取点
             double px = center.x + (random.nextDouble() - 0.5) * 2 * halfWidth;
             double py = center.y + (random.nextDouble() - 0.5) * 2 * halfHeight;
             double pz = center.z + (random.nextDouble() - 0.5) * 2 * halfDepth;
 
-            // 获取该粒子的速度
             Vec3 velocity = config.velocityProvider.getVelocity(random, entity);
             level.addParticle(config.particleOptions, px, py, pz,
                     velocity.x, velocity.y, velocity.z);
         }
     }
 
-    // ==================== Builder & Config ====================
-
-    /**
-     * 速度提供器函数式接口，用于为每个粒子独立生成速度向量
-     */
+    /** 速度提供器：为每颗粒子独立生成初速。 */
     @FunctionalInterface
     public interface VelocityProvider {
         Vec3 getVelocity(Random random, Entity entity);
     }
 
-    /**
-     * 粒子配置（不可变）
-     */
+    /** 粒子配置（不可变）。 */
     public static class ParticleConfig {
         final ParticleOptions particleOptions;
         final int count;
@@ -125,9 +94,7 @@ public final class EntityParticleUtils {
         }
     }
 
-    /**
-     * Builder 类，用于构建 ParticleConfig
-     */
+    /** Builder 类，用于构建 ParticleConfig。 */
     public static class Builder {
         private ParticleOptions particleOptions;
         private int count = 10;
@@ -139,46 +106,33 @@ public final class EntityParticleUtils {
 
         private Builder() {}
 
-        /**
-         * 设置粒子类型（必填）
-         */
+        /** 粒子类型（必填）。 */
         public Builder particle(ParticleOptions particle) {
             this.particleOptions = particle;
             return this;
         }
 
-        /**
-         * 设置粒子生成数量
-         */
+        /** 生成数量；负数抛 IllegalArgumentException。 */
         public Builder count(int count) {
             if (count < 0) throw new IllegalArgumentException("粒子数量不能为负数");
             this.count = count;
             return this;
         }
 
-        /**
-         * 设置碰撞箱缩放因子（1.0 = 原始大小，>1 扩大，<1 缩小）
-         */
+        /** 碰撞箱缩放因子：1.0 = 原始大小，>1 扩大，<1 缩小。 */
         public Builder rangeScale(float scale) {
             if (scale <= 0) throw new IllegalArgumentException("缩放因子必须 > 0");
             this.rangeScale = scale;
             return this;
         }
 
-        /**
-         * 设置固定速度（所有粒子速度相同）
-         */
+        /** 所有粒子用同一个固定初速。 */
         public Builder velocityFixed(Vec3 velocity) {
             this.velocityProvider = (rand, entity) -> velocity;
             return this;
         }
 
-        /**
-         * 设置随机速度范围（每个轴独立均匀随机）
-         * @param rangeX X轴速度范围 [-rangeX/2, +rangeX/2]
-         * @param rangeY Y轴速度范围
-         * @param rangeZ Z轴速度范围
-         */
+        /** 每轴独立均匀随机初速，实际范围 [-range/2, +range/2]。 */
         public Builder velocityRandomRange(double rangeX, double rangeY, double rangeZ) {
             this.velocityProvider = (rand, entity) -> new Vec3(
                     (rand.nextDouble() - 0.5) * rangeX,
@@ -188,9 +142,7 @@ public final class EntityParticleUtils {
             return this;
         }
 
-        /**
-         * 设置随机球形速度（方向随机，速度大小在 [0, maxSpeed] 之间）
-         */
+        /** 方向随机的球形初速，速率在 [0, maxSpeed]。 */
         public Builder velocityRandomSpherical(double maxSpeed) {
             this.velocityProvider = (rand, entity) -> {
                 double theta = rand.nextDouble() * 2 * Math.PI;
@@ -204,21 +156,14 @@ public final class EntityParticleUtils {
             return this;
         }
 
-        /**
-         * 使用自定义速度提供器（完全控制每个粒子的速度）
-         */
+        /** 自定义速度提供器（完全控制每颗粒子的初速，entity 参数可能为 null）。 */
         public Builder velocityCustom(VelocityProvider provider) {
 
             this.velocityProvider = provider;
             return this;
         }
 
-        /**
-         * 设置在生成粒子时播放的声音
-         * @param soundEvent 声音事件
-         * @param volume     音量 (0.0 - 1.0)
-         * @param pitch      音调 (0.5 - 2.0)
-         */
+        /** 生成粒子时同时播放的音效（volume 0.0~1.0、pitch 0.5~2.0）。 */
         public Builder sound(SoundEvent soundEvent, float volume, float pitch) {
             this.soundEvent = soundEvent;
             this.volume = volume;
@@ -226,9 +171,7 @@ public final class EntityParticleUtils {
             return this;
         }
 
-        /**
-         * 构建最终配置对象
-         */
+        /** 构建配置；未设置粒子类型时抛 IllegalStateException。 */
         public ParticleConfig build() {
             if (particleOptions == null) {
                 throw new IllegalStateException("必须设置粒子类型 (particle)");
@@ -238,7 +181,7 @@ public final class EntityParticleUtils {
         }
     }
 
-
+    /** 按碰撞箱体积 × density（+5，上限 200）播撒粒子；服务端走 sendParticles 广播给附近玩家。 */
     public static void spawnParticles(Entity entity, ParticleOptions particleTypes,
                                       double density, double speedRange, float rangeScale) {
         Level level = entity.level();
@@ -247,7 +190,6 @@ public final class EntityParticleUtils {
         }
 
         AABB bb = entity.getBoundingBox();
-        // 应用范围缩放：扩大或缩小碰撞箱
         double halfWidth = (bb.maxX - bb.minX) * 0.5 * rangeScale;
         double halfHeight = (bb.maxY - bb.minY) * 0.5 * rangeScale;
         double halfDepth = (bb.maxZ - bb.minZ) * 0.5 * rangeScale;
@@ -260,7 +202,6 @@ public final class EntityParticleUtils {
         Random random = new Random();
 
         for (int i = 0; i < count; i++) {
-            // 在缩放后的范围内随机取点
             double px = center.x + (random.nextDouble() - 0.5) * 2 * halfWidth;
             double py = center.y + (random.nextDouble() - 0.5) * 2 * halfHeight;
             double pz = center.z + (random.nextDouble() - 0.5) * 2 * halfDepth;
@@ -277,40 +218,12 @@ public final class EntityParticleUtils {
         }
     }
 
-    // ==================== 爆体爆炸 ====================
-
-    /**
-     * 在实体碰撞箱范围内炸开一团「血腥爆炸」粒子（{@link RegisterParticles#EXPLOSION_BLOODY}）。
-     *
-     * <p>移植自 corruption 的
-     * {@code CorruptionEntityParticleUtil#spawnExplosionParticles(Entity)}：数量按碰撞箱
-     * 体积算 —— {@code 体积 × 1 + 5}（至少 5 颗，上限 200），每颗在碰撞箱内均匀取点、
-     * 带一点随机初速。用体积而不是固定数量，是为了让"小怪一小团、大体型怪一大片"
-     * 自然成立，不必给每个实体单独配数量。</p>
-     *
-     * <p>这是给「爆体」这个固定场景的语义化入口（密度 1.0、速度扰动 0.1），数值与
-     * corruption {@code BaseOriginalEntity} 里的
-     * {@code spawnExplosionParticles(this, 1, 0.1)} 一致；底层就是上面的通用重载
-     * {@link #spawnParticles(Entity, ParticleOptions, double, double, float)}。服务端调用时
-     * 由 {@link ServerLevel#sendParticles} 广播给附近客户端 —— 所有玩家在同一位置、
-     * 同一 tick 看到同一团爆炸，和 {@code MeatBurstPacket} 的"服务端决定时机"是同一个原则。</p>
-     *
-     * <p>调用点见 {@code AbstractRottenEntity#onBurstEnd()}：爆体结束、实体被移除前，
-     * 与肉屑包同一 tick 发出，观感上是"炸开一团血雾 + 溅出肉屑"同时发生。</p>
-     */
+    /** 爆体：按 density 1.0、速度扰动 0.1 炸开血腥爆炸粒子（数量随体积，5~200 颗）。 */
     public static void spawnExplosionParticles(Entity entity) {
         spawnParticles(entity, RegisterParticles.EXPLOSION_BLOODY.get(), 1.0D, 0.1D, 1.0F);
     }
 
-    /**
-     * 在实体碰撞箱范围内生成粒子（仅客户端，供实体 tick 中调用）
-     *
-     * @param entity     目标实体
-     * @param particle   粒子类型
-     * @param count      每 tick 生成数量上限（受碰撞箱体积限制）
-     * @param speedRange 速度随机范围，实际速度在 [-speedRange/2, +speedRange/2]
-     * @param rangeScale 碰撞箱缩放因子，1.0 = 原始大小
-     */
+    /** 仅客户端：以 count 作密度在碰撞箱内播撒粒子（至少 1 颗、上限 200），供实体 tick 调用。 */
     public static void spawnParticlesOnClient(Entity entity, ParticleOptions particle,
                                               int count, double speedRange, float rangeScale) {
         Level level = entity.level();
@@ -339,14 +252,7 @@ public final class EntityParticleUtils {
         }
     }
 
-
-    /**
-     * 在指定区域内根据完整配置生成粒子（支持客户端/服务端）
-     *
-     * @param level  世界
-     * @param area   轴对齐包围盒
-     * @param config 粒子配置（需已设置粒子类型、数量、速度提供器等）
-     */
+    /** 在给定 AABB 区域内按配置撒粒子（客户端 addParticle / 服务端 sendParticles 均可用）。 */
     public static void spawnParticlesInArea(Level level, AABB area, ParticleConfig config) {
         Vec3 center = area.getCenter();
         double halfWidth  = (area.maxX - area.minX) * 0.5 * config.rangeScale;
@@ -355,13 +261,10 @@ public final class EntityParticleUtils {
 
         Random random = new Random();
 
-        // 播放声音（可选）
         if (config.soundEvent != null && !level.isClientSide) {
-            // 服务端播放声音（会同步给附近玩家）
             level.playSound(null, center.x, center.y, center.z,
                     config.soundEvent, SoundSource.MASTER, config.volume, config.pitch);
         } else if (config.soundEvent != null && level.isClientSide) {
-            // 客户端直接播放本地声音
             level.playSound(null, center.x, center.y, center.z,
                     config.soundEvent, SoundSource.MASTER, config.volume, config.pitch);
         }

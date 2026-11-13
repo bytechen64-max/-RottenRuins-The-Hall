@@ -44,6 +44,9 @@ src/generated/resources/.cache/
 *.rar
 *.bak
 
-# LWJGL natives cache (�ϲ�ǰ���ߺ���)
+# LWJGL natives cache (�ϲ�ǰ���ߺ���)
 .lwjgl/
 .dsh-vision-toolkit/
+
+# Jade 可选集成的编译期 jar（第三方模组，不入库）
+libs/jade/

@@ -6,6 +6,7 @@ import org.bytechen.rottenruins.overworld.registry.effect.customEffect.effects.A
 import org.bytechen.rottenruins.overworld.registry.effect.customEffect.effects.CorrosionEffect;
 import org.bytechen.rottenruins.overworld.registry.effect.customEffect.effects.FrailtyEffect;
 import org.bytechen.rottenruins.overworld.registry.effect.customEffect.effects.LethargyEffect;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * <b>自定义效果的总注册入口</b> —— 对应原版 {@code RegisterEffect}，
@@ -27,13 +28,9 @@ import org.bytechen.rottenruins.overworld.registry.effect.customEffect.effects.L
  */
 public final class RegisterCustomEffect {
 
-    // ────────── 奥数立方：三棱锥形态挂的印记 ──────────
-
     /** 奥数印记：带印记的目标每次受伤 → 随机塞一个负面效果（行为在 ArcaneMarkHandler）。 */
     public static final ArcaneMarkEffect ARCANE_MARK =
             CustomEffectRegistry.register(new ArcaneMarkEffect(id("arcane_mark")));
-
-    // ────────── 负面效果池（被印记随机抽中） ──────────
 
     /** 腐蚀：护甲 -2/层。 */
     public static final CorrosionEffect CORROSION =
@@ -56,6 +53,6 @@ public final class RegisterCustomEffect {
     }
 
     private static ResourceLocation id(String path) {
-        return new ResourceLocation(HallMod.MODID, path);
+        return ModUtils.modLoc(path);
     }
 }

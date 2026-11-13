@@ -8,15 +8,9 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * {@link MagicStatProvider} 的注册表。
- *
- * <p>注册进来的 provider 会被 {@link MagicStats} 在每次求值时按
- * {@link MagicStatProvider#priority()} 升序折叠。列表在写入时复制并排序，
- * 求值时只读，所以注册通常发生在 mod 初始化阶段、之后不再变动。</p>
- *
- * <p><b>线程约定</b>：注册请在 mod 构造 / {@code FMLCommonSetupEvent} 里做；
- * 求值发生在服务端 tick 与客户端渲染线程，读取的是一个已排序的不可变快照，
- * 因此并发读是安全的。运行期动态增删会重建快照。</p>
+ * {@link MagicStatProvider} 的注册表：写入时复制并按 {@link MagicStatProvider#priority()} 升序排序，求值时只读快照。
+ * 线程约定：注册放在 mod 构造 / {@code FMLCommonSetupEvent}；求值发生在服务端 tick 与客户端渲染线程，
+ * 读到的是已排序的不可变 volatile 快照，故并发读安全；运行期动态增删会重建快照。
  */
 public final class MagicStatRegistry {
 
@@ -37,7 +31,6 @@ public final class MagicStatRegistry {
         rebuild();
     }
 
-    /** 注销一个修饰来源。 */
     public static synchronized boolean unregister(@NotNull MagicStatProvider provider) {
         boolean removed = PROVIDERS.remove(provider);
         if (removed) {
@@ -52,45 +45,34 @@ public final class MagicStatRegistry {
         rebuild();
     }
 
-    /** 当前已排序的 provider 快照，仅供 {@link MagicStats} 与调试使用。 */
     @NotNull
     public static List<MagicStatProvider> providers() {
         return snapshot;
     }
 
-    /**
-     * 按 priority 升序排序；priority 相同时保持注册顺序（{@link List#sort} 是稳定排序）。
-     */
+    /** 按 priority 升序排序；priority 相同时保持注册顺序（{@link List#sort} 是稳定排序）。 */
     private static void rebuild() {
         List<MagicStatProvider> copy = new ArrayList<>(PROVIDERS);
         copy.sort(Comparator.comparingInt(MagicStatProvider::priority));
         snapshot = List.copyOf(copy);
     }
 
-    /**
-     * 折叠算子：拿到「当前累计值」和「这一次要应用的 provider」，返回新的累计值。
-     *
-     * <p><b>为什么要把 current 传进来</b>：修饰器是链式的（先算装备、再算附魔、最后算 buff），
-     * 每一步都必须看到上一步的结果。若算子只能拿到 provider，就没法把值串起来。</p>
-     */
+    /** 折叠算子：current 是上一步的累计值，必须传进来 —— 修饰器链式累加（装备→附魔→buff），每步都要看上一步结果。 */
     @FunctionalInterface
     public interface IntOp {
         int apply(@NotNull MagicStatProvider provider, int current);
     }
 
-    /** {@link IntOp} 的 double 版本。 */
     @FunctionalInterface
     public interface DoubleOp {
         double apply(@NotNull MagicStatProvider provider, double current);
     }
 
-    /** {@link IntOp} 的 float 版本。 */
     @FunctionalInterface
     public interface FloatOp {
         float apply(@NotNull MagicStatProvider provider, float current);
     }
 
-    /** 从 {@code base} 开始，按 priority 升序折叠 int。 */
     public static int foldInt(int base, @NotNull IntOp op) {
         int value = base;
         for (MagicStatProvider provider : snapshot) {
@@ -99,7 +81,6 @@ public final class MagicStatRegistry {
         return value;
     }
 
-    /** 从 {@code base} 开始，按 priority 升序折叠 double。 */
     public static double foldDouble(double base, @NotNull DoubleOp op) {
         double value = base;
         for (MagicStatProvider provider : snapshot) {
@@ -108,7 +89,6 @@ public final class MagicStatRegistry {
         return value;
     }
 
-    /** 从 {@code base} 开始，按 priority 升序折叠 float。 */
     public static float foldFloat(float base, @NotNull FloatOp op) {
         float value = base;
         for (MagicStatProvider provider : snapshot) {
@@ -117,17 +97,13 @@ public final class MagicStatRegistry {
         return value;
     }
 
-    /**
-     * 遍历所有 provider 求一次"是否允许"。任一返回 false 即拒绝。
-     *
-     * <p>给"以后可能出现的释放前置条件"留的口子：比如某个 debuff 禁止施法。</p>
-     */
+    /** 释放前置条件开关：任一 provider 返回 false 即拒绝（如某个 debuff 禁止施法）。 */
     @FunctionalInterface
     public interface Gate {
         boolean test(@NotNull MagicStatProvider provider);
     }
 
-    /** 所有 provider 都放行才返回 true；没有注册任何 provider 时返回 true。 */
+    /** 所有 provider 都放行才返回 true；没注册任何 provider 或 gate 为 null 时也返回 true。 */
     public static boolean allAllow(@Nullable Gate gate) {
         if (gate == null) {
             return true;

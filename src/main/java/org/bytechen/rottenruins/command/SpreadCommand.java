@@ -11,11 +11,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import org.bytechen.rottenruins.HallMod;
 import org.bytechen.infcore.core.blockspread.BlockSpreadManager;
 
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * 方块扩散测试指令 —— /spread
@@ -47,7 +47,7 @@ public final class SpreadCommand {
 
         ServerLevel level = player.serverLevel();
         BlockPos center = player.blockPosition();
-        ResourceLocation type = new ResourceLocation(HallMod.MODID, "spread");
+        ResourceLocation type = ModUtils.modLoc("spread");
 
         int count = 0;
         for (int x = -radius; x <= radius; x++) {

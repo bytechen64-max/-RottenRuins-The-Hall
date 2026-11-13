@@ -32,55 +32,31 @@ import java.util.UUID;
 
 /**
  * 绯红誓约 · <b>蓄力法阵</b>（玩家身下那一圈）。
- *
- * <h3>为什么它是一个实体，而不是客户端的一层渲染</h3>
- * <p>蓄力是一个<b>有服务端后果</b>的过程（蓄满要放技能），所以进度必须由服务端持有；
- * 而"身下渐渐扩散运动的法阵"又要每帧平滑地画出来。把两者缝在一起的最省事做法
- * 就是<b>一个跟着玩家走的技能实体</b>：</p>
- * <ul>
- *   <li>进度 {@code DATA_CHARGE} 走同步数据 —— 不需要任何新网络包；</li>
- *   <li>渲染侧拿到 {@code charge} / {@code radius} 两个同步量，
- *       再用 {@code partialTick} 在"上一 tick 的值 → 这一 tick 的值"之间插值，
- *       于是 20Hz 的同步在画面上是连续的（这正是"记得用部分 tick 插值"那条要求）；</li>
- *   <li>它挂在 {@code CrimsonVowBlockEntity} 之外 —— 也就是说
- *       <b>同一套蓄力可以被任何一把剑复用</b>，不必把逻辑写进物品类。</li>
- * </ul>
- *
- * <h3>生命周期</h3>
- * <ol>
- *   <li>{@code CrimsonVow.onBlockStart} 在<b>蹲下</b>时生成本实体；</li>
- *   <li>每 tick 检查"主人是否还在用这把剑格挡" —— 松手 / 换手 / 死亡
- *       都会让法阵立刻散掉（{@link #discard()}），不留残影；</li>
- *   <li>蓄满（{@link #CHARGE_TICKS}）后在本实体里做射线选点、生成
- *       {@link CrimsonVowFieldEntity}、并把玩家的使用状态收掉。</li>
- * </ol>
- *
- * <h3>为什么"射线选点"写在这里</h3>
- * <p>它是"蓄满之后立刻要发生的那件事"，与蓄力进度是同一条时间线上的东西；
- * 拆到物品类里会让 {@code CrimsonVow} 同时承担格挡、蓄力、选点、放技能四件事。
- * 物品类只负责"开启蓄力"，其余归这里。</p>
+ * 蓄力有服务端后果（蓄满要放技能），所以进度必须由服务端持有；做成一个跟着玩家走的技能实体，
+ * 进度走同步数据（不需要新网络包），渲染侧拿 {@code charge} / {@code radius} 按 partialTick 插值，
+ * 且它挂在物品类之外，同一套蓄力可被任何一把剑复用。
+ * 生命周期：蹲下时由 {@code CrimsonVow.onBlockStart} 生成 → 每 tick 检查主人是否仍在用剑格挡，否则立刻 discard →
+ * 蓄满后自己选点、生成 {@link CrimsonVowFieldEntity} 并收掉玩家的使用状态。
  */
 public class CrimsonVowChargeEntity extends Entity {
 
-    // ── 同步数据 ──────────────────────────────────────────────────
+    // 同步数据
     private static final EntityDataAccessor<Float> DATA_CHARGE =
             SynchedEntityData.defineId(CrimsonVowChargeEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> DATA_RADIUS =
             SynchedEntityData.defineId(CrimsonVowChargeEntity.class, EntityDataSerializers.FLOAT);
 
-    // ── 数值 ──────────────────────────────────────────────────────
-
+    // 数值
     /** 蓄满需要的 tick 数（3 秒）。 */
     public static final int CHARGE_TICKS = 60;
 
-    /** 起手时的法阵半径（格）。 */
+    /** 法阵半径（格）：起手 0.85 涨到满蓄 4.6。 */
     public static final float MIN_RADIUS = 0.85f;
-    /** 蓄满时的法阵半径（格）。 */
     public static final float MAX_RADIUS = 4.6f;
 
-    /** 射线最长找多远（格）。 */
+    /** 视线射线最长距离（格）。 */
     public static final double AIM_RANGE = 42.0;
-    /** 落点找地面时向下最多扫多少格。 */
+    /** 落点找地面时向下最多扫描的格数。 */
     private static final int GROUND_SCAN = 24;
 
     /** 生成后的存活上限（tick）—— 兜底，正常路径由 {@link #tick()} 提前结束。 */
@@ -90,24 +66,16 @@ public class CrimsonVowChargeEntity extends Entity {
     private int age;
     private int chargeTicks;
 
-    // ── 客户端插值缓存 ────────────────────────────────────────────
-    //
-    //  同步数据只有 20Hz，直接拿去画的话法阵会以每秒 20 次的台阶向外跳。
-    //  这里保存"上一 tick 收到的值"和"这一 tick 收到的值"，
-    //  渲染时按 partialTick 在两者之间线性插值 —— 于是画面上是连续的。
+    // 客户端插值缓存：同步数据只有 20Hz，直接拿去画会每秒跳 20 次台阶，
+    // 因此在上一 tick 与这一 tick 的值之间按 partialTick 线性插值。
     private float prevCharge, shownCharge;
     private float prevRadius, shownRadius;
 
     public CrimsonVowChargeEntity(EntityType<?> type, Level level) {
         super(type, level);
-        // 必须：实体的碰撞箱只有 0.5，不代表它的视觉范围（法阵有几格宽），
-        // 关掉剔除否则法阵会随视锥剔除"啪"地消失。
+        // 必须：碰撞箱只有 0.5，不代表法阵几格宽的视觉范围，关掉剔除否则法阵会随视锥剔除「啪」地消失。
         this.noCulling = true;
     }
-
-    // ══════════════════════════════════════════════════════════════
-    //  同步数据
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     public void defineSynchedData() {
@@ -133,7 +101,7 @@ public class CrimsonVowChargeEntity extends Entity {
         this.ownerUUID = owner == null ? null : owner.getUUID();
     }
 
-    /** 起阵者的 UUID（客户端渲染侧靠它认出"这是我自己在蓄力"）。 */
+    /** 起阵者的 UUID（客户端渲染侧靠它认出「这是我自己在蓄力」）。 */
     @Nullable
     public UUID getOwnerUUID() {
         return ownerUUID;
@@ -145,9 +113,7 @@ public class CrimsonVowChargeEntity extends Entity {
         return level().getPlayerByUUID(ownerUUID);
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  Tick
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     public void tick() {
@@ -157,7 +123,7 @@ public class CrimsonVowChargeEntity extends Entity {
         age++;
 
         if (level().isClientSide()) {
-            // 客户端只做插值，不做任何逻辑（逻辑全在服务端，见类注释）。
+            // 客户端只做插值，不做任何逻辑。
             prevCharge = shownCharge;
             shownCharge = getCharge();
             prevRadius = shownRadius;
@@ -167,11 +133,8 @@ public class CrimsonVowChargeEntity extends Entity {
 
         Player owner = getOwner();
 
-        // ── 有效性：主人必须还在"举着绯红誓约格挡" ──
-        //
-        //  松手、切物品、死亡、换维度都会在这里被判掉。
-        //  用 IBlockingWeapon.isBlocking 而不是自己读 useItem —— 与减伤判定共用同一个谓词，
-        //  不会出现"画面还在蓄力、格挡其实已经没了"这种不一致。
+        // 有效性：松手、切物品、死亡、换维度都在这里判掉。用 IBlockingWeapon.isBlocking 而不是自己读 useItem，
+        // 是为了与减伤判定共用同一个谓词，不会出现「画面还在蓄力、格挡其实已经没了」。
         if (owner == null || !owner.isAlive()
                 || !IBlockingWeapon.isBlocking(owner)
                 || !(owner.getUseItem().getItem() instanceof CrimsonVow)) {
@@ -205,7 +168,7 @@ public class CrimsonVowChargeEntity extends Entity {
                     SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.PLAYERS,
                     0.35f + 0.25f * c, 0.7f + 0.75f * c);
         }
-        // 满蓄前 10 tick 开始"过载"：连续的短促高音 + 火花。
+        // 满蓄前 10 tick（c > 0.83）开始「过载」：连续的短促高音 + 火花。
         if (c > 0.83f && chargeTicks % 2 == 0) {
             level().playSound(null, owner.getX(), owner.getY(), owner.getZ(),
                     SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS,
@@ -225,24 +188,12 @@ public class CrimsonVowChargeEntity extends Entity {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  蓄满：选点 + 落地
-    // ══════════════════════════════════════════════════════════════
 
     /**
-     * 蓄满的那一刻：沿<b>视线方向</b>选一个落点，在那里展开巨型法阵。
-     *
-     * <h3>选点规则</h3>
-     * <ol>
-     *   <li>从眼睛沿视线做一次方块射线（{@link #AIM_RANGE} 格）；</li>
-     *   <li>打中了 → 以命中点为圆心。若命中面朝上（站在地面/台地上对着地看），
-     *       直接取那块方块的顶面；否则从命中点往下扫一次地面，避免法阵挂在墙中间；</li>
-     *   <li>没打中（对着天空放）→ 取射线末端，再从那里往下扫地面；
-     *       扫不到（悬空/虚空）就用射线末端自己那一层。</li>
-     * </ol>
-     *
-     * <p>这一步是"释放方向由玩家决定"的全部实现 —— 没有它，巨型法阵就只能放在脚下，
-     * 而"视线指向的方向"是需求里明确写了的。</p>
+     * 蓄满那一刻沿<b>视线方向</b>选落点并展开巨型法阵：方块射线打中了就以命中点为圆心（命中面朝上则取那块方块顶面，
+     * 否则从命中点往下扫地面，避免法阵挂在墙中间）；打空则取射线末端再往下扫，扫不到（悬空/虚空）就用射线末端自己那一层。
+     * 这一步是「释放方向由玩家决定」的全部实现。
      */
     private void release(Player owner, float charge) {
         Vec3 eye = owner.getEyePosition();
@@ -268,7 +219,7 @@ public class CrimsonVowChargeEntity extends Entity {
                 level(), owner, center, CrimsonVowFieldEntity.DEFAULT_RADIUS,
                 CrimsonVowFieldEntity.DEFAULT_MAX_AGE);
 
-        // ── 落地表现 ──
+        // 落地表现
         float radius = field != null ? field.getRadius() : CrimsonVowFieldEntity.DEFAULT_RADIUS;
         Vec3 fx = center.add(0, 0.25, 0);
         VerdictFeedback.impactRing(level(), fx, radius * 1.15f, radius * 0.95f, 1.0f);
@@ -282,19 +233,14 @@ public class CrimsonVowChargeEntity extends Entity {
 
         CrimsonVow.beginSkillCooldown(owner);
 
-        // 先收使用状态再散掉自己：releaseUsing 会走 onBlockStop，
-        // 而 onBlockStop 只是日志，不会重复触发这里（本实体已 discard）。
+        // 先收使用状态再散掉自己：releaseUsing 会走 onBlockStop，那里只是日志，不会重入这里。
         owner.stopUsingItem();
         discard();
     }
 
     /**
-     * 从 {@code (x,z)} 的 {@code fromY} 开始往下找第一个可站立表面，返回它的顶面 y。
-     *
-     * <p>用碰撞盒顶面而不是 {@code by+1}：台阶、栅栏、雪层的顶面与整格不同，
-     * 只有碰撞盒高度才贴得准 —— 这与 {@code VerdictFieldRenderer} 里那套扫描同源。</p>
-     *
-     * @return 找不到时返回 {@link Double#NaN}
+     * 从 {@code (x,z)} 的 {@code fromY} 开始往下找第一个可站立表面，返回它的顶面 y；找不到返回 {@link Double#NaN}。
+     * 用碰撞盒顶面而不是 {@code by+1}：台阶、栅栏、雪层的顶面与整格不同，只有碰撞盒高度才贴得准。
      */
     private static double groundYBelow(Level level, int x, int z, int fromY) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
@@ -311,9 +257,7 @@ public class CrimsonVowChargeEntity extends Entity {
         return Double.NaN;
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  实体样板
-    // ══════════════════════════════════════════════════════════════
 
     @Override public boolean shouldRenderAtSqrDistance(double d) { return true; }
     @Override public boolean isPickable()   { return false; }
@@ -343,9 +287,7 @@ public class CrimsonVowChargeEntity extends Entity {
         return NetworkHooks.getEntitySpawningPacket(this);
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  静态工厂
-    // ══════════════════════════════════════════════════════════════
 
     /** 在玩家脚下起阵。同一玩家已有法阵时先把旧的散掉（不会叠两个）。 */
     public static CrimsonVowChargeEntity spawn(Level level, Player owner) {

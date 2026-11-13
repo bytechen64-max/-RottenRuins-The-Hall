@@ -35,7 +35,6 @@ public class LootTableData extends LootTableProvider {
         ));
     }
 
-    // ────────── 实体战利品 ──────────
     public static class ModEntityLoot extends EntityLootSubProvider {
         protected ModEntityLoot() {
             super(FeatureFlags.REGISTRY.allFlags());
@@ -86,7 +85,6 @@ public class LootTableData extends LootTableProvider {
         }
     }
 
-    // ────────── 方块战利品（保持不变） ──────────
     public static class ModBlockLoot extends BlockLootSubProvider {
         protected ModBlockLoot() {
             super(Set.of(), FeatureFlags.REGISTRY.allFlags());

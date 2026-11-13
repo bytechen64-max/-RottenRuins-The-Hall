@@ -62,7 +62,6 @@ public class CorruptionDamageUtil {
         return minApplied || commonApplied;
     }
 
-    // ============= 辅助方法 =============
     private static boolean isInvulnerableTarget(LivingEntity target) {
         if (target instanceof Player player) {
             return player.getAbilities().instabuild || player.isSpectator();

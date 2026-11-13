@@ -67,7 +67,6 @@ public class CorruptionDart extends ThrowableProjectile {
     private static final EntityDataAccessor<Boolean> USE_GRAVITY =
             SynchedEntityData.defineId(CorruptionDart.class, EntityDataSerializers.BOOLEAN);
 
-    // ---- 仅服务端使用的配置（不需要同步） ----
     private float damage = 6.0F;
     private int maxLifetime = 120;
     private boolean pierce = false;
@@ -91,9 +90,7 @@ public class CorruptionDart extends ThrowableProjectile {
         super(type, shooter, level);
     }
 
-    // =========================================================================
     // 静态工厂
-    // =========================================================================
 
     /** 本弹体在实体注册表中的类型（统一入口，避免各生物硬编码） */
     private static EntityType<CorruptionDart> type() {
@@ -145,9 +142,7 @@ public class CorruptionDart extends ThrowableProjectile {
         return dart;
     }
 
-    // =========================================================================
     // 配置
-    // =========================================================================
 
     public void setColor(int argb) {
         this.entityData.set(COLOR, argb);
@@ -206,9 +201,7 @@ public class CorruptionDart extends ThrowableProjectile {
         return this;
     }
 
-    // =========================================================================
     // 飞行逻辑
-    // =========================================================================
 
     @Override
     public void tick() {
@@ -257,9 +250,7 @@ public class CorruptionDart extends ThrowableProjectile {
         }
     }
 
-    // =========================================================================
     // 命中处理
-    // =========================================================================
 
     @Override
     protected void onHitEntity(EntityHitResult result) {
@@ -334,9 +325,7 @@ public class CorruptionDart extends ThrowableProjectile {
                     && CorruptionSkillUtil.isCorruptionAlly(livingTarget));
     }
 
-    // =========================================================================
     // 同步数据 / 存档
-    // =========================================================================
 
     @Override
     public void defineSynchedData() {

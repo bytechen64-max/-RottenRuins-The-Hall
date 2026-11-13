@@ -25,6 +25,7 @@ import org.bytechen.rottenruins.overworld.registry.items.magic.bases.UsingType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import net.minecraft.util.Mth;
 
 /**
  * <b>魔法装载界面</b>：给 8 个轮盘方位配置主动法术（三页轮盘各自一份草稿）。
@@ -66,9 +67,7 @@ public final class SpellLoadoutScreen extends Screen {
         return WheelI18n.tr(key, args);
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 常量
-    // ══════════════════════════════════════════════════════════════
 
     private static final int PAGES = WheelData.PAGES;              // 3
     private static final int SLOTS = WheelData.SLOTS_PER_PAGE;     // 8
@@ -79,7 +78,6 @@ public final class SpellLoadoutScreen extends Screen {
             "rotten_ruins.wheel.loadout.button.clear",
             "rotten_ruins.wheel.loadout.button.autofill",
             "rotten_ruins.wheel.loadout.button.save"};
-
 
     private static final int BTN_CLEAR = 0;
     private static final int BTN_AUTOFILL = 1;
@@ -115,9 +113,7 @@ public final class SpellLoadoutScreen extends Screen {
 
     private static final float TAU = (float) (Math.PI * 2.0);
 
-    // ══════════════════════════════════════════════════════════════
     // 数据状态
-    // ══════════════════════════════════════════════════════════════
 
     /** 三页草稿：draft[page][socket] = 魔法池槽位（-1 空位）。 */
     private final int[][] draft = new int[PAGES][SLOTS];
@@ -140,18 +136,14 @@ public final class SpellLoadoutScreen extends Screen {
 
     private long openMs;
 
-    // ══════════════════════════════════════════════════════════════
     // 每帧悬停结果
-    // ══════════════════════════════════════════════════════════════
 
     private int hoveredSocket = -1;
     private int hoveredCard = -1;
     private int hoveredPage = -1;
     private int hoveredButton = -1;
 
-    // ══════════════════════════════════════════════════════════════
     // 布局（init 里算）
-    // ══════════════════════════════════════════════════════════════
 
     private float uiScale = 1.0F;
     private int margin;
@@ -181,9 +173,7 @@ public final class SpellLoadoutScreen extends Screen {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 生命周期 / 布局
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     public boolean isPauseScreen() {
@@ -206,7 +196,7 @@ public final class SpellLoadoutScreen extends Screen {
      * 有下限，保证小窗口里文字仍然放得下、也不越界。
      */
     private void computeLayout() {
-        uiScale = clamp(Math.min(width / 640.0F, height / 400.0F), 0.6F, 1.6F);
+        uiScale = Mth.clamp(Math.min(width / 640.0F, height / 400.0F), 0.6F, 1.6F);
         margin = Math.max(8, Math.round(16.0F * uiScale));
         gap = Math.max(8, Math.round(14.0F * uiScale));
 
@@ -235,7 +225,7 @@ public final class SpellLoadoutScreen extends Screen {
         wheelCx = (centerLeft + centerRight) * 0.5F;
         float byWidth = (centerRight - centerLeft) * 0.5F - 6.0F;
         float byHeight = (contentBottom - contentTop) * 0.5F - 30.0F;
-        wheelOuter = clamp(Math.min(Math.min(byWidth, byHeight), Math.round(96.0F * uiScale)),
+        wheelOuter = Mth.clamp(Math.min(Math.min(byWidth, byHeight), Math.round(96.0F * uiScale)),
                 30.0F, 150.0F);
         wheelInner = Math.max(14.0F, wheelOuter * 0.42F);
         wheelCy = contentTop + (contentBottom - contentTop) * 0.5F - Math.round(12.0F * uiScale);
@@ -244,9 +234,7 @@ public final class SpellLoadoutScreen extends Screen {
         listRows = Math.max(1, (panelH - 42 - 20) / CARD_STEP);
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 草稿：读取 / 同步 / 校验
-    // ══════════════════════════════════════════════════════════════
 
     private PlayerMagicPool pool() {
         return WheelData.pool();
@@ -403,9 +391,7 @@ public final class SpellLoadoutScreen extends Screen {
         scrollRow = Math.max(0, Math.min(scrollRow, maxScroll));
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 渲染
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
@@ -415,7 +401,7 @@ public final class SpellLoadoutScreen extends Screen {
         updateHover(mouseX, mouseY);
 
         float time = WheelRenderer.timeSeconds();
-        float openT = clamp((Util.getMillis() - openMs) / 180.0F, 0.0F, 1.0F);
+        float openT = Mth.clamp((Util.getMillis() - openMs) / 180.0F, 0.0F, 1.0F);
 
         drawBackground(gui, mouseX, mouseY, time);
         drawHeader(gui);
@@ -834,9 +820,7 @@ public final class SpellLoadoutScreen extends Screen {
         return true;
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 基础控件绘制
-    // ══════════════════════════════════════════════════════════════
 
     private void drawPanel(GuiGraphics gui, int x, int y, int w, int h) {
         if (WheelGuiShaders.sdfAvailable()) {
@@ -981,9 +965,7 @@ public final class SpellLoadoutScreen extends Screen {
                 false);
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 命中检测
-    // ══════════════════════════════════════════════════════════════
 
     private void updateHover(int mouseX, int mouseY) {
         hoveredSocket = WheelRenderer.hoveredIndex(mouseX, mouseY,
@@ -1054,9 +1036,7 @@ public final class SpellLoadoutScreen extends Screen {
         return font.width(tr(BUTTON_KEYS[index])) + 16;
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 输入
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -1207,9 +1187,7 @@ public final class SpellLoadoutScreen extends Screen {
         return super.mouseScrolled(mouseX, mouseY, delta);
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 操作
-    // ══════════════════════════════════════════════════════════════
 
     private Rect codexTabRect(int tab) {
         int pad = 10;
@@ -1331,9 +1309,7 @@ public final class SpellLoadoutScreen extends Screen {
         mc.getSoundManager().play(SimpleSoundInstance.forUI(sound, pitch, volume));
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 文本 / 数据辅助
-    // ══════════════════════════════════════════════════════════════
 
     private Player player() {
         Minecraft mc = Minecraft.getInstance();
@@ -1440,10 +1416,6 @@ public final class SpellLoadoutScreen extends Screen {
     }
 
     // ── 小工具 ──
-
-    private static float clamp(float value, float min, float max) {
-        return value < min ? min : (value > max ? max : value);
-    }
 
     /** 简单矩形（GUI 坐标）。 */
     private record Rect(int x, int y, int w, int h) {

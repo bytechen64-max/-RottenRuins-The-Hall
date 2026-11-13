@@ -81,6 +81,16 @@ public class NetworkHelper {
     public static <MSG> void sendToAllClients(MSG msg) { NETWORK.send(PacketDistributor.ALL.noArg(), msg); }
     public static <MSG> void sendToALLClient(MSG msg) { NETWORK.send(PacketDistributor.ALL.noArg(), msg); }
     public static <MSG> void sendToClient(Entity entity, MSG msg) { NETWORK.send(PacketDistributor.TRACKING_ENTITY.with(() -> entity), msg); }
+
+    /**
+     * 发给"追踪该实体的玩家 + 玩家本人"。
+     *
+     * <p>{@code TRACKING_ENTITY} 不含实体自己 —— 玩家是看不到自己的同步包的，
+     * 自定义效果的 HUD 要显示自己身上的效果，必须走这个。</p>
+     */
+    public static <MSG> void sendToTrackingAndSelf(Entity entity, MSG msg) {
+        NETWORK.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), msg);
+    }
     public static <MSG> void sendToServer(MSG msg) { NETWORK.sendToServer(msg); }
 
     /**

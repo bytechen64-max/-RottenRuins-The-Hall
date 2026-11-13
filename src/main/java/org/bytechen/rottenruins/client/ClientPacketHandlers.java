@@ -15,36 +15,22 @@ import org.bytechen.rottenruins.utils.entity.EntityParticleUtils;
 
 import java.util.Random;
 
-/**
- * 客户端 S2C 包处理注册。
- *
- * <h3>为什么走 action 字符串分发</h3>
- * <p>项目已有 {@code UniversalPacket} + {@code PacketActionRegistry} 这套机制，
- * 这里只是把 {@link HeartLosePacket#ACTION} 对应的处理函数挂上。
- * 包本身在 {@code NetworkHelper.register()} 里已经注册过序号，所以
- * <b>新增这个功能不需要动包序号</b> —— 那是唯一一处"客户端服务端必须严格同序"
- * 的地方，能不动就不动。</p>
- */
+/** 客户端 S2C 包处理注册：走已有 action 字符串分发；包序号已在 {@code NetworkHelper.register()} 注册，新增处理不必动序号。 */
 @OnlyIn(Dist.CLIENT)
 public final class ClientPacketHandlers {
 
     private ClientPacketHandlers() {}
 
     public static void init() {
-        // Wire up S2C client-side packet handlers here
-
-        // 物品名字的流动彩字：在 tooltip 构建时替换首行文字的颜色（纯文本级，不动渲染层）。
-        // 注意挂的是 Forge 总线 —— ItemTooltipEvent 是游戏事件，不是 mod 事件。
+        // 流动彩字：在 tooltip 构建时替换首行颜色；挂 Forge 总线（ItemTooltipEvent 是游戏事件，不是 mod 事件）。
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
                 org.bytechen.rottenruins.client.rend.text.FlowingNameTooltipHook::onItemTooltip);
 
-        // tooltip 底板配色：在画底板之前改那四个颜色值（ITooltipStyle 的物品才生效）。
-        // 同样是游戏事件、同样挂 Forge 总线 —— 见 TooltipStyleHook 的类注释。
+        // tooltip 底板配色：画底板前改那四个颜色值（只对 ITooltipStyle 物品生效），同上走 Forge 总线。
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
                 org.bytechen.rottenruins.client.tooltip.TooltipStyleHook::onTooltipColor);
 
         // 虚空剑「蹲下左键」的客户端选中：射线选中后发 C2S 包给服务端结算。
-        // 挂在同一个 Forge 总线上，所以和上面的 tooltip 钩子一样走 addListener。
         org.bytechen.rottenruins.client.VoidSwordClientHandler.register();
 
         // 魔法星图：M 键打开界面（按键映射在 ClientModEventHandler 里注册）。
@@ -53,41 +39,24 @@ public final class ClientPacketHandlers {
         // 轮盘：服务端手势回执（蓄力/维持/失败提示，更新 WheelClientState）
         org.bytechen.rottenruins.network.s2c.WheelFeedbackPacket.registerClient();
 
-
         PacketActionRegistry.register(HeartLosePacket.ACTION, (data, ctx) -> {
             if (!(data.getValue() instanceof CompoundTag tag)) return;
             spawnHeartLose(tag);
         });
 
-        // 受击血花：服务端按"攻击源 → 受击者"算好方向/距离模长/数量，这里只负责表现。
-        // 载荷与 heart_lose 同构（NBT），所以直接读 CompoundTag。
+        // 受击血花：方向/距离模长/数量由服务端按"攻击源 → 受击者"算好，这里只负责表现；载荷与 heart_lose 同构（NBT）。
         PacketActionRegistry.register(BloodBurstPacket.ACTION, (data, ctx) -> {
             if (!(data.getValue() instanceof CompoundTag tag)) return;
             spawnBloodBurst(tag);
         });
 
-        // 爆体肉屑：服务端只告诉我们"哪个实体爆了"，这里按共享配置在实体碰撞箱内
-        // 现撒粒子。只认 int 载荷（见 MeatBurstPacket#readEntityId，脏数据得到 0）。
+        // 爆体肉屑：服务端只告诉我们"哪个实体爆了"，这里按共享配置在本地碰撞箱内现撒；只认 int 载荷。
         PacketActionRegistry.register(MeatBurstPacket.ACTION, (data, ctx) ->
                 spawnMeatBurst(MeatBurstPacket.readEntityId(data)));
     }
 
-    /**
-     * 在"刚刚爆体"的实体身上撒一簇肉屑。
-     *
-     * <p>对应 corruption 的 {@code CParticleSpawnPacket#handle}：客户端用包里的实体 id
-     * 在本地 {@code ClientLevel} 里找实体，再交给 {@link EntityParticleUtils} 按
-     * {@link MeatBurstPacket#burstConfig()} 生成 —— <b>位置</b>取本地实体的碰撞箱
-     * （所以粒子一定从玩家屏幕上那个尸体身上炸开），<b>数量 / 速度</b>用两端共享的
-     * 常量，服务端不需要在线上传任何逐粒子数据。</p>
-     *
-     * <p>找不到实体就直接跳过：服务端是在 {@code remove(...)} 之前发包的，正常情况下
-     * 包先于实体移除包到达；但刚进服 / 跨维度时实体可能还没同步下来，此时宁可不放，
-     * 也不要凭空在 (0,0,0) 炸一堆肉屑。</p>
-     *
-     * <p>（{@code EntityParticleUtils#spawnParticles(Entity, ParticleConfig)} 内部已判断
-     * {@code level.isClientSide}，因此在客户端调用是正确用法。）</p>
-     */
+    /** 在"刚刚爆体"的实体身上撒肉屑：位置取本地碰撞箱、数量/速度用两端共享常量；
+     *  实体未同步时跳过，宁可不放也别在 (0,0,0) 炸一堆。 */
     private static void spawnMeatBurst(int entityId) {
         if (entityId <= 0) return; // 0 是 readEntityId 的"载荷类型不对"哨兵值
         ClientLevel level = Minecraft.getInstance().level;
@@ -99,22 +68,8 @@ public final class ClientPacketHandlers {
         EntityParticleUtils.spawnParticles(entity, MeatBurstPacket.burstConfig());
     }
 
-    /**
-     * 按服务端算好的方向 / 距离模长 / 数量喷一簇 {@code blood} 血滴（受击血花）。
-     *
-     * <p>与 {@link #spawnHeartLose} 同构，随机性只加在两处，都不改变"从哪边打来的"：</p>
-     * <ol>
-     *   <li><b>生成位置</b>：在受击者碰撞箱体积内撒点（半宽/半高/半深由包带过来），
-     *       血从体表/伤口附近出来，不会都从中心一个点冒；</li>
-     *   <li><b>锥形散布</b>：主速度乘 0.85~1.15 的抖动，再叠一个
-     *       {@code ±速度 × CONE_FACTOR / 2} 的随机分量 —— 让血散成一片雾，
-     *       而不是一条笔直的"水枪线"；分量以主速度大小为基准，所以不会把方向带偏。</li>
-     * </ol>
-     *
-     * <p>主速度为零的包（理论上不会出现，服务端总会给一个非零模长）会退化成
-     * "血滴原地落下"，不会崩；数量已由 {@link BloodBurstPacket#readCount} 夹到
-     * 1~{@link BloodBurstPacket#MAX_COUNT}，脏包也不会刷爆粒子量。</p>
-     */
+    /** 按服务端算好的方向 / 距离模长 / 数量喷一簇血滴：随机只在碰撞箱撒点与锥形散布上，不改"从哪边打来的"；
+     *  数量已被 {@link BloodBurstPacket#readCount} 夹到 1~MAX_COUNT，脏包不会刷爆粒子量。 */
     private static void spawnBloodBurst(CompoundTag tag) {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null) return;
@@ -148,19 +103,8 @@ public final class ClientPacketHandlers {
         }
     }
 
-    /**
-     * 按服务端算好的位置与速度生成失心粒子。
-     *
-     * <p>方向与模长<b>原样使用</b>：它们是服务端根据"攻击者 → 受击者"算出来的，
-     * 客户端再掺自己的随机方向就会把"从攻击者飞向受击者"这个语义冲掉。</p>
-     *
-     * <p>随机性只体现在两处，都不影响主方向：</p>
-     * <ol>
-     *   <li><b>生成位置</b>：在受击者的碰撞箱体积内均匀撒点（半宽/半高/半深由包带过来），
-     *       而不是全部从中心一个点冒出 —— 否则看起来像喷泉而不是炸开；</li>
-     *   <li><b>速度抖动</b>：乘一个 0.9~1.0 的系数，只改快慢不改方向。</li>
-     * </ol>
-     */
+    /** 按服务端算好的位置与速度生成失心粒子：方向与模长原样使用（表达"从攻击者飞向受击者"），
+     *  随机只在碰撞箱内撒点与 0.9~1.0 的速度抖动上。 */
     private static void spawnHeartLose(CompoundTag tag) {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null) return;

@@ -206,7 +206,7 @@ public final class HeldItemOutlineSettings {
     }
 
     public static float setBloomStrength(float value) {
-        bloomStrength = clamp(value, MIN_BLOOM_STRENGTH, MAX_BLOOM_STRENGTH);
+        bloomStrength = Mth.clamp(value, MIN_BLOOM_STRENGTH, MAX_BLOOM_STRENGTH);
         return bloomStrength;
     }
 
@@ -215,7 +215,7 @@ public final class HeldItemOutlineSettings {
     }
 
     public static float setBloomRadius(float value) {
-        bloomRadius = clamp(value, MIN_BLOOM_RADIUS, MAX_BLOOM_RADIUS);
+        bloomRadius = Mth.clamp(value, MIN_BLOOM_RADIUS, MAX_BLOOM_RADIUS);
         return bloomRadius;
     }
 
@@ -224,7 +224,7 @@ public final class HeldItemOutlineSettings {
     }
 
     public static float setWidth(float value) {
-        width = clamp(value, MIN_WIDTH, MAX_WIDTH);
+        width = Mth.clamp(value, MIN_WIDTH, MAX_WIDTH);
         return width;
     }
 
@@ -233,7 +233,7 @@ public final class HeldItemOutlineSettings {
     }
 
     public static float setSoftness(float value) {
-        softness = clamp(value, MIN_SOFTNESS, MAX_SOFTNESS);
+        softness = Mth.clamp(value, MIN_SOFTNESS, MAX_SOFTNESS);
         return softness;
     }
 
@@ -242,7 +242,7 @@ public final class HeldItemOutlineSettings {
     }
 
     public static float setAlphaThreshold(float value) {
-        alphaThreshold = clamp(value, MIN_ALPHA_THRESHOLD, MAX_ALPHA_THRESHOLD);
+        alphaThreshold = Mth.clamp(value, MIN_ALPHA_THRESHOLD, MAX_ALPHA_THRESHOLD);
         return alphaThreshold;
     }
 
@@ -251,7 +251,7 @@ public final class HeldItemOutlineSettings {
     }
 
     public static float setOpacity(float value) {
-        opacity = clamp(value, MIN_OPACITY, MAX_OPACITY);
+        opacity = Mth.clamp(value, MIN_OPACITY, MAX_OPACITY);
         return opacity;
     }
 
@@ -260,7 +260,7 @@ public final class HeldItemOutlineSettings {
     }
 
     public static float setRed(float value) {
-        red = clamp(value, MIN_COLOR, MAX_COLOR);
+        red = Mth.clamp(value, MIN_COLOR, MAX_COLOR);
         return red;
     }
 
@@ -269,7 +269,7 @@ public final class HeldItemOutlineSettings {
     }
 
     public static float setGreen(float value) {
-        green = clamp(value, MIN_COLOR, MAX_COLOR);
+        green = Mth.clamp(value, MIN_COLOR, MAX_COLOR);
         return green;
     }
 
@@ -278,7 +278,7 @@ public final class HeldItemOutlineSettings {
     }
 
     public static float setBlue(float value) {
-        blue = clamp(value, MIN_COLOR, MAX_COLOR);
+        blue = Mth.clamp(value, MIN_COLOR, MAX_COLOR);
         return blue;
     }
 
@@ -287,7 +287,7 @@ public final class HeldItemOutlineSettings {
     }
 
     public static float setSecondaryRed(float value) {
-        secondaryRed = clamp(value, MIN_COLOR, MAX_COLOR);
+        secondaryRed = Mth.clamp(value, MIN_COLOR, MAX_COLOR);
         return secondaryRed;
     }
 
@@ -296,7 +296,7 @@ public final class HeldItemOutlineSettings {
     }
 
     public static float setSecondaryGreen(float value) {
-        secondaryGreen = clamp(value, MIN_COLOR, MAX_COLOR);
+        secondaryGreen = Mth.clamp(value, MIN_COLOR, MAX_COLOR);
         return secondaryGreen;
     }
 
@@ -305,7 +305,7 @@ public final class HeldItemOutlineSettings {
     }
 
     public static float setSecondaryBlue(float value) {
-        secondaryBlue = clamp(value, MIN_COLOR, MAX_COLOR);
+        secondaryBlue = Mth.clamp(value, MIN_COLOR, MAX_COLOR);
         return secondaryBlue;
     }
 
@@ -314,7 +314,7 @@ public final class HeldItemOutlineSettings {
     }
 
     public static float setColorScrollSpeed(float value) {
-        colorScrollSpeed = clamp(value, MIN_COLOR_SCROLL_SPEED, MAX_COLOR_SCROLL_SPEED);
+        colorScrollSpeed = Mth.clamp(value, MIN_COLOR_SCROLL_SPEED, MAX_COLOR_SCROLL_SPEED);
         return colorScrollSpeed;
     }
 
@@ -323,7 +323,7 @@ public final class HeldItemOutlineSettings {
     }
 
     public static float setDepthWeight(float value) {
-        depthWeight = clamp(value, MIN_DEPTH_WEIGHT, MAX_DEPTH_WEIGHT);
+        depthWeight = Mth.clamp(value, MIN_DEPTH_WEIGHT, MAX_DEPTH_WEIGHT);
         return depthWeight;
     }
 
@@ -332,7 +332,7 @@ public final class HeldItemOutlineSettings {
     }
 
     public static float setGlowStrength(float value) {
-        glowStrength = clamp(value, MIN_GLOW_STRENGTH, MAX_GLOW_STRENGTH);
+        glowStrength = Mth.clamp(value, MIN_GLOW_STRENGTH, MAX_GLOW_STRENGTH);
         return glowStrength;
     }
 
@@ -388,10 +388,6 @@ public final class HeldItemOutlineSettings {
                                 red, green, blue, secondaryRed, secondaryGreen, secondaryBlue, colorScrollSpeed, depthWeight, glowStrength))
                         .withStyle(ChatFormatting.DARK_AQUA));
         return settings;
-    }
-
-    private static float clamp(float value, float min, float max) {
-        return Mth.clamp(value, min, max);
     }
 
     public enum ColorMode {

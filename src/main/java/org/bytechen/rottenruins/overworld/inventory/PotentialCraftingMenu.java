@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 public final class PotentialCraftingMenu extends AbstractContainerMenu {
 
     public static final int IMAGE_WIDTH = 176;
-    public static final int IMAGE_HEIGHT = 240;
+    public static final int IMAGE_HEIGHT = 256;
 
     /** 圆心（= 产物槽位置）。 */
     public static final int RING_CENTER_X = 88;
@@ -35,8 +35,15 @@ public final class PotentialCraftingMenu extends AbstractContainerMenu {
     /** 环形槽静止半径。 */
     public static final int RING_RADIUS = 54;
 
-    private static final int INVENTORY_Y = 162;
-    private static final int HOTBAR_Y = 216;
+    /** 「开始合成」按钮（界面绘制与点击判定共用同一组常量）。 */
+    public static final int BUTTON_START = 0;
+    public static final int BUTTON_X = 58;
+    public static final int BUTTON_Y = 146;
+    public static final int BUTTON_WIDTH = 60;
+    public static final int BUTTON_HEIGHT = 18;
+
+    private static final int INVENTORY_Y = 182;
+    private static final int HOTBAR_Y = 236;
 
     private final Container container;
     private final ContainerData data;
@@ -136,6 +143,23 @@ public final class PotentialCraftingMenu extends AbstractContainerMenu {
         return true;
     }
 
+    @NotNull
+    public Container container() {
+        return container;
+    }
+
+    /**
+     * 按钮：客户端点「开始合成」→ {@code handleInventoryButtonClick} → 服务端走到这里。
+     * 材料校验与开始都发生在服务端，客户端只是发起请求。
+     */
+    @Override
+    public boolean clickMenuButton(@NotNull Player player, int id) {
+        if (id != BUTTON_START) {
+            return false;
+        }
+        return container instanceof PotentialCraftingTableBlockEntity station && station.requestStart();
+    }
+
     // ── 交互 ──
 
     @Override
@@ -184,8 +208,7 @@ public final class PotentialCraftingMenu extends AbstractContainerMenu {
         return container.stillValid(player);
     }
 
-    /** 环形材料槽：每格 1 个，合成期间不可拿不可放。 */
-    private final class RingSlot extends Slot {
+    /** 环形材料槽：每格 1 个，合成期间不可拿不可放。 */    private final class RingSlot extends Slot {
         private RingSlot(Container container, int index, int x, int y) {
             super(container, index, x, y);
         }

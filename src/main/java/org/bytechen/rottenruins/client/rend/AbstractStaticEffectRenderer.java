@@ -1,8 +1,6 @@
 package org.bytechen.rottenruins.client.rend;
 
 import org.bytechen.rottenruins.HallMod;
-
-
 import org.bytechen.rottenruins.network.NetworkHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -23,45 +21,29 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
- * 抽象静态特效渲染器基类。
- * 子类需要实现 {@link #getTypeId()} 和 {@link #doRender}，
+ * 抽象静态特效渲染器基类：子类实现 {@link #getTypeId()} 与 {@link #doRender}，
  * 并在静态初始化块中调用 {@link #registerRenderer} 完成自动注册。
- *
- * @param <T> 特效实例数据类型，必须继承自 {@link EffectInstance}
+ * @param <T> 特效实例类型，必须继承自 {@link EffectInstance}
  */
 @Mod.EventBusSubscriber(modid = HallMod.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public abstract class AbstractStaticEffectRenderer<T extends AbstractStaticEffectRenderer.EffectInstance> {
 
-    // ========== 全局注册表 ==========
     private static final Map<String, AbstractStaticEffectRenderer<?>> RENDERER_REGISTRY = new ConcurrentHashMap<>();
 
-    /**
-     * 注册一个渲染器子类实例（单例）。
-     */
+    /** 注册一个渲染器子类实例（单例）。 */
     protected static void registerRenderer(AbstractStaticEffectRenderer<?> renderer) {
         RENDERER_REGISTRY.put(renderer.getTypeId(), renderer);
     }
 
-    /**
-     * 根据类型标识获取渲染器。
-     */
     private static AbstractStaticEffectRenderer<?> getRenderer(String typeId) {
         return RENDERER_REGISTRY.get(typeId);
     }
 
-    // ========== 网络包处理（通用） ==========
-
-    /**
-     * 网络包 Payload，由服务端发送到客户端，触发特效创建/更新。
-     */
+    /** 服务端 → 客户端的特效创建/更新 Payload。 */
     public record EffectSyncPayload(String typeId, UUID instanceId, CompoundTag data) {
-        // 这里假设使用 CompoundTag 传输参数，实际可自定义序列化方式
     }
 
-    /**
-     * 在客户端处理收到的特效同步包。
-     * 该方法应由网络包处理器调用（见后文集成示例）。
-     */
+    /** 客户端处理特效同步包；由网络包处理器调用，建实例/更新都在 ctx.enqueueWork 里做。 */
     public static void handleEffectSyncPacket(EffectSyncPayload payload, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             AbstractStaticEffectRenderer<?> renderer = getRenderer(payload.typeId());
@@ -71,8 +53,6 @@ public abstract class AbstractStaticEffectRenderer<T extends AbstractStaticEffec
         });
         ctx.get().setPacketHandled(true);
     }
-
-    // ========== 实例数据基类 ==========
 
     public static abstract class EffectInstance {
         protected UUID id;
@@ -98,44 +78,25 @@ public abstract class AbstractStaticEffectRenderer<T extends AbstractStaticEffec
         public int getAge() { return age; }
         public float getLifeProgress() { return (float) age / maxAge; }
 
-        /**
-         * 从网络数据中更新参数（由子类实现具体反序列化）。
-         */
         public abstract void readFromNBT(CompoundTag tag);
 
-        /**
-         * 将当前状态写入网络数据（用于服务端发送时）。
-         */
         public abstract void writeToNBT(CompoundTag tag);
     }
 
-    // ========== 每个渲染器子类的实例管理 ==========
     private final Map<UUID, T> activeInstances = new ConcurrentHashMap<>();
 
-    /**
-     * 子类必须实现：返回该渲染器处理的唯一类型标识符（与网络包中的 typeId 一致）。
-     */
+    /** 子类必须实现：该渲染器处理的唯一类型标识符，与网络包里的 typeId 一致。 */
     public abstract String getTypeId();
 
-    /**
-     * 子类必须实现：创建特效实例的具体对象（工厂方法）。
-     */
+    /** 子类必须实现：创建特效实例（工厂方法）。 */
     protected abstract T createInstance(UUID id, CompoundTag data);
 
-    /**
-     * 子类必须实现：真正的渲染逻辑。
-     * @param poseStack 矩阵栈
-     * @param instance 当前要绘制的特效实例
-     * @param partialTick 部分 tick 插值
-     */
+    /** 子类必须实现：真正的渲染逻辑；partialTick 用于帧间插值。 */
     protected abstract void doRender(PoseStack poseStack, T instance, float partialTick);
-
-    // ========== 通用 Tick 与渲染事件 ==========
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END && Minecraft.getInstance().level != null) {
-            // 遍历所有已注册的渲染器，更新各自的实例
             for (AbstractStaticEffectRenderer<?> renderer : RENDERER_REGISTRY.values()) {
                 renderer.tickInstances();
             }
@@ -175,7 +136,6 @@ public abstract class AbstractStaticEffectRenderer<T extends AbstractStaticEffec
         }
     }
 
-    // ========== 网络数据应用 ==========
     public void applySyncData(UUID instanceId, CompoundTag data) {
         T existing = activeInstances.get(instanceId);
         if (existing != null) {
@@ -188,11 +148,7 @@ public abstract class AbstractStaticEffectRenderer<T extends AbstractStaticEffec
         }
     }
 
-    // ========== 供服务端调用的发送接口 ==========
-    /**
-     * 服务端调用此方法，向所有追踪该实体的客户端发送特效创建/更新包。
-     * 示例：NetworkHelper.sendToClient(entity, payload);
-     */
+    /** 服务端调用：向所有追踪该实体的客户端发送创建/更新包。 */
     public static void sendEffectToTracking(Entity entity, String typeId, UUID instanceId, CompoundTag data) {
         EffectSyncPayload payload = new EffectSyncPayload(typeId, instanceId, data);
         NetworkHelper.sendToClient(entity, payload);

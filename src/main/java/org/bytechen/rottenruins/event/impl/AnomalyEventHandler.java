@@ -33,8 +33,6 @@ public final class AnomalyEventHandler {
 
     private AnomalyEventHandler() {}
 
-    // ==================== 触发效果 ====================
-
     @SubscribeEvent
     public static void onAnomalyTrigger(AnomalyTriggerEvent event) {
         LivingEntity entity = event.getEntity();
@@ -69,8 +67,6 @@ public final class AnomalyEventHandler {
         entity.hurt(entity.damageSources().magic(), damage);
     }
 
-    // ==================== 持续伤害（Tick） ====================
-
     @SubscribeEvent
     public static void onLivingTick(LivingEvent.LivingTickEvent event) {
         LivingEntity entity = event.getEntity();
@@ -99,8 +95,6 @@ public final class AnomalyEventHandler {
         }
     }
 
-    // ==================== 伤害放大 ====================
-
     @SubscribeEvent
     public static void onLivingHurt(LivingHurtEvent event) {
         LivingEntity entity = event.getEntity();
@@ -119,8 +113,6 @@ public final class AnomalyEventHandler {
             event.setAmount(event.getAmount() * (1.0f + 0.5f * progress));
         }
     }
-
-    // ==================== 工具方法 ====================
 
     /** 判断是否为冻伤（freeze）伤害 */
     private static boolean isFrostDamage(net.minecraft.world.damagesource.DamageSource source) {

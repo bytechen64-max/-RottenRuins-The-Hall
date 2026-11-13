@@ -43,50 +43,15 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
- * <b>王庭炉石</b> —— 王庭阵营的支援型 boss：自己几乎不打人，靠治疗 / 减伤 / 强化把一片骸物
- * 变成打不死的墙，并用「王庭坍缩」把领域里的非骸物压住。
- *
- * <h3>基础数值</h3>
- * <table border="1">
- *   <tr><td>生命</td><td>{@value #MAX_HEALTH}</td><td>护甲</td><td>{@value #ARMOR}</td></tr>
- *   <tr><td>攻击力</td><td>{@value #ATTACK_DAMAGE}（同时是治疗的换算基准）</td>
- *       <td>移动速度</td><td>{@value #MOVEMENT_SPEED}</td></tr>
- * </table>
- * <p>继承 {@link BaseApostleEntity}：使徒分类不进行普通近战，「攻击力」这个属性在这里
- * 只有一个用途 —— 技能的换算基准（例如治疗量 = 攻击力 × 难度系数）。</p>
- *
- * <h3>难度系数（难度3 = HARD，难度4 = INCOMPREHENSIBLE）</h3>
- * <table border="1">
- *   <tr><th>项</th><th>难度1-2</th><th>难度3</th><th>难度4</th></tr>
- *   <tr><td>远程/魔法减伤（自身被动）</td><td>10%</td><td>25%</td><td>40%</td></tr>
- *   <tr><td>※减伤光环（给骸物）</td><td>20%</td><td>30%</td><td>40%</td></tr>
- *   <tr><td>治疗量（攻击力的占比）</td><td>80%</td><td>100%</td><td>130%</td></tr>
- *   <tr><td>强化倍率</td><td>×0.5</td><td>×2.0</td><td>×2.0</td></tr>
- *   <tr><td>削弱倍率</td><td>×1.0</td><td>×2.5</td><td>×3.0</td></tr>
- *   <tr><td>幻影继承（难度4 才有幻影）</td><td>70%</td><td>90%</td><td>110%</td></tr>
- * </table>
- * <p><b>强化/削弱按"字面倍率"实现</b>（这是需求方明确选的）：强化登记的是<b>输出倍率</b>，
- * 所以难度1-2 的 {@code ×0.5} 会让骸物打出更低的伤害；削弱则是
- * {@code 1 − 倍率} 钳到 0，也就是难度1-2 起敌人就被扣成"完全打不出伤害"。
- * 这两条都只是 {@link Scaling} 里的两个数字，要调回"增强"语义改成 1.5 / 0.5 即可。</p>
- *
- * <h3>过载</h3>
- * <p>每次释放<b>坍缩系</b>技能有 {@code 24%} 概率进入过载，持续 <b>30 秒</b>：</p>
- * <ul>
- *   <li>期间<b>无法再释放任何坍缩系技能</b>（治疗/强化/削弱照常）；</li>
- *   <li>给骸物的<b>※减伤光环失效</b>；</li>
- *   <li>改为<b>分摊</b>：它自己受到的伤害按人数分给附近的骸物（见 {@link #hurt}）。</li>
- * </ul>
- *
- * <h3>「同类」的定义</h3>
- * <p>本类里所有"同类 / 骸物"都指<b>王庭阵营</b>（{@link RottenFaction#isHall}），
- * 包含玩家以外的任何王庭生物 —— 这是需求方确认过的口径。</p>
+ * <b>王庭炉石</b> —— 王庭阵营支援型 boss：自己几乎不打人，靠治疗 / 减伤 / 强化把一片骸物变成打不死的墙，
+ * 并用「王庭坍缩」压住领域里的非骸物。基础数值：生命 103 / 护甲 7 / 攻击力 11（使徒不近战，攻击力只作
+ * 技能的换算基准，例如治疗量 = 攻击力 × 难度系数）。本类里「同类 / 骸物」一律指王庭阵营
+ * （{@link RottenFaction#isHall}）；强化/削弱按字面倍率实现（削弱 = 敌方输出 × max(0, 1 − 倍率)）。
+ * 过载（释放坍缩系有 24% 概率，持续 30 秒）：不能再放坍缩系、减伤光环失效、改为把自己受的伤按人数分给附近骸物。
  */
 public class HearthstoneEntity extends BaseApostleEntity {
 
-    // ══════════════════════════════════════════════════════════════
     // 基础数值
-    // ══════════════════════════════════════════════════════════════
 
     private static final double MAX_HEALTH = 103.0D;
     private static final double ARMOR = 7.0D;
@@ -95,9 +60,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
     private static final double FOLLOW_RANGE = 48.0D;
     private static final double KNOCKBACK_RESISTANCE = 0.6D;
 
-    // ══════════════════════════════════════════════════════════════
     // 光环 / 过载 / 绑定
-    // ══════════════════════════════════════════════════════════════
 
     /** 光环半径（格）：治疗、减伤、强化、削弱共用。 */
     private static final double AURA_RADIUS = 12.0D;
@@ -117,9 +80,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
     /** 跟随绑定目标时，超过这个距离才开始主动靠近。 */
     private static final double FOLLOW_START_DISTANCE = 6.0D;
 
-    // ══════════════════════════════════════════════════════════════
     // 同步数据（给将来的渲染/UI 用；逻辑判定一律走服务端字段）
-    // ══════════════════════════════════════════════════════════════
 
     private static final EntityDataAccessor<Integer> DATA_OVERLOAD_UNTIL =
             SynchedEntityData.defineId(HearthstoneEntity.class, EntityDataSerializers.INT);
@@ -130,9 +91,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
     private static final EntityDataAccessor<Boolean> DATA_PHANTOM =
             SynchedEntityData.defineId(HearthstoneEntity.class, EntityDataSerializers.BOOLEAN);
 
-    // ══════════════════════════════════════════════════════════════
     // 技能与坍缩系变体
-    // ══════════════════════════════════════════════════════════════
 
     /** 技能表。坍缩系全部来自同一个实现，只是参数不同。 */
     public enum Skill {
@@ -192,16 +151,9 @@ public class HearthstoneEntity extends BaseApostleEntity {
     private static final CollapseSpec COLLAPSE_BREAKDOWN_SPEC =
             new CollapseSpec(11.0D, 1.6F, false, 0.02F, 160, false, ParticleKind.SMOKE);
 
-    // ══════════════════════════════════════════════════════════════
     // 难度系数
-    // ══════════════════════════════════════════════════════════════
 
-    /**
-     * 一档难度的全部系数。
-     *
-     * <p>把数字集中在一个枚举里，而不是散在十几个 {@code if (hard) ...}` 里 ——
-     * 调平衡的时候只看这一张表就够了。</p>
-     */
+    /** 一档难度的全部系数（集中在一张表里，调平衡只看这里）。 */
     public enum Scaling {
         EASY(0.10F, 0.20F, 0.80F, 0.5F, 1.0F, 0.70F),
         NORMAL(0.10F, 0.20F, 0.80F, 0.5F, 1.0F, 0.70F),
@@ -274,9 +226,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 运行时状态（服务端权威）
-    // ══════════════════════════════════════════════════════════════
 
     private final Map<Skill, Integer> cooldowns = new EnumMap<>(Skill.class);
 
@@ -325,9 +275,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
                 .add(Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_RESISTANCE);
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 同步数据
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     public void defineSynchedData() {
@@ -357,9 +305,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
         return this.entityData.get(DATA_COLLAPSE_VARIANT);
     }
 
-    // ══════════════════════════════════════════════════════════════
     // Goals
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     protected void registerGoals() {
@@ -372,9 +318,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 难度
-    // ══════════════════════════════════════════════════════════════
 
     /** 当前世界的难度系数。每 tick 现算（难度可以被命令中途改，不缓存到字段里）。 */
     @NotNull
@@ -386,9 +330,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
                 DifficultyHelper.getDifficulty(serverLevel)));
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 主循环
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     public void aiStep() {
@@ -440,16 +382,9 @@ public class HearthstoneEntity extends BaseApostleEntity {
         this.cooldowns.put(skill, skill.cooldownTicks());
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 被动①：远程 / 魔法减伤 + 过载分摊
-    // ══════════════════════════════════════════════════════════════
 
-    /**
-     * 受击入口：先按难度吃远程/魔法减伤，再过载时分摊给骸物。
-     *
-     * <p>顺序刻意是「先减伤、后分摊」：分摊出去的是<b>已经减免过</b>的数值，
-     * 否则一次远程暴击会被拆成好几份 40% 减伤后的伤害，比设计值肉太多。</p>
-     */
+    /** 受击入口：先按难度吃远程/魔法减伤，再过载时分摊 —— 分摊出去的是<b>已减免</b>的数值。 */
     @Override
     public boolean hurt(@NotNull DamageSource source, float amount) {
         if (!this.level().isClientSide() && amount > 0.0F) {
@@ -469,14 +404,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
                 || source.is(DamageTypeTags.WITCH_RESISTANT_TO);
     }
 
-    /**
-     * 过载分摊：把这笔伤害按人头拆给附近的骸物，自己只留一份。
-     *
-     * <p>分摊对象刻意排除<b>其它炉石与幻影</b>：炉石之间互相分摊会形成链式调用
-     * （A 分给 B → B 再分给 A），在一个 boss 群里能把伤害放大到不可预期。</p>
-     *
-     * @return 炉石自己还该承受的那一部分
-     */
+    /** 过载分摊：按人头拆给附近骸物（排除其它炉石与幻影，否则互相分摊会链式放大伤害）；返回自己那份。 */
     private float shareDamageAmongAllies(@NotNull DamageSource source, float amount) {
         List<LivingEntity> allies = new ArrayList<>();
         for (LivingEntity candidate : alliesInRange(AURA_RADIUS)) {
@@ -495,9 +423,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
         return share;
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 被动②：※减伤光环（过载时失效）
-    // ══════════════════════════════════════════════════════════════
 
     private void tickAura() {
         // 过载 → 光环失效（登记自然过期就够了，这里显式不登记）
@@ -510,9 +436,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 被动③：与同类绑定 —— 同步速度并跟随
-    // ══════════════════════════════════════════════════════════════
 
     private void tickBinding(long now) {
         if (isPhantom()) {
@@ -581,9 +505,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
         return null;
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 技能调度
-    // ══════════════════════════════════════════════════════════════
 
     private void tryCastNextSkill(long now) {
         if (this.isDeadOrDying() || this.isNoAi()) {
@@ -638,9 +560,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 技能实现
-    // ══════════════════════════════════════════════════════════════
 
     /** 治疗：对范围内骸物恢复「攻击力 × 难度系数」。 */
     private void castHeal() {
@@ -742,18 +662,9 @@ public class HearthstoneEntity extends BaseApostleEntity {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 王庭坍缩（所有坍缩变体共用一个实现）
-    // ══════════════════════════════════════════════════════════════
 
-    /**
-     * 释放一个坍缩领域。
-     *
-     * <p>「王庭坍缩」与它的四个难度4变体在判定上<b>完全一样</b>，区别只有
-     * {@link CollapseSpec} 里的几个参数（半径、倍率、是否只治疗、是否跟人、自损）。
-     * 所以这里只写一份，变体靠参数区分 —— 否则五个几乎相同的 {@code cast} 方法
-     * 迟早会调平衡时改漏其中一个。</p>
-     */
+    /** 释放一个坍缩领域。四个难度4变体判定完全一样，差异只在 {@link CollapseSpec} 的参数里。 */
     private void castCollapse(@NotNull Skill skill, @NotNull CollapseSpec spec, long now) {
         this.collapseSpec = spec;
         this.collapseUntil = now + spec.durationTicks();
@@ -858,13 +769,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
         }
     }
 
-    /**
-     * 坍缩伤害：真伤 / 虚空 / 窒息三选一（轮流），无视护甲。
-     *
-     * <p>用 {@code BCCoreCompat} 直接写血那套太重，这里走原版的
-     * {@code BYPASSES_ARMOR} 系来源 —— 三种类型本来就无视护甲，
-     * 而且保留无敌帧与击杀归因，行为更符合原版预期。</p>
-     */
+    /** 坍缩伤害：真伤 / 虚空 / 窒息轮流，走原版 {@code BYPASSES_ARMOR} 系来源（保留无敌帧与击杀归因）。 */
     private void applyCollapseDamage(@NotNull LivingEntity enemy, float damage) {
         DamageSource source = switch (this.random.nextInt(3)) {
             case 0 -> this.damageSources().magic();
@@ -898,9 +803,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 工具
-    // ══════════════════════════════════════════════════════════════
 
     /** 某个生物是不是王庭阵营（"同类 / 骸物"的唯一口径）。 */
     public static boolean isHallFaction(@Nullable Entity entity) {
@@ -960,9 +863,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 存档
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     public void addAdditionalSaveData(@NotNull CompoundTag tag) {
@@ -991,17 +892,9 @@ public class HearthstoneEntity extends BaseApostleEntity {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // 动画
-    // ══════════════════════════════════════════════════════════════
 
-    /**
-     * 动画控制器交给基类。
-     *
-     * <p>模型还没做，先不注册任何自定义控制器 —— 基类的 {@code defaultControllersEnabled}
-     * 会处理移动/待机；等美术给了动画文件后，在这里补一段 {@code AnimationController}
-     * 播施法动作即可。</p>
-     */
+    /** 动画控制器交给基类；等美术给出动画文件后在这里补施法动作的 {@code AnimationController}。 */
     @Override
     public void registerControllers(
             software.bernie.geckolib.core.animation.AnimatableManager.ControllerRegistrar registrar) {

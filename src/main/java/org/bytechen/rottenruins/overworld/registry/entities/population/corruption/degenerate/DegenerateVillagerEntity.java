@@ -30,9 +30,7 @@ import java.util.function.Consumer;
  */
 public class DegenerateVillagerEntity extends BaseDegenerateEntity {
 
-    // =========================================================================
     // C1 酸液瘴气弹
-    // =========================================================================
     private static final int BILE_COOLDOWN = 90;
     private static final double BILE_MIN_RANGE = 3.5;
     private static final double BILE_MAX_RANGE = 16.0;
@@ -43,9 +41,7 @@ public class DegenerateVillagerEntity extends BaseDegenerateEntity {
 
     private int bileCooldown = 40;
 
-    // =========================================================================
     // C2 硬化召唤
-    // =========================================================================
     private static final int WALL_COOLDOWN = 220;
     private static final int WALL_COUNT = 4;
     private static final float WALL_SIZE = 1.6F;
@@ -75,9 +71,7 @@ public class DegenerateVillagerEntity extends BaseDegenerateEntity {
                 .add(Attributes.FOLLOW_RANGE, 40.0D);
     }
 
-    // =========================================================================
     // 技能主循环
-    // =========================================================================
 
     @Override
     public void tick() {

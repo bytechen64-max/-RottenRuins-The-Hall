@@ -7,6 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.bytechen.rottenruins.client.rend.gui.WheelGuiShaders;
+import net.minecraft.util.Mth;
 
 /**
  * 轮盘 HUD / 装载界面的<b>绘制器</b>：把 {@link WheelData} 的视图画成一个八角星盘。
@@ -40,9 +41,7 @@ public final class WheelRenderer {
     private WheelRenderer() {
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  轮盘主体
-    // ══════════════════════════════════════════════════════════════
 
     /**
      * 画完整轮盘。
@@ -295,9 +294,7 @@ public final class WheelRenderer {
                 cx, cy + 20, argb(TEXT_FAINT, 0.9F * alpha), false);
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  HUD chrome（标题 / 法力条 / 提示）
-    // ══════════════════════════════════════════════════════════════
 
     /** HUD 的标题、法力条与底部提示；装载界面不调用。 */
     public static void renderHudChrome(GuiGraphics gui, int width, int height,
@@ -397,9 +394,7 @@ public final class WheelRenderer {
                 withAlpha(TEXT_FAINT, 190), false);
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  几何 / 绘制辅助
-    // ══════════════════════════════════════════════════════════════
 
     /** 第 i 个方位中心角（正上 = 0，顺时针）。 */
     public static float slotAngle(int index) {
@@ -537,8 +532,9 @@ public final class WheelRenderer {
                 rgb[2] + (1.0F - rgb[2]) * amount}, 1.0F);
     }
 
+    /** 保留公开签名（外部便于书写），实现直接用 {@link Mth#lerp}。 */
     public static float lerp(float a, float b, float t) {
-        return a + (b - a) * t;
+        return Mth.lerp(t, a, b);
     }
 
     public static float easeOut(float t) {
@@ -547,8 +543,9 @@ public final class WheelRenderer {
         return 1.0F - inv * inv * inv;
     }
 
+    /** 保留公开签名，实现直接用 {@link Mth#clamp}。 */
     public static float clamp(float v, float lo, float hi) {
-        return v < lo ? lo : (v > hi ? hi : v);
+        return Mth.clamp(v, lo, hi);
     }
 
     private static int clamp255(float v) {

@@ -60,7 +60,7 @@ public final class PotentialCraftingGameTests {
         level.setBlockAndUpdate(pos, RegisterBlock.POTENTIAL_CRAFTING_TABLE.get().defaultBlockState());
         var station = (PotentialCraftingTableBlockEntity) level.getBlockEntity(pos);
         station.setItem(0, new ItemStack(RegisterItem.SOURCE_CHARGE_SAND.get()));
-        station.setItem(15, new ItemStack(Items.GLASS_BOTTLE));
+        station.setItem(14, new ItemStack(Items.GLASS_BOTTLE));
         station.setItem(7, new ItemStack(Items.GLASS_BOTTLE));
         station.setItem(3, new ItemStack(Items.GLASS_BOTTLE));
         station.setItem(11, new ItemStack(Items.GLASS_BOTTLE));
@@ -87,9 +87,10 @@ public final class PotentialCraftingGameTests {
 
         // 满势能（15）：每 tick 进度 +30，需求 time×15 → 恰好 time/2 tick 完成
         var fast = setup(helper, recipe, 15);
+        helper.assertTrue(fast.requestStart(), "点按钮后应能开始合成");
         int fastTicks = 0;
         for (int i = 0; i < time; i++) {
-            if (!fast.isCrafting() && i > 0) {
+            if (!fast.isCrafting()) {
                 break;
             }
             PotentialCraftingTableBlockEntity.tick(level, fast.getBlockPos(),
@@ -105,7 +106,7 @@ public final class PotentialCraftingGameTests {
         helper.assertTrue(fast.getItem(PotentialCraftingTableBlockEntity.OUTPUT_SLOT)
                         .is(RegisterItem.MANA_BOTTLE.get()),
                 "产物槽应是储魔瓶");
-        helper.assertTrue(fast.getItem(0).isEmpty() && fast.getItem(15).isEmpty(),
+        helper.assertTrue(fast.getItem(0).isEmpty() && fast.getItem(14).isEmpty(),
                 "材料必须被消耗掉");
         helper.succeed();
     }
@@ -119,6 +120,7 @@ public final class PotentialCraftingGameTests {
         helper.assertTrue(recipe != null, "配方必须存在");
 
         var station = setup(helper, recipe, 0);
+        helper.assertTrue(!station.requestStart(), "没有势能时点按钮也不该开始");
         for (int i = 0; i < recipe.timeTicks() * 2; i++) {
             PotentialCraftingTableBlockEntity.tick(level, station.getBlockPos(),
                     station.getBlockState(), station);
@@ -154,9 +156,8 @@ public final class PotentialCraftingGameTests {
         helper.assertTrue(recipe != null, "配方必须存在");
 
         var station = setup(helper, recipe, 15);
-        PotentialCraftingTableBlockEntity.tick(level, station.getBlockPos(),
-                station.getBlockState(), station);
-        helper.assertTrue(station.isCrafting(), "满势能下应立刻开始合成");
+        helper.assertTrue(station.requestStart(), "满势能下点按钮应能开始合成");
+        helper.assertTrue(station.isCrafting(), "按钮生效后应进入合成中");
 
         station.dropRemainderAfterInterrupt();
         for (int slot = 0; slot < PotentialCraftingTableBlockEntity.RING_SLOTS; slot++) {

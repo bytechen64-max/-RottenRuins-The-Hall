@@ -28,9 +28,7 @@ public class AttackerEntity extends BaseRefactoredEntity {
     private static final double JUMP_VERTICAL_SPEED = 0.3;
     private static final double MAX_HORIZONTAL_SPEED = 3;
 
-    // =========================================================================
     // C8 扑击后撤参数
-    // =========================================================================
     private static final double DASH_MIN_RANGE = 3.5;
     private static final double DASH_MAX_RANGE = 12.0;
     private static final int DASH_WINDUP = 16;
@@ -78,9 +76,7 @@ public class AttackerEntity extends BaseRefactoredEntity {
         tickDash();
     }
 
-    // =========================================================================
     // C8 扑击后撤
-    // =========================================================================
 
     private void tickDash() {
         if (dashCooldown > 0) dashCooldown--;

@@ -23,21 +23,10 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL30;
 
 /**
- * 冲击波渲染器 —— 空气折射 / 波前透镜。
- *
- * <h3>渲染流程</h3>
- * <ol>
- *   <li>把主帧缓冲 blit 到 {@code copyTex}（场景拷贝）；</li>
- *   <li>绘制一个以爆心为球心、半径 = 当前波前半径的球壳；</li>
- *   <li>片元着色器把球壳当作真实存在的空气介质，做
- *       射线-球壳求交 → 光程积分 → 斯涅尔偏折，
- *       再用折射后的 UV 重采样场景拷贝。</li>
- * </ol>
- *
- * 因此畸变由真实几何驱动：正视球心时弦最长、掠射处趋近 0，
- * 边缘天然比中心畸变强；波前是一层薄而陡的压缩壳（锐利白边 +
- * 色散），其后方是宽而弱的稀疏尾（热扰动）。
- * 详见 {@code assets/hall/shaders/core/rendertype_shockwave.fsh}。
+ * 冲击波渲染器：空气折射 / 波前透镜。
+ * 每帧把主帧缓冲 blit 到 copyTex，再画一个半径 = 波前半径的球壳；片元做射线-球壳求交、
+ * 光程积分与斯涅尔偏折后重采样场景拷贝，所以畸变由真实几何驱动（正视最强、掠射趋零）。
+ * 着色器见 assets/hall/shaders/core/rendertype_shockwave.fsh。
  */
 public class ShockwaveRenderer extends EntityRenderer<ShockwaveEntity> {
 
@@ -48,22 +37,7 @@ public class ShockwaveRenderer extends EntityRenderer<ShockwaveEntity> {
     private static final float TWO_PI = (float)(2.0 * Math.PI);
     private static final float PI_2 = (float)(Math.PI / 2.0);
 
-    // ── 效果强度（统一入口，便于后续挂配置） ──
-    /**
-     * 折射强度倍率。着色器内部已把峰值位移标定为
-     * {@code 波前壳带宽 × 0.40}（该比例同时保证位移场斜率
-     * ≈ 0.64 px/px < 1.0，不会把画面折成锯齿），本系数是全局缩放：
-     * 1.0 表示用满标定值。
-     * <p>带宽 = 波半径角度的 18%~86%（受 {@code uRingWidth} 调节），
-     * 并有 90px 像素下限，所以远景的壳仍然是一整条厚带而不是发丝。</p>
-     * <p>实测（1080p / 70° FOV，波半径 16 格）：</p>
-     * <ul>
-     *   <li>24 格外 → 壳厚约 283px，峰值位移约 113px，边缘亮带约 100px</li>
-     *   <li>80 格外 → 约 90px 厚，约 36px 位移，亮带约 32px</li>
-     *   <li>1000 格外 → 仍为约 90px 厚、约 36px 位移（像素下限托底）</li>
-     *   <li>平视站在波内 → 覆盖全屏，约 162px 位移</li>
-     * </ul>
-     */
+    /** 折射强度倍率（全局缩放）：着色器已把峰值位移标定为壳带宽 × 0.40，1.0 = 用满标定值。 */
     private static final float WARP_STRENGTH = 1.0f;
     /** 尾流热扰动强度。 */
     private static final float SHIMMER_STRENGTH = 0.22f;
@@ -106,26 +80,14 @@ public class ShockwaveRenderer extends EntityRenderer<ShockwaveEntity> {
 
     public ShockwaveRenderer(EntityRendererProvider.Context ctx) { super(ctx); }
 
-    /**
-     * Entity renderer path — skip; actual rendering happens in
-     * {@link ShockwaveRenderHandler#onRenderLevel} so the scene copy
-     * includes all entities.
-     */
+    /** 实体渲染路径跳过；实际绘制在 {@link ShockwaveRenderHandler#onRenderLevel}，让场景拷贝含全部实体。 */
     @Override
     public void render(ShockwaveEntity e, float yaw, float pt, PoseStack ps, MultiBufferSource bufs, int light) {
-        // no-op: rendering is handled after all entities via RenderLevelStageEvent
     }
 
     /**
-     * Render a single shockwave. Called from the stage-event handler
-     * after all entities have been drawn, so the framebuffer copy
-     * captures the complete scene.
-     *
-     * <h3>Shader pack compatibility</h3>
-     * When Oculus/Iris is active the scene copy + draw are deferred to
-     * {@link ShockwaveLateRenderQueue} and replayed at
-     * {@code renderLevel()} TAIL, after the shader pack has composed
-     * the final scene to the main framebuffer.
+     * 画单个冲击波（在全部实体画完之后调用，场景拷贝才完整）。
+     * Oculus/Iris 生效时改由 {@link ShockwaveLateRenderQueue} 在 renderLevel() TAIL 重放。
      */
     public static void renderOne(ShockwaveEntity e, float pt, PoseStack ps) {
         if (HeldItemOutlineCompat.isOculusShadowPass()) return;
@@ -136,7 +98,6 @@ public class ShockwaveRenderer extends EntityRenderer<ShockwaveEntity> {
         ShaderInstance sh = SplendidingShaders.shockwaveShader;
         if (sh == null) return;
 
-        // ── Compute uniforms ──
         float maxR = Math.max(e.getMaxRadius(), 0.01f);
         float prog = r / maxR;
         float fi = Math.min(1.0f, prog / 0.08f);
@@ -147,7 +108,6 @@ public class ShockwaveRenderer extends EntityRenderer<ShockwaveEntity> {
         float alpha = e.getAlpha() * fade;
         if (alpha <= 0.002f) return;
 
-        // ── Pose ──
         ps.pushPose();
         ps.translate(e.getX(), e.getY() + 0.02, e.getZ());
         ps.scale(r, r, r);
@@ -158,24 +118,18 @@ public class ShockwaveRenderer extends EntityRenderer<ShockwaveEntity> {
         // 爆心（世界空间）—— 从 pose 的平移列读取（此时缩放为 r、平移为爆心）
         float cx = pose.m30(), cy = pose.m31(), cz = pose.m32();
 
-        // ── Shader pack active → defer ──
         if (HeldItemOutlineCompat.isOculusShaderPackActive()) {
             ShockwaveLateRenderQueue.enqueue(pose, nrm, cx, cy, cz, r, maxR,
                     alpha, e.getLifeProgress(), e.getRingPosition(), e.getRingWidth());
             return;
         }
 
-        // ── Immediate render (no shader pack) ──
         doSceneCopy();
         drawShockwave(pose, nrm, sh, cx, cy, cz, r,
                 alpha, e.getLifeProgress(), e.getRingPosition(), e.getRingWidth());
     }
 
-    /**
-     * Called from {@link ShockwaveLateRenderQueue#renderAll()} during late replay.
-     * Does the scene copy first (main framebuffer now has the composed scene),
-     * then draws the sphere with late-deferred GL state.
-     */
+    /** 晚重放路径：主帧缓冲此时已是合成后的画面，先拷贝再画球壳。 */
     static void renderOneDeferred(Matrix4f pose, Matrix3f nrm,
                                    float cx, float cy, float cz,
                                    float radius, float maxRadius,
@@ -189,22 +143,16 @@ public class ShockwaveRenderer extends EntityRenderer<ShockwaveEntity> {
                 alpha, lifeProgress, ringPosition, ringWidth);
     }
 
-    // ── internal helpers ──────────────────────────────────────
-
     /**
-     * Blit the current main framebuffer into the scene-copy texture.
-     *
-     * <p>包级可见，供同一包内的 {@link ApostleSlashWarp} 复用：使徒斩击的空间扭曲
-     * 需要同一张场景拷贝，两边共用一份可以保证<b>每帧只做一次全屏 blit</b>。</p>
+     * 把主帧缓冲 blit 进场景拷贝纹理。包级可见，供同包的 {@link ApostleSlashWarp} 复用：
+     * 双方共用一份，保证每帧只做一次全屏 blit。
      */
     static void doSceneCopy() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.getMainRenderTarget() == null) return;
 
-        // 尺寸必须取「主 render target」而不是「窗口」：Oculus/Iris 的 resolution scale
-        // 会让主 RT 比窗口小（例如 0.75×）。以前用窗口尺寸当 srcRect 去 blit 一个更小的
-        // 源 → 越界，glBlitFramebuffer 报 GL_INVALID_OPERATION，拷贝静默失败，
-        // 屏幕上就是"扭曲不生效 / 卡住一张旧图"。
+        // 尺寸必须取「主 render target」而非「窗口」：Oculus/Iris 的 resolution scale 会让
+        // 主 RT 比窗口小（如 0.75×），用窗口尺寸 blit 更小的源 → 越界、GL_INVALID_OPERATION。
         int w = Math.max(1, mc.getMainRenderTarget().width);
         int h = Math.max(1, mc.getMainRenderTarget().height);
         int mainFbo = mc.getMainRenderTarget().frameBufferId;
@@ -242,21 +190,17 @@ public class ShockwaveRenderer extends EntityRenderer<ShockwaveEntity> {
                                        float alpha, float lifeProgress,
                                        float ringPosition, float ringWidth) {
         Minecraft mc = Minecraft.getInstance();
-        // uPixelSize 的分母必须是「被采样的那张纹理」的尺寸 —— 即场景拷贝的尺寸。
-        // gl_FragCoord 在主 RT 的像素空间里，所以这两个值必须一致，否则整幅折射会偏移。
+        // uPixelSize 的分母必须是被采样那张纹理（场景拷贝）的尺寸，否则整幅折射会偏移
         float w = Math.max(1, copyW > 0 ? copyW : mc.getWindow().getWidth());
         float h = Math.max(1, copyH > 0 ? copyH : mc.getWindow().getHeight());
 
-        // ── 爆心 → 视图空间 ──
-        //  视图矩阵最后一行 (m03,m13,m23) 的相反数是相机世界位置
-        //  （Mat4 是列主序，故 m30/m31/m32 即“第 4 行的前 3 列”，
-        //   与 JOML Vector4f(0,0,0,1).mul(view) 的结果一致）。
+        // 爆心 → 视图空间：view 最后一行 (m03,m13,m23) 的相反数是相机位置
+        // （列主序，故 m30/m31/m32 即"第 4 行的前 3 列"）。
         Matrix4f view = RenderSystem.getModelViewMatrix();
         float centerVSx = view.m00() * cx + view.m10() * cy + view.m20() * cz + view.m30();
         float centerVSy = view.m01() * cx + view.m11() * cy + view.m21() * cz + view.m31();
         float centerVSz = view.m02() * cx + view.m12() * cy + view.m22() * cz + view.m32();
 
-        // ── GL state ──
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableDepthTest();
@@ -264,7 +208,6 @@ public class ShockwaveRenderer extends EntityRenderer<ShockwaveEntity> {
         RenderSystem.depthMask(false);
         RenderSystem.setShader(() -> sh);
 
-        // ── Uniforms ──
         setUniform(sh, "uIntensity", alpha);
         setUniform(sh, "uLifeProgress", lifeProgress);
         setUniform(sh, "uRingPosition", ringPosition);
@@ -272,29 +215,24 @@ public class ShockwaveRenderer extends EntityRenderer<ShockwaveEntity> {
         setUniform(sh, "uWarp", WARP_STRENGTH * refractionScale());
         setUniform(sh, "uShimmer", SHIMMER_STRENGTH * refractionScale());
         setUniform(sh, "uChroma", CHROMA_STRENGTH);
-        // 亮带开关：冲击波要那圈压缩壳亮带；使徒斩击的扭曲复用同一个着色器时
-        // 会把它置 0（纯折射）。uniform 是全局的，所以这里必须显式写回 1.0，
-        // 否则先画斩击再画冲击波时，冲击波会"继承"到 0 而丢掉亮带。
+        // uGlow 必须显式写回 1.0：uniform 是全局的，斩击复用时会置 0，否则冲击波丢亮带
         setUniform(sh, "uGlow", 1.0f);
         setUniform(sh, "uPixelSize", 1.0f / w, 1.0f / h);
         setUniform(sh, "uCenterVS", centerVSx, centerVSy, centerVSz);
-        // 球壳真实半径。必须在片元里当常数用 —— 用 length(vPos) 反推会
-        // 拿到插值量，随三角形边界抖动，屏幕上表现为沿网格走的锯齿。
+        // 球壳真实半径要当常数用：用 length(vPos) 反推拿到的是插值量，会沿网格起锯齿
         setUniform(sh, "uWaveRadius", radius);
 
-        // ── 深度纹理：让波前只作用于它前方的空气（被方块遮挡处不畸变） ──
+        // 深度纹理：让波前只作用于它前方的空气（被方块遮挡处不畸变）
         int depthTex = resolveDepthTexture(mc);
         boolean hasDepth = depthTex > 0;
         setUniform(sh, "uHasDepth", hasDepth ? 1.0f : 0.0f);
 
-        // ── Bind scene-copy texture ──
         int prev = GlStateManager._getInteger(GL11.GL_TEXTURE_BINDING_2D);
         RenderSystem.activeTexture(GL13.GL_TEXTURE0);
         RenderSystem.bindTexture(copyTex);
         sh.setSampler("ScreenTexture", copyTex);
         if (hasDepth) sh.setSampler("DepthTexture", depthTex);
 
-        // ── Draw sphere ──
         Tesselator tess = Tesselator.getInstance();
         BufferBuilder buf = tess.getBuilder();
         buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR_NORMAL);
@@ -306,7 +244,6 @@ public class ShockwaveRenderer extends EntityRenderer<ShockwaveEntity> {
             }
         tess.end();
 
-        // ── Restore ──
         RenderSystem.activeTexture(GL13.GL_TEXTURE0);
         RenderSystem.bindTexture(prev);
         RenderSystem.depthMask(true);
@@ -315,13 +252,8 @@ public class ShockwaveRenderer extends EntityRenderer<ShockwaveEntity> {
     }
 
     /**
-     * 取得主帧缓冲的深度纹理 id；若该纹理不可用（例如某些光影包把主
-     * 目标改成 renderbuffer 深度附件），返回 -1 并让着色器跳过深度遮挡
-     * 测试，而不会产生 GL 错误。
-     *
-     * 探测只做一次（窗口尺寸变化时重探），并在探测时刻意打开
-     * GL_TEXTURE_2D —— 这正是绘制时会用到的目标，因此若纹理无效，
-     * GL_INVALID_OPERATION 必然在此刻出现。
+     * 取主帧缓冲的深度纹理 id；不可用（例如光影包把主目标改成 renderbuffer 深度附件）时
+     * 返回 -1，让着色器跳过深度遮挡而不产生 GL 错误。只探测一次，尺寸变化时重探。
      */
     private static int resolveDepthTexture(Minecraft mc) {
         if (depthTexProbeDone) return depthTexId;
@@ -350,21 +282,12 @@ public class ShockwaveRenderer extends EntityRenderer<ShockwaveEntity> {
         if (sh.getUniform(name) != null) sh.safeGetUniform(name).set(v);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 供同包内的 ApostleSlashWarp 复用（场景拷贝 + 深度纹理探测）
-    // ══════════════════════════════════════════════════════════════
-
     /** 当前场景拷贝纹理 id（由 {@link #doSceneCopy()} 建立）。 */
     static int sceneCopyTextureId() {
         return copyTex;
     }
 
-    /**
-     * 共享场景拷贝：把当前主帧缓冲 blit 进拷贝纹理，供其它屏幕空间特效复用。
-     *
-     * <p>陨石事件的"动漫冲击帧"要<b>把整帧画面重画成漫画分镜</b>
-     * （边缘墨线 / 局部自适应二值 / 网点），必须能采样到真实画面。</p>
-     */
+    /** 共享场景拷贝：把主帧缓冲 blit 进拷贝纹理，供其它屏幕空间特效（如陨石冲击帧）复用。 */
     public static void copySceneForOverlay() {
         doSceneCopy();
     }
@@ -373,7 +296,6 @@ public class ShockwaveRenderer extends EntityRenderer<ShockwaveEntity> {
     public static int sceneTextureForOverlay() {
         return copyTex;
     }
-
 
     /** 场景拷贝纹理宽度（-1 = 尚未建立）。片元里 {@code uPixelSize} 必须用这个尺寸。 */
     static int sceneCopyWidth() {

@@ -32,45 +32,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 方块模型视角的 mask 效果层渲染器 —— 世界里的方块（BER）和方块物品（ItemRenderer
- * 注入）共用这一套。
- *
- * <h3>两个入口</h3>
- * <ul>
- *   <li>{@link #renderBlock} —— 方块实体每帧渲染时调用；方块模型由
- *       {@code BlockRenderDispatcher} 按 {@link BlockState} 取。</li>
- *   <li>{@link #renderItem} —— 方块物品在手持/物品栏/掉落物形态下调用；
- *       模型是 {@code ItemRenderer} 已经拿到的那个 BakedModel（block item 的模型
- *       就是方块模型，所以 quad 形状与世界里一致）。</li>
- * </ul>
- *
- * <h3>和物品版 {@code MaskLayerRenderer} 的异同</h3>
- * <table>
- *   <tr><th></th><th>物品版</th><th>本类（方块模型）</th></tr>
- *   <tr><td>几何</td><td>用本体贴图烘的 16×16 平面</td><td>模型自己的 quad（六个面 / 任意形状）</td></tr>
- *   <tr><td>UV</td><td>指向本体贴图，shader 里用 BaseMin/BaseSize 换算</td>
- *       <td>CPU 侧重映射到遮罩 sprite，shader 直接采样</td></tr>
- *   <tr><td>上下文开关</td><td>GUI / 手持 / 世界</td><td>世界（方块）/ 同一套三开关（方块物品）</td></tr>
- * </table>
- *
- * <h3>为什么 UV 在 CPU 侧重映射</h3>
- * <p>方块有六张面贴图（甚至多个 sprite），uniform 没法 per-face；而这个渲染器
- * 本来就要逐 quad 写顶点，所以顺手把每个 quad 的 UV 从它自己的 sprite 矩形线性
- * 映射到遮罩 sprite 矩形 —— 着色器里 {@code UV0} 直接就是遮罩图集 UV。效果实现
- * （{@link MaskEffectPass}）完全不用知道宿主长什么样。</p>
- *
- * <h3>深度 / 混合由效果的 RenderType 决定</h3>
- * <p>本体由区块 mesh（方块）或原版物品渲染（方块物品）先画、深度已写好，所以
- * 这里统一用 {@code LEQUAL + polygon offset}、只写颜色。混合方式由
- * {@link MaskEffectPass#immediateType()} 返回的变体决定：
- * {@code glow} 是 ADDITIVE，{@code death_core} 是 TRANSLUCENT（遮罩窗口内覆盖、
- * 窗口外透明）。</p>
- *
- * <h3>光影包（Oculus / Iris）与阴影 pass</h3>
- * <p>v1 的策略是<b>不画</b>：方块侧还没有对应的「延迟回放」队列（物品侧的
- * {@code MaskLayerLateRenderQueue} 是按物品重新入队，方块需要在 BER 里存矩阵 +
- * 状态再在主帧缓冲回放，属于下一阶段）。在光影包激活时直接跳过并只提示一次，
- * 避免写进 GBuffer 被当成场景材质 —— 那比不画更糟。阴影 pass 一律跳过。</p>
+ * 方块模型视角的 mask 效果层渲染器 —— 世界里的方块（BER）与方块物品（ItemRenderer 注入）共用这一套。
+ * UV 在 CPU 侧逐 quad 从自身 sprite 矩形线性重映射到遮罩 sprite（方块六面各不同，uniform 没法 per-face）。
+ * 深度/混合由 {@link MaskEffectPass#immediateType()} 决定：本体先画且已写深度，这里 LEQUAL + polygon offset 只写颜色。
+ * v1 在光影包激活时不画：方块侧还没有延迟回放队列，写进 GBuffer 被当成场景材质比不画更糟。
  */
 public final class BlockMaskOverlayRenderer {
 
@@ -86,16 +51,7 @@ public final class BlockMaskOverlayRenderer {
     /** 已提示过的问题，避免每帧刷屏。资源重载时由 {@link #resetWarnings()} 清空。 */
     private static final Set<String> WARNED = new HashSet<>();
 
-    /**
-     * 世界里的方块：由 BER 调用。
-     *
-     * @param poseStack 当前 BER 的 PoseStack（已平移到方块位置）
-     * @param buffer    渲染缓冲（通常就是 {@code MultiBufferSource.BufferSource}）
-     * @param light     打包光照（这些层不读 UV2，透传只为满足顶点格式）
-     * @param overlay   打包 overlay
-     * @param state     方块状态（用来取方块模型）
-     * @param layers    该方块要挂的层（未排序、未过滤）
-     */
+    /** 世界里的方块：由 BER 调用，模型按 {@link BlockState} 从 BlockRenderDispatcher 取。 */
     public static void renderBlock(PoseStack poseStack, MultiBufferSource buffer,
                                    int light, int overlay, BlockState state,
                                    List<MaskLayerSpec> layers) {
@@ -109,13 +65,7 @@ public final class BlockMaskOverlayRenderer {
                 null, "block:" + blockId(state));
     }
 
-    /**
-     * 方块物品：由 {@code ItemRenderer} 注入点调用（手持 / 物品栏 / 掉落物）。
-     *
-     * <p>几何取物品模型自己的 quad；block item 的模型就是方块模型，所以和世界里
-     * 的方块层是同一份形状与 UV 映射。物品的 display 变换已经在 {@code poseStack}
-     * 上，直接同栈绘制即可。</p>
-     */
+    /** 方块物品：block item 的模型就是方块模型，display 变换已在 poseStack 上，直接同栈绘制。 */
     public static void renderItem(PoseStack poseStack, MultiBufferSource buffer,
                                   int light, int overlay, BakedModel model,
                                   List<MaskLayerSpec> layers, ItemDisplayContext context,
@@ -133,7 +83,7 @@ public final class BlockMaskOverlayRenderer {
         // 阴影 pass 是「从光源方向看」，这些层却按相机视角算，入内会投出错误阴影。
         if (HeldItemOutlineCompat.isOculusShadowPass()) return false;
 
-        // v1：光影包激活时跳过（见类注释最后一节）。只说一次，避免刷屏。
+        // v1：光影包激活时跳过；只说一次，避免刷屏。
         if (CosmicItemShaderCompat.isOculusShaderPackActive()) {
             warnOnce("shader_pack",
                     "检测到光影包：方块/方块物品的 mask 层暂时跳过（v1 还没有延迟回放队列）");
@@ -143,14 +93,7 @@ public final class BlockMaskOverlayRenderer {
         return Minecraft.getInstance().level != null;
     }
 
-    /**
-     * 收集一个模型的全部 quad。
-     *
-     * <p><b>不能只调 {@code getQuads(state, null, rand)}</b>：{@code SimpleBakedModel}
-     * 在 null 方向只返回「unculled faces」，而普通方块模型的六个面全部按方向存进
-     * culledFaces —— 那条路拿到的是空列表（症状：方块本体正常、层永远不出现）。
-     * 必须六个方向各取一次。</p>
-     */
+    /** 六个方向各取一次：null 方向只返回 unculled faces，普通方块的六个面都在 culledFaces 里。 */
     private static List<BakedQuad> collectQuads(BakedModel model, @Nullable BlockState state) {
         List<BakedQuad> quads = new ArrayList<>(7);
         for (Direction direction : Direction.values()) {
@@ -210,8 +153,7 @@ public final class BlockMaskOverlayRenderer {
             // 方块/方块模型没有「本体贴图光源」这个概念，base 传 null；效果实现自己决定要不要用。
             pass.apply(layer, mask, null, time);
 
-            // 一次性诊断（与物品侧「层生效」同款）：能区分「没被调用 / 层被过滤」
-            // 和「层在画但看着不对」这两类完全不同的故障。
+            // 一次性诊断：能区分「没被调用 / 层被过滤」和「层在画但看着不对」这两类故障。
             logFirstLayer(owner, layer, quads.size());
 
             VertexConsumer consumer = buffer.getBuffer(type);
@@ -221,20 +163,14 @@ public final class BlockMaskOverlayRenderer {
                         1.0F, 1.0F, 1.0F, light, overlay);
             }
 
-            // 每层单独 flush：Uniform.set() 的值在 endBatch -> ShaderInstance.apply()
-            // 才真正上传，攒到一起会让后一层的 uniform 盖掉前一层（与物品侧同一条约定）。
+            // 每层单独 flush：uniform 在 endBatch -> apply() 才真正上传，攒着会让后一层盖掉前一层。
             if (buffer instanceof MultiBufferSource.BufferSource bs) {
                 bs.endBatch(type);
             }
         }
     }
 
-    /**
-     * 把一个 quad 的 UV 从它自己的 sprite 矩形线性映射到遮罩 sprite 矩形。
-     *
-     * <p>只改 UV0，位置/法线/光贴图原样保留，所以表面层精确贴合宿主形状
-     * （cube、台阶、方块物品模型都成立）。</p>
-     */
+    /** 把一个 quad 的 UV 从它自己的 sprite 矩形线性映射到遮罩 sprite 矩形；只改 UV0，位置/法线/光贴图原样。 */
     private static BakedQuad remapUvToMask(BakedQuad quad, TextureAtlasSprite mask) {
         TextureAtlasSprite source = quad.getSprite();
         if (source == null) return quad;
@@ -262,10 +198,7 @@ public final class BlockMaskOverlayRenderer {
         return new BakedQuad(dst, quad.getTintIndex(), quad.getDirection(), mask, quad.isShade());
     }
 
-    // ── 一次性诊断日志 ──────────────────────────────────────────────
-    //
-    // 与物品侧 MaskLayerResolver 的「层生效」日志同一个目的：从画面上看
-    // 「没被调用 / 层被过滤掉」和「层在画但画错了」是一样的，日志能把它们分开。
+    // 一次性诊断日志：与物品侧 MaskLayerResolver 同目的 —— 从画面上看「没被调用 / 层被过滤」和「层在画但画错了」是一样的。
 
     /** 已记录过的「宿主 + 效果 + 遮罩」组合。 */
     private static final Set<String> LOGGED = new HashSet<>();

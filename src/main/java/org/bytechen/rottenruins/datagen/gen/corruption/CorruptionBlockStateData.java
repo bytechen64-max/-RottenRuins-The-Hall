@@ -15,6 +15,7 @@ import org.bytechen.rottenruins.overworld.registry.blocks.impl.corruption.Corrup
 import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionBlocks;
 
 import java.util.Objects;
+import org.bytechen.rottenruins.utils.ModUtils;
 
 /**
  * 腐化系方块的 blockstate / 方块模型 / 方块物品模型生成器（从 corruption 工程
@@ -65,10 +66,6 @@ public class CorruptionBlockStateData extends BlockStateProvider {
         this.directionComplexBlockWithItem(CorruptionBlocks.REFACTORED_REMAINS_LARGE.get());
     }
 
-    // ==================== 腐染经络 ====================
-
-    // ==================== corruption grass (two blocks tall) ====================
-
     private void corruptionGrassWithItem(net.minecraft.world.level.block.Block block) {
         net.minecraft.resources.ResourceLocation texture = blockTexture(block);
         net.minecraftforge.client.model.generators.ModelFile cross =
@@ -114,15 +111,11 @@ public class CorruptionBlockStateData extends BlockStateProvider {
         itemModels().withExistingParent(name(block), "item/generated").texture("layer0", topTex);
     }
 
-    // ==================== 腐染矮草 ====================
-
     private void crossBlockWithItem(Block block) {
         simpleBlock(block, models().cross(name(block), blockTexture(block)).renderType("cutout"));
         itemModels().withExistingParent(name(block), "item/generated")
                 .texture("layer0", blockTexture(block));
     }
-
-    // ==================== 残骸 ====================
 
     /**
      * 残骸类方块：六向 facing + 手写十字交叉模型 + 对应物品模型。
@@ -199,17 +192,15 @@ public class CorruptionBlockStateData extends BlockStateProvider {
         });
 
         // 物品模型：直接继承方块模型
-        itemModels().withExistingParent(name(block), new ResourceLocation(HallMod.MODID, path));
+        itemModels().withExistingParent(name(block), ModUtils.modLoc(path));
     }
-
-    // ==================== 血肉温床 ====================
 
     /**
      * 仅生成水平朝向（北/东/南/西）的 blockstate JSON，不生成方块模型文件；
      * 模型文件由 corruption 工程手写资源提供（{@code models/block/fleshbed.json}）。
      */
     private void horizontalBlockStateOnly(Block block) {
-        ResourceLocation modelLocation = new ResourceLocation(HallMod.MODID, "block/" + name(block));
+        ResourceLocation modelLocation = ModUtils.modLoc("block/" + name(block));
         ModelFile existingModel = new ModelFile.UncheckedModelFile(modelLocation);
 
         getVariantBuilder(block).forAllStates(state -> {
@@ -226,12 +217,10 @@ public class CorruptionBlockStateData extends BlockStateProvider {
 
     private void horizontalBlockStateWithItem(Block block) {
         horizontalBlockStateOnly(block);
-        ResourceLocation modelLocation = new ResourceLocation(HallMod.MODID, "block/" + name(block));
+        ResourceLocation modelLocation = ModUtils.modLoc("block/" + name(block));
         ModelFile existingModel = new ModelFile.UncheckedModelFile(modelLocation);
         itemModels().getBuilder(name(block)).parent(existingModel);
     }
-
-    // ==================== 工具方法 ====================
 
     private String name(Block block) {
         return ForgeRegistries.BLOCKS.getKey(block) == null

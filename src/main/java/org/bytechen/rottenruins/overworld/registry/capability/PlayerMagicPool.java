@@ -22,44 +22,14 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * 玩家的魔法池：<b>5 格法术槽</b>（默认，属性 {@code magic_slots} 可扩容） + <b>同名共享冷却</b> + 当前选中格。
- *
- * <h3>三条规则，以及它们各自在哪实现</h3>
- * <table border="1">
- *   <tr><th>规则</th><th>实现位置</th></tr>
- *   <tr><td>一个栏只能放一个魔法</td>
- *       <td>{@link #getSlotLimit(int)} 恒为 1；{@link #insertItem} 第 3 步直接拒绝已有内容</td></tr>
- *   <tr><td>槽位不能存重复的魔法</td>
- *       <td>{@link #isItemValid} 与 {@link #containsSpell}：任何一格已经有了同一种法术，别格就拒绝</td></tr>
- *   <tr><td>同一玩家的同名物品共享冷却</td>
- *       <td>{@link #cooldowns} 的键是<b>物品注册名</b>（不是 ItemStack、也不是 Item 实例），
- *           所以同一件法术放在 1 号还是 3 号槽是同一个冷却</td></tr>
- * </table>
- *
- * <h3>相对早期版本修掉的问题</h3>
- * <ol>
- *   <li><b>冷却不再存在物品上。</b> 原来 {@code upDate()} 递减的是
- *       {@code CMagicBaseItem.coolcount} —— 那是<b>注册表单例</b>的字段，
- *       结果甲放完法术乙也不能放。现在冷却按玩家存在这里。</li>
- *   <li><b>{@code getSlots()} 不再越界。</b> 原来返回 {@code handler.getSlots() + addition}，
- *       底层却是固定槽位数；{@code addition > 0} 时任何遍历到 {@code getSlots()} 的代码
- *       都会读越界。现在底层数组按 {@link MagicStats#MAX_SLOT_COUNT} 分配，
- *       {@code getSlots()} 由 {@link MagicStats#slotCount} 决定并做钳制。</li>
- *   <li><b>{@code changeSlot} 不再能选出非法下标。</b> 原来的环绕算式会算出负数、
- *       或正好等于 {@code getSlots()}。现在统一走 {@link #setSelectedSlot}，环绕与钳制在里面。</li>
- *   <li><b>槽位数收缩不再吞物品。</b> 属性修饰器调低槽位数时，
- *       {@link #ensureSlotCount()} 会把越界格子里的法术塞回背包（塞不下就掉在地上）。</li>
- * </ol>
- *
- * <h3>关于槽位选择</h3>
- * <p>选中格由客户端界面 {@code MagicScreen}（默认 {@code M} 键）通过
- * {@code MagicPoolActionPacket} 写入，服务端只负责校验与存储；选中的下标会随
- * {@code MagicPoolSyncPacket} 一起同步给客户端。外部（命令、别的界面）也可以直接调
- * {@link #setSelectedSlot(int)}。</p>
+ * 玩家的魔法池：5 格法术槽（属性 magic_slots 可扩容）+ 同名共享冷却 + 当前选中格 + 轮盘方位映射。
+ * 规则：一格只放一个魔法且不能重复；同名法术共享冷却（键是物品注册名，不是 ItemStack / Item 实例，
+ * 所以同一件法术放在 1 号还是 3 号槽是同一个冷却）。选中格由客户端 MagicScreen 经
+ * MagicPoolActionPacket 写入、服务端只校验与存储；命令等外部入口可直接调 setSelectedSlot。
  */
 public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<CompoundTag> {
 
-    /** NBT：槽内法术（{@code ContainerHelper} 的 {@code Items} 列表）。 */
+    /** NBT：槽内法术（ContainerHelper 的 Items 列表）。 */
     public static final String NBT_SLOTS = "Items";
     /** NBT：当前选中格。 */
     public static final String NBT_SELECTED = "HallMagicSelected";
@@ -75,21 +45,14 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
     /** -1 = 该方位没有绑定法术。 */
     public static final int WHEEL_EMPTY = -1;
 
-    /**
-     * 底层数组长度。按最大值分配，这样属性修饰器扩容时不需要重建数组；
-     * 可见格数始终由 {@link MagicStats#slotCount(Player)} 决定。
-     */
+    /** 底层数组按最大值分配，扩容时不必重建；可见格数始终由 MagicStats.slotCount 决定并钳制。 */
     private static final int BACKING_SIZE = MagicStats.MAX_SLOT_COUNT;
 
     private final Player player;
     private final NonNullList<ItemStack> slots;
     /** 冷却表：物品注册名 → 剩余 tick。 */
     private final Map<ResourceLocation, Integer> cooldowns = new HashMap<>();
-    /**
-     * 轮盘方位映射：{@code wheelSlots[page * 8 + index] = 魔法池槽位下标}，-1 = 空位。
-     * <p>轮盘只是"另一个入口"，法术本体仍存在魔法池里；这层映射让同一件法术可以
-     * 同时出现在魔法星图和轮盘的任意方位。</p>
-     */
+    /** 轮盘方位映射：wheelSlots[page * 8 + index] = 魔法池槽位下标，-1 = 空位；法术本体仍在池里。 */
     private final int[] wheelSlots = new int[WHEEL_PAGES * WHEEL_SLOTS_PER_PAGE];
     private int selected;
 
@@ -103,10 +66,6 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         this.slots = NonNullList.withSize(BACKING_SIZE, ItemStack.EMPTY);
         java.util.Arrays.fill(wheelSlots, WHEEL_EMPTY);
     }
-
-    // ══════════════════════════════════════════════════════════════
-    // IItemHandler
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     public int getSlots() {
@@ -125,7 +84,6 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         if (stack.isEmpty() || !isValidSlot(slot) || !isItemValid(slot, stack)) {
             return stack;
         }
-        // 一个栏只放一个魔法
         if (!slots.get(slot).isEmpty()) {
             return stack;
         }
@@ -167,10 +125,7 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         return 1;
     }
 
-    /**
-     * 能否放进这一格：是法术 + 不在别格重复。
-     * <p>注意 {@code simulate} 也走这里，所以"预览放置"同样遵守去重规则。</p>
-     */
+    /** 能否放入：是法术且没在别格重复；simulate 预览也走这里，所以预览同样遵守去重。 */
     @Override
     public boolean isItemValid(int slot, @NotNull ItemStack stack) {
         if (stack.isEmpty() || !isValidSlot(slot)) {
@@ -181,10 +136,6 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         }
         return !containsSpellExcept(stack.getItem(), slot);
     }
-
-    // ══════════════════════════════════════════════════════════════
-    // ByteItemHandle
-    // ══════════════════════════════════════════════════════════════
 
     @Override
     public boolean canAdd(Item item) {
@@ -214,8 +165,6 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
     public void upDate() {
         tickCooldowns();
     }
-
-    // ---- 槽位选择 ----
 
     @Override
     public int getSelectedSlot() {
@@ -255,14 +204,11 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         return slot >= 0 && slot < getSlots();
     }
 
-    // ---- 去重 ----
-
     @Override
     public boolean containsSpell(Item item) {
         return containsSpellExcept(item, -1);
     }
 
-    /** 除 {@code exceptSlot} 之外，还有没有哪一格放着这个物品。 */
     private boolean containsSpellExcept(Item item, int exceptSlot) {
         int count = getSlots();
         for (int i = 0; i < count; i++) {
@@ -283,11 +229,7 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         return MagicStats.magicId(getStackInSlot(slot));
     }
 
-    /**
-     * 把一件法术放进第一个能放的空格。
-     *
-     * @return 实际放入的槽位下标；放不进去（满了 / 重复）返回 {@code -1}
-     */
+    /** 放进第一个能放的空格；返回实际放入的槽位，放不进去（满了 / 重复）返回 -1。 */
     public int addSpell(@NotNull ItemStack spell) {
         if (spell.isEmpty()) {
             return -1;
@@ -302,8 +244,6 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         }
         return -1;
     }
-
-    // ---- 冷却 ----
 
     @Override
     public boolean onCooldown(@Nullable ResourceLocation magicId) {
@@ -352,8 +292,7 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
             }
         }
 
-        // 只有服务端才做"驱逐越界物品"与"标脏"。
-        // 客户端那份是同步过来的镜像 —— 往客户端玩家的背包里塞东西是错的
+        // 只有服务端才做"驱逐越界物品"与"标脏"：客户端那份是同步镜像，往客户端背包塞东西是错的
         // （而且会因为槽位数变化而在客户端凭空造出物品）。
         if (player.level().isClientSide()) {
             return;
@@ -367,14 +306,7 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         }
     }
 
-    /**
-     * 把"已经不在可用范围"的格子清空（槽位数被属性修饰器调小时会用到）。
-     *
-     * <p>刻意把法术<b>还给玩家</b>而不是直接丢掉 —— 玩家不会因为换了件装备
-     * 就莫名其妙损失法术。背包塞不下才掉在脚下。</p>
-     *
-     * @return 是否有内容被挪走
-     */
+    /** 槽位数缩小时把越界格子里的法术还给玩家（背包塞不下才掉在脚下）而非丢弃；@return 是否有内容被挪走。 */
     private boolean ensureSlotCount() {
         boolean moved = false;
         int usable = getSlots();
@@ -396,10 +328,6 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         return moved;
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 轮盘方位映射
-    // ══════════════════════════════════════════════════════════════
-
     public static boolean isValidWheelPage(int page) {
         return page >= 0 && page < WHEEL_PAGES;
     }
@@ -412,7 +340,7 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         return isValidWheelPage(page) && isValidWheelIndex(index);
     }
 
-    /** 读某个方位的魔法池槽位；空位 / 非法返回 {@link #WHEEL_EMPTY}。 */
+    /** 读某个方位的魔法池槽位；空位 / 非法返回 WHEEL_EMPTY。 */
     public int getWheelSlot(int page, int index) {
         if (!isValidWheelPosition(page, index)) {
             return WHEEL_EMPTY;
@@ -440,7 +368,7 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         return out;
     }
 
-    /** 全部页的映射副本（长度 {@code WHEEL_PAGES * 8}）。 */
+    /** 全部页的映射副本（长度 WHEEL_PAGES * 8）。 */
     @NotNull
     public int[] copyWheelSlots() {
         return wheelSlots.clone();
@@ -512,14 +440,7 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 同步钩子
-    // ══════════════════════════════════════════════════════════════
-
-    /**
-     * 是否有未同步的改动。
-     * <p>留给以后接客户端同步用（法术槽与法力都需要同步，但按需求这一轮只管服务端）。</p>
-     */
+    /** 是否有未同步的改动（留给以后接客户端同步用）。 */
     public boolean isDirty() {
         return dirty;
     }
@@ -533,10 +454,6 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         dirty = true;
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // 能力提供者 / 序列化
-    // ══════════════════════════════════════════════════════════════
-
     @Override
     @NotNull
     public <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability,
@@ -549,7 +466,7 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
         return LazyOptional.empty();
     }
 
-    /** 实体被移除时由 Forge 调用（经由 {@code invalidateCaps}）。 */
+    /** 实体被移除时由 Forge 调用（经由 invalidateCaps）。 */
     public void invalidate() {
         self.invalidate();
     }
@@ -602,8 +519,8 @@ public class PlayerMagicPool implements ByteItemHandle, ICapabilitySerializable<
             int copy = Math.min(saved.length, wheelSlots.length);
             System.arraycopy(saved, 0, wheelSlots, 0, copy);
         } else {
-            // 老存档 / 新玩家：第一次拿到轮盘数据时，把魔法池里的主动法术按顺序填进第 I 页，
-            // 否则"按 R 没反应"会被当成 bug。之后玩家在装载界面里怎么改就怎么存。
+            // 老存档 / 新玩家：第一次拿到轮盘数据时把主动法术填进第 I 页，否则"按 R 没反应"会被当成 bug；
+            // 之后玩家在装载界面里怎么改就怎么存。
             autoAssignWheelPage0();
         }
         sanitizeWheelSlots();

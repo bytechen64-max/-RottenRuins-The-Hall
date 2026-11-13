@@ -56,9 +56,7 @@ public final class WheelData {
     private WheelData() {
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  能力 / 玩家
-    // ══════════════════════════════════════════════════════════════
 
     @Nullable
     public static PlayerMagicPool pool() {
@@ -92,9 +90,7 @@ public final class WheelData {
         return player != null && player.getMainHandItem().getItem() instanceof StaffBase;
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  轮盘页 / 槽位
-    // ══════════════════════════════════════════════════════════════
 
     /** 读取真实轮盘配置的某一页（全部 8 个方位）。 */
     public static Slot @NotNull [] page(int page) {
@@ -185,9 +181,7 @@ public final class WheelData {
         return false;
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  表现辅助
-    // ══════════════════════════════════════════════════════════════
 
     /** 流派色（RGB 0..1），与设计稿 / 预览工具一致。 */
     public static float[] colorOf(@Nullable MagicType type) {

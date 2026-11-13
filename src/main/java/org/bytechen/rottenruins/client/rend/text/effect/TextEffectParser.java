@@ -9,40 +9,18 @@ import java.util.List;
 
 /**
  * 把带 {@code §[rrs:...]} 标记的原文编译成 {@link EffectPlan}（纯 Java，无 Minecraft 依赖）。
- *
- * <h3>为什么解析要独立于渲染</h3>
- * <p>同一段原文会被不同路径消费：测量（{@code StringSplitter}）、String 绘制、Component 的
- * 逐帧 overlay。如果各自边解析边渲染，迟早出现"测量时算出来的宽度和绘制时不一样"。
- * 这里解析一次、产出一份不可变计划，三条路径只做"查表"。</p>
- *
- * <h3>计数口径必须与 {@code StringDecomposer} 完全一致</h3>
- * <p>解析器从左到右数<b>可视字符</b>：遇到 {@code §}+任意字符 → 原版会吞掉两个字符且不渲染，
- * 不计；代理对计 1；其余字符计 1。这个口径是 T1（把 gap 交回原版）与 L1（overlay 原版 FCS）
- * 能对齐"第 i 个字"的唯一依据。</p>
- *
- * <h3>边界处理（对应提案 §4.7）</h3>
- * <ul>
- *   <li>未闭合/超长/未知命名空间的标记：不消费，按原版"未知 § 码"处理（只吞 {@code §[}），
- *       正文照常可见 —— 绝不让文字消失。</li>
- *   <li>未知效果名：标记零宽吞掉、计入 {@link EffectPlan#invalidMarkers}，正文不受影响。</li>
- *   <li>{@code §r} 会清空全部自定义效果（与原版"完全重置"语义对齐）。</li>
- * </ul>
+ * 解析与渲染分离：测量 / String 绘制 / Component 逐帧 overlay 共用同一份不可变计划，
+ * 各自边解析边渲染迟早会出现"测量宽度 ≠ 绘制宽度"；计数口径必须与 {@code StringDecomposer} 一致
+ * （{@code §}+任意字符不计，代理对计 1）。边界：未闭合 / 超长 / 未知命名空间的标记不消费、只吞 {@code §[}，
+ * 绝不让文字消失；未知效果名零宽吞掉并计入 {@link EffectPlan#invalidMarkers}；{@code §r} 清空全部效果。
  */
 public final class TextEffectParser {
 
     private TextEffectParser() {}
 
-    /**
-     * 原文里是否存在<b>可被我们消费</b>的标记（快路径判断，不做分配）。
-     *
-     * <p>既认打开标记 {@code §[rrs:...]}，也认关闭标记 {@code §[/]} / {@code §[/grad]}：
-     * 折行后可能出现"只有关闭标记、没有打开标记"的尾部片段（{@code Font.split} 按 raw 下标
-     * 切块），如果只认打开标记，这种片段会漏到原版手里，最终把 {@code "/]"} 当正文画出来。</p>
-     *
-     * <p>必须校验"确实有闭合的 ']'"：否则 {@code "§[rrs:grad"（漏写右括号）} 这种文本会让
-     * T1 把 gap 又交回原版、T1 再次被触发 —— 无限递归。找不到闭合标记时返回 false，
-     * 原版按"未知 § 码"处理（只吞 {@code §[}），与提案 §4.7 的降级行为一致。</p>
-     */
+    /** 原文里是否存在可被我们消费的标记（快路径，不做分配）。
+     *  既认打开 {@code §[rrs:...]} 也认关闭 {@code §[/]} / {@code §[/grad]}：折行后可能出现只有
+     *  关闭标记的尾部片段；且必须校验"有闭合的 ']'"，否则漏写右括号会让 T1 无限递归。 */
     public static boolean hasMarkers(String text, int from) {
         if (text == null) return false;
         int cursor = Math.max(0, from);
@@ -92,7 +70,6 @@ public final class TextEffectParser {
                         String body = text.substring(i + 2, close);
                         int handled = handleMarker(body, visible, spans, open);
                         if (handled >= 0) {
-                            // 是我们的标记：把前面的文本 gap 收尾，然后跳过整个标记
                             invalid += handled;
                             if (i > gapStart) {
                                 parts.add(EffectPlan.Part.text(gapStart, i, gapOrdinal));
@@ -130,12 +107,8 @@ public final class TextEffectParser {
         return new EffectPlan(parts, spans, visible, hasRtl, invalid);
     }
 
-    // ── 标记处理 ─────────────────────────────────────────────────
-
-    /**
-     * @return {@code >= 0} 表示这是本命名空间的标记（已消费）；{@code -1} 表示不是我们的标记
-     *         （调用方按原版未知码处理）。
-     */
+    /** @return {@code >= 0} 表示是本命名空间的标记（已消费）；{@code -1} 表示不是我们的标记，
+     *  调用方按原版未知码处理。 */
     private static int handleMarker(String body, int visible,
                                     List<EffectSpan> spans, Deque<EffectSpan> open) {
         String trimmed = body.trim();
@@ -211,8 +184,6 @@ public final class TextEffectParser {
             if (span != null) span.visibleEnd = visible;
         }
     }
-
-    // ── 底层扫描工具 ──────────────────────────────────────────────
 
     /** 从 {@code from} 开始找 ']'，限制在 {@link TextEffectIds#MAX_MARKER_LENGTH} 内。 */
     private static int findMarkerEnd(String text, int from) {

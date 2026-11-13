@@ -29,9 +29,7 @@ import java.util.function.Consumer;
  */
 public class DegenerateCowEntity extends BaseDegenerateEntity {
 
-    // =========================================================================
     // C4 屠宰者暴冲
-    // =========================================================================
     private static final float RAGE_THRESHOLD = 0.5F;
     private static final int RAGE_DURATION = 200;
     private static final int RAGE_SPEED_DURATION = 200;
@@ -39,9 +37,7 @@ public class DegenerateCowEntity extends BaseDegenerateEntity {
     private boolean raging = false;
     private int rageCooldown = 0;
 
-    // =========================================================================
     // C5 血肉偿还
-    // =========================================================================
     private static final int SACRIFICE_COOLDOWN = 150;
     private static final float SACRIFICE_HEALTH_COST = 0.4F;
     private static final float SACRIFICE_DAMAGE_RATIO = 0.55F;
@@ -71,9 +67,7 @@ public class DegenerateCowEntity extends BaseDegenerateEntity {
                 .add(Attributes.FOLLOW_RANGE, 40.0D);
     }
 
-    // =========================================================================
     // 技能主循环
-    // =========================================================================
 
     @Override
     public void tick() {
