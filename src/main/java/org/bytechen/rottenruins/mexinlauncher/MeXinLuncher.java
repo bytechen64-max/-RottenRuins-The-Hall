@@ -1,4 +1,4 @@
-package org.bytechen.rottenruins.mexin;
+package org.bytechen.rottenruins.mexinlauncher;
 
 import cpw.mods.modlauncher.api.IEnvironment;
 import cpw.mods.modlauncher.api.ITransformationService;
@@ -84,6 +84,11 @@ public final class MeXinLuncher implements ITransformationService {
     @Override
     public void onLoad(@NotNull IEnvironment environment, @NotNull Set<String> otherServices)
             throws IncompatibleEnvironmentException {
+        // 摘除前先把本包（launch plugin 层）的类全部预加载：摘掉模块后，
+        // 这个类加载器就再也解析不到本模块里尚未加载的类了。
+        MeXinContainerTweak.preloadOwnClasses();
+        // 把自己从启动插件容器里摘掉，之后 FML 才会把同一个 jar 当模组加载
+        MeXinContainerTweak.apply(environment.getProperty(IEnvironment.Keys.GAMEDIR.get()).orElse(null));
         // 兼容开关：排查冲突时可 -Dmexin.disable=true 让本服务完全静默（不扫描、不注入）
         if (Boolean.getBoolean("mexin.disable")) {
             MeXinLog.info("已通过 -Dmexin.disable=true 关闭，本次不扫描也不注入");
@@ -113,6 +118,13 @@ public final class MeXinLuncher implements ITransformationService {
             // 扫描失败不能让游戏起不来：退化成"不注入任何方法"
             MeXinLog.error("扫描/初始化失败，本次不注入任何方法", t);
         }
+    }
+
+    @Override
+    public List<ITransformationService.Resource> beginScanning(@NotNull IEnvironment environment) {
+        // 模组扫描前再摘一次：onLoad 阶段启动插件层的 Configuration 可能还没进 completedLayers
+        MeXinContainerTweak.apply(environment.getProperty(IEnvironment.Keys.GAMEDIR.get()).orElse(null));
+        return List.of();
     }
 
     @Override

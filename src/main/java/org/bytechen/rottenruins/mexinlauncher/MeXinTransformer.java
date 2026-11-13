@@ -1,4 +1,4 @@
-package org.bytechen.rottenruins.mexin;
+package org.bytechen.rottenruins.mexinlauncher;
 
 import cpw.mods.modlauncher.api.ITransformer;
 import cpw.mods.modlauncher.api.ITransformerVotingContext;
@@ -29,11 +29,11 @@ import java.util.Set;
  * StackMapTable，ModLauncher 重新写盘时用 COMPUTE_MAXS 就够。</p>
  *
  * <p>本类运行在 <b>launch plugin 层</b>：不能引用模组自己的类，
- * {@link MeXinCall} 只用内部名字符串引用。</p>
+ * {@code MeXinCall} 只用内部名字符串引用。</p>
  */
 public final class MeXinTransformer implements ITransformer<ClassNode>, Opcodes {
 
-    /** {@link MeXinCall} 的内部名 —— 改类名时这里要同步。 */
+    /** {@code MeXinCall} 的内部名 —— 改类名时这里要同步。 */
     static final String CALL_INTERNAL = "org/bytechen/rottenruins/mexin/MeXinCall";
     static final String CALL_DESC = "L" + CALL_INTERNAL + ";";
     private static final String CALL_INIT_DESC = "(Ljava/lang/Object;)V";
@@ -163,7 +163,7 @@ public final class MeXinTransformer implements ITransformer<ClassNode>, Opcodes 
             return;
         }
         String expected = expectedHookDesc(spec, method);
-        if (!hookSignatureMatches(node, method, spec, expected)) {
+        if (!hookSignatureMatches(node, method, spec)) {
             MeXinLog.warn("钩子签名不匹配，跳过 " + spec + "\n  期望 " + expected
                     + "\n  实际 " + spec.hookDesc());
             return;
@@ -219,14 +219,15 @@ public final class MeXinTransformer implements ITransformer<ClassNode>, Opcodes 
 
     /**
      * 校验钩子签名。和"逐字符比对期望描述符"等价，但放宽了 {@code this} 槽：
-     * 同包注入时要往多个不同的类里插，钩子第一个参数只能写成它们的公共父类型
+     * 同包 / 子类注入时要往多个不同的类里插，钩子第一个参数只能写成它们的公共父类型
      * （最省事是 {@code Object}），所以这里按<b>可赋值性</b>判断，而不是要求正好等于目标类。
+     *
+     * <p>注意：<b>不能</b>因为"描述符正好等于按 targetClass 推出的期望值"就提前放行 ——
+     * 同一个包里可能有跟 targetClass 毫无继承关系的类也叫同名方法，那样注入进去就是
+     * {@code VerifyError: Bad type on operand stack}（{@code ALOAD 0} 的类型不匹配）。</p>
      */
     private boolean hookSignatureMatches(@NotNull ClassNode node, @NotNull MethodNode method,
-                                         @NotNull MeXinSpec spec, @NotNull String expected) {
-        if (expected.equals(spec.hookDesc())) {
-            return true;
-        }
+                                         @NotNull MeXinSpec spec) {
         Type[] declared = Type.getArgumentTypes(spec.hookDesc());
         Type[] targets = Type.getArgumentTypes(method.desc);
         boolean isStatic = (method.access & ACC_STATIC) != 0;
@@ -235,6 +236,7 @@ public final class MeXinTransformer implements ITransformer<ClassNode>, Opcodes 
             if (declared.length == 0) {
                 return false;
             }
+            // 无论描述符是否"看起来正好对"，这个类的实例都必须能塞进钩子的第一个参数
             if (!thisParamAccepts(node.name, declared[0])) {
                 return false;
             }

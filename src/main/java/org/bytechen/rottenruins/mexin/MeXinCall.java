@@ -8,7 +8,7 @@ package org.bytechen.rottenruins.mexin;
  * → 换成新值。{@link MeXinType#MIX_BEFORE_ENTER} / {@link MeXinType#MIX_BEFORE_RETURN}
  * 的钩子拿不到它（只读观察）。</p>
  *
- * <p>这个类的内部名/描述符被 {@link MeXinTransformer} 以字符串形式写死用于发射字节码，
+ * <p>这个类的内部名/描述符被 {@code MeXinTransformer} 以字符串形式写死用于发射字节码，
  * 改名时必须同步改那边（{@code MeXinTransformer#CALL_DESC}）。</p>
  *
  * @param <T> 原方法的返回类型（基本类型为装箱类型）

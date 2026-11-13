@@ -1,4 +1,4 @@
-package org.bytechen.rottenruins.mexin;
+package org.bytechen.rottenruins.mexinlauncher;
 
 import org.jetbrains.annotations.NotNull;
 

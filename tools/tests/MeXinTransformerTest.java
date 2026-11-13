@@ -1,7 +1,7 @@
 import org.bytechen.rottenruins.mexin.MeXinSelfTest;
-import org.bytechen.rottenruins.mexin.MeXinSpec;
-import org.bytechen.rottenruins.mexin.MeXinTransformer;
-import org.bytechen.rottenruins.mexin.MeXinType;
+import org.bytechen.rottenruins.mexinlauncher.MeXinSpec;
+import org.bytechen.rottenruins.mexinlauncher.MeXinTransformer;
+import org.bytechen.rottenruins.mexinlauncher.MeXinType;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
@@ -146,6 +146,16 @@ public final class MeXinTransformerTest {
         check("includmy：更深的子包 Baz 被注入", baz, baz);
         check("includmy：钩子自己所在类也被注入", hooks, hooks);
         check("includmy：总包外的 Outside 不受影响", !outside, outside);
+
+        // 类型不相容必须跳过：钩子第一个参数写成 Foo，同包里的 Bar 不能注入
+        // （否则 ALOAD 0 的类型对不上，加载时就是 VerifyError: Bad type on operand stack）
+        MeXinSpec typed = new MeXinSpec(hookOwner, "value", "", "()I", MeXinType.BODY, false, root,
+                hookOwner, "onValue", "(Ldemo/root/Foo;" + callDesc + ")V");
+        MeXinTransformer typedTransformer = MeXinTransformer.forTest(List.of(typed), packageIndex);
+        boolean fooTyped = injectsHook(synthetic(root + "/Foo"), typedTransformer);
+        boolean barTyped = injectsHook(synthetic(root + "/sub/Bar"), typedTransformer);
+        check("includmy：this 类型相容的 Foo 被注入", fooTyped, fooTyped);
+        check("includmy：this 类型不相容的 Bar 被跳过", !barTyped, barTyped);
     }
 
     /** 造一个只有 {@code public int value() { return 1; }} 的类（没有注解、没有依赖）。 */

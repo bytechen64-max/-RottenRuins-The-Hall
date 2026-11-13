@@ -1,4 +1,4 @@
-package org.bytechen.rottenruins.mexin;
+package org.bytechen.rottenruins.mexinlauncher;
 
 /**
  * MeXin 的日志。

@@ -7,11 +7,18 @@ import java.lang.annotation.Target;
 
 /**
  * <b>MeXin</b> —— 简化版 Mixin：注解写在<b>钩子方法</b>上（不是类上），由 coremod
- * （{@link MeXinLuncher}）在类加载时把钩子调用注入到目标方法里。
+ * （{@code MeXinLuncher}）在类加载时把钩子调用注入到目标方法里。
  *
  * <p>钩子签名按顺序：{@code [目标实例（目标方法非静态时必须）] [目标方法的全部参数...]
  * [MeXinCall（仅 BODY）]}；钩子必须是 {@code public static}。返回值：BODY 与两个 MIX 模式为
  * {@code void}，EXCHANGE 与原方法相同。</p>
+ *
+ * <p><b>单 jar</b>：本 jar provides {@code ITransformationService}，于是一方面被 ModLauncher 当启动插件
+ * （MeXin 才能在类加载时改字节码），另一方面又被 FML 从 mods 扫描里剔除。启动时
+ * ① 用 Unsafe 从 {@code ModDirTransformerDiscoverer.found} 里删掉自身；
+ * ② 用 Unsafe 从各层 {@code Configuration} 的 {@code nameToModule}/{@code modules} 里删掉自身模块
+ * （否则同一个 jar 的两个模块导出同一个包 → {@code java.lang.module.ResolutionException}）。
+ * 摘除前会把 mexinlauncher 包的类全部预加载，因为摘掉模块后该加载器就解析不到新类了。</p>
  *
  * <ul>
  *   <li><b>覆盖范围</b>：默认只改 {@code clazz}/{@code clazzname} 那一个类；{@code includextend}

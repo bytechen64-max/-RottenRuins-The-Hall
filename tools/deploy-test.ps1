@@ -1,13 +1,20 @@
 # Deploy build/libs/rotten_ruins-<ver>-all.jar into the "111" test instance, refusing to run while
 # that instance's Minecraft is still open.
 #
-# WHY this guard exists:
+# ONE jar only: the jar provides cpw.mods.modlauncher.api.ITransformationService (so ModLauncher loads
+# it as a launch plugin), and MeXinLuncher#onLoad then (a) drops itself from
+# ModDirTransformerDiscoverer.found so FML's ModsFolderLocator no longer skips it, and (b) removes its
+# own module from the already-built ModuleLayer Configurations via Unsafe, so the game layer does not
+# see two modules exporting the same packages (that would be java.lang.module.ResolutionException).
+# Old two-jar leftovers must not linger: a stray "rotten_ruins-mexin-launcher-*.jar" would also be
+# loaded and would collide.
+#
+# WHY the running-process guard exists:
 #   Windows lets you overwrite a jar that a running JVM has open, but the overwrite is in-place
 #   (truncate + rewrite). Any class the JVM has not loaded yet then fails with
 #       java.lang.NoClassDefFoundError: org/bytechen/rottenruins/.../SomeClass
 #   even though the jar on disk is complete. That is the real cause of three earlier "missing
-#   class" crashes (GroundingStakeBlock$1 / HallInfectionTracker / magic.bases.State):
-#   the new jar was copied into mods/ while the game was still running.
+#   class" crashes (GroundingStakeBlock$1 / HallInfectionTracker / magic.bases.State).
 #
 # Usage:
 #   .\tools\deploy-test.ps1              # deploy (game must be closed)
@@ -40,7 +47,6 @@ $running = Get-CimInstance Win32_Process -Filter "Name='javaw.exe' or Name='java
     }
 if ($running -and -not $Force) {
     if ($WhatIf) {
-        # -WhatIf 不写文件，所以游戏开着也能检查，只是提醒一句
         Write-Host ("note: game is running (PID {0}) - a real deploy would be refused." -f ($running.ProcessId -join ', ')) -ForegroundColor Yellow
     } else {
         Write-Host ("Game is running (PID {0}) - refusing to overwrite the jar in mods/." -f ($running.ProcessId -join ', ')) -ForegroundColor Red
@@ -81,6 +87,18 @@ if ($missing.Count -gt 0) {
 # ---------- 3) backup + install ----------
 if ($WhatIf) { Write-Host "[WhatIf] checks passed, nothing copied." -ForegroundColor Yellow; exit 0 }
 
+# Obsolete leftovers: the two-jar launch-plugin jar and the single-jar copy cache.
+Get-ChildItem (Join-Path $Instance "mods") -Filter "rotten_ruins-mexin-launcher-*.jar" -ErrorAction SilentlyContinue |
+    ForEach-Object {
+        Move-Item $_.FullName "$($_.FullName).old" -Force
+        Write-Host ("moved stale launch-plugin jar -> {0}.old" -f $_.Name) -ForegroundColor Yellow
+    }
+$loaderCache = Join-Path $Instance ".mexin-loader"
+if (Test-Path $loaderCache) {
+    Move-Item $loaderCache "$loaderCache.old" -Force
+    Write-Host "moved obsolete .mexin-loader -> .mexin-loader.old" -ForegroundColor Yellow
+}
+
 if (Test-Path $dst) {
     $bak = "$dst.bak"
     Copy-Item $dst $bak -Force
@@ -88,4 +106,4 @@ if (Test-Path $dst) {
 }
 Copy-Item $built $dst -Force
 Get-Item $dst | Select-Object LastWriteTime, Length, Name | Format-Table -AutoSize
-Write-Host "Deployed. You can start the game now." -ForegroundColor Green
+Write-Host "Deployed (single jar). You can start the game now." -ForegroundColor Green
