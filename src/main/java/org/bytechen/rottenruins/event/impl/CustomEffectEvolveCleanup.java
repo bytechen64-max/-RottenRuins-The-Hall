@@ -6,7 +6,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.bytechen.infcore.api.event.EntityEvolveEvent;
+import org.bytechen.rottenruins.api.infection.event.EntityEvolveEvent;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.registry.effect.customEffect.CustomEffects;
 import org.bytechen.rottenruins.overworld.registry.effect.customEffect.RegisterCustomEffect;

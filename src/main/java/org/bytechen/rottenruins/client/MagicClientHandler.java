@@ -13,8 +13,8 @@ import org.bytechen.rottenruins.client.gui.SpellLoadoutScreen;
 import org.bytechen.rottenruins.client.gui.SpellWheelScreen;
 import org.bytechen.rottenruins.client.gui.wheel.WheelClientState;
 import org.bytechen.rottenruins.client.gui.wheel.WheelData;
-import org.bytechen.rottenruins.network.c2s.MagicPoolActionPacket;
-import org.bytechen.rottenruins.network.c2s.WheelActionPacket;
+import org.bytechen.rottenruins.platform.forge.magic.network.c2s.MagicPoolActionPacket;
+import org.bytechen.rottenruins.platform.forge.magic.network.c2s.WheelActionPacket;
 import org.lwjgl.glfw.GLFW;
 
 /**

@@ -2,7 +2,7 @@ package org.bytechen.rottenruins.overworld.registry.entities.population.corrupti
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import org.bytechen.infcore.core.evolution.EvolutionManager;
+import org.bytechen.rottenruins.gameplay.infection.evolution.EvolutionManager;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
@@ -89,7 +89,7 @@ public abstract class BaseHostEntity extends BaseCorruptionEntity {
     @Override
     public void tick() {
         super.tick();
-        if (this.level().isClientSide || !this.isAlive()) return;
+        if (this.level().isClientSide || this.isFakeDying() || !this.isAlive()) return;
         tickSpit();
         tickHordeCharge();
     }
@@ -200,7 +200,7 @@ public abstract class BaseHostEntity extends BaseCorruptionEntity {
     public void onKilledEntity(Entity killed) {
         super.onKilledEntity(killed);
 
-        if (this.level().isClientSide || !this.isAlive()) return;
+        if (this.level().isClientSide || this.isFakeDying() || !this.isAlive()) return;
         if (this.getKillCount() != EVOLVE_KILL_THRESHOLD) return;
         if (!(this.level() instanceof ServerLevel serverLevel)) return;
 

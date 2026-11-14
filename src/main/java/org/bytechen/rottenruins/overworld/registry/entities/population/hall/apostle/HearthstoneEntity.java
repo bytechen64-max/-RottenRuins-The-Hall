@@ -24,9 +24,9 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.bytechen.infcore.api.IInfectedEntity;
-import org.bytechen.infcore.api.goal.InfectedTargetGoal;
-import org.bytechen.infcore.core.difficulty.DifficultyHelper;
+import org.bytechen.rottenruins.api.infection.IInfectedEntity;
+import org.bytechen.rottenruins.api.infection.goal.InfectedTargetGoal;
+import org.bytechen.rottenruins.gameplay.infection.difficulty.DifficultyHelper;
 import org.bytechen.rottenruins.event.impl.HearthstoneAuraEvents;
 import org.bytechen.rottenruins.overworld.difficulty.DifficultyScaleProfile;
 import org.bytechen.rottenruins.overworld.registry.EntityTypeRegistry;
@@ -309,7 +309,7 @@ public class HearthstoneEntity extends BaseApostleEntity {
 
     @Override
     protected void registerGoals() {
-        this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
+        this.targetSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .targetOtherInfected(true)   // 王庭 vs 腐化：跨阵营索敌（同阵营仍被 infcore 过滤）
                 .range(FOLLOW_RANGE)
                 .mustSee(false)

@@ -5,7 +5,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.registry.RegisterBlock;
-import org.bytechen.infcore.core.blockspread.BlockSpreadEntry;
+import org.bytechen.rottenruins.core.infection.blockspread.BlockSpreadEntry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.List;
  * 只需在对应数组里加 vanilla 方块，循环会自动生成传播条目。
  * 多个 vanilla 方块 → 同一个 hall 方块时，只需把 vanilla 方块加进数组即可。
  */
-public class BlockSpreadDataProvider extends org.bytechen.infcore.core.datagen.BlockSpreadDataProvider {
+public class BlockSpreadDataProvider extends org.bytechen.rottenruins.datagen.infection.BlockSpreadDataProvider {
     public static final String SPREAD_KEY_DEFAULT = "spread";
 
     /** 传播到 hall_grass 的 vanilla 方块 */

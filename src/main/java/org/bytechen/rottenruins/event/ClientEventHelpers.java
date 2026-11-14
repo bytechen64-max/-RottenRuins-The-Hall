@@ -17,6 +17,15 @@ import software.bernie.geckolib.core.animation.AnimationState;
 public class ClientEventHelpers {
 
     public static void setupClientRenderLayers() {
+        ClientRenderRegistry.registerModelBehavior(EntityTypeRegistry.ABNORMAL_SQUID.get(), new IGeoModelBehavior() {
+            @Override
+            public void onModelCustomAnimations(GeoBaseModel<?> model, LivingEntity entity,
+                                                long uniqueId, AnimationState<?> state) {
+                CoreGeoBone root = model.getAnimationProcessor().getBone("group");
+                if (root != null) root.setRotX(-Mth.rotLerp(state.getPartialTick(), entity.xRotO,
+                        entity.getXRot()) * Mth.DEG_TO_RAD);
+            }
+        });
         // 注册发光图层 —— InfPlayer
         ClientRenderRegistry.registerRenderLayer(
                 EntityTypeRegistry.INF_PLAYER.get(),
@@ -51,6 +60,9 @@ public class ClientEventHelpers {
         ClientRenderRegistry.registerRenderLayer(
                 EntityTypeRegistry.COLLAPSAR.get(),
                 new GlowLayer("textures/entity/collapsar_glow_layer.png"));
+        ClientRenderRegistry.registerRenderLayer(
+                EntityTypeRegistry.ABNORMAL_SQUID.get(),
+                new GlowLayer("textures/entity/abnormal_squid_glow_layer.png"));
 
 
 

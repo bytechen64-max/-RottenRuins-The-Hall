@@ -9,15 +9,14 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.level.Level;
-import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.difficulty.HallDifficultyAttributes;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.ChaseLockGoal;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.FaceTargetGoal;
 import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.infected.BaseInfectedEntity;
 import org.bytechen.rottenruins.utils.TickUtils;
-import org.bytechen.infcore.api.goal.InfectedTargetGoal;
-import org.bytechen.infcore.core.evolution.EvolutionManager;
+import org.bytechen.rottenruins.api.infection.goal.InfectedTargetGoal;
+import org.bytechen.rottenruins.gameplay.infection.evolution.EvolutionManager;
 
 import java.util.function.Consumer;
 
@@ -65,7 +64,7 @@ public class MonolithEntity extends BaseUlceratedEntity {
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 80)
+                .add(Attributes.MAX_HEALTH, 100)
                 .add(Attributes.MOVEMENT_SPEED, 0.2)
                 .add(Attributes.ATTACK_DAMAGE, 20)
                 .add(Attributes.ARMOR, 10)
@@ -78,7 +77,7 @@ public class MonolithEntity extends BaseUlceratedEntity {
         // 索敌：与其它王庭生物一致 —— goalSelector 优先级 2，40 格内无需视线
         // 追击占位（只占 MOVE）：位移与出手由 AbstractRottenEntity#tickChase 统一负责
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
-        this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
+        this.targetSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .targetOtherInfected(true)   // 王庭 vs 腐化：跨阵营索敌（同阵营仍被 infcore 过滤）
                 .range(40.0)
                 .mustSee(false)

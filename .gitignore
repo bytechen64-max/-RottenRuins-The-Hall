@@ -38,6 +38,8 @@ src/generated/resources/.cache/
 
 # Cache
 *.cache
+__pycache__/
+*.pyc
 
 # Misc
 *.zip

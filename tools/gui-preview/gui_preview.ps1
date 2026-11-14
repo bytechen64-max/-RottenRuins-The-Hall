@@ -85,6 +85,7 @@ if (-not (Test-Path $asciiFont)) {
 
 $baseSources = @(
     'src\main\java\org\bytechen\rottenruins\client\gui\WandHudGeometry.java',
+    'src\main\java\org\bytechen\rottenruins\client\gui\WandHudPicker.java',
     'src\main\java\org\bytechen\rottenruins\client\gui\WandHudMotion.java',
     'src\main\java\org\bytechen\rottenruins\client\gui\WandHudVisuals.java',
     'tools\gui-preview\MiniJson.java',
@@ -110,7 +111,7 @@ function Get-SceneClass([string]$name) {
 }
 
 if ($All) {
-    $scenes = @('smoke', 'tooltip', 'collapsar_bar', 'gui_effects', 'tab_divider', 'difficulty',
+    $scenes = @('smoke', 'tooltip', 'collapsar_bar', 'gui_effects', 'creative_inventory', 'difficulty',
                 'spell_wheel', 'spell_loadout')
 } else {
     $scenes = @($Scene)

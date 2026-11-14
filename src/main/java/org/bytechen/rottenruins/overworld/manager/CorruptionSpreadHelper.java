@@ -35,10 +35,10 @@ public final class CorruptionSpreadHelper {
             if (!level.isLoaded(pos)) continue;
 
             BlockState state = level.getBlockState(pos);
-            if (!org.bytechen.infcore.core.blockspread.BlockSpreadManager.hasSpreadRule(state, SPREAD_TYPE)) {
+            if (!org.bytechen.rottenruins.gameplay.infection.blockspread.BlockSpreadManager.hasSpreadRule(state, SPREAD_TYPE)) {
                 continue;
             }
-            if (org.bytechen.infcore.core.blockspread.BlockSpreadManager.applySpread(level, pos, SPREAD_TYPE)) {
+            if (org.bytechen.rottenruins.gameplay.infection.blockspread.BlockSpreadManager.applySpread(level, pos, SPREAD_TYPE)) {
                 spread++;
             }
         }

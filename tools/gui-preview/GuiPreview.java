@@ -30,7 +30,7 @@ public final class GuiPreview {
     public static void main(String[] args) throws Exception {
         if (args.length < 2) {
             System.out.println("usage: GuiPreview <scene> <outDir> [timeSeconds] [width] [height] [scale]");
-            System.out.println("       scene 例：smoke / tooltip / collapsar_bar / gui_effects / tab_divider");
+            System.out.println("       scene 例：smoke / tooltip / collapsar_bar / gui_effects / creative_inventory");
             System.exit(2);
         }
         String scene = args[0];

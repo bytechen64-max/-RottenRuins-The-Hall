@@ -17,9 +17,9 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.overworld.registry.items.magic.bases.MagicHandle;
-import org.bytechen.rottenruins.overworld.registry.items.magic.bases.StaffBase;
-import org.bytechen.rottenruins.overworld.registry.items.magic.its.SuppressionField;
+import org.bytechen.rottenruins.gameplay.magic.casting.MagicHandle;
+import org.bytechen.rottenruins.content.magic.base.StaffBase;
+import org.bytechen.rottenruins.content.magic.spell.SuppressionField;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 

@@ -4,6 +4,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import org.bytechen.rottenruins.overworld.registry.CapabilityRegistry;
 import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.base.RottenFaction;
 
 /**
  * 威胁点数的读写入口。
@@ -60,9 +61,10 @@ public final class ThreatHelper {
     }
 
     /**
-     * 该实体是否属于王庭阵营（{@link AbstractRottenEntity} 即为王庭生物）。
+     * 该实体是否属于王庭阵营。腐化 / 死亡生物也继承 AbstractRottenEntity，不能仅凭基类判断。
      */
     public static boolean isHallCreature(Entity entity) {
-        return entity instanceof AbstractRottenEntity;
+        return entity instanceof AbstractRottenEntity rotten
+                && rotten.getFaction() == RottenFaction.HALL;
     }
 }

@@ -76,7 +76,7 @@ public class DegenerateVillagerEntity extends BaseDegenerateEntity {
     @Override
     public void tick() {
         super.tick();
-        if (this.level().isClientSide || !this.isAlive()) return;
+        if (this.level().isClientSide || this.isFakeDying() || !this.isAlive()) return;
 
         // 原版的 15 tick 酸球保留（近程骚扰），叠加新的技能节奏
         if (this.tickCount % 15 == 0) {

@@ -7,7 +7,9 @@
   "refmap": "rotten_ruins.refmap.json",
   "mixins": [
     "MixinAnimationController",
-    "SilentDaylightCooldownMixin"
+    "SilentDaylightCooldownMixin",
+    "FoodDataMixin",
+    "PlayerNaturalHealingMixin"
   ],
   "client": [
     "CosmicAfterLevelMixin",
@@ -16,6 +18,8 @@
     "GameRendererOculusMixin",
     "ScreenShakeMixin",
     "ItemInHandRendererMixin",
+    "ItemSlashThirdPersonMixin",
+    "SlashItemCaptureMixin",
     "LevelRendererEmbeddiumMixin",
     "ItemRendererMixin",
     "MixinItemRendererCosmic",

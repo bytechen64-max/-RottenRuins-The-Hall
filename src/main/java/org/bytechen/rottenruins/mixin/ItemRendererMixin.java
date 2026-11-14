@@ -40,6 +40,7 @@ public abstract class ItemRendererMixin {
     private void onBeforePopPose(ItemStack stack, ItemDisplayContext context, boolean leftHand,
                                  PoseStack poseStack, MultiBufferSource buffer, int combinedLight,
                                  int combinedOverlay, BakedModel model, CallbackInfo ci) {
+        org.bytechen.rottenruins.client.combat.slash.trail.anchors.TrackedSlashTrails.capture(stack, context, poseStack);
         OutlineGlintRenderer.renderGlintPass(stack, context, poseStack, buffer, combinedLight, combinedOverlay, model);
         // 描边：屏幕空间"剪影遮罩 + 环形膨胀"，替代了旧的"放大壳"。
         // 必须在这里调用 —— 物品自己的 pose 还在栈上，遮罩要重放这个变换。

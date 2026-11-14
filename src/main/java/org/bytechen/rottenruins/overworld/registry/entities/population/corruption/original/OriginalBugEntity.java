@@ -65,7 +65,7 @@ public class OriginalBugEntity extends BaseOriginalEntity {
     @Override
     public void tick() {
         super.tick();
-        if (this.level().isClientSide || !this.isAlive()) return;
+        if (this.level().isClientSide || this.isFakeDying() || !this.isAlive()) return;
 
         if (sprayCooldown > 0) sprayCooldown--;
 

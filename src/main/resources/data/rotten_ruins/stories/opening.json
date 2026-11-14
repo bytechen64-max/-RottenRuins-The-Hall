@@ -1,0 +1,11 @@
+{
+  "timing": "readable",
+  "pages": [
+    {
+      "text": {
+        "translate": "rotten_ruins.story.opening"
+      },
+      "hold_ticks": 240
+    }
+  ]
+}

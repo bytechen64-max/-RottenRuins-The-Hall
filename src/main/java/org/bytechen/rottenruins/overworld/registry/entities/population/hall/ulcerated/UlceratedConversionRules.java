@@ -4,7 +4,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.registry.EntityTypeRegistry;
-import org.bytechen.infcore.core.evolution.EvolutionManager;
+import org.bytechen.rottenruins.gameplay.infection.evolution.EvolutionManager;
 import org.bytechen.rottenruins.overworld.registry.entities.base.RottenFaction;
 
 /**

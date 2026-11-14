@@ -6,7 +6,7 @@ import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.registry.EntityTypeRegistry;
 import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionEntityTypes;
 import org.bytechen.rottenruins.overworld.registry.entities.base.RottenFaction;
-import org.bytechen.infcore.core.evolution.EvolutionEntry;
+import org.bytechen.rottenruins.core.infection.evolution.EvolutionEntry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +22,7 @@ import java.util.List;
  *       （迁自 {@code BearerManager} 的孕育者进阶）</li>
  * </ul>
  */
-public class EvolutionDataProvider extends org.bytechen.infcore.core.datagen.EvolutionDataProvider {
+public class EvolutionDataProvider extends org.bytechen.rottenruins.datagen.infection.EvolutionDataProvider {
 
     public EvolutionDataProvider(PackOutput packOutput) {
         super(packOutput, HallMod.MODID, "default");
@@ -38,6 +38,7 @@ public class EvolutionDataProvider extends org.bytechen.infcore.core.datagen.Evo
         String corruptionInf = RottenFaction.CORRUPTION.infectionRuleType().getPath();
         String corruptionEvo = RottenFaction.CORRUPTION.evolutionRuleType().getPath();
 
+        // ==================== 王庭：击杀感染 ====================
         entries.add(entry(hallInf, EntityType.PLAYER, false, false,
                 List.of(target(EntityTypeRegistry.INF_PLAYER.get(), 100))));
         entries.add(entry(hallInf, EntityType.SKELETON, false, false,
@@ -51,11 +52,17 @@ public class EvolutionDataProvider extends org.bytechen.infcore.core.datagen.Evo
         entries.add(entry(hallInf, CorruptionEntityTypes.CORRUPTION_SKELETON.get(), false, false,
                 List.of(target(EntityTypeRegistry.INF_SKELETON.get(), 100))));
 
+        // 斥候：连续在水中满 5 秒即请求此规则，与索敌和附近同伴数量无关。
+        entries.add(entry(hallEvo, EntityTypeRegistry.SCOUT.get(), false, false,
+                List.of(target(EntityTypeRegistry.ABNORMAL_SQUID.get(), 100))));
+
+        // ==================== 王庭：巨碑进阶 ====================
         // 注意：同一 source 的两条规则会互相覆盖，必须写成一条 entry + 两个 target。
         entries.add(entry(hallEvo, EntityTypeRegistry.MONOLITH.get(), false, false,
                 List.of(target(EntityTypeRegistry.BONECRUSHER.get(), 50),
                         target(EntityTypeRegistry.HEAVY_BOMB.get(), 50))));
 
+        // ==================== 腐化：同化感染（corruption AssimilationMapManager.loadDefaults） ====================
         entries.add(entry(corruptionInf, EntityType.BAT, false, false,
                 List.of(target(CorruptionEntityTypes.CORRUPTION_BAT.get(), 100))));
         entries.add(entry(corruptionInf, EntityType.PIG, false, false,
@@ -80,6 +87,7 @@ public class EvolutionDataProvider extends org.bytechen.infcore.core.datagen.Evo
         entries.add(entry(corruptionInf, EntityType.PLAYER, false, false,
                 List.of(target(CorruptionEntityTypes.CORRUPTION_PLAYER.get(), 100))));
 
+        // ==================== 腐化：感染生物击杀进阶（3 kills -> degenerate） ====================
         // 同化种击杀 3 个生物后进化为对应的腐化种（宿主家族 -> 腐化家族）。
         // 没有对应腐化种的（骷髅/狼/蝙蝠/鸡/玩家/骨堆）不配置规则，applyEvolution 自然不触发。
         entries.add(entry(corruptionEvo, CorruptionEntityTypes.CORRUPTION_ZOMBIE.get(), false, false,
@@ -91,6 +99,7 @@ public class EvolutionDataProvider extends org.bytechen.infcore.core.datagen.Evo
         entries.add(entry(corruptionEvo, CorruptionEntityTypes.CORRUPTION_VILLAGER.get(), false, false,
                 List.of(target(CorruptionEntityTypes.DEGENERATE_VILLAGER.get(), 100))));
 
+        // ==================== 腐化：孕育者进阶（corruption BearerManager） ====================
         entries.add(entry(corruptionEvo, CorruptionEntityTypes.BEARER.get(), false, false,
                 List.of(target(CorruptionEntityTypes.LONG_ARM_BEAST.get(), 50),
                         target(CorruptionEntityTypes.SHOCKER.get(), 50))));

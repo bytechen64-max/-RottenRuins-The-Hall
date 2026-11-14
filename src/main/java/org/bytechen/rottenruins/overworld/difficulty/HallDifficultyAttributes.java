@@ -15,8 +15,8 @@ import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.infcore.api.IInfectedEntity;
-import org.bytechen.infcore.core.difficulty.DifficultyHelper;
+import org.bytechen.rottenruins.api.infection.IInfectedEntity;
+import org.bytechen.rottenruins.gameplay.infection.difficulty.DifficultyHelper;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;

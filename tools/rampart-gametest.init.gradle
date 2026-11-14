@@ -1,0 +1,27 @@
+gradle.beforeProject { rampartProject ->
+    rampartProject.afterEvaluate {
+        if (rampartProject.extensions.findByName('minecraft') != null) {
+            rampartProject.minecraft.runs.named('gameTestServer').configure {
+                workingDirectory rampartProject.file('build/rampart-game-test')
+                property 'forge.enabledGameTestNamespaces', 'rotten_ruins_rampart_tests'
+                args '--universe', rampartProject.file('build/rampart-game-test/worlds').absolutePath, '--world', 'rampart-world'
+            }
+        }
+    }
+    rampartProject.tasks.configureEach { rampartTask ->
+        if (rampartTask.name == 'runGameTestServer') {
+            dependsOn 'patchModJars'
+            doFirst {
+                rampartProject.file('build/rampart-game-test').mkdirs()
+                rampartProject.copy {
+                    from rampartProject.file('build/patched-mods')
+                    into rampartProject.file('build/rampart-game-test/mods')
+                }
+                rampartProject.copy {
+                    from rampartProject.file('run/eula.txt')
+                    into rampartProject.file('build/rampart-game-test')
+                }
+            }
+        }
+    }
+}

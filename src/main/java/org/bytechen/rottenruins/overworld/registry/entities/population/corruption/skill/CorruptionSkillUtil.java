@@ -16,7 +16,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import org.bytechen.infcore.api.IInfectedEntity;
+import org.bytechen.rottenruins.api.infection.IInfectedEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.base.RottenFaction;
 import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionEntityTypes;
 import net.minecraft.world.entity.player.Player;
@@ -151,7 +151,7 @@ public final class CorruptionSkillUtil {
         if (candidate == null || candidate == attacker) return false;
         if (!(candidate instanceof LivingEntity living) || !living.isAlive()) return false;
         if (living instanceof IInfectedEntity infected
-                && RottenFaction.isOurs(infected.getInfectionType())) return false;
+                && RottenFaction.isCorruption(infected.getInfectionType())) return false;
         if (living instanceof Player player && (player.isCreative() || player.isSpectator())) return false;
         return true;
     }
@@ -161,7 +161,7 @@ public final class CorruptionSkillUtil {
         List<LivingEntity> result = new ArrayList<>();
         AABB area = source.getBoundingBox().inflate(radius);
         for (LivingEntity e : source.level().getEntitiesOfClass(LivingEntity.class, area)) {
-            if (isValidTarget(source, e)) result.add(e);
+            if (isValidTarget(source, e) && source.distanceToSqr(e) <= radius * radius) result.add(e);
         }
         result.sort(Comparator.comparingDouble(source::distanceToSqr));
         return result;

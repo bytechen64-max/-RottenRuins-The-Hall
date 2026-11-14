@@ -3,8 +3,69 @@
   "generator": {
     "type": "minecraft:noise",
     "biome_source": {
-      "type": "minecraft:fixed",
-      "biome": "rotten_ruins:flesh_marrow"
+      "type": "minecraft:multi_noise",
+      "biomes": [
+        {
+          "biome": "rotten_ruins:hall_ocean",
+          "parameters": {
+            "continentalness": [
+              -2.0,
+              0.05
+            ],
+            "depth": [
+              -2.0,
+              2.0
+            ],
+            "erosion": [
+              -2.0,
+              2.0
+            ],
+            "humidity": [
+              -2.0,
+              2.0
+            ],
+            "offset": 0.0,
+            "temperature": [
+              -2.0,
+              2.0
+            ],
+            "weirdness": [
+              -2.0,
+              2.0
+            ]
+          }
+        },
+        {
+          "biome": "rotten_ruins:flesh_marrow",
+          "parameters": {
+            "continentalness": [
+              0.05,
+              2.0
+            ],
+            "depth": [
+              -2.0,
+              2.0
+            ],
+            "erosion": [
+              -2.0,
+              2.0
+            ],
+            "humidity": [
+              -2.0,
+              2.0
+            ],
+            "offset": 0.0,
+            "temperature": [
+              -2.0,
+              2.0
+            ],
+            "weirdness": [
+              -2.0,
+              2.0
+            ]
+          }
+        }
+      ]
     },
     "settings": "rotten_ruins:flesh_marrow"
   }

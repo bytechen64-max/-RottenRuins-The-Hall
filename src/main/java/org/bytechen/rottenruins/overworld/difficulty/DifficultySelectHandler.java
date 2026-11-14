@@ -8,7 +8,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.network.NetworkHelper;
 import org.bytechen.rottenruins.network.s2c.S2COpenDifficultySelectPacket;
-import org.bytechen.infcore.core.difficulty.DifficultyHelper;
+import org.bytechen.rottenruins.gameplay.infection.difficulty.DifficultyHelper;
 
 /**
  * 难度选择流程的服务器端处理。

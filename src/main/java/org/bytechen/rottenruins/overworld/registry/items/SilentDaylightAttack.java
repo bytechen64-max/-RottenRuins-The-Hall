@@ -16,8 +16,8 @@ import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.compat.BCCoreCompat;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.SwordAuraEntity;
-import org.bytechen.rottenruins.utils.ModUtils;
 import org.bytechen.rottenruins.utils.SpellDamageUtil;
+import org.bytechen.rottenruins.utils.ModUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;

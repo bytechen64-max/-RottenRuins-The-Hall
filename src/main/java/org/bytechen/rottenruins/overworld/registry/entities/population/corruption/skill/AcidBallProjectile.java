@@ -1,6 +1,5 @@
 package org.bytechen.rottenruins.overworld.registry.entities.population.corruption.skill;
 
-import org.bytechen.infcore.api.IInfectedEntity;
 import org.bytechen.rottenruins.client.entity.IBillboardRenderable;
 import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionEffects;
 import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractCorruptionProjectile;

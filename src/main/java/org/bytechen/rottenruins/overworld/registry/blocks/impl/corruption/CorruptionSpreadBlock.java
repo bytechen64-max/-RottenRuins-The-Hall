@@ -1,14 +1,15 @@
 package org.bytechen.rottenruins.overworld.registry.blocks.impl.corruption;
 
+import org.bytechen.rottenruins.utils.ModUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import org.bytechen.infcore.api.block.ISpreadBlock;
-import org.bytechen.infcore.core.blockspread.SpreadHelper;
-import org.bytechen.rottenruins.utils.ModUtils;
+import org.bytechen.rottenruins.api.infection.block.ISpreadBlock;
+import org.bytechen.rottenruins.gameplay.infection.blockspread.SpreadHelper;
+import org.bytechen.rottenruins.HallMod;
 
 /**
  * 腐化扩散方块 —— 与王庭 {@code AbstractSpreadBlock} 相同的自我扩散逻辑。

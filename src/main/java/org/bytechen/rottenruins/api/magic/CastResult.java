@@ -1,5 +1,6 @@
 package org.bytechen.rottenruins.api.magic;
 
+
 /**
  * 一次释放请求的结果。由 {@code MagicHandle} 返回，也用于
  * {@link MagicCastEvent.Post}。

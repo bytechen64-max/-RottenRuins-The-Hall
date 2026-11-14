@@ -29,7 +29,7 @@ import org.bytechen.rottenruins.config.data.MeteorShowerConfig;
 import org.bytechen.rottenruins.overworld.manager.BlockSpreadManager;
 import org.bytechen.rottenruins.overworld.registry.RegisterBlock;
 import org.bytechen.rottenruins.utils.entity.EntityParticleUtils;
-import org.bytechen.infcore.api.IInfectedEntity;
+import org.bytechen.rottenruins.api.infection.IInfectedEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;

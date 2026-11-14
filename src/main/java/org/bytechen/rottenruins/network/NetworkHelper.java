@@ -3,12 +3,12 @@ package org.bytechen.rottenruins.network;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.network.all.UniversalPacket;
 import org.bytechen.rottenruins.network.c2s.C2SDifficultySelectPacket;
-import org.bytechen.rottenruins.network.c2s.MagicPoolActionPacket;
+import org.bytechen.rottenruins.platform.forge.magic.network.c2s.MagicPoolActionPacket;
 import org.bytechen.rottenruins.network.c2s.PacketSyncKeyframe;
 import org.bytechen.rottenruins.network.s2c.AnomalySyncPacket;
 import org.bytechen.rottenruins.network.s2c.EffectSyncPacket;
-import org.bytechen.rottenruins.network.s2c.MagicPoolSyncPacket;
-import org.bytechen.rottenruins.network.s2c.ManaSyncPacket;
+import org.bytechen.rottenruins.platform.forge.magic.network.s2c.MagicPoolSyncPacket;
+import org.bytechen.rottenruins.platform.forge.magic.network.s2c.ManaSyncPacket;
 import org.bytechen.rottenruins.network.s2c.S2COpenDifficultySelectPacket;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -25,9 +25,11 @@ import java.util.UUID;
 
 public class NetworkHelper {
     private static int packetId = 0;
+    private static final String PROTOCOL_VERSION = "3";
 
     public static final SimpleChannel NETWORK = NetworkRegistry.newSimpleChannel(
-            ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "main"), () -> "1.0", s -> true, s -> true);
+            ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "main"), () -> PROTOCOL_VERSION,
+            PROTOCOL_VERSION::equals, PROTOCOL_VERSION::equals);
 
     public static void register() {
         // ── C2S 处理器（服务端侧的业务逻辑，包序号不变）──
@@ -39,7 +41,7 @@ public class NetworkHelper {
         MagicPoolActionPacket.register();
 
         // 轮盘施法界面的配置保存 + 手势协议（同样走 action 分发，不新增包序号）
-        org.bytechen.rottenruins.network.c2s.WheelActionPacket.register();
+        org.bytechen.rottenruins.platform.forge.magic.network.c2s.WheelActionPacket.register();
 
         NETWORK.registerMessage(packetId++, UniversalPacket.class,
                 UniversalPacket::encode, UniversalPacket::decode, UniversalPacket::handle);

@@ -7,7 +7,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.bytechen.infcore.api.event.BlockSpreadEvent;
+import org.bytechen.rottenruins.api.infection.event.BlockSpreadEvent;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.manager.CorruptionSpreadHelper;
 import org.bytechen.rottenruins.overworld.swarm.HallBiomeProcessor;

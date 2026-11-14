@@ -15,6 +15,12 @@ public class RegisterEffect {
         return EFFECTS.register(name, effectSupplier);
     }
 
+    public static final RegistryObject<MobEffect> MANIC_DISCOMFORT =
+            registerEffect("manic_discomfort", org.bytechen.rottenruins.overworld.registry.effect.ManicDiscomfortEffect::new);
+
+    public static final RegistryObject<MobEffect> APOPTOSIS =
+            registerEffect("apoptosis", org.bytechen.rottenruins.overworld.registry.effect.ApoptosisEffect::new);
+
     // —— 异常适应 Buff（叠满触发后自动获得 15s，阻止异常进度积累） ——
     public static final RegistryObject<MobEffect> HEAT_ANOMALY_ADAPTATION =
             registerEffect("heat_anomaly_adaptation", () -> org.bytechen.rottenruins.overworld.registry.effect.HeatAnomalyAdaptationEffect.INSTANCE);

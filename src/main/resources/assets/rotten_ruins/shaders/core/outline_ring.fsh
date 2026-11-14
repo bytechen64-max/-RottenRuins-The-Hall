@@ -145,27 +145,27 @@ vec4 fireAura(vec2 uv) {
     float inside = smoothstep(0.25, 0.60, texture(MaskSampler, uv).a);
     float density = texture(FireSpread, uv).a;
     float dist = clamp(1.0 - density / 0.28, 0.0, 1.0);   // 0 = 轮廓附近，1 = 模糊半径外
+    // dist 在空白区域恒为 1，但 reach 能大于 1，不能单靠 dist 截断火焰。
+    // 在整条密度梯度上衰减，而非只在接近 0 的窄带淡出：后者会显出一圈整齐的等值线。
+    // 指数包络没有突然进入全亮的平台，尾部再用幂次压低，亮度在密度归零前已趋近于 0。
+    float support = pow(1.0 - exp(-density * 9.0), 1.5);
     float outward = 1.0 - inside;                          // 只在轮廓外
 
-    // 紧贴轮廓的连续底环：**不乘噪声/团块**。镜头转动时火舌会变，但这一圈永远贴着
-    // 剪影边缘 —— 否则"边缘脱离一会儿"就是这里断开的观感。
-    float rim = outward * (1.0 - smoothstep(0.0, 0.12, dist));
-
-    // 贴边锚：用**全分辨率剪影**多向采样，保证最内圈每帧都连着物品轮廓。
-    // 光雾那两张模糊图是 1/4 分辨率、线性放大的，物品移动（尤其开视角摇晃时）会
-    // 有一两个纹素的量化跳动 —— 表现就是"边缘脱离一会儿"。这一圈不经过模糊图。
+    // 白热边只由原始剪影的小半径圆盘膨胀产生，宽火焰密度不参与描边形状。
+    // 不能在大半径上稀疏采样：那会形成几个移位的剪影副本，而不是连续的外环。
     vec2 texel = 1.0 / max(ScreenSize, vec2(1.0));
-    float anchor = 0.0;
-    if (outward > 0.001 && rim < 0.5) {
-        float cover = 0.0;
-        for (int i = 0; i < 8; i++) {
-            float ang = float(i) * 0.7853982;
-            vec2 dir = vec2(cos(ang), sin(ang));
-            cover = max(cover, texture(MaskSampler, uv + dir * texel * 2.0).a);
-            cover = max(cover, texture(MaskSampler, uv + dir * texel * 7.0).a);
+    float edgeWidth = clamp(OutlineWidth, 0.75, 4.0);
+    float cover = 0.0;
+    if (outward > 0.001) {
+        for (int i = 0; i < RING_DIR_COUNT; i++) {
+            for (int layer = 1; layer <= 3; layer++) {
+                vec2 offset = RING_DIRS[i] * texel * edgeWidth * float(layer) / 3.0;
+                cover = max(cover, texture(MaskSampler, uv + offset).a);
+            }
         }
-        anchor = outward * smoothstep(0.30, 0.55, cover);
     }
+    float anchor = outward * smoothstep(0.25, 0.60, cover);
+    float rim = anchor;
 
     float t = Time;
     // 两个尺度的上升噪声。纵向压扁 → 火舌是竖着的；减 t 让图案向上卷。
@@ -173,12 +173,15 @@ vec4 fireAura(vec2 uv) {
     float n1 = fbm(q);
     float n2 = fbm(q * 2.5 + vec2(9.1, -t * 0.7));
     float n = n1 * 0.6 + n2 * 0.4;
+    // 外圈随上升噪声变薄、断开；靠近火源保持连续，避免把外缘画成均匀的光罩。
+    float edgeBreakup = mix(0.18, 1.0, smoothstep(0.28, 0.72, n));
+    support *= mix(edgeBreakup, 1.0, smoothstep(0.06, 0.24, density));
 
     // 火舌能伸多远：噪声强的地方烧得更远；比上一版更厚（0.55~1.85 个模糊半径），
     // 再乘一个"上方更长"的偏置 —— 火是往上窜的，否则会是一个对称的圆环。
     float up = smoothstep(-0.5, 0.9, p.y);
     float reach = mix(0.55, 1.85, n) * mix(0.70, 1.35, up);
-    float flame = outward * (1.0 - smoothstep(0.0, reach, dist));
+    float flame = outward * support * (1.0 - smoothstep(0.0, reach, dist));
 
     // 团块：把连续的一圈打散成一条条火舌；下限从 0.10 提到 0.28，
     // 让火带更"连"（太碎会显得时有时无）。
@@ -186,10 +189,10 @@ vec4 fireAura(vec2 uv) {
     flame *= mix(0.28, 1.0, clump);
 
     // 白热核：贴在轮廓上
-    float core = outward * (1.0 - smoothstep(0.0, 0.10, dist));
+    float core = anchor;
 
     // 外层扩散：火舌之外再铺一层更淡、更远的暖雾（"扩散厚度"的主要来源）
-    float haze = outward * smoothstep(0.10, 0.80, dist)
+    float haze = outward * support * smoothstep(0.10, 0.80, dist)
             * (1.0 - smoothstep(1.35, 1.95, dist)) * 0.28;
 
     // 颜色：冷尾 → 主色 → 白热
@@ -198,16 +201,16 @@ vec4 fireAura(vec2 uv) {
     color = mix(color, vec3(1.0, 0.94, 0.80), smoothstep(0.72, 1.15, heat));
 
     // 烟：火舌之外、往上的那一带，用冷色压暗（加法下只是很淡的暗红）
-    float smoke = smoothstep(0.30, 0.95, p.y) * (1.0 - flame) * outward * fbm(q * 1.3 + 3.1) * 0.30;
+    float smoke = smoothstep(0.30, 0.95, p.y) * (1.0 - flame) * outward * support * fbm(q * 1.3 + 3.1) * 0.30;
 
     // 火星：网格随机点，跟着火一起上升；只在离轮廓不远的地方出现（否则会撒满整片绘制区）
     vec2 sp = vec2(p.x * 6.0, p.y * 6.0 - t * 2.6);
     vec2 cell = floor(sp);
     float rnd = hash21(cell + 19.7);
     float sparkOn = step(0.80, rnd);
-    float sparkDot = smoothstep(0.40, 0.0, length(fract(sp) - 0.5));
+    float sparkDot = 1.0 - smoothstep(0.0, 0.40, length(fract(sp) - 0.5));
     float sparkFalloff = 1.0 - smoothstep(0.20, 1.05, dist);
-    float spark = sparkOn * sparkDot * outward * sparkFalloff * (0.45 + 0.55 * sin(t * 7.0 + rnd * 43.0));
+    float spark = sparkOn * sparkDot * outward * support * sparkFalloff * (0.45 + 0.55 * sin(t * 7.0 + rnd * 43.0));
     vec3 sparkColor = vec3(1.0, 0.55, 0.16) * spark;
 
     float alpha = clamp(flame * 1.35 + core * 1.10 + spark * 0.80 + rim * 0.85
@@ -218,7 +221,8 @@ vec4 fireAura(vec2 uv) {
             + FireColorA * haze * 0.65) / max(alpha, 1.0e-4);
     // 烟只加一点点色偏，不额外占覆盖度（否则会变成一大片灰雾）
     rgb += FireColorB * smoke;
-    return vec4(rgb * alpha, alpha);
+    // 主合成会乘覆盖度，这里返回非预乘颜色；重复乘 alpha 会把柔和尾部压成一圈窄亮边。
+    return vec4(rgb, alpha);
 }
 
 void main() {

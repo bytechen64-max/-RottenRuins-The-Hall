@@ -10,6 +10,7 @@ import org.bytechen.rottenruins.client.entity.render.impl.CrimsonVowLateRenderQu
 import org.bytechen.rottenruins.client.entity.render.impl.ShockwaveLateRenderQueue;
 import org.bytechen.rottenruins.client.entity.render.impl.VerdictBeamLateRenderQueue;
 import org.bytechen.rottenruins.client.entity.render.impl.VerdictFieldLateRenderQueue;
+import org.bytechen.rottenruins.client.story.StoryTextClient;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.GameRenderer;
 import org.spongepowered.asm.mixin.Mixin;
@@ -43,6 +44,8 @@ public abstract class CosmicAfterLevelMixin {
                     ordinal = 0))
     private void live$renderCosmicBeforeHand(float partialTick, long finishTimeNano,
                                               PoseStack poseStack, CallbackInfo ci) {
+        if (!CosmicItemShaderCompat.isOculusShaderPackActive())
+            org.bytechen.rottenruins.client.combat.slash.trail.anchors.TrackedSlashTrails.renderDeferred();
         if (CosmicItemShaderCompat.isOculusShaderPackActive()) {
             CosmicItemLateRenderQueue.renderNonFirstPerson();
             // mask 效果层与星空层共用这个相位：世界空间的层在手臂之前回放。
@@ -67,6 +70,8 @@ public abstract class CosmicAfterLevelMixin {
         ShockwaveLateRenderQueue.renderAll();
         BlackHoleLateRenderQueue.renderAll();
         ApostleSlashWarpQueue.renderAll();
+        if (CosmicItemShaderCompat.isOculusShaderPackActive())
+            org.bytechen.rottenruins.client.combat.slash.trail.anchors.TrackedSlashTrails.renderDeferred();
         CollapsarHaloLateRenderQueue.renderAll();
         // 天穹裁决的两个自定义着色器特效（光柱 / 地面光纹）。
         // 它们没有场景拷贝需求，但仍然必须延后到 MAIN_TARGET ——
@@ -75,5 +80,6 @@ public abstract class CosmicAfterLevelMixin {
         VerdictFieldLateRenderQueue.renderAll();
         // 绯红誓约「起誓」：蓄力法阵 / 巨型法阵 / 扭曲柱 / 终末光柱。
         CrimsonVowLateRenderQueue.renderAll();
+        StoryTextClient.renderDeferred();
     }
 }

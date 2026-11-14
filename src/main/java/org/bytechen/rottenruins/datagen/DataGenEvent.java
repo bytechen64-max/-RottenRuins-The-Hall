@@ -32,7 +32,10 @@ public class DataGenEvent {
         event.getGenerator().addProvider(event.includeClient(), new BlockSpreadDataProvider(out));
         event.getGenerator().addProvider(event.includeClient(), new CorruptionBlockSpreadDataProvider(out));
 
-        event.getGenerator().addProvider(event.includeServer(), new HallWorldGenData(out, lp));
+        HallWorldGenData registryData = new HallWorldGenData(out, lp);
+        event.getGenerator().addProvider(event.includeServer(), registryData);
+        event.getGenerator().addProvider(event.includeServer(),
+                new DamageTypeTagData(out, registryData.getRegistryProvider(), efh));
         // 成就树（根节点 = 首次进入世界；见 AdvancementProviderData）
         event.getGenerator().addProvider(event.includeServer(), new AdvancementProviderData(out, lp, efh));
 

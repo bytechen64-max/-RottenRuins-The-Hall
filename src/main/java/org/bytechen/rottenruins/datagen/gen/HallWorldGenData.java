@@ -35,6 +35,10 @@ import java.util.concurrent.CompletableFuture;
 public class HallWorldGenData extends DatapackBuiltinEntriesProvider {
 
     public static final RegistrySetBuilder BUILDER = new RegistrySetBuilder()
+            .add(Registries.DAMAGE_TYPE, ctx -> ctx.register(
+                    org.bytechen.rottenruins.overworld.registry.ModDamageTypes.APOPTOSIS,
+                    new net.minecraft.world.damagesource.DamageType("apoptosis",
+                            net.minecraft.world.damagesource.DamageScaling.NEVER, 0.0F)))
             .add(Registries.NOISE, HallNoiseData::bootstrap)
             .add(Registries.NOISE_SETTINGS, FleshDimensionData::bootstrapNoiseSettings)
             .add(Registries.CONFIGURED_FEATURE, HallFeatureData::bootstrapConfiguredFeatures)

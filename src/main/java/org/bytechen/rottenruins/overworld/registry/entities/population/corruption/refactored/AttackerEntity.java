@@ -63,7 +63,7 @@ public class AttackerEntity extends BaseRefactoredEntity {
     @Override
     public void tick() {
         super.tick();
-        if (this.level().isClientSide || !this.isAlive()) return;
+        if (this.level().isClientSide || this.isFakeDying() || !this.isAlive()) return;
 
         LivingEntity target = this.getTarget();
         // 每 50 tick 且目标存在且距离 < 10 时，触发低空远跳

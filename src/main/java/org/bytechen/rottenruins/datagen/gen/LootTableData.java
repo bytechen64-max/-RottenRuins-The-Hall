@@ -42,6 +42,12 @@ public class LootTableData extends LootTableProvider {
 
         @Override
         public void generate() {
+            this.add(EntityTypeRegistry.DEATH_HUNTER.get(), LootTable.lootTable()
+                    .withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1))
+                            .when(net.minecraft.world.level.storage.loot.predicates.LootItemKilledByPlayerCondition.killedByPlayer())
+                            .when(net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition.randomChance(0.1F))
+                            .add(LootItem.lootTableItem(RegisterItem.DEATH_DAGGER.get()))));
+
             // InfPlayer 掉落 HALL_TENDON 和 HALL_BONE_FRAGMENTS
             // 注意：此处移除了 ApplyBonusCount，掉落数量仅由 SetItemCountFunction 控制，
             // 不再受抢夺附魔影响。如需保留抢夺效果，请参考方案二通过 LivingDropsEvent 实现。
@@ -80,6 +86,7 @@ public class LootTableData extends LootTableProvider {
         protected Stream<EntityType<?>> getKnownEntityTypes() {
             return Stream.of(
                     EntityTypeRegistry.INF_PLAYER.get(),
+                    EntityTypeRegistry.DEATH_HUNTER.get(),
                     EntityTypeRegistry.BONECRUSHER.get()
             );
         }

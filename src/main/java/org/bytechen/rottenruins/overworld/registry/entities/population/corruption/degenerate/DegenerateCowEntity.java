@@ -72,7 +72,7 @@ public class DegenerateCowEntity extends BaseDegenerateEntity {
     @Override
     public void tick() {
         super.tick();
-        if (this.level().isClientSide || !this.isAlive()) return;
+        if (this.level().isClientSide || this.isFakeDying() || !this.isAlive()) return;
 
         if (rageCooldown > 0) rageCooldown--;
         if (sacrificeCooldown > 0) sacrificeCooldown--;

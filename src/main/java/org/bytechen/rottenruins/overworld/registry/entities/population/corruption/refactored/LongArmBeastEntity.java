@@ -66,7 +66,7 @@ public class LongArmBeastEntity extends BaseRefactoredEntity {
     @Override
     public void tick() {
         super.tick();
-        if (this.level().isClientSide || !this.isAlive()) return;
+        if (this.level().isClientSide || this.isFakeDying() || !this.isAlive()) return;
 
         if (hookCooldown > 0) hookCooldown--;
 

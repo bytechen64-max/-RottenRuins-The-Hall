@@ -15,7 +15,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.compat.BCCoreCompat;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.BlackHoleEntity;
-import org.bytechen.infcore.api.IInfectedEntity;
+import org.bytechen.rottenruins.api.infection.IInfectedEntity;
 
 import java.util.List;
 import java.util.Set;

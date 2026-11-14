@@ -15,6 +15,10 @@ import java.util.function.Supplier;
 
 public class RegisterBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, HallMod.MODID);
+    public static final RegistryObject<BlockEntityType<org.bytechen.rottenruins.overworld.registry.blockentity.FleshbedBlockEntity>> FLESHBED =
+            BLOCK_ENTITIES.register("fleshbed", () -> BlockEntityType.Builder.of(
+                    org.bytechen.rottenruins.overworld.registry.blockentity.FleshbedBlockEntity::new,
+                    org.bytechen.rottenruins.overworld.registry.corruption.CorruptionBlocks.FLESHBED.get()).build(null));
 
     public static final RegistryObject<BlockEntityType<SourceMachineBlockEntity>> SOURCE_FILTER=BLOCK_ENTITIES.register("source_filter",()->
             BlockEntityType.Builder.of((pos,state)->new SourceMachineBlockEntity(pos,state,false),RegisterBlock.SOURCE_FILTER.get()).build(null));

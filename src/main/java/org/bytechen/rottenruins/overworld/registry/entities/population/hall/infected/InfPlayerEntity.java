@@ -28,7 +28,7 @@ import org.bytechen.rottenruins.utils.combat.RangeAttackCallback;
 import org.bytechen.rottenruins.utils.combat.RangeAttackUtils;
 import org.bytechen.rottenruins.utils.entity.EntityBreakUtils;
 import org.bytechen.rottenruins.utils.entity.EntityParticleUtils;
-import org.bytechen.infcore.api.goal.InfectedTargetGoal;
+import org.bytechen.rottenruins.api.infection.goal.InfectedTargetGoal;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
@@ -71,10 +71,10 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 40)
+                .add(Attributes.MAX_HEALTH, 100)
                 .add(Attributes.MOVEMENT_SPEED, 0.25)
                 .add(Attributes.ATTACK_DAMAGE, 15)
-                .add(Attributes.ARMOR, 10)
+                .add(Attributes.ARMOR, 25)
                 .add(Attributes.FOLLOW_RANGE, 32.0)
                 .add(Attributes.KNOCKBACK_RESISTANCE,0.8f);
     }
@@ -84,7 +84,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
         // 追击占位只占 MOVE：位移与出手由 AbstractRottenEntity#tickChase 负责，原版 MeleeAttackGoal 的出手在这里被写死为 false（空转）。
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
 
-        this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
+        this.targetSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .targetOtherInfected(true)   // 王庭 vs 腐化：跨阵营索敌（同阵营仍被 infcore 过滤）
                 .range(40.0)
                 .mustSee(false)

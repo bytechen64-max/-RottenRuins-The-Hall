@@ -22,9 +22,9 @@ import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.registry.RegisterBlock;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.HallVineBlock;
-import org.bytechen.infcore.api.block.ISpreadBlock;
-import org.bytechen.infcore.api.event.BlockSpreadEvent;
-import org.bytechen.infcore.core.blockspread.BlockSpreadManager;
+import org.bytechen.rottenruins.api.infection.block.ISpreadBlock;
+import org.bytechen.rottenruins.api.infection.event.BlockSpreadEvent;
+import org.bytechen.rottenruins.gameplay.infection.blockspread.BlockSpreadManager;
 
 import java.util.*;
 import org.bytechen.rottenruins.utils.ModUtils;
@@ -112,6 +112,7 @@ public class HallSpreadEventHandler {
                 for (Direction dir : Direction.values()) {
                     BlockPos neighbor = pos.relative(dir);
                     if (visited.add(neighbor)) {
+                        if (!level.isLoaded(neighbor)) continue;
                         BlockState state = level.getBlockState(neighbor);
                         if (VANILLA_LEAVES.contains(state.getBlock())) {
                             found.add(neighbor);
@@ -148,6 +149,7 @@ public class HallSpreadEventHandler {
         try {
             for (int i = 0; i < batch && !cascade.pending.isEmpty(); i++) {
                 BlockPos pos = cascade.pending.poll();
+                if (!level.isLoaded(pos)) continue;
                 BlockState state = level.getBlockState(pos);
                 if (VANILLA_LEAVES.contains(state.getBlock())) {
                     BlockSpreadManager.applySpread(level, pos, state, HALL_SPREAD_TYPE);
@@ -219,7 +221,7 @@ public class HallSpreadEventHandler {
         BlockPos belowPos = pos.below();
         float r = random.nextFloat();
 
-        if (level.isEmptyBlock(abovePos)) {
+        if (level.isLoaded(abovePos) && level.isEmptyBlock(abovePos)) {
             if (r < VINE_CHANCE) {
                 // 向上藤蔓
                 level.setBlockAndUpdate(abovePos, vineDefault
@@ -232,7 +234,8 @@ public class HallSpreadEventHandler {
             }
         }
 
-        if (level.isEmptyBlock(belowPos) && random.nextFloat() < VINE_CHANCE) {
+        if (level.isLoaded(belowPos) && level.isEmptyBlock(belowPos)
+                && random.nextFloat() < VINE_CHANCE) {
             level.setBlockAndUpdate(belowPos, vineDefault
                     .setValue(HallVineBlock.GROWTH_DIR, HallVineBlock.GrowthDirection.DOWN)
                     .setValue(HallVineBlock.SECTION, HallVineBlock.VineSection.BOTTOM)

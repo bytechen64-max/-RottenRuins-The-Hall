@@ -2,11 +2,11 @@
 
 一个标签里塞一百多个物品时，原版只有一条扁平的物品流 —— 找东西全靠眼睛。
 这套东西把标签内容声明成若干**分区**，每个分区在网格里以一行
-**流动色带 + 居中彩色标题**开头：
+**金属铭牌 + 居中银色标题**开头：
 
 ```
 ┌─ 创造模式物品栏 ─────────────────────────────────┐
-│ [畸骸与王庭生物]                                   │  ← 隔断行：9 个空槽 + hall:gui_tab_divider + 流动彩色标题
+│ [畸骸与王庭生物]                                   │  ← 隔断行：9 个空槽 + 金属铭牌 + 银色标题
 │  🥚 🥚 🥚 🥚 🥚 🥚 🥚 🥚 🥚                        │
 │  🥚                                                │
 │  □ □ □ □ □ □ □ □ □   ← 段尾补空到整行（不然标题行会从半行处折下去）
@@ -59,8 +59,7 @@
 | `RegisterTab` | `overworld/registry` | 声明「什么归哪一段」 |
 | `CreativeModeInventoryScreenMixin` | `mixin` | 把扁平表重排成「补空 + 隔断行 + 本段物品」；拦住隔断行上的点击 |
 | `SectionedCreativeScreen` | `client/gui/creative` | 界面侧接口（混入实现），渲染器靠 `instanceof` 认领界面 |
-| `CreativeTabDividerRenderer` | `client/gui/creative` | 在 `ContainerScreenEvent.Render.Foreground` 上画色带与标题 |
-| `hall:gui_tab_divider` | `assets/hall/shaders/core` | 那条极光缎带 |
+| `CreativeTabDividerRenderer` | `client/gui/creative` | 在 `ContainerScreenEvent.Render.Foreground` 上画铭牌与标题 |
 
 `SectionedCreativeScreen` 之所以是接口而不是一个静态变量：静态变量在切模式 / 同帧两个界面时
 会残留，而接口长在界面实例上，界面没了就自然没了。
@@ -87,7 +86,7 @@ CreativeModeInventoryScreenMixin#splendiding$rebuildLayout()
 ItemPickerMenu.items  →  scrollTo(scrollOffs)  →  网格
         │
         ▼
-ContainerScreenEvent.Render.Foreground → 色带 + 流动彩色标题
+ContainerScreenEvent.Render.Foreground → 金属铭牌 + 固定银色标题
 ```
 
 重排是**幂等**的：它只读 `selectedTab.getDisplayItems()`，不读已经改过的 `menu.items`，
@@ -118,37 +117,26 @@ ContainerScreenEvent.Render.Foreground → 色带 + 流动彩色标题
 - **去重按 `Item`。** 与改造前的 `LinkedHashSet<Item>` 同口径：同一个物品带不同 NBT
   只保留先声明的那一次。
 
-## 六、调参在哪
+## 六、材质与标题
+
+当前方案为冷蓝灰银边与金属铭牌，贴图位于
+`assets/rotten_ruins/textures/gui/creative_inventory/`。
+生成命令、UV 表和预览见 [创造栏贴图说明](proposals/creative-inventory/README.md)。
 
 | 想改什么 | 改哪 |
 | --- | --- |
-| 色带的颜色 / 权重 / 辉光 | `CreativeTabDividerRenderer` 的 `PALETTE_A/B/C`、`GLOW`（对应 shader 的 `uColorA/B/C` `.a` 权重） |
-| 色带的图案、流速、噪声频率 | `assets/hall/shaders/core/gui_tab_divider.fsh` |
-| 标题的流动速度与色相梯度 | `CreativeTabDividerRenderer` 的 `TEXT_FLOW_SPEED` / `TEXT_FLOW_GRADIENT` |
-| 色带占的矩形 | `CreativeTabDividerRenderer` 的 `GRID_X/GRID_W/GRID_Y/ROW_H`（默认 8 / 162 / 17 / 18，正好盖住 9 个槽位井的外框） |
-| 整条的不透明度 | 着色器 `uIntensity`（Java 侧 `INTENSITY`）。色带的 alpha 恒为 `band × edge × uIntensity`，**不受噪声影响** |
-| 标题文案 | `LangDataCN` / `LangDataEN` 的 `itemGroup.hall.main.section.*` |
+| 面板、金属边、铭牌配色 | `tools/generate-creative-inventory-textures.py` |
+| 标签页背景与槽位悬停色 | `RegisterTab` 的资源路径、`withLabelColor` / `withSlotColor` |
+| 铭牌位置 | `CreativeTabDividerRenderer` 的 `GRID_X/GRID_W/GRID_Y/ROW_H`（8 / 162 / 17 / 18） |
+| 标题颜色与可用宽度 | `CreativeTabDividerRenderer` 的 `TITLE_COLOR` / `TITLE_WIDTH`（142 像素） |
+| 标题文案 | `LangDataCN` / `LangDataEN` 的 `itemGroup.rotten_ruins.main.section.*` |
 
-**着色器加载失败不会让功能消失**：`SplendidingShaders.guiTabDividerShader` 为 null 时
-退回一条纯色细线 + 同样的标题。分区本身（找东西）不能因为着色器没了就失效。
+## 七、统一使用面板相对坐标
 
-## 七、两套坐标系（改渲染时最容易翻的地方）
-
-`CreativeTabDividerRenderer` 在同一个方法里用了**两个不同的坐标空间**，这不是笔误：
-
-| 画什么 | 走哪条路 | 坐标 |
-| --- | --- | --- |
-| 色带 | `BufferUploader.drawWithShader` | **屏幕绝对** GUI 坐标（`leftPos + 9` 起） |
-| 标题、降级细线 | `gui.drawString` / `gui.fill` | **相对面板左上角**（`9` 起） |
-
-原因：立即绘制的顶点矩阵是单位阵，`ProjMat` / `ModelViewMat` 由 RenderSystem 给，
-`GuiGraphics` 的 PoseStack 完全没参与；而 `gui.*` 会把 PoseStack 烘进顶点 ——
-偏偏 `ContainerScreenEvent.Render.Foreground` 是在 `AbstractContainerScreen`
-push 了 `(leftPos, topPos)` 平移**之后**才派发的（同屏的 `renderLabels` 用 `8, 6`
-画标签标题，就是这个相对口径）。
-
-给文字传绝对坐标的后果是它被平移两次：色带位置正确，标题整块飘到面板外的世界渲染区。
-`drawBars` 与 `drawFlowingText` 的 javadoc 里各写了一遍，改一处时记得另一处。
+Foreground 事件在界面已平移 `(leftPos, topPos)` 之后派发。
+铭牌由 `GuiGraphics.blit` 绘制，文字由 `GuiGraphics.drawString` 绘制，
+两者均使用面板相对坐标；不需要再加 `leftPos/topPos`。
+不透明的铭牌覆盖整行空槽边框和鼠标悬停高亮，标题居中，超长时加省略号。
 
 ### 顺带量出来的槽位井几何
 
@@ -176,5 +164,5 @@ push 了 `(leftPos, topPos)` 平移**之后**才派发的（同屏的 `renderLab
 - 插在哪，网格里就在哪；顺序即声明顺序。
 - 不用管去重：`OtherItems` 那个兜底分区永远排在最后，前面拿走的它不会再吐一遍。
 - 段尾补空是自动的，不用自己数格。
-- 记得在 `LangDataCN` / `LangDataEN` 里补 `itemGroup.hall.main.section.<key>`，
+- 记得在 `LangDataCN` / `LangDataEN` 里补 `itemGroup.rotten_ruins.main.section.<key>`，
   然后 `runData`。

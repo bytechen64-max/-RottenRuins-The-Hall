@@ -34,6 +34,9 @@ public class HallBiomeData {
     public static final ResourceKey<Biome> FLESH_MARROW = ResourceKey.create(
             Registries.BIOME, ModUtils.modLoc("flesh_marrow"));
 
+    public static final ResourceKey<Biome> HALL_OCEAN = ResourceKey.create(
+            Registries.BIOME, ModUtils.modLoc("hall_ocean"));
+
     /**
      * 在 datagen 的 bootstrap 阶段注册群系。
      */
@@ -43,6 +46,19 @@ public class HallBiomeData {
 
         context.register(HALL_WASTELAND, createHallBiome(placedFeatures, configuredCarvers));
         context.register(FLESH_MARROW, createFleshBiome(placedFeatures, configuredCarvers));
+        context.register(HALL_OCEAN, createHallOcean(placedFeatures, configuredCarvers));
+    }
+
+    /** 海洋不放陆地树草，只在水体内生成畸鱿。 */
+    public static Biome createHallOcean(HolderGetter<PlacedFeature> features,
+                                        HolderGetter<ConfiguredWorldCarver<?>> carvers) {
+        MobSpawnSettings.Builder spawns = new MobSpawnSettings.Builder();
+        spawns.addSpawn(MobCategory.MONSTER, new MobSpawnSettings.SpawnerData(
+                EntityTypeRegistry.ABNORMAL_SQUID.get(), 30, 1, 3));
+        return new Biome.BiomeBuilder().hasPrecipitation(true).temperature(0.5F).downfall(0.3F)
+                .specialEffects(createFleshBiome(features, carvers).getSpecialEffects())
+                .mobSpawnSettings(spawns.build())
+                .generationSettings(new BiomeGenerationSettings.Builder(features, carvers).build()).build();
     }
 
     /**

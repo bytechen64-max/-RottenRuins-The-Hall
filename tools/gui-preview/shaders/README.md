@@ -1,4 +1,4 @@
-# 轮盘设计稿的三支工具私有着色器
+# GUI 预览工具私有着色器
 
 这里放的是**设计稿专用**的着色器，只有 `tools/gui-preview` 会加载它们
 （`PreviewCanvas.shader(name)` 先找 `tools/gui-preview/shaders/<name>.json`，找不到才回落
@@ -11,12 +11,15 @@
 | `wheel_aura.{json,vsh,fsh}` | 轮盘背后的环境光环（柔光/光束/符文环/辐条/选中锥光） | `src_alpha / one`（加色） | 每帧一次，画在扇区之前 |
 | `wheel_core.{json,vsh,fsh}` | 中心核心（漩涡光球 + 法力弧 + 冷却弧 + 蓄力脉冲） | `src_alpha / one`（加色） | 每帧一次，画在暗盘与文字之下/之间 |
 
+`gui_tab_divider.{json,vsh,fsh}` 为其他设计场景共用的色带效果（如 `spell_loadout`、`spell_forge` 与框架自检）。
+它只在预览工具中使用，不再打包或注册为游戏端创造栏着色器。
+
 实验场景：`SceneWheelShaderLab.java`（场景名 `wheel_shader_lab`，8 扇区一次演示全部状态）。
 正式集成见 `WheelKit.java` / `SceneSpellWheel.java`。
 
 ---
 
-## 0. 三支 shader 共用的约定（**改之前先读**）
+## 0. 轮盘三支 shader 共用的约定（**改之前先读**）
 
 ### 坐标还原
 

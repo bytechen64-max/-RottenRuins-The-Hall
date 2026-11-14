@@ -15,7 +15,6 @@ import org.bytechen.rottenruins.client.rend.text.effect.GlyphEffectState;
 import org.bytechen.rottenruins.client.rend.text.effect.TextEffectClock;
 import org.bytechen.rottenruins.client.rend.text.effect.TextEffectPlanCache;
 import org.bytechen.rottenruins.client.rend.text.effect.TextEffectSettings;
-import org.bytechen.rottenruins.client.rend.text.effect.TextEffectStats;
 
 /**
  * T1 钩子的实际解析/绘制逻辑：把 {@code StringDecomposer.iterateFormatted} 的调用

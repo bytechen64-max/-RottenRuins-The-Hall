@@ -26,6 +26,9 @@ public final class PotentialBlockData extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
+        var analyzerModel=models().getExistingFile(modLoc("block/analyzer"));
+        horizontalBlock(RegisterBlock.ANALYZER.get(),analyzerModel);
+        simpleBlockItem(RegisterBlock.ANALYZER.get(),analyzerModel);
         machine(RegisterBlock.SOURCE_FILTER.get(),"source_filter");
         machine(RegisterBlock.SOURCE_COLLECTOR.get(),"source_collector");
         // 势能合成台：模型同样放在 src/main/resources（占位贴图，等美术资源到位后替换）

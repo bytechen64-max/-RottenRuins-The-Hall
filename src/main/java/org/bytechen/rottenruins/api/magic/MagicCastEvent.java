@@ -1,5 +1,5 @@
 package org.bytechen.rottenruins.api.magic;
-import org.bytechen.rottenruins.HallMod;
+
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -7,7 +7,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.Event;
-import org.bytechen.rottenruins.overworld.registry.items.magic.bases.UsingType;
+import org.bytechen.rottenruins.core.magic.model.UsingType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

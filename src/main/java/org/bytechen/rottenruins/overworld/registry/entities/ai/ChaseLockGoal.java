@@ -3,7 +3,6 @@ package org.bytechen.rottenruins.overworld.registry.entities.ai;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.Goal;
-import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 
 import java.util.EnumSet;
 

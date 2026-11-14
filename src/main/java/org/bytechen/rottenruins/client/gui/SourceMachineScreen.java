@@ -1,20 +1,13 @@
 package org.bytechen.rottenruins.client.gui;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import org.bytechen.rottenruins.client.rend.gui.WheelGuiShaders;
 import org.bytechen.rottenruins.network.NetworkHelper;
 import org.bytechen.rottenruins.network.c2s.FilterSettingsPacket;
 import org.bytechen.rottenruins.overworld.energy.ElementBand;
@@ -26,9 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** 与魔法装载界面共用 SDF 圆角；示波曲线使用单批次、逐物理像素淡出的线带。 */
+/** 可替换的像素纹理底板；文字、元素、示波曲线和进度实时叠加。 */
 public final class SourceMachineScreen extends AbstractContainerScreen<SourceMachineMenu> {
-    private static final int TEXT=0xFFE3E8EE,MUTED=0xFF92A1B4,GOLD=0xFFE7C46A;
+    private static final int TEXT=0xFF404040,MUTED=0xFF404040,LIGHT=0xFFE8E8D8;
+    private static final ResourceLocation MANUAL=texture("filter_manual"),QUICK=texture("filter_quick"),
+            BANDS=texture("filter_bands"),COLLECTOR=texture("collector"),WIDGETS=texture("widgets");
     private static int rememberedView;
     private final int[] settings=new int[4];
     private final TuningSlider[] sliders=new TuningSlider[4];
@@ -120,37 +115,51 @@ public final class SourceMachineScreen extends AbstractContainerScreen<SourceMac
         renderTooltip(graphics,mouseX,mouseY);
     }
 
-    private static void panel(GuiGraphics graphics,float x,float y,float width,float height,float radius,int top,int bottom,int border) {
-        if(WheelGuiShaders.sdfAvailable()) {
-            WheelGuiShaders.sdfRoundRect(graphics,x,y,width,height,radius,top,bottom,border,0.8F);
-        } else {
-            graphics.fillGradient((int)x,(int)y,(int)(x+width),(int)(y+height),top,bottom);
-            if((border>>>24)!=0) graphics.renderOutline((int)x,(int)y,(int)width,(int)height,border);
-        }
+    private static ResourceLocation texture(String name) {
+        return new ResourceLocation("rotten_ruins","textures/gui/source_machine/"+name+".png");
     }
 
-    private static void line(GuiGraphics graphics,float x1,float y1,float x2,float y2,float halfWidth,int color) {
-        if(WheelGuiShaders.sdfAvailable()) WheelGuiShaders.sdfLine(graphics,x1,y1,x2,y2,halfWidth,color);
-        else graphics.fill((int)Math.min(x1,x2),(int)Math.min(y1,y2),(int)Math.max(x1,x2)+1,(int)Math.max(y1,y2)+1,color);
+    /** Stretch only the middle strip: keep borders and the two control columns intact. */
+    private static void horizontal(GuiGraphics graphics,ResourceLocation texture,int x,int y,int width,int height,
+                                   int u,int v,int sourceWidth,int border,int textureWidth,int textureHeight) {
+        int[] source={0,border,sourceWidth-border,sourceWidth};
+        int[] target={0,border,width-border,width};
+        for(int i=0;i<3;i++) graphics.blit(texture,x+target[i],y,target[i+1]-target[i],height,
+                (float)(u+source[i]),(float)v,source[i+1]-source[i],height,textureWidth,textureHeight);
+    }
+
+    private static void buttonFace(GuiGraphics graphics,int x,int y,int width,int height,boolean selected,boolean hovered) {
+        int u=selected?20:hovered?40:0;
+        int[] source={0,2,18,20},xx={0,2,width-2,width},yy={0,2,height-2,height};
+        for(int row=0;row<3;row++) for(int col=0;col<3;col++)
+            graphics.blit(WIDGETS,x+xx[col],y+yy[row],xx[col+1]-xx[col],yy[row+1]-yy[row],
+                    (float)(u+source[col]),(float)source[row],source[col+1]-source[col],source[row+1]-source[row],80,20);
+        if(selected && hovered) graphics.renderOutline(x,y,width,height,0xFFFFFFFF);
     }
 
     @Override
     protected void renderBg(GuiGraphics graphics,float partialTick,int mouseX,int mouseY) {
         int x=leftPos,y=topPos;
-        panel(graphics,x-4,y-2,imageWidth+8,imageHeight+8,10,0x30000000,0x60000000,0);
-        panel(graphics,x,y,imageWidth,imageHeight,8,0xFA131E30,0xFA080D18,0x777F795F);
-        line(graphics,x+16,y+28,x+imageWidth-16,y+28,0.35F,0x667C775C);
         if(!menu.collector) {
+            // Manual wells are rendered by each widget, so they follow narrow-window layout.
+            if(view==0) {
+                horizontal(graphics,MANUAL,x,y,imageWidth,155,0,0,372,16,372,230);
+                horizontal(graphics,QUICK,x,y+155,imageWidth,63,0,155,372,16,372,230);
+                horizontal(graphics,MANUAL,x,y+218,imageWidth,12,0,218,372,16,372,230);
+            } else horizontal(graphics,view==2?BANDS:QUICK,x,y,imageWidth,imageHeight,0,0,372,16,372,230);
             if(view==2) drawReference(graphics,x,y); else drawWave(graphics,x+16,y+66,imageWidth-32,62);
         } else {
-            for(var slot:menu.slots) panel(graphics,x+slot.x-1,y+slot.y-1,18,18,3,0xFF08121F,0xFF101D2D,0x66566B81);
-            panel(graphics,x+81,y+54,58,12,6,0xFF06101A,0xFF06101A,0x55405C6F);
+            graphics.blit(COLLECTOR,x,y,0,0,220,200,220,200);
             float progress=menu.value(4)/(float)SourceMachineBlockEntity.TOTAL_WORK;
             long now=System.nanoTime();
             double seconds=Math.min(0.1,(now-lastFrame)/1.0e9); lastFrame=now;
             if(progress<shownProgress) shownProgress=progress;
             else shownProgress+=(progress-shownProgress)*(float)(1-Math.exp(-seconds*16));
-            if(shownProgress>0.001F) panel(graphics,x+83,y+56,54*shownProgress,8,4,0xFF94DFE7,0xFF3CA4BE,0);
+            int filled=Math.round(54*shownProgress);
+            if(filled>0) {
+                graphics.fill(x+83,y+56,x+83+filled,y+64,0xFF3994AF);
+                graphics.fill(x+83,y+56,x+83+filled,y+57,0xFFA4E5EC);
+            }
             centered(graphics,menu.value(4)*100/SourceMachineBlockEntity.TOTAL_WORK+"%",x+110,y+73,TEXT);
         }
     }
@@ -165,16 +174,20 @@ public final class SourceMachineScreen extends AbstractContainerScreen<SourceMac
             ElementBand element=elementFromMenu();
             Component label=element==null?Component.translatable("gui.rotten_ruins.source.unmatched"):
                     Component.translatable("gui.rotten_ruins.source.tuned",Component.translatable(element.key()));
-            centered(graphics,label,110,87,element==null?MUTED:element.color);
+            String status=label.getString();
+            int textX=110-font.width(status)/2;
+            graphics.fill(textX-12,87,textX-4,95,element==null?0xFF777777:0xFF000000|element.color);
+            graphics.drawString(font,status,textX,87,TEXT,false);
             graphics.drawString(font,playerInventoryTitle,inventoryLabelX,inventoryLabelY,MUTED,false);
         } else if(view!=2) {
             ElementBand element=ElementBand.match(settings[0],settings[1],settings[2],settings[3]!=0);
-            graphics.drawString(font,Component.translatable("gui.rotten_ruins.source.spectrum"),26,73,MUTED,false);
+            graphics.drawString(font,Component.translatable("gui.rotten_ruins.source.spectrum"),26,73,0xFFB9C3AF,false);
             String power=Component.translatable("gui.rotten_ruins.source.power",menu.value(5)).getString();
             graphics.drawString(font,power,imageWidth-17-font.width(power),137,MUTED,false);
             String status=(element==null?Component.translatable("gui.rotten_ruins.source.unmatched"):
                     Component.translatable("gui.rotten_ruins.source.tuned",Component.translatable(element.key()))).getString();
-            graphics.drawString(font,font.plainSubstrByWidth(status,imageWidth-44-font.width(power)),17,137,element==null?MUTED:element.color,false);
+            graphics.fill(17,137,25,145,element==null?0xFF777777:0xFF000000|element.color);
+            graphics.drawString(font,font.plainSubstrByWidth(status,Math.max(0,imageWidth-56-font.width(power))),29,137,TEXT,false);
         }
     }
 
@@ -205,17 +218,17 @@ public final class SourceMachineScreen extends AbstractContainerScreen<SourceMac
     }
 
     private void drawReference(GuiGraphics graphics,int x,int y) {
-        panel(graphics,x+16,y+66,imageWidth-32,150,5,0xC0091423,0xC00B1420,0x44476078);
         int inner=imageWidth-32;
         int[] columns={Math.round(inner*0.29F),Math.round(inner*0.48F),Math.round(inner*0.66F),Math.round(inner*0.85F)};
         String[] headers={"fc","B","G","φ"};
-        for(int i=0;i<4;i++) graphics.drawString(font,headers[i],x+16+columns[i],y+76,GOLD,false);
+        for(int i=0;i<4;i++) graphics.drawString(font,headers[i],x+16+columns[i],y+76,LIGHT,false);
         int row=0;
         for(ElementBand element:ElementBand.values()) {
             int yy=y+96+row++*16;
-            graphics.drawString(font,Component.translatable(element.key()),x+25,yy,element.color,false);
+            String label=font.plainSubstrByWidth(Component.translatable(element.key()).getString(),Math.max(0,columns[0]-14));
+            graphics.drawString(font,label,x+25,yy,element.color,false);
             String[] values={range(element.minFc,element.maxFc),range(element.minB,element.maxB),range(element.minG,element.maxG),element.negative?"−":"+"};
-            for(int i=0;i<4;i++) graphics.drawString(font,values[i],x+16+columns[i],yy,TEXT,false);
+            for(int i=0;i<4;i++) graphics.drawString(font,values[i],x+16+columns[i],yy,LIGHT,false);
         }
     }
 
@@ -223,26 +236,14 @@ public final class SourceMachineScreen extends AbstractContainerScreen<SourceMac
     private static String number(int value) { return String.format(Locale.ROOT,"%.1f",value/10.0); }
 
     private void drawWave(GuiGraphics graphics,int x,int y,int width,int height) {
-        panel(graphics,x,y,width,height,5,0xFF06111C,0xFF091421,0x55506C7E);
-        for(int gx=16;gx<width-8;gx+=24) line(graphics,x+gx,y+18,x+gx,y+height-6,0.25F,0x282F5770);
-        for(int gy=24;gy<height-4;gy+=16) line(graphics,x+8,y+gy,x+width-8,y+gy,0.25F,0x282F5770);
-        line(graphics,x+8,y+36,x+width-8,y+36,0.3F,0x60445D72);
         ElementBand band=ElementBand.match(settings[0],settings[1],settings[2],settings[3]!=0);
         int color=0xFF000000|(band==null?0x8CA8BA:band.color);
-        float scale=(float)minecraft.getWindow().getGuiScale();
-        float[] points=SourceWaveform.points(settings[0],settings[1],settings[2],settings[3]!=0,System.nanoTime()/1.0e9,width, width-16,height-18);
-        float[] mesh=SourceWaveform.mesh(points,0.6F,1.0F/Math.max(1,scale),color);
-        graphics.flush();
-        RenderSystem.enableBlend(); RenderSystem.defaultBlendFunc(); RenderSystem.disableDepthTest();
-        RenderSystem.depthMask(false); RenderSystem.disableCull(); RenderSystem.setShaderColor(1,1,1,1);
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        BufferBuilder buffer=Tesselator.getInstance().getBuilder();
-        buffer.begin(VertexFormat.Mode.TRIANGLES,DefaultVertexFormat.POSITION_COLOR);
-        var matrix=graphics.pose().last().pose();
-        for(int i=0;i<mesh.length;i+=6) buffer.vertex(matrix,x+8+mesh[i],y+14+mesh[i+1],0).color(mesh[i+2],mesh[i+3],mesh[i+4],mesh[i+5]).endVertex();
-        BufferUploader.drawWithShader(buffer.end());
-        RenderSystem.enableCull(); RenderSystem.depthMask(true); RenderSystem.enableDepthTest(); RenderSystem.disableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        float[] points=SourceWaveform.points(settings[0],settings[1],settings[2],settings[3]!=0,
+                System.nanoTime()/1.0e9,Math.max(2,width-16),width-17,height-20);
+        for(int i=0;i<points.length;i+=2) {
+            int px=x+8+(int)points[i],py=y+14+(int)points[i+1];
+            graphics.fill(px,py,px+1,py+1,color);
+        }
     }
 
     private final class ModeButton extends Button {
@@ -253,9 +254,9 @@ public final class SourceMachineScreen extends AbstractContainerScreen<SourceMac
         }
         @Override public void renderWidget(GuiGraphics graphics,int mouseX,int mouseY,float partialTick) {
             boolean selected=view==mode;
-            panel(graphics,getX(),getY(),width,height,4,selected?0x443C5061:0x44131F30,selected?0x44344750:0x440B1422,
-                    selected?0xCCE7C46A:isHoveredOrFocused()?0x997D8C98:0x3346576B);
-            centered(graphics,getMessage(),getX()+width/2,getY()+6,selected?GOLD:TEXT);
+            buttonFace(graphics,getX(),getY(),width,height,selected,isHoveredOrFocused());
+            String label=font.plainSubstrByWidth(getMessage().getString(),Math.max(0,width-8));
+            graphics.drawString(font,label,getX()+(width-font.width(label))/2,getY()+6,LIGHT,true);
         }
     }
 
@@ -273,12 +274,11 @@ public final class SourceMachineScreen extends AbstractContainerScreen<SourceMac
         }
         @Override public void renderWidget(GuiGraphics graphics,int mouseX,int mouseY,float partialTick) {
             boolean selected=element!=null && ElementBand.match(settings[0],settings[1],settings[2],settings[3]!=0)==element;
-            int accent=element==null?MUTED:0xFF000000|element.color;
-            panel(graphics,getX(),getY(),width,height,5,selected?0xFF203446:0xFF152334,0xFF0C1624,
-                    selected?accent:isHoveredOrFocused()?0xAA92A1B4:0x5546556A);
-            if(selected) line(graphics,getX()+9,getY()+height-3,getX()+width-9,getY()+height-3,0.5F,accent);
-            String label=font.plainSubstrByWidth(getMessage().getString(),width-12);
-            centered(graphics,label,getX()+width/2,getY()+9,accent);
+            buttonFace(graphics,getX(),getY(),width,height,selected,isHoveredOrFocused());
+            if(element!=null) graphics.fill(getX()+5,getY()+9,getX()+9,getY()+17,0xFF000000|element.color);
+            int start=element==null?4:12,end=width-4;
+            String label=font.plainSubstrByWidth(getMessage().getString(),Math.max(0,end-start));
+            graphics.drawString(font,label,getX()+start+(end-start-font.width(label))/2,getY()+9,LIGHT,true);
         }
     }
 
@@ -312,15 +312,14 @@ public final class SourceMachineScreen extends AbstractContainerScreen<SourceMac
             return super.keyPressed(keyCode,scanCode,modifiers);
         }
         @Override public void renderWidget(GuiGraphics graphics,int mouseX,int mouseY,float partialTick) {
-            panel(graphics,getX(),getY(),width,height,4,0xFF142236,0xFF0D1828,isHoveredOrFocused()?0x99E7C46A:0x44465970);
-            graphics.drawString(font,Component.translatable("gui.rotten_ruins.source.param."+index+".short"),getX()+8,getY()+5,MUTED,false);
+            horizontal(graphics,MANUAL,getX(),getY(),width,height,16+(index%2)*175,155+(index/2)*35,165,12,372,230);
+            if(isHoveredOrFocused()) graphics.renderOutline(getX(),getY(),width,height,0xFFFFFFFF);
+            String label=font.plainSubstrByWidth(Component.translatable("gui.rotten_ruins.source.param."+index+".short").getString(),
+                    Math.max(0,width-24-font.width(display())));
+            graphics.drawString(font,label,getX()+8,getY()+5,MUTED,false);
             graphics.drawString(font,display(),getX()+width-8-font.width(display()),getY()+5,TEXT,false);
-            float start=getX()+9,end=getX()+width-9,cy=getY()+height-7;
-            line(graphics,start,cy,end,cy,1.0F,0xFF30435B);
-            if(value>0.001) line(graphics,start,cy,(float)(start+(end-start)*value),cy,1.0F,0xFF72CAD6);
-            float cx=(float)(start+(end-start)*value);
-            if(WheelGuiShaders.sdfAvailable()) WheelGuiShaders.sdfDisc(graphics,cx,cy,3.0F,0xFFF4E4B4,GOLD);
-            else graphics.fill((int)cx-2,(int)cy-2,(int)cx+3,(int)cy+3,GOLD);
+            int cx=getX()+9+(int)Math.round((width-18)*value);
+            graphics.blit(WIDGETS,cx-4,getY()+16,60,0,8,10,80,20);
         }
     }
 }

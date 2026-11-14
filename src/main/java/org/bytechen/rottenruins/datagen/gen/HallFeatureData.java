@@ -13,6 +13,8 @@ import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.configurations.FeatureConfiguration;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.placement.CountPlacement;
+import net.minecraft.world.level.levelgen.placement.BiomeFilter;
+import net.minecraft.world.level.levelgen.placement.SurfaceWaterDepthFilter;
 import net.minecraft.world.level.levelgen.placement.HeightmapPlacement;
 import net.minecraft.world.level.levelgen.placement.InSquarePlacement;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
@@ -119,7 +121,9 @@ public final class HallFeatureData {
         context.register(HALL_TREES, placed(configured, HALL_TREE, List.of(
                 CountPlacement.of(5),
                 InSquarePlacement.spread(),
-                HeightmapPlacement.onHeightmap(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES))));
+                SurfaceWaterDepthFilter.forMaxDepth(0),
+                HeightmapPlacement.onHeightmap(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES),
+                BiomeFilter.biome())));
 
         context.register(HALL_GRASS_PATCHES, placed(configured, HALL_GRASS_PATCH, List.of(
                 CountPlacement.of(8),

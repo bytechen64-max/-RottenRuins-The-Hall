@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.LevelResource;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.infcore.core.biome.BiomeSpreadHelper;
+import org.bytechen.rottenruins.gameplay.infection.biome.BiomeSpreadHelper;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -175,19 +175,19 @@ public final class HallBiomeProcessor {
         DimensionState st = state(currentLevel);
         if (st.taskQueue.isEmpty()) return;
 
-        int processed = 0;
+        int attempted = 0;
         Set<ChunkPos> dirtyChunks = new HashSet<>();
 
-        while (!st.taskQueue.isEmpty() && processed < MAX_PER_TICK) {
+        while (!st.taskQueue.isEmpty() && attempted < MAX_PER_TICK) {
             SpreadTask task = st.taskQueue.poll();
             if (task == null) continue;
+            attempted++;
 
             st.pendingPos.remove(task.pos());
 
             if (task.dimension().equals(currentLevel.dimension())) {
                 if (BiomeSpreadHelper.setColumnQuartBiome(currentLevel, task.pos(), task.targetBiome())) {
                     dirtyChunks.add(new ChunkPos(task.pos()));
-                    processed++;
                 }
             }
         }
@@ -205,21 +205,22 @@ public final class HallBiomeProcessor {
         String blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
         BlockPos immutablePos = pos.immutable();
 
-        Map<BlockPos, String> data = st.chunkCache.computeIfAbsent(cp,
-                k -> new HashMap<>(st.storage.readChunk(cp)));
-
-        if (!data.containsKey(immutablePos)) {
+        Map<BlockPos, String> snapshot;
+        synchronized (st.chunkCache) {
+            Map<BlockPos, String> data = st.chunkCache.computeIfAbsent(cp,
+                    k -> new HashMap<>(st.storage.readChunk(cp)));
+            if (data.containsKey(immutablePos)) return;
             data.put(immutablePos, blockId);
-            try {
-                executor.submit(() -> {
-                    // 快照 Map 在入队后仍可能被并发写入，故写盘时对 storage 加锁
-                    synchronized (st.storage) {
-                        st.storage.writeChunk(cp, data);
-                    }
-                });
-            } catch (RejectedExecutionException e) {
-                HallMod.LOGGER.warn("[HallBiome] 快照任务提交被拒绝，可能正在关服");
-            }
+            snapshot = new HashMap<>(data);
+        }
+        try {
+            executor.submit(() -> {
+                synchronized (st.storage) {
+                    st.storage.writeChunk(cp, snapshot);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            HallMod.LOGGER.warn("[HallBiome] 快照任务提交被拒绝，可能正在关服");
         }
     }
 

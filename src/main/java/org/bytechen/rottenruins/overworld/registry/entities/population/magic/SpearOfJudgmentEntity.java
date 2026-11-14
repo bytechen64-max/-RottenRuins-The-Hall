@@ -1,5 +1,6 @@
 package org.bytechen.rottenruins.overworld.registry.entities.population.magic;
 
+
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.DustParticleOptions;
 import org.joml.Vector3f;
@@ -21,10 +22,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
-import org.bytechen.rottenruins.api.magic.MagicStats;
+import org.bytechen.rottenruins.gameplay.magic.stats.MagicStats;
 import org.bytechen.rottenruins.overworld.registry.EntityTypeRegistry;
 import org.bytechen.rottenruins.overworld.registry.RegisterItem;
-import org.bytechen.rottenruins.overworld.registry.items.magic.bases.IMagicBaseItem;
+import org.bytechen.rottenruins.gameplay.magic.spell.IMagicBaseItem;
 import org.bytechen.rottenruins.utils.SpellDamageUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

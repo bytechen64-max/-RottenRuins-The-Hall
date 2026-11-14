@@ -28,7 +28,6 @@ import net.minecraftforge.common.ToolAction;
 import net.minecraftforge.common.ToolActions;
 import org.jetbrains.annotations.Nullable;
 import org.bytechen.rottenruins.api.ICustomOutline;
-import org.bytechen.rottenruins.api.ItemFxProvider;
 
 import java.util.List;
 import org.bytechen.rottenruins.overworld.registry.effect.VerdictEffect;
@@ -36,7 +35,6 @@ import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skil
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.SwordAuraEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.VerdictBeamEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.VerdictFieldEntity;
-import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.VerdictSwordDropEntity;
 import org.bytechen.rottenruins.overworld.registry.items.verdict.HeightFactor;
 import org.bytechen.rottenruins.overworld.registry.items.verdict.VerdictCooldown;
 import org.bytechen.rottenruins.overworld.registry.items.verdict.VerdictDamage;
@@ -57,7 +55,19 @@ import java.util.UUID;
  * <p>三个技能共用同一个 {@link VerdictCooldown} 冷却池：短按 &lt; 8 tick 突进，蓄满松手光柱，潜行 + 按住 14 tick 领域（三态全靠原版使用机制区分，不需要自定义网络包）。
  * <p><b>必须让 {@link #useOnRelease} 返回 true</b>：否则按满时长会走 {@code completeUsingItem()} 而跳过 {@code releaseUsing()}，蓄满松手的光柱放不出来。
  */
-public class DomeriteLongsword extends SwordItem implements ICustomOutline {
+public class DomeriteLongsword extends SwordItem implements ICustomOutline, org.bytechen.rottenruins.api.combat.slash.ISlashWeapon {
+    @Override public org.bytechen.rottenruins.api.combat.slash.SlashSpec slashSpec(Player player,ItemStack stack) {
+        return org.bytechen.rottenruins.content.combat.slash.verdict.VerdictSlash.SPEC;
+    }
+    @Override public float slashDamage(org.bytechen.rottenruins.api.combat.slash.SlashContext context,LivingEntity target) {
+        return VerdictDamage.HURT_PART+net.minecraft.world.item.enchantment.EnchantmentHelper.getDamageBonus(context.stack(),target.getMobType());
+    }
+    @Override public boolean applySlashDamage(org.bytechen.rottenruins.api.combat.slash.SlashContext context,LivingEntity target,float damage) {
+        return VerdictDamage.strike(target,context.player().damageSources().playerAttack(context.player()),damage,VerdictDamage.BYPASS_PART,context.player());
+    }
+    @Override public void onSlashHit(org.bytechen.rottenruins.api.combat.slash.SlashContext context,LivingEntity target,float damage,boolean dealt) {
+        if(dealt)grantVictory(context.player());
+    }
 
     /** 攻击距离加成（格）。{@code forge:entity_reach} 默认 3.0、上限 1024，所以 100 是合法普通值。 */
     public static final double ATTACK_REACH_BONUS = 5;
@@ -146,7 +156,7 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
     private static final float BASE_DAMAGE = 8.0F;
 
     public DomeriteLongsword(Properties properties) {
-        super(Tiers.NETHERITE, (int) BASE_DAMAGE, -2.4f, properties);
+        super(Tiers.NETHERITE, (int) BASE_DAMAGE, -1.5f, properties);
     }
 
     @Override
@@ -175,7 +185,7 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline {
                         AttributeModifier.Operation.ADDITION));
             } else if (attr == Attributes.ATTACK_SPEED) {
                 dynamic.put(attr, new AttributeModifier(
-                        Item.BASE_ATTACK_SPEED_UUID, "Domerite speed", -2.4f,
+                        Item.BASE_ATTACK_SPEED_UUID, "Domerite speed", -1.5f,
                         AttributeModifier.Operation.ADDITION));
             } else {
                 dynamic.put(attr, mod);

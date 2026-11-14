@@ -14,7 +14,7 @@ import org.bytechen.rottenruins.overworld.difficulty.HallDifficultyAttributes;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.ChaseLockGoal;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.FaceTargetGoal;
 import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
-import org.bytechen.infcore.api.goal.InfectedTargetGoal;
+import org.bytechen.rottenruins.api.infection.goal.InfectedTargetGoal;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
@@ -51,10 +51,10 @@ public class InfEndermanEntity extends BaseInfectedEntity {
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 50)
+                .add(Attributes.MAX_HEALTH, 80)
                 .add(Attributes.MOVEMENT_SPEED, 0.25)
                 .add(Attributes.ATTACK_DAMAGE, 25)
-                .add(Attributes.ARMOR, 10)
+                .add(Attributes.ARMOR, 20)
                 .add(Attributes.FOLLOW_RANGE, 32.0)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.8f);
     }

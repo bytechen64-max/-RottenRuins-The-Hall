@@ -21,6 +21,55 @@ public class LangDataEN extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
+        add(RegisterItem.HALL_BOOMERANG.get(), "Hall Boomerang");
+        add(EntityTypeRegistry.BOOMERANG.get(), "Hall Boomerang");
+        add("gui.rotten_ruins.potential_crafting.start", "Craft");
+        add("gui.rotten_ruins.potential_crafting.crafting", "Crafting…");
+        add(RegisterItem.SOUL_DRINK.get(), "Soul Drink");
+        add("staff_grade.rotten_ruins.common", "Grade: Common");
+        add("staff_grade.rotten_ruins.epic", "Grade: Epic");
+        add("staff_grade.rotten_ruins.legendary", "Grade: Legendary");
+        add("tooltip.rotten_ruins.staff_grade_bonus", "+%s spell damage of the same school");
+        add("effect.rotten_ruins.arcane_mark", "Arcane Mark");
+        add("effect.rotten_ruins.corrosion", "Corrosion");
+        add("effect.rotten_ruins.lethargy", "Lethargy");
+        add("effect.rotten_ruins.frailty", "Frailty");
+        add("gui.rotten_ruins.jade.crafting", "Crafting %s%% · ~%s s");
+
+        add("rotten_ruins.story.unknown", "Unknown story: %s");
+        add("rotten_ruins.story.missing_ritual", "Ritual story unavailable. Check the fleshbed_start rule and its clocked story in the data pack.");
+        add("rotten_ruins.story.respawn.first.0", "...You're back.\nDon't worry. I'm still here. Check if you're missing anything.");
+        add("rotten_ruins.story.respawn.normal.0", "Welcome back. Need a moment to rest?");
+        add("rotten_ruins.story.respawn.normal.1", "I remember the path we took.\nLet's walk it again.");
+        add("rotten_ruins.story.respawn.normal.2", "At least this time, you know where the danger is.");
+        add("rotten_ruins.story.respawn.normal.3", "Get your footing first.\nWe'll set off when you're ready.");
+        add("rotten_ruins.story.respawn.rapid.0", "Slow down. We still have time.");
+        add("rotten_ruins.story.respawn.rapid.1", "...Do we really have that much time left?");
+        add("rotten_ruins.story.respawn.fall.0", "Next time, take a look down before you step.");
+        add("rotten_ruins.story.respawn.fall.1", "Let's find a steadier path this time.");
+        add("rotten_ruins.story.respawn.drown.0", "Now, take a deep breath.\nYou're safe.");
+        add("rotten_ruins.story.respawn.drown.1", "Listen to the air around you.\nRemember to come up for breath this time.");
+        add("rotten_ruins.story.respawn.mob.0", "It's still waiting for you there.\nGo back when you're ready.");
+        add("rotten_ruins.story.respawn.mob.1", "I saw that. That one's tough.\nLet's try another approach.");
+        add(RegisterItem.VOID_SHARD.get(), "Void Shard");
+        add("rotten_ruins.story.fleshbed.1", "All things return to decay. The ending is already written...");
+        add("rotten_ruins.story.fleshbed.2", "Still, some things can change. You can choose to stop.");
+        add("rotten_ruins.story.fleshbed.3", "If you insist, then go and do it.");
+        add("rotten_ruins.story.fleshbed.4", "Follow the choice within your heart...");
+        add("rotten_ruins.fleshbed.feed", "Fleshbed: fed %s/%s rotten flesh");
+        add("rotten_ruins.fleshbed.ready", "Fed %s/%s rotten flesh. Right-click again to begin the ritual.");
+        add("rotten_ruins.fleshbed.started", "The ritual has begun...");
+        add("rotten_ruins.fleshbed.running", "The ritual is in progress.");
+        add("rotten_ruins.fleshbed.complete", "The ritual is complete.");
+        add("rotten_ruins.fleshbed.space", "Not enough room. Leave clear, solid ground around all four sides of the fleshbed.");
+        add("rotten_ruins.story.opening", "Hi there! I'm the Rotten Plague mascot.\nI don't have a character design yet...\nBut I'll help you get to know this world!");
+        add(RegisterItem.TRUE_COPPER.get(), "§[rrs:grad:#B87333:#FFD1A3]True Copper Shortsword§[/]");
+        add(RegisterItem.DEATH_DAGGER.get(), "Death Dagger");
+        add(RegisterEffect.APOPTOSIS.get(), "Apoptosis");
+        add("tooltip.rotten_ruins.death_dagger", "25% chance on hit to inflict Apoptosis I for 8 seconds");
+        add("death.attack.apoptosis", "%1$s died of apoptosis");
+        add("death.attack.apoptosis.player", "%1$s died of apoptosis while fighting %2$s");
+
         // Creative tab label / panel title: flowing gradient (§6 fallback keeps it gold when effects are off).
         add("itemGroup." + HallMod.MODID + ".main",
                 "§6§[rrs:grad:#6FBF4A:#8B1E2D:speed=0.6]Rotten Ruins§[/]");
@@ -58,6 +107,7 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterItem.BONECRUSHER_SPAWN_EGG.get(), "Hall Shell Spawn Egg");
         // 补充缺失条目：王庭重型轰炸刷怪蛋
         add(RegisterItem.HEAVY_BOMB_SPAWN_EGG.get(), "Heavy Bomb Spawn Egg");
+        add(RegisterItem.RAMPART_SPAWN_EGG.get(), "Rampart Spawn Egg");
         add(RegisterItem.COLLAPSAR_SPAWN_EGG.get(), "Collapsar Spawn Egg");
         add(RegisterItem.WINDING_COLUMN_SPAWN_EGG.get(), "Winding Column Spawn Egg");
 // 物品：补缺失条目
@@ -66,6 +116,7 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterItem.DOMERITE_LONGSWORD.get(), "Skyfall Verdict");
 
         add(RegisterItem.SCOUT_SPAWN_EGG.get(), "Ulcerated Scout Spawn Egg");
+        add(RegisterItem.ABNORMAL_SQUID_SPAWN_EGG.get(), "Abnormal Squid Spawn Egg");
         add(RegisterItem.PURSUER_SPAWN_EGG.get(), "Ulcerated Pursuer Spawn Egg");
         add(RegisterItem.MONOLITH_SPAWN_EGG.get(), "Ulcerated Monolith Spawn Egg");
 
@@ -113,6 +164,7 @@ public class LangDataEN extends LanguageProvider {
         add(EntityTypeRegistry.INF_SKELETON.get(), "Infected Skeleton");
         add(EntityTypeRegistry.INF_SKELETON_ARROW.get(), "Infected Skeleton Arrow");
         add(EntityTypeRegistry.HEAVY_BOMB.get(), "Heavy Bomb");
+        add(EntityTypeRegistry.RAMPART.get(), "Rampart");
         add(EntityTypeRegistry.HEAVY_BOMB_TNT.get(), "Heavy Bomb TNT");
         add(EntityTypeRegistry.HEARTHSTONE.get(), "Hearthstone");
         add(EntityTypeRegistry.DEATH_HUNTER.get(), "Death Hunter");
@@ -123,6 +175,7 @@ public class LangDataEN extends LanguageProvider {
         // but it still gets a readable name for debugging)
         add(EntityTypeRegistry.VERDICT_SWORD_DROP.get(), "Verdict Blade");
         add(EntityTypeRegistry.SCOUT.get(), "Ulcerated Scout");
+        add(EntityTypeRegistry.ABNORMAL_SQUID.get(), "Abnormal Squid");
         add(EntityTypeRegistry.PURSUER.get(), "Ulcerated Pursuer");
         add(EntityTypeRegistry.MONOLITH.get(), "Ulcerated Monolith");
 
@@ -131,6 +184,7 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterEffect.COLD_ANOMALY_ADAPTATION.get(), "Cold Anomaly Adaptation");
         add(RegisterEffect.HEAT_ANOMALY_ADAPTATION.get(), "Heat Anomaly Adaptation");
         add(RegisterEffect.VERDICT.get(), "Verdict");
+        add(RegisterEffect.MANIC_DISCOMFORT.get(), "Manic Discomfort");
         // Skyfall Verdict: action-bar hint when right-clicking during cooldown
         add("item.rotten_ruins.domerite_longsword.cooldown", "Verdict not ready (%s s)");
         // Skyfall Verdict: pitch too low for the beam (this used to be completely silent)
@@ -201,8 +255,11 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterBlock.DEATH_CORE.get(), "Death Core");
         add("dimension." + HallMod.MODID + ".heall", "Carrion Marrow");
         add("biome." + HallMod.MODID + ".flesh_marrow", "Carrion Marrow");
+        add("biome." + HallMod.MODID + ".hall_ocean", "Hall Ocean");
         add(RegisterBlock.FLESH_RIFT.get().getDescriptionId() + ".no_dimension", "The other end of the rift has not yet formed...");
 
+        // ---- Magic attributes (see RegisterAttributes) ----
+        // ---- Magic: school names + item tooltips (see MagicType / MagicTooltips) ----
         add("magic_type." + HallMod.MODID + ".water", "Water");
         add("magic_type." + HallMod.MODID + ".fire", "Fire");
         add("magic_type." + HallMod.MODID + ".death", "Death");
@@ -233,6 +290,7 @@ public class LangDataEN extends LanguageProvider {
         add("attribute.name." + HallMod.MODID + ".spell_power_void", "Void Spell Power");
         add("attribute.name." + HallMod.MODID + ".spell_power_mysterious", "Mysterious Spell Power");
 
+        // ---- Magic system · items ----
         // Mana plates: one per school.
         add(RegisterItem.DEATH_MANA_PLATE.get(), "Death Mana Plate");
         add(RegisterItem.SOURCE_MANA_PLATE.get(), "Source Mana Plate");
@@ -271,20 +329,7 @@ public class LangDataEN extends LanguageProvider {
         add("gui.rotten_ruins.potential_crafting.needs_power", "Requires potential");
         add("gui.rotten_ruins.potential_crafting.idle", "Place ingredients to begin");
         add("gui.rotten_ruins.potential_crafting.no_recipe", "No matching recipe");
-        add("gui.rotten_ruins.potential_crafting.start", "Craft");
-        add("gui.rotten_ruins.potential_crafting.crafting", "Crafting…");
-        // Custom effects (shown in HUD / Jade)
-        // Staff grades & Soul Drink
-        add(RegisterItem.SOUL_DRINK.get(), "Soul Drink");
-        add("staff_grade.rotten_ruins.common", "Grade: Common");
-        add("staff_grade.rotten_ruins.epic", "Grade: Epic");
-        add("staff_grade.rotten_ruins.legendary", "Grade: Legendary");
-        add("tooltip.rotten_ruins.staff_grade_bonus", "+%s spell damage of the same school");
-        add("effect.rotten_ruins.arcane_mark", "Arcane Mark");
-        add("effect.rotten_ruins.corrosion", "Corrosion");
-        add("effect.rotten_ruins.lethargy", "Lethargy");
-        add("effect.rotten_ruins.frailty", "Frailty");
-        add("gui.rotten_ruins.jade.crafting", "Crafting %s%% · ~%s s");
+        add(RegisterBlock.ANALYZER.get(), "Analyzer");
         add("gui.rotten_ruins.source.reference", "Bands");
         add("gui.rotten_ruins.source.mode.0", "Manual");
         add("gui.rotten_ruins.source.mode.1", "Quick tune");
@@ -354,6 +399,7 @@ public class LangDataEN extends LanguageProvider {
         // Death Star: nether star + wither roses
         add(RegisterItem.DEATH_STAR.get(), "Death Star");
 
+        // ---- Spell constellation GUI / key bind ----
         add("key.categories." + HallMod.MODID, "Rotten Ruins");
         add("key." + HallMod.MODID + ".open_magic", "Open Spell Constellation");
         add("rotten_ruins.gui.magic.title", "Spell Constellation");
@@ -366,6 +412,7 @@ public class LangDataEN extends LanguageProvider {
         add("rotten_ruins.gui.magic.mana", "Mana %s");
         add("rotten_ruins.gui.magic.cooldown", "Cooldown %ss");
         add("rotten_ruins.gui.magic.charge", "Charge %ss");
+        // ---- Spell wheel HUD / loadout ----
         add("key." + HallMod.MODID + ".cast_wheel", "Open/Close Spell Wheel");
         add("key." + HallMod.MODID + ".open_loadout", "Spell Loadout");
         add("rotten_ruins.gui.wheel.title", "Spell Wheel");
@@ -397,7 +444,10 @@ public class LangDataEN extends LanguageProvider {
         add("rotten_ruins.wand_hud.no_reserve", "NO WAND RESERVE");
         add("rotten_ruins.wand_hud.skill", "SELECTED  %s");
         add("rotten_ruins.wand_hud.no_skill", "NONE");
-        add("rotten_ruins.wand_hud.chat_hint", "Drag move · Wheel/corner scale · RMB reset");
+        add("rotten_ruins.wand_hud.picker_hint", "LMB prepare spell · RMB / click outside to close");
+        add("rotten_ruins.wand_hud.picker_select", "PREPARE: %s");
+        add("rotten_ruins.wand_hud.picker_empty", "No other spells loaded on this page");
+        add("rotten_ruins.wand_hud.chat_hint", "RMB icon: spells · Wheel scale · Drag move");
         add("rotten_ruins.wand_hud.hide", "HIDE WAND HUD");
         add("rotten_ruins.wand_hud.show", "SHOW WAND HUD");
         add("rotten_ruins.wheel.release_to_cast", "CLICK A SIGIL TO CAST");
@@ -490,19 +540,25 @@ public class LangDataEN extends LanguageProvider {
         add("rotten_ruins.wheel.loadout.per_second", "%s / s");
         add("rotten_ruins.wheel.loadout.bind_to_slot", "BIND TO SLOT %s");
         add("rotten_ruins.wheel.loadout.release_on_socket", "RELEASE ON A SOCKET");
+        // ---- Section-code text effects · preview screen / command ----
         add("rotten_ruins.gui.textfx.title", "§[rrs:grad:#6FBF4A:#8B1E2D]Section-Code Text Effects§[/]");
         add("rotten_ruins.gui.textfx.hint", "Each row animates live; press ESC to close; type /rrsfx for more");
         add("rotten_ruins.command.rrsfx.enabled", "§aText effects: ON");
         add("rotten_ruins.command.rrsfx.disabled", "§cText effects: OFF");
 
+        // ---- Sound subtitles (see SoundData) ----
         // Body-explosion sound: same subtitle text as corruption's rip_body, hall namespace.
         add("subtitles." + HallMod.MODID + ".rip_body", "Body rips apart");
 
+        // ====================================================================
+        // ---- Simplified corruption content (migrated from the corruption mod) ----
         // Blocks / items / entities / effects are referenced through their registry
         // objects (CorruptionBlocks / CorruptionItems / CorruptionEntityTypes /
         // CorruptionEffects); keys are derived from registry ids, so a rename is a
         // compile error instead of a silently-missing translation.
+        // ====================================================================
 
+        // ---- A. Blocks: block.rotten_ruins.<id> (21) ----
         add(CorruptionBlocks.SPREAD_DIRT.get(), "Corrupted Dirt");
         add(CorruptionBlocks.SPREAD_STONE.get(), "Corrupted Stone");
         add(CorruptionBlocks.INFECTION_COBBLESTONE_BLOCK.get(), "Corrupted Cobblestone");
@@ -527,6 +583,7 @@ public class LangDataEN extends LanguageProvider {
         add(CorruptionBlocks.VARIABLE_HEIGHT_CROP.get(), "Corrupted Meridian");
         add(CorruptionBlocks.SPIRACLE_BLOCK.get(), "Living Spiracle");
 
+        // ---- B. Items: item.rotten_ruins.<id> (42 = 14 materials + 5 tools + 23 spawn eggs) ----
         // Materials
         add(CorruptionItems.INFECTION_BONE.get(), "Infected Bone");
         add(CorruptionItems.HARD_FRAGMENTS.get(), "Hardened Fragments");
@@ -574,6 +631,7 @@ public class LangDataEN extends LanguageProvider {
         add(CorruptionItems.SUMMONING_PILLAR_SPAWN_EGG.get(), "Stage I Summoning Pillar Spawn Egg");
         add(CorruptionItems.ORIGINAL_BUG_SPAWN_EGG.get(), "Primordial Worm Spawn Egg");
 
+        // ---- C. Entities: entity.rotten_ruins.<id> (23) ----
         add(CorruptionEntityTypes.CORRUPTION_ZOMBIE.get(), "Assimilated Zombie");
         add(CorruptionEntityTypes.CORRUPTION_PLAYER.get(), "Assimilated Player");
         add(CorruptionEntityTypes.CORRUPTION_COW.get(), "Assimilated Cow");
@@ -599,6 +657,7 @@ public class LangDataEN extends LanguageProvider {
         add(CorruptionEntityTypes.SUMMONING_PILLAR.get(), "Stage I Summoning Pillar");
         add(CorruptionEntityTypes.ORIGINAL_BUG.get(), "Primordial Worm");
 
+        // ---- D. Effects: effect.rotten_ruins.<id> (6) ----
         add(CorruptionEffects.CORRUPTION.get(), "Corruption");
         add(CorruptionEffects.LYSIS.get(), "Lysis");
         add(CorruptionEffects.MIASMA.get(), "Despair");
@@ -606,6 +665,7 @@ public class LangDataEN extends LanguageProvider {
         add(CorruptionEffects.BLEEDING.get(), "Bleeding");
         add(CorruptionEffects.FEAR.get(), "Fear");
 
+        // ---- E. Advancements: advancements.rotten_ruins.<path> ----
         // Keys come from AdvancementProviderData so the display JSON and lang stay in sync.
         // Advancement titles/descriptions are drawn as single Components (advancement GUI / toast),
         // so effect markers are safe here.

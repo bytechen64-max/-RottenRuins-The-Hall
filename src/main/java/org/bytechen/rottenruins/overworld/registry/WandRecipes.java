@@ -6,7 +6,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.overworld.registry.items.magic.WandCraftingRecipe;
+import org.bytechen.rottenruins.content.magic.WandCraftingRecipe;
 
 public final class WandRecipes {
     public static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS =

@@ -1,0 +1,28 @@
+// Configure the run before ForgeGradle generates launch files, not only JavaExec's workingDir.
+gradle.beforeProject { oceanProject ->
+    oceanProject.afterEvaluate {
+        if (oceanProject.extensions.findByName('minecraft') != null) {
+            oceanProject.minecraft.runs.named('gameTestServer').configure {
+                workingDirectory oceanProject.file('build/hall-ocean-game-test')
+                property 'forge.enabledGameTestNamespaces', 'rotten_ruins_worldgen_tests'
+                args '--universe', oceanProject.file('build/hall-ocean-game-test/worlds').absolutePath, '--world', (oceanProject.findProperty('oceanTestWorld') ?: 'hall-ocean-world')
+            }
+        }
+    }
+    oceanProject.tasks.configureEach { oceanTask ->
+        if (oceanTask.name == 'runGameTestServer') {
+            dependsOn 'patchModJars'
+            doFirst {
+                oceanProject.file('build/hall-ocean-game-test').mkdirs()
+                oceanProject.copy {
+                    from oceanProject.file('build/patched-mods')
+                    into oceanProject.file('build/hall-ocean-game-test/mods')
+                }
+                oceanProject.copy {
+                    from oceanProject.file('run/eula.txt')
+                    into oceanProject.file('build/hall-ocean-game-test')
+                }
+            }
+        }
+    }
+}

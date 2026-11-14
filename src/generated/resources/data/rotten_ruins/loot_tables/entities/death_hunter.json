@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:entity",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:killed_by_player"
+        },
+        {
+          "chance": 0.1,
+          "condition": "minecraft:random_chance"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "rotten_ruins:death_dagger"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "rotten_ruins:entities/death_hunter"
+}

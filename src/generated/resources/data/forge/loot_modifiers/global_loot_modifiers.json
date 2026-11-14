@@ -1,6 +1,14 @@
 {
   "entries": [
-    "rotten_ruins:source_charge_sand_from_gravel"
+    "rotten_ruins:spell_from_bastion_other",
+    "rotten_ruins:source_charge_sand_from_gravel",
+    "rotten_ruins:spell_from_bastion_treasure",
+    "rotten_ruins:spell_from_desert_pyramid",
+    "rotten_ruins:spell_from_bastion_bridge",
+    "rotten_ruins:spell_from_shipwreck_treasure",
+    "rotten_ruins:spell_from_bastion_hoglin_stable",
+    "rotten_ruins:spell_from_jungle_temple",
+    "rotten_ruins:void_shard_from_enderman"
   ],
   "replace": false
 }

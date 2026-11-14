@@ -60,6 +60,15 @@ public final class ItemFxFieldPool {
         int wantW = spec.widthOf(main.width);
         int wantH = spec.heightOf(main.height);
 
+        return getSized(effectId, spec.name(), wantW, wantH);
+    }
+
+    /** 保存单件物品的裁剪剪影，尺寸仅覆盖它自己的屏幕区域。 */
+    @Nullable
+    public static TextureTarget getSized(String effectId, String fieldName, int wantW, int wantH) {
+        if (wantW <= 0 || wantH <= 0) return null;
+        ItemFxFieldSpec spec = ItemFxFieldSpec.full(fieldName, ItemFxFormat.RGBA8);
+
         Entry entry = FIELDS.computeIfAbsent(key(effectId, spec.name()), k -> new Entry(spec));
         TextureTarget target = entry.target;
         if (target == null) {

@@ -30,6 +30,13 @@ public class RecipeProviderData extends RecipeProvider {
 
     @Override
     protected void buildRecipes(Consumer<FinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC,
+                        org.bytechen.rottenruins.overworld.registry.corruption.CorruptionBlocks.FLESHBED.get())
+                .define('M', Ingredient.of(Items.BEEF, Items.PORKCHOP, Items.CHICKEN, Items.MUTTON, Items.RABBIT,
+                        Items.COOKED_BEEF, Items.COOKED_PORKCHOP, Items.COOKED_CHICKEN, Items.COOKED_MUTTON, Items.COOKED_RABBIT))
+                .define('G', Items.GOLD_INGOT)
+                .pattern("MMM").pattern("MGM").pattern("MMM")
+                .unlockedBy("has_gold_ingot", has(Items.GOLD_INGOT)).save(consumer);
         addWandRecipes(consumer);
         addPotentialEquipmentRecipes(consumer);
         addChipRecipes(consumer);
@@ -92,6 +99,11 @@ public class RecipeProviderData extends RecipeProvider {
     }
 
     private void addSourceMachineRecipes(Consumer<FinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC,RegisterBlock.ANALYZER.get())
+                .define('I',Items.IRON_INGOT).define('G',Items.GLASS).define('C',Items.COPPER_INGOT)
+                .define('S',RegisterItem.CHIP_SCAN.get()).define('P',RegisterItem.SOURCE_MANA_PLATE.get())
+                .pattern("IGI").pattern("CSC").pattern("IPI")
+                .unlockedBy("has_chip_scan",has(RegisterItem.CHIP_SCAN.get())).save(consumer);
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC,RegisterItem.MANA_BOTTLE.get())
                 .requires(Items.GLASS_BOTTLE).requires(Items.COPPER_INGOT).requires(RegisterItem.SOURCE_CHARGE_SAND.get())
                 .unlockedBy("has_source_charge_sand",has(RegisterItem.SOURCE_CHARGE_SAND.get())).save(consumer);

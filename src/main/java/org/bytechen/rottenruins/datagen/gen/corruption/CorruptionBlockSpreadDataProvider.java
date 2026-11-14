@@ -3,7 +3,7 @@ package org.bytechen.rottenruins.datagen.gen.corruption;
 import net.minecraft.data.PackOutput;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import org.bytechen.infcore.core.blockspread.BlockSpreadEntry;
+import org.bytechen.rottenruins.core.infection.blockspread.BlockSpreadEntry;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionBlocks;
 
@@ -16,7 +16,7 @@ import java.util.List;
  * <p>供一阶召唤柱/腐化群系使用：把脚下方块逐步感染成腐化方块。
  * 输出 {@code data/rotten_ruins/infcore_blockspread/corruption.json}。</p>
  */
-public class CorruptionBlockSpreadDataProvider extends org.bytechen.infcore.core.datagen.BlockSpreadDataProvider {
+public class CorruptionBlockSpreadDataProvider extends org.bytechen.rottenruins.datagen.infection.BlockSpreadDataProvider {
 
     public static final String SPREAD_TYPE = "corruption";
 

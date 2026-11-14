@@ -3,7 +3,7 @@ package org.bytechen.rottenruins.overworld.difficulty;
 import net.minecraft.resources.ResourceLocation;
 import org.bytechen.rottenruins.config.ConfigHelper;
 import org.bytechen.rottenruins.config.data.SplendidingConfig;
-import org.bytechen.infcore.api.difficulty.DifficultyType;
+import org.bytechen.rottenruins.api.infection.difficulty.DifficultyType;
 import org.jetbrains.annotations.Nullable;
 
 /**

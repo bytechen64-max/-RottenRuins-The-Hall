@@ -1,6 +1,7 @@
 package org.bytechen.rottenruins.mixin;
 
 import org.bytechen.rottenruins.client.rend.glint.HeldItemOutlineRenderer;
+import org.bytechen.rottenruins.client.rend.slash.ItemSlashAnimation;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
@@ -8,13 +9,20 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemDisplayContext;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = ItemInHandRenderer.class, priority = 900)
 public abstract class ItemInHandRendererMixin {
+    @Shadow
+    public abstract void renderItem(net.minecraft.world.entity.LivingEntity entity, ItemStack stack,
+                                    ItemDisplayContext context, boolean leftHand, PoseStack poses,
+                                    MultiBufferSource buffers, int light);
+
     @Inject(method = "renderArmWithItem", at = @At("HEAD"), cancellable = true, require = 0)
     private void itemglint$skipDisabledItemHand(AbstractClientPlayer player, float partialTick, float pitch,
                                                  InteractionHand hand, float swingProgress, ItemStack stack,
@@ -24,6 +32,27 @@ public abstract class ItemInHandRendererMixin {
                 && (stack.isEmpty() || HeldItemOutlineRenderer.shouldSkipHand(hand))) {
             ci.cancel();
             return;
+        }
+        var slash = ItemSlashAnimation.pose(player, hand, stack, partialTick, true);
+        if (slash != null) {
+            HumanoidArm arm = hand == InteractionHand.MAIN_HAND ? player.getMainArm() : player.getMainArm().getOpposite();
+            boolean left = arm == HumanoidArm.LEFT;
+            ItemDisplayContext context = left ? ItemDisplayContext.FIRST_PERSON_LEFT_HAND
+                    : ItemDisplayContext.FIRST_PERSON_RIGHT_HAND;
+            boolean rendered = false;
+            poseStack.pushPose();
+            try {
+                if (ItemSlashAnimation.apply(poseStack, player, stack, context, left, slash, equipProgress, null)) {
+                    renderItem(player, stack, context, left, poseStack, bufferSource, packedLight);
+                    rendered = true;
+                }
+            } finally {
+                poseStack.popPose();
+            }
+            if (rendered) {
+                if (HeldItemOutlineRenderer.isCaptureActive()) HeldItemOutlineRenderer.markHandCaptured();
+                ci.cancel();
+            }
         }
     }
 

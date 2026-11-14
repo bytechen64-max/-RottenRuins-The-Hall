@@ -9,7 +9,7 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.overworld.registry.items.magic.its.SoulDrink;
+import org.bytechen.rottenruins.content.magic.spell.SoulDrink;
 import org.bytechen.rottenruins.utils.SpellDamageUtil;
 import org.jetbrains.annotations.Nullable;
 

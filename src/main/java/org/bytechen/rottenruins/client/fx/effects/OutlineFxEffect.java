@@ -47,10 +47,10 @@ public final class OutlineFxEffect implements ItemFxEffect {
             ItemFxFieldSpec.scaled(FIELD_HALO_HALF_WORK, ItemFxFormat.RGBA8, 2, 64),
             ItemFxFieldSpec.scaled(FIELD_HALO_WIDE, ItemFxFormat.RGBA8, 4, 32),
             ItemFxFieldSpec.scaled(FIELD_HALO_WIDE_WORK, ItemFxFormat.RGBA8, 4, 32),
-            ItemFxFieldSpec.scaled(FIELD_FIRE_HALF, ItemFxFormat.RGBA8, 2, 64),
-            ItemFxFieldSpec.scaled(FIELD_FIRE_HALF_WORK, ItemFxFormat.RGBA8, 2, 64),
-            ItemFxFieldSpec.scaled(FIELD_FIRE_WIDE, ItemFxFormat.RGBA8, 4, 32),
-            ItemFxFieldSpec.scaled(FIELD_FIRE_WIDE_WORK, ItemFxFormat.RGBA8, 4, 32),
+            ItemFxFieldSpec.scaled(FIELD_FIRE_HALF, ItemFxFormat.RGBA16F, 2, 64),
+            ItemFxFieldSpec.scaled(FIELD_FIRE_HALF_WORK, ItemFxFormat.RGBA16F, 2, 64),
+            ItemFxFieldSpec.scaled(FIELD_FIRE_WIDE, ItemFxFormat.RGBA16F, 4, 32),
+            ItemFxFieldSpec.scaled(FIELD_FIRE_WIDE_WORK, ItemFxFormat.RGBA16F, 4, 32),
             ItemFxFieldSpec.full(FIELD_FIRE_VOLUME, ItemFxFormat.RGBA8)
     );
 

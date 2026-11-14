@@ -60,7 +60,7 @@ public class CorruptionBoneRuinsEntity extends BaseHostEntity {
     @Override
     public void tick() {
         super.tick();
-        if (this.level().isClientSide || !this.isAlive()) return;
+        if (this.level().isClientSide || this.isFakeDying() || !this.isAlive()) return;
 
         if (eruptTimer > 0) {
             eruptTick();

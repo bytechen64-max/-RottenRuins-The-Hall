@@ -1,6 +1,5 @@
 package org.bytechen.rottenruins.overworld.registry.entities.base;
 
-import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.client.entity.IAutoRenderableEntity;
 import org.bytechen.rottenruins.network.c2s.IKeyframeHandler;
 import org.bytechen.rottenruins.network.s2c.BloodBurstPacket;
@@ -14,7 +13,8 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.Mth;
+import org.bytechen.rottenruins.core.entity.burst.BurstMath;
+import org.bytechen.rottenruins.core.entity.burst.FakeDeathState;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -27,12 +27,12 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.overworld.registry.capability.threat.ThreatHelper;
 import org.bytechen.rottenruins.overworld.registry.SoundEventRegistry;
-import org.bytechen.infcore.api.IInfectedEntity;
-import org.bytechen.infcore.api.IKillCounter;
-import org.bytechen.infcore.api.goal.ITargetFilter;
-import org.bytechen.infcore.core.capability.CapabilityRegistry;
-import org.bytechen.infcore.core.capability.KillCountCapability;
-import org.bytechen.infcore.core.evolution.EvolutionManager;
+import org.bytechen.rottenruins.api.infection.IInfectedEntity;
+import org.bytechen.rottenruins.api.infection.IKillCounter;
+import org.bytechen.rottenruins.api.infection.goal.ITargetFilter;
+import org.bytechen.rottenruins.platform.forge.infection.capability.CapabilityRegistry;
+import org.bytechen.rottenruins.platform.forge.infection.capability.KillCountCapability;
+import org.bytechen.rottenruins.gameplay.infection.evolution.EvolutionManager;
 import org.joml.Vector3f;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -47,7 +47,13 @@ import java.util.function.Consumer;
 public abstract class AbstractRottenEntity extends Monster implements IAutoRenderableEntity, IKeyframeHandler, IInfectedEntity, IKillCounter, ITargetFilter {
 
 
-    /** 阵营：王庭 / 腐化。<b>必须是可覆写方法而不是实例字段</b>：{@link net.minecraft.world.entity.Mob} 构造器会在子类字段初始化之前调用 {@code registerGoals()} 进而调到这里，用字段会读到 null 并 NPE（表现为刷怪蛋放不出生物）。 */
+    /**
+     * 阵营：王庭 / 腐化 / 死亡（默认王庭；腐化系覆写为 CORRUPTION，
+     * 死亡系在 {@code AbstractDeathEntity} 覆写为 DEATH）。
+     * <p><b>必须是可覆写方法而不是实例字段</b>：{@link net.minecraft.world.entity.Mob} 的构造器
+     * 会在子类字段初始化之前调用 {@code registerGoals()}。阵营查询也可能发生在构造期，
+     * 若用字段，便可能读到 null（表现为刷怪蛋放不出生物）。</p>
+     */
     protected RottenFaction faction() { return RottenFaction.HALL; }
 
     public RottenFaction getFaction() { return faction(); }
@@ -89,7 +95,7 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
     private static final EntityDataAccessor<Float> BURST_TWITCH_AMPLITUDE =
             SynchedEntityData.defineId(AbstractRottenEntity.class, EntityDataSerializers.FLOAT);
 
-    private int fakeDeathTimer = 0;
+    private final FakeDeathState fakeDeathState = new FakeDeathState();
     /** 爆体总时长（tick）：30 = 1.5 秒。 */
     protected int fakeDeathDuration = 30;
     /** 爆体缩放窗口（tick）：与爆体总时长一致，全程抽搐。 */
@@ -110,27 +116,56 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
     public int doHurtCooldown = 0;
     protected float doHurtDistance = 3.0f;
 
-    /** 追击时交给寻路的速度倍率（对应原版 {@code MeleeAttackGoal} 的 {@code speedModifier}），由子类在构造器里用 {@link #setChaseSpeed(float)} 声明。 */
+    /**
+     * 追击时交给寻路的速度倍率 —— 对应原版 {@code MeleeAttackGoal} 的 {@code speedModifier}。
+     * <p>现在追移动由 {@link #tickChase()} 统一发起，各生物原来的倍率（例如
+     * 畸骸末影人是 1.2）改由子类在构造器里用 {@link #setChaseSpeed(float)} 声明。</p>
+     */
     protected float chaseSpeed = 1.0F;
 
-    /** 被玩家攻击后的"还手窗口"（tick）：窗口内该玩家无视威胁点数直接锁为攻击者 —— 威胁点数不足时王庭生物<b>不主动索敌</b>玩家，但被打过来<b>必须会还手</b>（主动索敌由 {@link #canTarget} 拦截，还手靠这个窗口放行）。 */
+    // ==================== 威胁点数 / 索敌与还手 ====================
+
+    /**
+     * 被玩家攻击后的"还手窗口"（tick）。窗口内这名玩家会被无视威胁点数直接锁为攻击者。
+     * <p>
+     * 需求：玩家威胁点数低于 {@link ThreatHelper#TARGET_THREAT_THRESHOLD} 时王庭生物
+     * <b>不会主动索敌</b>玩家，但玩家打过来时必须<b>会还手</b>。
+     * 主动索敌由 {@link #canTarget} 拦截，还手则靠这个窗口放行。
+     */
     private static final int RETALIATION_WINDOW_TICKS = 100;
 
     /** 最近攻击本实体的玩家（只用于还手窗口判定） */
     @Nullable
     private Player lastAttacker;
 
+    /** 还手窗口剩余 tick */
     private int retaliationTicks;
 
-    /** 创造 / 旁观玩家一律不索敌也不还手（同原版 {@code NearestAttackableTargetGoal}）；{@code canAttackType} 挡不住同类玩家，必须自己判。 */
+    /**
+     * 王庭生物是否"完全不该理会"这名玩家。
+     * <p>
+     * 创造 / 旁观模式玩家一律不索敌、也不还手 —— 与原版
+     * {@code NearestAttackableTargetGoal} 排除创造、旁观玩家的行为一致。
+     * 构造器里的 {@code canAttackType} 挡不住这种情况（玩家与生物同类），
+     * 所以必须自己判。
+     */
     public static boolean isIgnoredPlayer(Player player) {
         return player.isCreative() || player.isSpectator();
     }
 
-    /** 玩家贴脸到这个距离内时，即使威胁点数不够也会被主动索敌，避免王庭生物"装瞎"。 */
+    /**
+     * 玩家贴脸到这个距离内时，即使威胁点数不够也会被主动索敌。
+     * <p>避免王庭生物在玩家已经贴脸时还"装瞎"；远处的玩家仍按威胁点数判定。</p>
+     */
     protected static final double NEARBY_PLAYER_AGGRO_DISTANCE = 12.0D;
 
-    /** 威胁点数索敌过滤器（作为 {@code InfectedTargetGoal} 的 filter）：玩家要威胁点数 ≥ {@link ThreatHelper#TARGET_THREAT_THRESHOLD} 且非创造/旁观；非玩家生物<b>不论威胁点数一律照常索敌</b>。 */
+    /**
+     * 威胁点数索敌过滤器 —— 直接作为 {@code InfectedTargetGoal} 的 filter 传入。
+     * <p>
+     * {@link net.minecraft.world.entity.player.Player 玩家}：创造 / 旁观模式直接排除；
+     * 其余玩家要威胁点数 ≥ {@link ThreatHelper#TARGET_THREAT_THRESHOLD} 才会被主动索敌；<br>
+     * 非玩家生物：<b>不论威胁点数一律照常索敌</b>。
+     */
     @Override
     public boolean canTarget(LivingEntity owner, LivingEntity target) {
         if (!(target instanceof Player player)) return true;
@@ -139,7 +174,14 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
                 || owner.distanceToSqr(player) <= NEARBY_PLAYER_AGGRO_DISTANCE * NEARBY_PLAYER_AGGRO_DISTANCE;
     }
 
-    /** 最后一道闸：{@link #canTarget} 只挡得住 {@code InfectedTargetGoal} 这条索敌路径，其它直接写 {@code target} 的地方在这里被折成 {@code null}（创造/旁观玩家、威胁点数不足又不在还手窗口内的玩家）。 */
+    /**
+     * 锁死"威胁点数不足的玩家不会被盯上"这条规则。
+     * <p>
+     * {@link #canTarget} 只挡得住 {@code InfectedTargetGoal} 这条索敌路径；
+     * 原版其它写 {@code target} 的地方（其它 goal、别的 mod 的 AI、指令等）不受它约束。
+     * 这里做最后一道闸：创造 / 旁观玩家，以及威胁点数不足又不在还手窗口内的玩家，
+     * 直接改成 {@code null}。
+     */
     @Override
     public void setTarget(@Nullable LivingEntity target) {
         if (target instanceof Player player
@@ -153,22 +195,53 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
         super.setTarget(target);
     }
 
+    /** 还手窗口是否仍然有效。 */
     protected boolean isRetaliating() {
         return this.retaliationTicks > 0;
     }
 
+    /** 指定的玩家是否就是最近打我的那个人（还手目标）。 */
     protected boolean isRetaliationTarget(Player player) {
         return this.retaliationTicks > 0 && this.lastAttacker == player;
     }
 
-    /** 威胁点数达标 → 正常索敌；否则只在"还手窗口"内、且正是这名玩家 → 还手；贴脸距离内也算。 */
+    /**
+     * 王庭生物是否可以攻击这名玩家。
+     * <p>
+     * 威胁点数达到阈值 → 可以（正常索敌）；
+     * 否则只有在"还手窗口"内、且正是这名玩家打的 → 可以（还手）。
+     */
     protected boolean canAttackPlayer(Player player) {
         return ThreatHelper.getThreat(player) >= ThreatHelper.TARGET_THREAT_THRESHOLD
                 || isRetaliationTarget(player)
                 || this.distanceToSqr(player) <= NEARBY_PLAYER_AGGRO_DISTANCE * NEARBY_PLAYER_AGGRO_DISTANCE;
     }
 
-    /** 范围攻击是否允许把 {@code target} 计入命中列表（给 {@code RangeAttackUtils} 的 {@code Builder#filter} 用）：<b>不能直接复用 {@link #canTarget}</b> —— 范围攻击是"无差别扫一片"，那样挥一刀会把旁边同阵营的感染生物一起扫进去；玩家仍走威胁点数 / 还手窗口闸门，{@link IInfectedEntity} 不互相误伤。 */
+    // ==================== 范围攻击（AoE / 扇形扫击）公共判定 ====================
+
+    /**
+     * 范围攻击是否允许把 {@code target} 计入命中列表 —— 给
+     * {@code RangeAttackUtils} 的 {@code Builder#filter} 用。
+     *
+     * <h3>为什么不直接复用 {@link #canTarget}</h3>
+     * <p>{@link #canTarget} 只对玩家做威胁点数闸门，非玩家一律放行。单目标攻击没问题
+     * （一次只打 AI 选中的那一个），但范围攻击是"无差别扫一片"：如果直接拿它当过滤，
+     * 挥一刀会把旁边的同阵营感染生物也扫进去 —— 与
+     * {@link org.bytechen.rottenruins.api.infection.goal.InfectedTargetGoal} 默认
+     * {@code targetOtherInfected=false} 的"感染生物之间不互相攻击"矛盾。</p>
+     *
+     * <h3>这里的口径</h3>
+     * <ul>
+     *   <li>{@link Player}：仍然走 {@link #canAttackPlayer} 的威胁点数 / 还手窗口闸门，
+     *       否则范围伤害会绕过"威胁点数不足不主动开战"的设定，隔墙蹭到低威胁玩家；</li>
+     *   <li>{@link IInfectedEntity}：不互相误伤（与 AI 索敌口径一致）；</li>
+     *   <li>其它生物：存活、可攻击、类型允许即可。</li>
+     * </ul>
+     *
+     * <p><b>主目标例外</b>：若本次攻击在 0.58s 前摇里锁定的主目标恰好是玩家，而它的威胁点数
+     * 在命中瞬间掉回阈值以下，这里会返回 false。子类可以在自己的 filter 里对
+     * {@code target == 主目标} 单独放行（见 {@code InfPlayerEntity#tickAttack}）。</p>
+     */
     protected boolean canHitWithRangeAttack(LivingEntity target) {
         if (target == this || !target.isAlive() || !target.isAttackable()) return false;
         if (!this.canAttackType(target.getType())) return false;
@@ -177,7 +250,15 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
         return true;
     }
 
-    /** 自身碰撞箱中心指向目标碰撞箱中心的<b>水平</b>单位向量：扇形轴必须对准目标方向而不是直接用 {@link #getYRot()}（转向是渐进的，起手瞬间会把主目标甩出扇面）；水平位置重合时退回自身朝向，保证不是零向量。 */
+    /**
+     * 从自身碰撞箱中心指向目标碰撞箱中心的<b>水平</b>单位向量。
+     * <p>
+     * 范围攻击的扇形轴应该对准"目标所在方向"，而不是直接用 {@link #getYRot()}：
+     * 生物转向是渐进的（{@code FaceTargetGoal} 每 tick 只转几度），起手瞬间 yRot 往往
+     * 还没完全对准目标，拿它当扇形轴会把主目标甩出扇面。两者水平位置重合
+     * （目标站在自己身上等退化情况）时退回自身朝向，保证返回值永远不是零向量。
+     * </p>
+     */
     protected Vec3 horizontalDirectionTo(LivingEntity target) {
         Vec3 delta = target.getBoundingBox().getCenter().subtract(this.getBoundingBox().getCenter());
         Vec3 horizontal = new Vec3(delta.x, 0.0D, delta.z);
@@ -189,10 +270,26 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
 
     @Override
     public ResourceLocation getInfectionType() {
+        // 王庭 / 腐化 / 死亡各有自己的感染阵营标识（不是同一个 type）
         return this.faction().infectionType();
     }
 
-    /** 击杀 → 感染：infcore 在 {@code LivingDeathEvent} 里调用，规则 type 取 {@code getFaction().infectionRuleType()}，具体转化交给 {@link EvolutionManager} 判定（王庭侧没有专属形态的再按碰撞体积走兜底档位，腐化侧只做表内映射）。 */
+    // ==================== 击杀 → 感染 ====================
+
+    /**
+     * 击杀事件：被本模组感染生物<b>击杀</b>的生物会被同化成<b>该阵营</b>的感染形态。
+     * <p>
+     * 由 infcore 在 {@code LivingDeathEvent} 中通过 {@link IKillCounter#onKilledEntity(Entity)}
+     * 调用；使用的规则 type 为 {@code getFaction().infectionRuleType()}
+     * （王庭 {@code rotten_ruins:hall_inf} / 腐化 {@code rotten_ruins:corruption_inf}），
+     * 具体转化规则交给 infcore 的 {@link EvolutionManager} 判定：
+     * 有专属感染形态的走进化表（王庭：玩家 → 畸骸玩家、骷髅 → 畸骸骷髅……；
+     * 腐化：蝙蝠/猪/羊/牛/狼/鸡/骷髅/僵尸/村民/玩家 → {@code corruption_*} 同化种），
+     * 王庭侧没有专属形态的再按碰撞体积走 {@code UlceratedConversionRules} 的兜底档位；
+     * 腐化侧没有兜底（与原 corruption 工程一致，只做表内映射）。
+     *
+     * @param killed 被本实体击杀的实体
+     */
     @Override
     public void onKilledEntity(Entity killed) {
         IKillCounter.super.onKilledEntity(killed); // 击杀计数 +1
@@ -200,10 +297,12 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
         if (!(killed instanceof LivingEntity victim)) return;
         if (!(victim.level() instanceof ServerLevel serverLevel)) return;
 
-        // 先快照坐标 / 碰撞箱：转化成功时 infcore 会 discard 受害者并生成新的感染实体，之后既读不到它也没有追踪玩家列表（所以溅血按坐标广播）。
+        // 先快照坐标 / 碰撞箱：感染转化成功时 infcore 会 discard 受害者并生成新的感染实体，
+        // 之后既读不到它、也拿不到它的追踪玩家列表（所以溅血要按坐标广播，见 onInfectionBlood）。
         AABB victimBox = victim.getBoundingBox();
         Vec3 victimCenter = victimBox.getCenter();
-        // 击杀时拿不到"最后一击"的实际伤害，用生命上限的一半作为体量代理（大怪喷得多、小怪喷得少）。
+        // 击杀时拿不到"最后一击"的实际伤害，用生命上限的一半作为体量代理：
+        // 大怪喷得多、小怪喷得少，且不会因为最后一击伤害未知就全按固定值处理。
         float proxyDamage = victim.getMaxHealth() * 0.5F;
 
         // 只有真的"造成感染"（转化成功）才喷血 —— applyEvolution 的返回值就是判定结果。
@@ -212,10 +311,27 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
         }
     }
 
-    /** 感染击杀溅血：被杀目标已被转化替换，只能用手上快照的坐标与碰撞箱按 {@link BloodBurstPacket#sendBurstAt} 广播；子类可覆写改变或禁用（某些 boss 不出血）。{@code damage} 是生命上限一半的数量代理值。 */
+    /**
+     * 感染击杀溅血 —— 王庭生物击杀目标并<b>成功转化为感染形态</b>时，在<b>被击杀者原位</b>
+     * 喷一簇 {@code blood} 血花。
+     *
+     * <p>和受击溅血（{@link #onHurtBlood}）同属"只允许的两个出血点"；区别是这里的目标
+     * 已经被感染转化替换掉，所以交给我们自己快照下来的坐标与碰撞箱，由
+     * {@link BloodBurstPacket#sendBurstAt} 按坐标广播给附近玩家。
+     * 方向仍是"完成击杀的王庭生物 → 受害者原位"，速度按两者距离换算。</p>
+     *
+     * <p>子类可以覆写本方法改变 / 禁用感染击杀血花（例如某些 boss 不想出血）。</p>
+     *
+     * @param level   服务端世界
+     * @param center  受害者转化前的碰撞箱中心
+     * @param box     受害者转化前的碰撞箱
+     * @param damage  数量换算用的伤害代理值（生命上限的一半）
+     */
     protected void onInfectionBlood(ServerLevel level, Vec3 center, AABB box, float damage) {
         BloodBurstPacket.sendBurstAt(level, center, box, this, damage);
     }
+
+    // ---------- IKillCounter：计数读写全部交给 infcore 附加的能力 ----------
 
     @Override
     public int getKillCount() {
@@ -237,10 +353,28 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
     }
 
     public enum BurstRenderMode { ANIMATION_ONLY, SCALE_ONLY, ANIMATION_AND_SCALE, NONE }
-    /** 爆体时的渲染模式，由子类在构造器里设置（服务端 / 客户端执行同一构造器，不做同步，运行期不要只在一端改）。默认动画+缩放；没有 die 动画时 {@link #shouldBurstPlayAnim()} 会自动退回"只缩放"且 idle/walk/run 照常播。 */
+    /**
+     * 爆体时的渲染模式。
+     * <p>默认 {@link BurstRenderMode#ANIMATION_AND_SCALE}：爆体一开始就同时播死亡动画
+     * （<b>前提是 {@link #hasDieAnim()} 为 true</b>）与脉冲缩放。</p>
+     * <p><b>没有 {@code die} 动画的生物不需要改这里</b>：{@link #shouldBurstPlayAnim()}
+     * 会同时看 {@link #hasDieAnim()}，动画模式下没有死亡动画时会自动退回"只缩放"，
+     * 并且 <b>idle / walk / run 照常播放</b>（见 {@link #isBurstAnimating()}）。
+     * 真正补了 die 动画的生物，在构造器里 {@code setHasDieAnim(true)} 即可。</p>
+     * <p>本字段由子类在构造器里设置（服务端 / 客户端都会执行同一构造器），
+     * 不做同步；运行期不要只在一端改它。</p>
+     */
     protected BurstRenderMode burstRenderMode = BurstRenderMode.ANIMATION_AND_SCALE;
 
-    /** 该生物的 animation json 里是否<b>真的存在</b> {@code "die"} 动画；默认 false（目前项目内所有动画文件都没有）。为 false 时爆体不尝试播放死亡动画，{@link #isBurstAnimating()} 恒为 false，idle / walk / run 不会被爆体停掉。 */
+    /**
+     * 该生物的 animation json 里是否<b>真的存在</b> {@code "die"} 动画。
+     * <p>默认 false —— 目前项目内所有动画文件都没有 die 动画。为 false 时：
+     * 爆体不会尝试播放死亡动画，{@link #isBurstAnimating()} 恒为 false，
+     * 因此 idle / walk / run 控制器不会被爆体停掉。</p>
+     * <p>以后给某个生物补了 die 动画，在它的构造器里 {@code setHasDieAnim(true)};
+     * 若同时想让爆体播死亡动画，再把 {@code burstRenderMode} 设为
+     * {@link BurstRenderMode#ANIMATION_ONLY} 或 {@link BurstRenderMode#ANIMATION_AND_SCALE}。</p>
+     */
     protected boolean hasDieAnim = false;
 
     public void setHasDieAnim(boolean has) { this.hasDieAnim = has; }
@@ -248,9 +382,13 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
 
     public boolean isActuallyMoving = false;
     private int movingCooldown = 0;
-    private long clientBurstStartTime = -1;
 
-    /** 找到路之后「下一次重算路径」的间隔（tick），量级同原版 {@code MeleeAttackGoal} 的 {@code 4 + rand(7)}。 */
+    // ==================== 追击寻路节流 ====================
+
+    /**
+     * 找到路之后「下一次重算路径」的间隔（tick）。
+     * <p>量级与原版 {@code MeleeAttackGoal} 的 {@code 4 + rand(7)} 一致。</p>
+     */
     private static final int REPATH_INTERVAL = 10;
     /** 寻路失败后的首次退避（tick），之后每失败一次翻倍。 */
     private static final int REPATH_FAIL_BASE = 40;
@@ -261,6 +399,10 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
     private int repathCooldown;
     /** 连续寻路失败次数（用来做指数退避）。 */
     private int repathFailures;
+    @Nullable
+    private LivingEntity chaseTarget;
+    @Nullable
+    private Vec3 lastRepathPosition;
 
 
 
@@ -345,7 +487,8 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
         if (!level().isClientSide) {
             Entity attacker = source.getEntity();
             // 创造 / 旁观玩家不参与还手，否则打一下就会永久被锁为目标
-            if (attacker instanceof Player player && !isIgnoredPlayer(player)) {
+            if (result && this.isAlive() && !this.isFakeDying()
+                    && attacker instanceof Player player && !isIgnoredPlayer(player)) {
                 this.lastAttacker = player;
                 this.retaliationTicks = RETALIATION_WINDOW_TICKS;
                 // 原版只有 HurtByTargetGoal 才会读 lastHurtByMob，而王庭生物都没注册这个 goal ——
@@ -357,7 +500,24 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
         return result;
     }
 
-    /** 受击溅血：在被打的<b>王庭生物自己身上</b>喷一簇 {@code blood} 血花。需求只允许两个出血点（本方法 + {@link #onInfectionBlood}），入口写在基类而非 Forge 事件 —— "其它生物被攻击不会出血"是<b>结构上</b>保证的。{@code damage} 是血条变化 + 吸收盾消耗，不是护甲减免前的原始值。 */
+    // ==================== 受击溅血 ====================
+
+    /**
+     * 王庭生物被攻击、真正吃到伤害时调用 —— 在<b>自己身上</b>喷一簇 {@code blood} 血花。
+     *
+     * <h3>为什么写在基类、不用 Forge 事件</h3>
+     * <p>需求只允许两个地方出溅血：</p>
+     * <ol>
+     *   <li>王庭生物被打（本方法，粒子在<b>被打的王庭生物</b>身上）；</li>
+     *   <li>王庭生物击杀并成功感染目标（{@link #onInfectionBlood}，粒子在<b>被击杀者原位</b>）。</li>
+     * </ol>
+     * <p>入口都写在本基类里，原版 / 其它模组的生物被打时不会走到这里 ——
+     * "其他生物被攻击不会出血"是<b>结构上</b>保证的，不依赖事件或其他过滤。
+     * 子类想改条件 / 方向 / 数量，直接覆写本方法即可。</p>
+     *
+     * @param source 伤害源（用于解析攻击源方向）
+     * @param damage 这一击<b>实际</b>吃到的伤害（血条变化 + 吸收盾消耗），不是护甲减免前的原始值
+     */
     protected void onHurtBlood(DamageSource source, float damage) {
         if (this.level().isClientSide()) return;
         if (damage <= 0.0F) return;
@@ -368,7 +528,14 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
         BloodBurstPacket.sendBurst(this, attacker, damage);
     }
 
-    /** 受击血花的"攻击源"解析：优先 {@code getEntity()}（真正的攻击者），没有时退回 {@code getDirectEntity()}（弹道方向）；摔伤 / 火 / 虚空没有攻击源，返回 null 不喷血。 */
+    /**
+     * 受击血花的"攻击源"解析 —— 方向与距离的起点。
+     *
+     * <p>优先 {@code DamageSource#getEntity()}（真正的攻击者 / 射击者），没有时退回
+     * {@code getDirectEntity()}（弹射物本体）。这样近战是"攻击者 → 受击者"，
+     * 抛射物是"射击者 → 受击者"（即弹道方向），摔伤 / 火 / 虚空这类没有攻击源的伤害
+     * 解析为 {@code null}，不喷血。子类可以覆写来做特殊伤害源。</p>
+     */
     protected Entity resolveBloodSource(DamageSource source) {
         if (source.getEntity() != null) return source.getEntity();
         return source.getDirectEntity();
@@ -392,43 +559,77 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
         super.tick();
 
         if (isFakeDying()) {
-            if (!this.level().isClientSide() && fakeDeathTimer > 0) {
-                fakeDeathTimer--;
-                if (fakeDeathTimer == 0) {
-                    onBurstEnd();
-                    this.entityData.set(IS_FAKE_DYING, false);
-                    this.remove(RemovalReason.KILLED);
-                }
+            if (!this.level().isClientSide() && fakeDeathState.tick()) {
+                onBurstEnd();
+                this.entityData.set(IS_FAKE_DYING, false);
+                this.remove(RemovalReason.KILLED);
             }
             return;
         }
 
         if (!this.level().isClientSide()) {
             if (doHurtCooldown > 0) doHurtCooldown--;
-            if (retaliationTicks > 0) retaliationTicks--;
+            if (retaliationTicks > 0) {
+                retaliationTicks--;
+                if (retaliationTicks == 0) lastAttacker = null;
+            }
+            // setTarget only checks assignments. Recheck the current target as threat,
+            // distance, game mode and the retaliation window can change afterwards.
+            if (this.getTarget() instanceof Player player
+                    && (isIgnoredPlayer(player) || !canAttackPlayer(player))) {
+                this.setTarget(null);
+                this.getNavigation().stop();
+            }
             this.tickChase();
         }
     }
 
     /**
      * 追击：贴身就出手，够不着就寻路过去 —— 带节流与失败退避。
-     * <p><b>不能每 tick 直接 {@code moveTo}</b>：目标卡在密闭空间 / 墙后 / 高台上时 {@code createPath} 返回 null、{@code moveTo} 失败，
-     * {@code isDone()} 下一 tick 仍为 true，于是每 tick 重跑一次完整 A*（20 次/秒），几只叠加就能把 TPS 打穿。
-     * <p>找到路：{@link #REPATH_INTERVAL} + 少量随机后重算；找不到路：{@link #REPATH_FAIL_BASE} 起指数退避到 {@link #REPATH_FAIL_MAX}。
-     * 子类自己也调 {@code moveTo}（爬行 / 冲撞）时请复用同一个冷却，别再每 tick 重算。
+     *
+     * <h3>为什么不能每 tick 直接 {@code moveTo}</h3>
+     * <p>这里以前写的是「只要 {@code navigation.isDone()} 就 {@code moveTo(target, 1.0)}」，
+     * 看着很自然，但目标卡在<b>密闭空间 / 墙体另一侧 / 高台</b>上时寻路是找不到路的：
+     * {@code PathNavigation#createPath} 返回 {@code null} → {@code moveTo} 返回 {@code false}
+     * → 内部 {@code path} 被置 {@code null} → {@code isDone()} 下一 tick 依然是 {@code true}
+     * → <b>再跑一次完整的 A*</b>。于是一个打不到人的怪就是 <b>20 次/秒</b>的路径搜索
+     * （每次都要建 {@code PathNavigationRegion}、{@code Map<Target,BlockPos>}、
+     * {@code BinaryHeap}，再在方块网格上跑一遍 A*），几只叠加就能把 TPS 打穿；
+     * 目标死了换成另一个打不到的目标，循环照旧继续，所以会看到「目标一死 TPS 骤降」。</p>
+     *
+     * <h3>现在的策略</h3>
+     * <ul>
+     *   <li>找到路：{@link #REPATH_INTERVAL} + 少量随机（错开同 tick 集体重算）后才允许重算；</li>
+     *   <li>找不到路：按 {@link #REPATH_FAIL_BASE} 起做<b>指数退避</b>
+     *       40 → 80 → 160 → {@link #REPATH_FAIL_MAX} 封顶，即不可达目标最多 10 秒重算一次；</li>
+     *   <li>一旦贴身、或重新找到路、或目标丢失，退避计数立刻清零。</li>
+     * </ul>
+     *
+     * <p>子类若自己也调 {@code moveTo}（例如爬行 / 冲撞状态），请复用同一个冷却，别再每 tick 重算。</p>
      */
     protected void tickChase() {
         if (this.repathCooldown > 0) this.repathCooldown--;
 
-        // 附近没有玩家时基类 aiStep 会把 AI 关掉（stopAiAtDist），此时 travel 不跑、寻路出来的路径没人消费，直接跳过。
+        // 基类 aiStep 会在附近没有玩家时把 AI 关掉（stopAiAtDist）。那种情况下
+        // Mob#isEffectiveAi() 为 false、travel 根本不跑，寻路出来的路径没人消费，
+        // 纯属浪费 —— 直接跳过。
         if (this.isNoAi()) return;
 
         LivingEntity target = this.getTarget();
+        if (target != this.chaseTarget) {
+            // 新目标不能继承旧目标的路径和最长十秒的失败退避。
+            this.chaseTarget = target;
+            this.repathCooldown = 0;
+            this.repathFailures = 0;
+            this.lastRepathPosition = null;
+            this.getNavigation().stop();
+        }
         if (target == null || !target.isAlive()) {
             this.repathFailures = 0;
             return;
         }
 
+        // 贴身且看得见：出手，不走位
         if (getBoundingBoxDistanceSqrExact(target) <= doHurtDistance * doHurtDistance
                 && this.hasLineOfSight(target)) {
             if (doHurtCooldown == 0 && doHurtGoal(target)) doHurtCooldown = doHurtTime;
@@ -436,12 +637,17 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
             return;
         }
 
-        if (this.repathCooldown > 0 || !this.getNavigation().isDone()) return;
+        // 冷却到期后，移动目标也需要更新路径，不能一直追到它的旧位置。
+        if (this.repathCooldown > 0) return;
+        if (!this.getNavigation().isDone() && this.lastRepathPosition != null
+                && target.position().distanceToSqr(this.lastRepathPosition) < 1.0D) return;
 
+        this.lastRepathPosition = target.position();
         if (this.getNavigation().moveTo(target, this.chaseSpeed)) {
             this.repathFailures = 0;
             this.repathCooldown = REPATH_INTERVAL + this.getRandom().nextInt(5);
         } else {
+            // 找不到路 = 目标基本不可达，退避，别每 tick 再试一次
             this.repathFailures = Math.min(this.repathFailures + 1, 5);
             this.repathCooldown = Math.min(REPATH_FAIL_BASE << (this.repathFailures - 1), REPATH_FAIL_MAX);
         }
@@ -483,7 +689,7 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
             if (serverLevel.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), activeRange)) {
                 if (this.isNoAi()) this.setNoAi(false);
             } else if (!serverLevel.players().isEmpty()) {
-                // 有玩家在线但激活范围内没有 → 太远，暂停 AI
+                // 有玩家在线但 isAlive 范围内没有 → 太远，暂停 AI
                 if (!this.isNoAi()) this.setNoAi(true);
             }
             // 无人在线时保持 AI 运行，不影响其他怪物正常刷新
@@ -505,8 +711,9 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
             state.setControllerSpeed(getWalkAnimSpeed());
             return state.setAndContinue(ANIM_WALK);
         }));
-        // 子类扩展点，必须夹在移动与死亡之间：GeckoLib 按注册顺序应用控制器，后注册的覆盖先注册的骨骼，
-        // 攻击要盖过移动、死亡要盖过攻击。
+        // 子类扩展点：在「移动」与「死亡」之间插入自己的控制器（攻击 / 技能）。
+        // 顺序有意义：GeckoLib 按注册顺序应用控制器，后注册的覆盖先注册的骨骼；
+        // 攻击要盖过移动，死亡要盖过攻击，所以这个钩子必须夹在两者之间。
         registerAdditionalControllers(registrar);
         AnimationController<AbstractRottenEntity> dieController =
                 new AnimationController<>(this, "die_controller", 3, state ->
@@ -515,7 +722,16 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
         registrar.add(dieController.triggerableAnim("die_trigger", ANIM_DIE));
     }
 
-    /** 控制器扩展点：在 {@code movement_controller} 之后、{@code die_controller} 之前调用，基类什么都不做；只追加一条攻击 / 技能控制器时覆写这里即可，不必重写整个 {@link #registerControllers}（容易忘掉移动或死亡控制器）。 */
+    /**
+     * 控制器扩展点：在 {@code movement_controller} 之后、{@code die_controller} 之前调用，
+     * 基类默认什么都不做。
+     * <p>
+     * 只追加一条攻击 / 技能控制器的子类覆写这里即可，不必重写整个
+     * {@link #registerControllers}（重写时很容易忘掉移动或死亡控制器）。
+     * 需要整段替换注册逻辑的子类（例如 {@code InfPlayerEntity} 要改 movement 状态机）
+     * 仍可直接重写 {@link #registerControllers}。
+     * </p>
+     */
     protected void registerAdditionalControllers(AnimatableManager.ControllerRegistrar registrar) {
     }
 
@@ -525,36 +741,57 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
     public boolean isFakeDying() { return this.entityData.get(IS_FAKE_DYING); }
     public boolean shouldBurstScale() { return burstRenderMode == BurstRenderMode.SCALE_ONLY || burstRenderMode == BurstRenderMode.ANIMATION_AND_SCALE; }
 
-    /** 爆体时是否播死亡动画 —— <b>必须同时</b>满足：animation json 里真的有 {@code die} 动画、且渲染模式包含动画。没有 die 动画时恒为 false，既不会播不存在的动画，也<b>不会</b>停掉 idle / walk / run。 */
+    /**
+     * 爆体时是否应该播放死亡动画 —— <b>必须同时</b>满足：
+     * <ol>
+     *   <li>该生物的 animation json 里真的有 {@code die} 动画（{@link #hasDieAnim()}）；</li>
+     *   <li>爆体渲染模式包含动画（{@link BurstRenderMode#ANIMATION_ONLY} 或
+     *       {@link BurstRenderMode#ANIMATION_AND_SCALE}）。</li>
+     * </ol>
+     * <p>没有 die 动画时恒为 false：不会尝试播一个不存在的动画，也<b>不会</b>
+     * 停掉 idle / walk / run（见 {@link #isBurstAnimating()}）。</p>
+     */
     public boolean shouldBurstPlayAnim() {
         return hasDieAnim && (burstRenderMode == BurstRenderMode.ANIMATION_ONLY || burstRenderMode == BurstRenderMode.ANIMATION_AND_SCALE);
     }
 
-    /** 爆体期间是否由死亡动画接管（此时 idle / walk / run 要停下让位）：判的是"死亡动画真的会播"而不是 {@link #isFakeDying()} 本身，所以没有 die 动画时 idle 一律继续播。 */
+    /**
+     * 爆体期间是否由死亡动画接管（此时 idle / walk / run 应当停下让位）。
+     * <p>需求："没有死亡动画时，爆体不要限制 idle 的播放" —— 所以这里不是判
+     * {@link #isFakeDying()} 本身，而是判"死亡动画真的会播"（{@link #shouldBurstPlayAnim()}）。
+     * 目前项目里没有生物带 die 动画，因此爆体期间 idle 一律继续播。</p>
+     */
     public boolean isBurstAnimating() {
         return isFakeDying() && shouldBurstPlayAnim();
     }
 
-    /** 单个脉冲里"鼓起"所占的比例，其余时间用于回落（见 {@link #burstPulseShape(float)}）。 */
-    private static final float BURST_PULSE_RISE = 0.3f;
+    // ==================== 爆体缩放（阶梯脉冲） ====================
 
-    /** 爆体缩放是否生效：已<b>开始爆体</b> + 没关掉缩放 + 渲染模式含缩放，三个条件同时满足；爆体之前恒为 {@code false}，模型保持原始大小。 */
+    /**
+     * 爆体缩放是否正在生效。
+     * <p>三个条件同时满足才缩放：</p>
+     * <ol>
+     *   <li>已经<b>开始爆体</b>（{@link #isFakeDying()}，即 {@link #startFakeDeath()} 之后）；</li>
+     *   <li>这颗生物没有关掉缩放（{@link #setBurstScaleEnabled(boolean)}）；</li>
+     *   <li>渲染模式包含缩放（{@link BurstRenderMode#SCALE_ONLY} 或
+     *       {@link BurstRenderMode#ANIMATION_AND_SCALE}）。</li>
+     * </ol>
+     * <p>这是"开始爆体时启用"的唯一判定入口：爆体之前恒为 {@code false}，
+     * 模型保持原始大小。</p>
+     */
     public boolean isBurstScalingActive() {
         return isFakeDying() && isBurstScaleEnabled() && shouldBurstScale();
     }
 
-    /** 爆体进度（0 = 刚开始，1 = 缩放窗口结束）：客户端用收到 {@code IS_FAKE_DYING} 时的 gameTime、服务端用假死计时器，因此渲染端<b>不需要</b>每 tick 同步"已经过多少 tick"。 */
+    /**
+     * 爆体进度（0 = 刚开始爆体，1 = 缩放窗口结束）。
+     * <p>两端各自按自己的时钟计算：客户端用收到 {@code IS_FAKE_DYING} 同步包时的
+     * {@code gameTime}（见 {@link #onSyncedDataUpdated}），服务端用假死计时器。
+     * 这样渲染端<b>不需要</b>每 tick 同步一个"已经过多少 tick"的字段。</p>
+     */
     public float getBurstProgress(float partialTick) {
-        int duration = getResolvedBurstScaleDuration();
-        if (duration <= 0) return 1.0f;
-        float elapsed;
-        if (level().isClientSide()) {
-            if (clientBurstStartTime < 0) return 0.0f;
-            elapsed = (level().getGameTime() - clientBurstStartTime) + partialTick;
-        } else {
-            elapsed = (getFakeDeathDuration() - fakeDeathTimer) + partialTick;
-        }
-        return Mth.clamp(elapsed / (float) duration, 0.0f, 1.0f);
+        return fakeDeathState.progress(level().isClientSide(), level().getGameTime(),
+                getFakeDeathDuration(), getResolvedBurstScaleDuration(), partialTick);
     }
 
     /** 线性爆体强度（0..1）。只想要"推进度"的调用方（动画 / 粒子等）可以用它。 */
@@ -563,85 +800,33 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
         return getBurstProgress(partialTick);
     }
 
-    /**
-     * 爆体时的模型缩放倍率（1.0 = 原始大小）：高频阶梯脉冲（N = {@link #getBurstPulseCount()} 级，每级只回缩到上一级的峰值）+ 逐 tick 随机抖动。
-     * <p>抖动由 tick + 实体 id 哈希出确定性噪声：同一 tick 内所有帧同值、下一 tick 跳变 = 20Hz 抽搐，幅度随进度 0.5×→1.5×，且正向峰值也不许超过 maxScale（默认 1.4）。
-     * <p><b>纯视觉</b>：只在客户端渲染时使用，碰撞箱与命中判定保持原样。
-     */
+    /** Existing staircase pulses and deterministic per-tick twitch, delegated to the visual model. */
     public float getBurstScale(float partialTick) {
         if (!isBurstScalingActive()) return 1.0f;
-
         float progress = getBurstProgress(partialTick);
-        float maxScale = Math.max(1.0f, getBurstMaxScale());
-        float scale;
-
-        if (progress >= 1.0f) {
-            scale = maxScale;                    // 窗口走完：停在最大倍率（抖动继续到爆体结束）
-        } else {
-            int pulses = getBurstPulseCount();
-            float pulsePos = progress * pulses;  // 0..N
-            int index = (int) pulsePos;
-            if (index >= pulses) {
-                scale = maxScale;
-            } else {
-                float local = pulsePos - index;  // 当前脉冲内的 0..1
-                float step = (maxScale - 1.0f) / pulses;
-                float baseline = 1.0f + step * index;
-                scale = baseline + step * burstPulseShape(local);
-            }
-        }
-
-        // 鬼畜抖动：逐 tick 变化（partialTick 不参与），同一 tick 的 3 帧共用同一个值。
-        float twitch = getBurstTwitchAmplitude();
-        if (twitch > 0.0f) {
-            long seed = (long) this.getId() * 0xBF58476D1CE4E5B9L
-                    + level().getGameTime() * 0x9E3779B97F4A7C15L;
-            float noise = burstTwitchNoise(seed) * 2.0f - 1.0f;   // -1..1
-            scale += noise * twitch * (0.5f + progress);          // 幅度 0.5×→1.5×
-        }
-        // 硬上限：抖动的正向峰值也不许超过 maxScale（默认 1.4 倍）。
-        return Mth.clamp(scale, 1.0f, maxScale);
-    }
-
-    /** 由 long 种子生成 [0,1) 的确定性噪声（SplitMix64）。用哈希而不是 {@code Random}：渲染每帧都可能调用，不能推进共享随机状态；同一 tick + 同一实体必须给出同一个值，才能形成"每 tick 跳一下"的抽搐而不是每帧乱闪。 */
-    private static float burstTwitchNoise(long seed) {
-        seed ^= seed >>> 30;
-        seed *= 0xBF58476D1CE4E5B9L;
-        seed ^= seed >>> 27;
-        seed *= 0x94D049BB133111EBL;
-        seed ^= seed >>> 31;
-        return (seed >>> 40) / (float) (1 << 24);
-    }
-
-    /** 单个脉冲的归一化形状 0 → 1 → 0：前 {@value #BURST_PULSE_RISE} 快速鼓起（smoothstep），余下缓缓落回；两端都取 0，所以帧间"跳一级"只发生在脉冲边界。 */
-    private static float burstPulseShape(float t) {
-        if (t <= 0.0f || t >= 1.0f) return 0.0f;
-        if (t < BURST_PULSE_RISE) {
-            float x = t / BURST_PULSE_RISE;
-            return x * x * (3.0f - 2.0f * x);
-        }
-        float x = (t - BURST_PULSE_RISE) / (1.0f - BURST_PULSE_RISE);
-        return 1.0f - x * x * (3.0f - 2.0f * x);
+        return BurstMath.scale(progress, getBurstMaxScale(), progress >= 1.0f ? 1 : getBurstPulseCount(),
+                getBurstTwitchAmplitude(), getId(), level().getGameTime());
     }
 
     /** 缩放窗口里实际使用的时长（tick）；{@code burstScaleDuration <= 0} 时退回爆体总时长。 */
     public int getResolvedBurstScaleDuration() {
-        int duration = getBurstScaleDuration();
-        if (duration > 0) return duration;
-        return Math.max(1, getFakeDeathDuration());
+        return BurstMath.resolvedDuration(getBurstScaleDuration(), getFakeDeathDuration());
     }
 
-    /** 缩放窗口内的脉冲级数：{@link #getBurstScaleRate()} 是<b>每秒</b>脉冲次数，所以 {@code N = round(rate * duration / 20)}。默认 10 次/秒 × 1.5 秒 = 15 级（每级约 2 tick）。 */
+    /**
+     * 缩放窗口内的脉冲级数。
+     * <p>{@link #getBurstScaleRate()} 表示<b>每秒脉冲次数</b>，所以
+     * {@code N = round(rate * duration / 20)}。默认 10 次/秒 × 1.5 秒 = 15 级
+     * （每级约 2 tick，单级只涨 {@code (max - 1) / 15}）—— 频率高、步子小，
+     * 叠加上面的逐 tick 抖动就是"鬼畜抽动"。想更密就继续调高 rate。</p>
+     */
     public int getBurstPulseCount() {
-        int duration = getResolvedBurstScaleDuration();
-        float rate = getBurstScaleRate();
-        if (rate <= 0.0f) return 1;
-        return Math.max(1, Math.round(rate * duration / 20.0f));
+        return BurstMath.pulseCount(getBurstScaleRate(), getResolvedBurstScaleDuration());
     }
 
     public boolean tryFakeDeath() {
-        if (!fakeDeathEnabled || isFakeDying()) return false;
-        if (fakeDeathChance > 0 && this.getRandom().nextInt(100) >= fakeDeathChance) return false;
+        if (!FakeDeathState.canStart(fakeDeathEnabled, isFakeDying(), fakeDeathChance,
+                () -> this.getRandom().nextInt(100))) return false;
         startFakeDeath();
         return true;
     }
@@ -649,7 +834,7 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
     protected void startFakeDeath() {
         if (isFakeDying()) return;
         this.entityData.set(IS_FAKE_DYING, true);
-        this.fakeDeathTimer = this.getFakeDeathDuration();
+        this.fakeDeathState.start(this.getFakeDeathDuration());
         this.setHealth(this.getMaxHealth());
         if (shouldBurstPlayAnim()) this.triggerAnim("die_controller", "die_trigger");
         onBurstStart();
@@ -658,29 +843,61 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
     protected void onBurstStart() {}
 
     /**
-     * 爆体结束回调：在 {@link #tick()} 里 fake death 计时器归零那一 tick 调用，紧跟着实体才会 {@code remove(RemovalReason.KILLED)}。
-     * <p><b>发包顺序很重要：</b>本方法在 {@code remove(...)} <b>之前</b>执行（同一连接保序），客户端处理肉屑包时还能用实体 id 解析到实体读到碰撞箱；
-     * 挪到 {@code remove(...)} 之后客户端多半已经找不到实体，肉屑就不会出现。
-     * <p><b>子类覆写本方法时必须调用 {@code super.onBurstEnd()}</b>，否则肉屑爆发 + 血腥爆炸 + 红色 dust + 爆体音效 + 那一次死亡掉落就都丢了。
+     * 爆体结束回调 —— 在 {@link #tick()} 里 fake death 计时器归零的那一 tick 调用，
+     * 紧跟着实体才会 {@code remove(RemovalReason.KILLED)}。
+     *
+     * <p>这是 corruption 原模组 {@code BaseOriginalEntity#onFakeDeathEnd()} 的对应位置
+     * （爆体结束 = 尸体被"撑爆"的瞬间）：在那里服务端会发一个只带实体 id 的
+     * {@code CParticleSpawnPacket}，让每个客户端各自在实体碰撞箱内撒肉屑，同时播放
+     * {@code RIP_BODY} 爆体音效、并广播一团 {@code explosion_bloody} 血腥爆炸。
+     * 本方法同样只由服务端触发这几样：{@link MeatBurstPacket}（肉屑，客户端按共享配置
+     * 现算位置）、{@link EntityParticleUtils#spawnExplosionParticles(Entity)}（血腥爆炸，
+     * 走原版 {@code sendParticles} 广播）、原版红色 dust（同一条 {@code sendParticles} 路径）
+     * 和 {@link SoundEventRegistry#RIP_BODY}（爆体音效，服务端 {@code playSound} 广播），
+     * <b>客户端绝不各自决定</b>什么时候炸，否则各端会因为实体移除包到达时机不同而错开。</p>
+     *
+     * <p><b>发包顺序很重要：</b>本方法在 {@code remove(...)} <b>之前</b>执行，
+     * {@code UniversalPacket} 先入队、实体移除包后入队（同一连接保序），所以客户端
+     * 处理肉屑包时还能用实体 id 在本地 {@code ClientLevel} 里解析到实体、读到它的碰撞箱。
+     * 如果把发包挪到 {@code remove(...)} 之后，客户端多半已经找不到实体，肉屑就不会出现。
+     * 爆炸粒子、dust 与音效发的是"绝对坐标"，没有这个依赖，但同 tick 发出才能和肉屑
+     * 看起来是同一瞬间。</p>
+     *
+     * <p><b>子类覆写本方法时必须调用 {@code super.onBurstEnd()}</b>，否则爆体结束的
+     * 肉屑爆发 + 血腥爆炸 + 红色 dust + 爆体音效 + 那一次死亡掉落就都丢了
+     * （子类在这里做的自定义逻辑不会替基类补发）。</p>
      */
     protected void onBurstEnd() {
-        // 只在服务端触发、同 tick 发出：肉屑包 + 血腥爆炸 + 红色 dust + 爆体音效，最后补一次死亡掉落。
+        // 只在服务端触发：客户端上的实体只是副本，由服务端的 fake death 状态机统一决定时机。
+        // 同 tick 发出：肉屑包（客户端按实体碰撞箱现算位置）+ 血腥爆炸 + 红色 dust
+        // （后两者走原版粒子包广播）+ 爆体音效（服务端 playSound 广播给附近客户端），
+        // 最后补一次正常死亡会有的掉落（见下方 dropAllDeathLoot 说明）。
         if (!this.level().isClientSide()) {
             MeatBurstPacket.sendBurst(this);
             EntityParticleUtils.spawnExplosionParticles(this);
-            // 数值照抄 corruption BaseOriginalEntity 的 spawnParticles(redDust, 8, 0.1, 1.2)：纯红、scale 2.0，给爆炸加一层红色粉尘。
+            // 再补一层原版红色 dust：数值照抄 corruption BaseOriginalEntity 的
+            // `spawnParticles(this, redDust, 8, 0.1, 1.2f)` —— 纯红（1,0,0）、scale 2.0，
+            // 密度 8 / 速度扰动 0.1 / 范围 1.2，给血腥爆炸加一层"红色粉尘"的体积感。
             EntityParticleUtils.spawnParticles(this,
                     new DustParticleOptions(new Vector3f(1.0F, 0.0F, 0.0F), 2.0F),
                     8.0D, 0.1D, 1.2F);
             this.level().playSound(null, this.blockPosition(),
                     SoundEventRegistry.RIP_BODY.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
 
-            // 爆体路径不经过 super.die()，不在这里补就永远没有战利品表 / 装备 / 经验；每次爆体只调用一次，不会和正常死亡重复。
+            // 爆体结算 = 这次的"死亡掉落时刻"：爆体路径不经过 super.die()，
+            // 不在这里补就永远没有战利品表 / 装备 / 经验。这里只发一次
+            // （onBurstEnd 每次爆体只会被调用一次），不会和正常死亡重复。
             this.dropAllDeathLoot(this.getBurstLootDamageSource());
         }
     }
 
-    /** 爆体掉落使用的伤害源：优先最近一次伤害（带着击杀者信息，战利品的 {@code killed_by_player}、抢夺附魔、{@code LivingDropsEvent} 才正常），取不到就退回泛用伤害源。 */
+    /**
+     * 爆体掉落使用的伤害来源。
+     *
+     * <p>优先用最近一次伤害：它带着击杀者信息，让战利品表的 {@code killed_by_player}
+     * 条件、抢夺附魔、{@code LivingDropsEvent} 的击杀者都能正常工作。
+     * 取不到（例如非伤害原因进入爆体）就退回泛用伤害源。</p>
+     */
     private DamageSource getBurstLootDamageSource() {
         DamageSource source = this.getLastDamageSource();
         return source != null ? source : this.damageSources().generic();
@@ -718,7 +935,10 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
     public int getBurstScaleDuration() { return this.entityData.get(BURST_SCALE_DURATION); }
     public void setBurstScaleRate(float rate) { this.burstScaleRate = rate; this.entityData.set(BURST_SCALE_RATE, rate); }
     public float getBurstScaleRate() { return this.entityData.get(BURST_SCALE_RATE); }
-    /** 鬼畜抖动幅度（倍率的绝对值，实际抖动 = 该值 × 0..1 噪声 × 0.5..1.5）；0 = 关闭抖动、只保留高频阶梯脉冲；默认 0.04，NaN / 负数回退 0。 */
+    /**
+     * 鬼畜抖动幅度（倍率的绝对值，实际抖动 = 该值 × 0..1 噪声 × (0.5..1.5)）。
+     * <p>0 = 关闭抖动、只保留高频阶梯脉冲；默认 0.04。NaN / 负数回退 0。</p>
+     */
     public void setBurstTwitchAmplitude(float amplitude) {
         float v = Float.isFinite(amplitude) ? Math.max(0.0f, amplitude) : 0.0f;
         this.entityData.set(BURST_TWITCH_AMPLITUDE, v);
@@ -738,6 +958,7 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
     public BurstRenderMode getBurstRenderMode() { return this.burstRenderMode; }
     public void setDoHurtDistance(float distance) { this.doHurtDistance = distance; }
     public float getDoHurtDistance() { return doHurtDistance; }
+    /** 追击速度倍率（见 {@link #chaseSpeed}）。 */
     public void setChaseSpeed(float speed) { this.chaseSpeed = speed; }
     public float getChaseSpeed() { return this.chaseSpeed; }
     public int getDoHurtTime() { return doHurtTime; }
@@ -747,7 +968,7 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
     public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
         super.onSyncedDataUpdated(key);
         if (level().isClientSide && IS_FAKE_DYING.equals(key)) {
-            if (isFakeDying()) this.clientBurstStartTime = level().getGameTime(); else this.clientBurstStartTime = -1;
+            this.fakeDeathState.onClientStateChanged(isFakeDying(), level().getGameTime());
         }
     }
 
@@ -770,7 +991,17 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
         return cachedBoundingBox;
     }
 
-    /** 剔除盒按最大爆体倍率一起放大：缩放是纯视觉的，只放大模型不放大剔除盒时，贴近屏幕边缘会出现"模型还在视野里、实体却被整只裁掉"的闪烁；缩放以脚底为原点，所以水平两侧各扩一半、竖直只向上扩。<b>只影响剔除，不影响碰撞箱 / 命中判定。</b> */
+    /**
+     * 视锥剔除盒跟着爆体缩放一起变大。
+     *
+     * <p>原版 {@code EntityRenderer#shouldRender} 用的是
+     * {@link Entity#getBoundingBoxForCulling()}（再 inflate 0.5），而爆体缩放是纯视觉的：
+     * 只放大模型、不放大剔除盒的话，贴近屏幕边缘时会出现"模型还在视野里，
+     * 实体却被整只裁掉"的闪烁。这里按最大倍率把盒子补到能包住放大后的模型 ——
+     * 缩放以脚底为原点，所以水平方向两侧各扩一半、竖直方向只向上扩。</p>
+     *
+     * <p>只影响剔除，<b>不影响</b>碰撞箱、攻击距离与命中判定。</p>
+     */
     @Override
     public AABB getBoundingBoxForCulling() {
         AABB box = super.getBoundingBoxForCulling();
@@ -799,7 +1030,7 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
         nbt.putFloat("IdleAnimSpeed", this.idleAnimSpeed);
         nbt.putFloat("DieAnimSpeed", this.dieAnimSpeed);
         nbt.putBoolean("IsFakeDying", isFakeDying());
-        nbt.putInt("FakeDeathTimer", this.fakeDeathTimer);
+        nbt.putInt("FakeDeathTimer", this.fakeDeathState.remainingTicks());
         nbt.putInt("FakeDeathDuration", this.fakeDeathDuration);
         nbt.putInt("BurstScaleDuration", getBurstScaleDuration());
         nbt.putFloat("BurstScaleRate", getBurstScaleRate());
@@ -816,7 +1047,7 @@ public abstract class AbstractRottenEntity extends Monster implements IAutoRende
         if (nbt.contains("IsWalking")) this.entityData.set(IS_WALKING, nbt.getBoolean("IsWalking"));
         if (nbt.contains("HasWalkAnim")) { this.hasWalkAnim = nbt.getBoolean("HasWalkAnim"); this.entityData.set(HAS_WALK_ANIM_SYNCED, this.hasWalkAnim); }
         if (nbt.contains("IsFakeDying")) this.entityData.set(IS_FAKE_DYING, nbt.getBoolean("IsFakeDying"));
-        if (nbt.contains("FakeDeathTimer")) this.fakeDeathTimer = nbt.getInt("FakeDeathTimer");
+        if (nbt.contains("FakeDeathTimer")) this.fakeDeathState.restoreRemainingTicks(nbt.getInt("FakeDeathTimer"));
         if (nbt.contains("FakeDeathDuration")) this.setFakeDeathDuration(nbt.getInt("FakeDeathDuration"));
         if (nbt.contains("BurstScaleDuration")) this.setBurstScaleDuration(nbt.getInt("BurstScaleDuration"));
         if (nbt.contains("BurstScaleRate")) this.setBurstScaleRate(nbt.getFloat("BurstScaleRate"));

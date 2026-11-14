@@ -26,11 +26,11 @@ import java.nio.file.Path;
  */
 public class ShaderPreview {
 
-    /** 画布边长。坐标固定：物品方片画在 [128,192)² 这一块里。 */
-    static final int SIZE = 320;
-    static final float ITEM_X = 128f;
-    static final float ITEM_Y = 128f;
-    static final float ITEM_W = 64f;
+    /** 默认画布 320px、物品 64px；可用参数改变大小，检查远近缩放。 */
+    static int SIZE = 320;
+    static float ITEM_X = 128f;
+    static float ITEM_Y = 128f;
+    static float ITEM_W = 64f;
 
     public static void main(String[] args) throws Exception {
         Path dir = Path.of(args[0]);
@@ -44,6 +44,12 @@ public class ShaderPreview {
         float fireStrength = args.length > 8
                 ? Float.parseFloat(args[8])
                 : (colorMode > 4.5f ? 1f : 0f);
+        ITEM_W = args.length > 9 ? Float.parseFloat(args[9]) : 64f;
+        SIZE = args.length > 10 ? Integer.parseInt(args[10]) : 320;
+        ITEM_X = ITEM_Y = (SIZE - ITEM_W) * 0.5f;
+        float haloStrength = args.length > 11 ? Float.parseFloat(args[11]) : 0.9f;
+        if (colorMode == 5f && fireStrength > 0f) haloStrength = 0f;
+        float neighborSize = args.length > 12 ? Float.parseFloat(args[12]) : 0f;
 
         GLFW.glfwInit();
         GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
@@ -78,10 +84,10 @@ public class ShaderPreview {
         int[] quartetB = makeTarget(SIZE / 4, true);
 
         // 火焰密度场（与管线 buildFireDensity 同一套四趟，只是分辨率固定）
-        int[] fireHalfA = makeTarget(SIZE / 2, true);
-        int[] fireHalfB = makeTarget(SIZE / 2, true);
-        int[] fireWideA = makeTarget(SIZE / 4, true);
-        int[] fireWideB = makeTarget(SIZE / 4, true);
+        int[] fireHalfA = makeTarget(SIZE / 2, true, GL30.GL_RGBA16F);
+        int[] fireHalfB = makeTarget(SIZE / 2, true, GL30.GL_RGBA16F);
+        int[] fireWideA = makeTarget(SIZE / 4, true, GL30.GL_RGBA16F);
+        int[] fireWideB = makeTarget(SIZE / 4, true, GL30.GL_RGBA16F);
 
         // Sampler0：默认 1×1 白，给了贴图就换成真实贴图（同时算出不透明包围盒）
         int itemTex = itemTexture.isEmpty() ? whiteTexture() : loadItemTexture(itemTexture);
@@ -122,10 +128,10 @@ public class ShaderPreview {
 
         GL20.glUseProgram(maskProg);
         matrix(maskProg, "ModelViewMat", new float[]{
-                0.4f, 0f, 0f, 0f,
-                0f, 0.4f, 0f, 0f,
+                2f * ITEM_W / SIZE, 0f, 0f, 0f,
+                0f, 2f * ITEM_W / SIZE, 0f, 0f,
                 0f, 0f, 1f, 0f,
-                -0.2f, -0.2f, 0f, 1f});
+                2f * ITEM_X / SIZE - 1f, 2f * ITEM_Y / SIZE - 1f, 0f, 1f});
         matrix(maskProg, "ProjMat", new float[]{
                 1f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1f});
         vec4(maskProg, "MaskColor", 1.0f, 0.42f, 0.09f, 1f);
@@ -148,6 +154,38 @@ public class ShaderPreview {
         GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
         save(out.resolve("mask.png"), maskTarget[1], SIZE);
 
+        // 与游戏相同：捕获点保存单件裁剪快照，合成时重建独立遮罩。
+        // NeighborSize 模拟同屏大号手持物，哪怕它覆盖目标位置也不能改变目标自己的火焰。
+        int cropX = Math.max(0, (int) ITEM_X - 2);
+        int cropY = Math.max(0, (int) ITEM_Y - 2);
+        int cropR = Math.min(SIZE, (int) Math.ceil(ITEM_X + ITEM_W) + 2);
+        int cropT = Math.min(SIZE, (int) Math.ceil(ITEM_Y + ITEM_W) + 2);
+        int cropSize = Math.max(cropR - cropX, cropT - cropY);
+        int[] cropTarget = makeTarget(cropSize, true);
+        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, maskTarget[1]);
+        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, cropTarget[1]);
+        GL30.glBlitFramebuffer(cropX, cropY, cropR, cropT, 0, 0,
+                cropR - cropX, cropT - cropY, GL11.GL_COLOR_BUFFER_BIT, GL11.GL_NEAREST);
+        if (neighborSize > 0f) {
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, maskTarget[1]);
+            GL11.glViewport(0, 0, SIZE, SIZE);
+            matrix(maskProg, "ModelViewMat", new float[]{
+                    2f * neighborSize / SIZE, 0f, 0f, 0f,
+                    0f, 2f * neighborSize / SIZE, 0f, 0f,
+                    0f, 0f, 1f, 0f, -0.1f, -0.7f, 0f, 1f});
+            // makeTarget changes the texture binding; restore the item atlas before drawing.
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, itemTex);
+            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
+        }
+        save(out.resolve("shared_mask.png"), maskTarget[1], SIZE);
+        int[] isolatedMask = makeTarget(SIZE, true);
+        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, cropTarget[1]);
+        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, isolatedMask[1]);
+        GL30.glBlitFramebuffer(0, 0, cropR - cropX, cropT - cropY, cropX, cropY, cropR, cropT,
+                GL11.GL_COLOR_BUFFER_BIT, GL11.GL_NEAREST);
+        maskTarget = isolatedMask;
+        save(out.resolve("isolated_mask.png"), maskTarget[1], SIZE);
+
         // ── pass 2: 光雾模糊链（1/2 → 1/4）──
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
         GL20.glUseProgram(blurProg);
@@ -167,12 +205,20 @@ public class ShaderPreview {
         blur(blurProg, quadVao, quartetB, quartetA[0], 0f, 1f / (SIZE / 4), 1f);
 
         // ── pass 2.5: 火焰密度场（半径按物品尺寸放大：reach = 物品高 × 1.6）──
-        float fireReachPx = ITEM_W * 2.5f;
-        float fireScale = Math.max(0.5f, Math.min(6f, fireReachPx / 52f));
-        blur(blurProg, quadVao, fireHalfA, maskTarget[0], 2f / SIZE, 0f, fireScale);
-        blur(blurProg, quadVao, fireHalfB, fireHalfA[0], 0f, 1f / (SIZE / 2), fireScale);
-        blur(blurProg, quadVao, fireWideA, fireHalfB[0], 2f / (SIZE / 2), 0f, fireScale);
-        blur(blurProg, quadVao, fireWideB, fireWideA[0], 0f, 1f / (SIZE / 4), fireScale);
+        float fireReachPx = Math.max(1f, Math.min(ITEM_W, SIZE) * 2.5f);
+        float fireScale = fireReachPx / 52f;
+        float baseScale = Math.min(fireScale, 1f);
+        blur(blurProg, quadVao, fireHalfA, maskTarget[0], 2f / SIZE, 0f, baseScale);
+        blur(blurProg, quadVao, fireHalfB, fireHalfA[0], 0f, 1f / (SIZE / 2), baseScale);
+        blur(blurProg, quadVao, fireWideA, fireHalfB[0], 2f / (SIZE / 2), 0f, baseScale);
+        blur(blurProg, quadVao, fireWideB, fireWideA[0], 0f, 1f / (SIZE / 4), baseScale);
+        float remainingVariance = 1.25f * (fireScale * fireScale - baseScale * baseScale);
+        for (float strideSize = 1f; remainingVariance > 0.0001f; strideSize *= 2f) {
+            float step = Math.min(strideSize, (float) Math.sqrt(remainingVariance));
+            blur(blurProg, quadVao, fireWideA, fireWideB[0], 1f / (SIZE / 4), 0f, step);
+            blur(blurProg, quadVao, fireWideB, fireWideA[0], 0f, 1f / (SIZE / 4), step);
+            remainingVariance = Math.max(0f, remainingVariance - step * step);
+        }
         save(out.resolve("fire_spread.png"), fireWideB[1], SIZE / 4);
 
         // ── pass 3: 环形合成（硬环 + 光雾 + 火焰光环）──
@@ -201,7 +247,7 @@ public class ShaderPreview {
         vec3(ringProg, "FireColorA", 1.0f, 0.42f, 0.09f);
         vec3(ringProg, "FireColorB", 0.35f, 0.05f, 0.02f);
 
-        flt(ringProg, "HaloStrength", 0.9f);
+        flt(ringProg, "HaloStrength", haloStrength);
         flt(ringProg, "HaloNoise", 0.8f);
         flt(ringProg, "HaloWarp", 1f);
         flt(ringProg, "Time", time);
@@ -341,13 +387,20 @@ public class ShaderPreview {
 
     /** 生成一张可采样目标（RGBA8），返回 {textureId, framebufferId}。 */
     static int[] makeTarget(int size, boolean linear) {
+        return makeTarget(size, linear, GL11.GL_RGBA8);
+    }
+
+    static int[] makeTarget(int size, boolean linear, int internalFormat) {
         int tex = GL11.glGenTextures();
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, tex);
-        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, size, size, 0,
+        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, size, size, 0,
                 GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
         int filter = linear ? GL11.GL_LINEAR : GL11.GL_NEAREST;
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, filter);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, filter);
+        // 与游戏 RenderTarget 一致，宽模糊跨过画布边缘时不能从另一侧循环采样。
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL13.GL_CLAMP_TO_EDGE);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL13.GL_CLAMP_TO_EDGE);
         int fbo = GL30.glGenFramebuffers();
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fbo);
         GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,

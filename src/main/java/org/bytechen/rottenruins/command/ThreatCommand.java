@@ -91,7 +91,7 @@ public final class ThreatCommand {
         int threat = ThreatHelper.getThreat(target);
         boolean targetedByHall = threat >= ThreatHelper.TARGET_THREAT_THRESHOLD;
         feedback(ctx, name(target) + " 的威胁点数：" + threat
-                + (targetedByHall ? "（王庭生物会主动索敌）" : "（低于阈值，王庭生物不会主动索敌）"));
+                + (targetedByHall ? "（王庭生物会主动索敌）" : "（低于阈值，仅近距离或还手时索敌）"));
         return threat;
     }
 

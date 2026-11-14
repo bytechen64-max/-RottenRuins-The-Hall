@@ -2,7 +2,7 @@ package org.bytechen.rottenruins.overworld.difficulty;
 
 import net.minecraft.resources.ResourceLocation;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.infcore.core.difficulty.DifficultyRegistry;
+import org.bytechen.rottenruins.gameplay.infection.difficulty.DifficultyRegistry;
 
 /**
  * RottenRuinsSplendiding 四档难度定义。

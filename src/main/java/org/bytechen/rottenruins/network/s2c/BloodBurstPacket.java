@@ -9,7 +9,6 @@ import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.network.NetworkHelper;
 import org.bytechen.rottenruins.network.all.UniversalPacket;
 import org.bytechen.rottenruins.network.all.tools.UniversalPacketData;
-import org.bytechen.rottenruins.overworld.registry.RegisterParticles;
 
 /**
  * 受击血花（{@link RegisterParticles#BLOOD}）的 S2C 包 —— 在目标身上朝"攻击源方向"喷一串血点。

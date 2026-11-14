@@ -13,7 +13,7 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
-import org.bytechen.infcore.core.evolution.EvolutionManager;
+import org.bytechen.rottenruins.gameplay.infection.evolution.EvolutionManager;
 import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.BaseRefactoredEntity;
 
@@ -73,7 +73,7 @@ public class BearerEntity extends BaseRefactoredEntity {
     @Override
     public void aiStep() {
         super.aiStep();
-        if (!this.level().isClientSide && this.isAlive()) {
+        if (!this.level().isClientSide && !this.isFakeDying() && this.isAlive()) {
             if (this.devouringTarget == null) {
                 if (this.tickCount % 10 == 0) findPotentialVictim();
             } else {

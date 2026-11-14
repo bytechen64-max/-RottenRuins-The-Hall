@@ -29,46 +29,93 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
+import org.bytechen.rottenruins.core.magic.rules.OlympiadFieldTimeline;
 import org.bytechen.rottenruins.overworld.registry.effect.customEffect.CustomEffects;
 import org.bytechen.rottenruins.overworld.registry.effect.customEffect.RegisterCustomEffect;
 import org.bytechen.rottenruins.utils.EntityChooseUtil;
 import org.bytechen.rottenruins.utils.ModUtils;
 import org.bytechen.rottenruins.utils.SpellDamageUtil;
+import org.bytechen.rottenruins.utils.entity.SetHealthDieUnti;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.bytechen.rottenruins.network.s2c.OlympiadImpactPacket;
+import net.minecraft.core.particles.DustParticleOptions;
+import org.joml.Vector3f;
 
 /**
- * 奥数立方的投射物：一颗会自己找目标的小立方体，命中后按形态结算 ——
- * TETRA 造成 {@value #TETRA_DAMAGE} 点伤害并挂 {@code rotten_ruins:arcane_mark}（{@value #MARK_DURATION} tick）；
- * CUBE 造成「目标最大生命 × {@value #CUBE_DAMAGE_PERCENT}%」的伤害；ICO 展开成半径 {@value #EXPAND_RADIUS} 格的伤害场
- * （每 tick 随机伤害类型、无视无敌帧）。飞行阶段按有限转向速率追踪 {@value #CHASE_RANGE} 格内最近目标。
- * 用 {@code Projectile} 而非 {@code AbstractHurtingProjectile}：后者那套加速度/阻尼是给抛物线火球准备的。
+ * <b>奥数立方</b>的投射物 —— 一颗会自己找目标的小立方体，有三种形态。
+ *
+ * <h3>三种形态</h3>
+ * <table border="1">
+ *   <tr><th>形态</th><th>命中后</th></tr>
+ *   <tr><td>{@link #FORM_TETRA 三棱锥}</td>
+ *       <td>造成 {@value #TETRA_DAMAGE} 点伤害，并给目标挂 {@code rotten_ruins:arcane_mark}
+ *       自定义效果 {@value #MARK_DURATION} tick（10 秒）；</td></tr>
+ *   <tr><td>{@link #FORM_CUBE 立方体}</td>
+ *       <td>造成「目标最大生命 × {@value #CUBE_DAMAGE_PERCENT}%」的伤害
+ *       （{@link SetHealthDieUnti#setData}，不钳制）；</td></tr>
+ *   <tr><td>{@link #FORM_ICO 正二十面体}</td>
+ *       <td>先展开成半径 {@value #EXPAND_RADIUS} 格的场，伤害持续 {@value #EXPAND_DURATION} tick（3 秒），前后另有展开 / 收拢动画，
+ *           每 tick 对范围内目标造成<b>随机类型</b>的伤害、<b>无视无敌帧</b>
+ *           —— 20 个面都是正三角形的正二十面体。</td></tr>
+ * </table>
+ *
+ * <h3>自动追击</h3>
+ * <p>飞行阶段每 tick 找 {@value #CHASE_RANGE} 格内最近的可打击目标，把速度方向<b>转向</b>它
+ * （不是瞬移，也不是瞬间掉头：用一个有限的转向速率，读起来像"被吸引"而不是"锁定"）。
+ * 找不到目标就沿原方向继续飞。</p>
+ *
+ * <h3>为什么用 {@code Projectile} 而不是 {@code AbstractHurtingProjectile}</h3>
+ * <p>后者的加速度/阻尼曲线是给火球那种"抛物线感"准备的，而这里的立方体是<b>匀速追踪</b>，
+ * 自己管速度更直观；同时不需要它那套 {@code xPower/yPower/zPower}。</p>
  */
 public class OlympiadCubeEntity extends Projectile {
+
+    // ══════════════════════════════════════════════════════════════
+    // 形态
+    // ══════════════════════════════════════════════════════════════
 
     /** 三棱锥：命中挂自定义效果。 */
     public static final int FORM_TETRA = 0;
 
-    /** 立方体：命中造成最大生命 10% 的伤害。 */
+    /** 立方体：命中把血量改成最大生命的 10%。 */
     public static final int FORM_CUBE = 1;
 
     /** 正二十面体（20 个正三角面）：命中展开成伤害场。 */
     public static final int FORM_ICO = 2;
 
+    /** 形态总数。 */
     public static final int FORM_COUNT = 3;
 
-    /** 飞行速度（格/tick）：{@value #FLY_SPEED} ⇒ 22 格/秒（原 0.55 翻倍，手感从"飘过去"变成"射过去"）。 */
+    // ── 可调数值 ──
+
+    /**
+     * 飞行速度（格/tick）：{@value #FLY_SPEED} ⇒ 22 格/秒。
+     *
+     * <p>原为 0.55（11 格/秒），翻倍后手感从"飘过去"变成"射过去"，
+     * 配合翻倍的索敌范围（{@link #CHASE_RANGE}）也能在更远处就开始拐。</p>
+     */
     public static final double FLY_SPEED = 1.10d;
 
-    /** 每 tick 最多转向多少（0.3 ≈ 每秒约 340°）。必须跟着速度一起调：转弯半径 ≈ 速度 / 角速度，
-     *  速度翻倍而不调它就会变成 10 格以上的大圈，追 6 格内目标永远打不中；0.3 把半径拉回 3~4 格。 */
+    /**
+     * 每 tick 最多转向多少（0.3 ≈ 每秒能拐约 340°）。
+     *
+     * <p>这个值<b>必须</b>跟着速度一起调：转向速率不变而速度翻倍，转弯半径会跟着翻倍
+     * （半径 ≈ 速度 / 角速度），在 22 格/秒下就变成 10 格以上的大圈 ——
+     * 追 6 格内的目标会绕着它转圈永远打不中。0.3 把转弯半径拉回 3~4 格，
+     * 与 {@link #CHASE_RANGE} 同量级。</p>
+     */
     private static final double TURN_RATE = 0.3d;
 
-    /** 自动追击范围（格）：只找这么近的目标（原为 3 格）。 */
+    /**
+     * 自动追击范围（格）：只找这么近的目标。原为 3 格，翻倍到 6 格。
+     */
     public static final double CHASE_RANGE = 6.0d;
 
     /** 没命中的最长存活时间（tick）：4 秒。 */
@@ -78,14 +125,16 @@ public class OlympiadCubeEntity extends Projectile {
     public static final double EXPAND_RADIUS = 8.0d;
 
     /** 展开场的持续时间（tick）：3 秒。 */
-    public static final int EXPAND_DURATION = 60;
+    public static final int EXPAND_DURATION = OlympiadFieldTimeline.ACTIVE_TICKS;
 
     /** 展开场每 tick 每目标的基础伤害。 */
     public static final float EXPAND_DAMAGE = 4.0f;
 
     /**
-     * 立方体形态每次命中造成目标<b>最大生命的 10%</b> 作为伤害。注意是"造成这么多伤害"（当前血量减去它），
-     * 不是把血量设成 10% —— 后者对残血目标是直接处决、对满血目标几乎无感，两个方向都不像"一次伤害"。
+     * 立方体形态每次命中造成的伤害：目标<b>最大生命的 10%</b>。
+     *
+     * <p>注意是"造成这么多伤害"（当前血量减去它），<b>不是</b>把血量<b>设成</b> 10%
+     * —— 后者对残血目标是直接处决、对满血目标却几乎无感，两个方向都不像"一次伤害"。</p>
      */
     public static final float CUBE_DAMAGE_PERCENT = 10.0f;
 
@@ -105,33 +154,51 @@ public class OlympiadCubeEntity extends Projectile {
             DamageTypes.FALL
     };
 
+    // ══════════════════════════════════════════════════════════════
+    // 同步数据
+    // ══════════════════════════════════════════════════════════════
+
     private static final EntityDataAccessor<Integer> DATA_FORM =
             SynchedEntityData.defineId(OlympiadCubeEntity.class, EntityDataSerializers.INT);
 
-    /** 0 = 飞行中，1 = 已展开。客户端渲染靠它切换形状大小。 */
+    /** 是否处于领域生命周期（包含入场、伤害和退场）。 */
     private static final EntityDataAccessor<Boolean> DATA_EXPANDED =
             SynchedEntityData.defineId(OlympiadCubeEntity.class, EntityDataSerializers.BOOLEAN);
 
-    /** 剩余展开时间（tick）；0 表示不在展开态。客户端用不到，可读性保留。 */
+    /** 领域剩余总时间（tick），包含入场与退场，用于服务端生命周期与存档。 */
     private static final EntityDataAccessor<Integer> DATA_EXPAND_LIFE =
             SynchedEntityData.defineId(OlympiadCubeEntity.class, EntityDataSerializers.INT);
 
-    /** 命中爆开剩余 tick（>0 = 正在"快速放大后消失"）。 */
+    /** Server game time at impact; late trackers and reloaded entities share the same animation. */
+    private static final EntityDataAccessor<Long> DATA_EXPAND_START =
+            SynchedEntityData.defineId(OlympiadCubeEntity.class, EntityDataSerializers.LONG);
+
     private static final EntityDataAccessor<Integer> DATA_BURST_LIFE =
             SynchedEntityData.defineId(OlympiadCubeEntity.class, EntityDataSerializers.INT);
-
-    /** 命中爆开的总时长（tick）：8 tick = 0.4 秒，够"猛一下涨开再散掉"。 */
     public static final int BURST_TICKS = 8;
 
+    public int getBurstLife() { return entityData.get(DATA_BURST_LIFE); }
+    public boolean isBursting() { return getBurstLife() > 0; }
+    private void beginBurst() {
+        setDeltaMovement(Vec3.ZERO);
+        entityData.set(DATA_BURST_LIFE, BURST_TICKS);
+    }
+
     private int age;
+    private final Map<Integer, CompoundTag> pendingImpacts = new LinkedHashMap<>();
+    private static final DustParticleOptions ARCANE_DUST =
+            new DustParticleOptions(new Vector3f(0.67f, 0.36f, 1.0f), 0.75f);
 
     /** 拖尾保留的采样点数（客户端）：{@value #TRAIL_POINTS} tick 的历史轨迹。 */
     public static final int TRAIL_POINTS = 12;
 
     /**
      * <b>客户端专用</b>的轨迹采样（从旧到新），供 {@code OlympiadCubeRenderer} 画拖尾。
-     * 存在实体上而不是渲染器里：渲染无状态，没地方安全地攒历史；实体自己有 tick，顺手就记下了。
-     * 不参与同步、不进存档，服务端那份永远是空的。
+     *
+     * <p>为什么存在实体上而不是渲染器里：渲染是无状态的（每帧都可能换视锥），
+     * 没有地方安全地攒历史；而实体自己有 tick，客户端也照样 tick —— 顺手就把
+     * "最近 12 tick 飞到过哪里"记下来了。它<b>不参与同步、不进存档</b>，
+     * 服务端那份永远是空的。</p>
      */
     private final Deque<Vec3> clientTrail = new ArrayDeque<>();
 
@@ -145,8 +212,13 @@ public class OlympiadCubeEntity extends Projectile {
         entityData.define(DATA_FORM, FORM_TETRA);
         entityData.define(DATA_EXPANDED, false);
         entityData.define(DATA_EXPAND_LIFE, 0);
+        entityData.define(DATA_EXPAND_START, 0L);
         entityData.define(DATA_BURST_LIFE, 0);
     }
+
+    // ══════════════════════════════════════════════════════════════
+    // 访问器
+    // ══════════════════════════════════════════════════════════════
 
     public int getForm() {
         return entityData.get(DATA_FORM);
@@ -168,31 +240,27 @@ public class OlympiadCubeEntity extends Projectile {
         return entityData.get(DATA_EXPAND_LIFE);
     }
 
-    /** 命中爆开剩余 tick；>0 表示正在播放"快速放大后消失"。 */
-    public int getBurstLife() {
-        return entityData.get(DATA_BURST_LIFE);
+    public long getExpandStartTime() {
+        return entityData.get(DATA_EXPAND_START);
     }
 
-    public boolean isBursting() {
-        return getBurstLife() > 0;
-    }
-
-    private void setBurstLife(int ticks) {
-        entityData.set(DATA_BURST_LIFE, Math.max(0, ticks));
-    }
-
-    /** 命中后进入爆开态：停止运动，播放完自行消失。 */
-    private void beginBurst() {
-        setDeltaMovement(Vec3.ZERO);
-        setBurstLife(BURST_TICKS);
+    public float getExpandAge(float partialTick) {
+        return Math.max(0.0f, (float) (level().getGameTime() - getExpandStartTime()) + partialTick);
     }
 
     private void setExpandLife(int ticks) {
         entityData.set(DATA_EXPAND_LIFE, ticks);
     }
 
+    // ══════════════════════════════════════════════════════════════
+    // 生成
+    // ══════════════════════════════════════════════════════════════
+
     /**
-     * 从施法者视线方向发射一颗。yawGap 是相对视线的偏转角（度），副弹用它错开、别和主弹叠在一起。
+     * 发射一颗。
+     *
+     * @param form   形态（{@link #FORM_TETRA} / {@link #FORM_CUBE} / {@link #FORM_ICO}）
+     * @param yawGap 相对施法者视线偏转的角度（度）；副弹用它错开一点，别和主弹叠在一起
      */
     public static OlympiadCubeEntity spawn(@NotNull Player caster, @NotNull Level level,
                                            int form, float yawGap) {
@@ -215,6 +283,10 @@ public class OlympiadCubeEntity extends Projectile {
         return cube;
     }
 
+    // ══════════════════════════════════════════════════════════════
+    // Tick
+    // ══════════════════════════════════════════════════════════════
+
     @Override
     public void tick() {
         super.tick();
@@ -226,16 +298,12 @@ public class OlympiadCubeEntity extends Projectile {
             return;
         }
 
-        // 命中爆开：只倒计时，别的逻辑全部停掉，播完就消失
         if (isBursting()) {
             int left = getBurstLife() - 1;
-            setBurstLife(left);
-            if (left <= 0) {
-                discard();
-            }
+            entityData.set(DATA_BURST_LIFE, left);
+            if (left <= 0) discard();
             return;
         }
-
         if (isExpanded()) {
             tickExpanded(level);
             return;
@@ -251,7 +319,7 @@ public class OlympiadCubeEntity extends Projectile {
         moveAndCollide(level);
     }
 
-    /** 飞行阶段：找 CHASE_RANGE 内最近的目标，把速度方向慢慢转过去。 */
+    /** 飞行阶段：找 3 格内最近的目标，把速度方向慢慢转过去。 */
     private void chase(@NotNull ServerLevel level) {
         LivingEntity target = nearestTarget(level);
         if (target == null) {
@@ -266,7 +334,10 @@ public class OlympiadCubeEntity extends Projectile {
         setDeltaMovement(blended);
     }
 
-    /** CHASE_RANGE 内最近的可打击目标；排除主人/旁观者/已死，见 {@link #canHit}。 */
+    /**
+     * 3 格内最近的可打击目标。排除：主人、旁观者、已死、以及"目标是自己人"的情况交给
+     * {@link #canHit}。用 {@link EntityChooseUtil#sphereAt} 拿初筛列表再挑最近。
+     */
     @Nullable
     private LivingEntity nearestTarget(@NotNull ServerLevel level) {
         Entity owner = getOwner();
@@ -313,16 +384,30 @@ public class OlympiadCubeEntity extends Projectile {
         }
     }
 
-    /** 给渲染器读的轨迹采样（从旧到新，世界坐标）：只在客户端有内容，只读不要改它。 */
+    // ══════════════════════════════════════════════════════════════
+    // 拖尾（客户端）
+    // ══════════════════════════════════════════════════════════════
+
+    /**
+     * 给渲染器读的轨迹采样（从旧到新，世界坐标）。<b>只在客户端有内容</b>，
+     * 且只应由渲染器读、不要改它。
+     */
     @NotNull
     public Deque<Vec3> getClientTrail() {
         return clientTrail;
     }
 
-    /** 客户端每 tick 采样一次位置。以前撒的是潜影贝的 END_ROD 拖尾粒子，换成自记轨迹后形状/粗细/颜色可控
-     *  且能跟着追踪曲线拐弯；展开成领域后没有"飞行"这回事，直接把轨迹清掉。 */
+    /**
+     * 客户端每 tick 采样一次位置。
+     *
+     * <p>以前这一段撒的是 {@code ParticleTypes.END_ROD} —— 那是<b>潜影贝子弹</b>的拖尾粒子，
+     * 借来的观感。现在改成自己记轨迹、由 {@code OlympiadCubeRenderer} 画一条细长拖尾：
+     * 形状、粗细、颜色全都可控，而且能跟着真实的追踪曲线拐弯（粒子做不到，它们是散的）。</p>
+     *
+     * <p>展开成领域后没有"飞行"这回事，直接把轨迹清掉。</p>
+     */
     private void tickClientTrail() {
-        if (isExpanded()) {
+        if (isExpanded() || isBursting()) {
             clientTrail.clear();
             return;
         }
@@ -332,10 +417,33 @@ public class OlympiadCubeEntity extends Projectile {
         }
     }
 
-    /** 展开阶段：每 tick 对范围内目标造成一次随机类型的伤害（清无敌帧）。 */
+    /** 入场与退场仅播放动画，中间保留完整的 60 tick 伤害。 */
     private void tickExpanded(@NotNull ServerLevel level) {
         int left = getExpandLife() - 1;
         setExpandLife(left);
+        if (left <= 0) {
+            discard();
+            return;
+        }
+        int fieldAge = OlympiadFieldTimeline.TOTAL_TICKS - left;
+        if (fieldAge == OlympiadFieldTimeline.OPEN_TICKS) {
+            level.playSound(null, getX(), getY(), getZ(),
+                    SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.7f, 1.25f);
+        }
+        if (fieldAge == OlympiadFieldTimeline.OPEN_TICKS + OlympiadFieldTimeline.ACTIVE_TICKS) {
+            flushImpactFeedback(level);
+            level.playSound(null, getX(), getY(), getZ(),
+                    SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 0.45f, 1.4f);
+        }
+        if (left == 2) {
+            level.playSound(null, getX(), getY(), getZ(),
+                    SoundEvents.GLASS_BREAK, SoundSource.PLAYERS, 0.28f, 1.8f);
+            level.sendParticles(ARCANE_DUST, getX(), getY(), getZ(),
+                    9, 0.22d, 0.22d, 0.22d, 0.02d);
+        }
+        if (!OlympiadFieldTimeline.dealsDamage(fieldAge)) {
+            return;
+        }
 
         // 每 tick 抽一个伤害类型，这一 tick 里所有目标共用（读起来是"这一下是火/冰/虚空"）
         Holder<DamageType> type = level.registryAccess()
@@ -349,20 +457,36 @@ public class OlympiadCubeEntity extends Projectile {
                 e -> e != owner && e.isAlive() && !e.isSpectator()
                         && e.getBoundingBox().distanceToSqr(position()) <= EXPAND_RADIUS * EXPAND_RADIUS);
         for (LivingEntity victim : victims) {
-            // 每 tick 一下必然落在原版 20 tick 无敌帧里，不清就只剩第一下
+            // 无伤无敌帧：每 tick 一下必然落在原版 20 tick 无敌帧里，不清就只剩第一下
             SpellDamageUtil.prepareRepeatHit(victim);
-            // 带上施法者：击杀归因 / 掉落表的 killer 条件 / 进度都靠它
-            SpellDamageUtil.hurt(victim, source, ItemStack.EMPTY, casterOrNull(), EXPAND_DAMAGE);
+            CompoundTag hit = OlympiadImpactPacket.snapshot(victim);
+            if (SpellDamageUtil.hurt(victim, source, ItemStack.EMPTY, casterOrNull(), EXPAND_DAMAGE)
+                    && (pendingImpacts.containsKey(victim.getId())
+                    || pendingImpacts.size() < OlympiadImpactPacket.MAX_HITS)) {
+                pendingImpacts.put(victim.getId(), hit);
+            }
         }
 
-        if (tickCount % 4 == 0) {
-            level.sendParticles(ParticleTypes.ENCHANT,
-                    getX(), getY(), getZ(), 12, 1.2d, 1.2d, 1.2d, 0.05d);
-        }
-        if (left <= 0) {
-            discard();
+        if (OlympiadFieldTimeline.isPulse(fieldAge)) {
+            level.playSound(null, getX(), getY(), getZ(),
+                    SoundEvents.AMETHYST_BLOCK_HIT, SoundSource.PLAYERS, 0.24f,
+                    1.05f + 0.08f * ((fieldAge / OlympiadFieldTimeline.PULSE_TICKS) % 3));
+            flushImpactFeedback(level);
         }
     }
+
+    private void flushImpactFeedback(ServerLevel level) {
+        if (pendingImpacts.isEmpty()) return;
+        OlympiadImpactPacket.send(level, position(), pendingImpacts.values());
+        pendingImpacts.clear();
+        // A crowd produces one impact accent per beat rather than one sound per victim.
+        level.playSound(null, getX(), getY(), getZ(),
+                SoundEvents.GLASS_HIT, SoundSource.PLAYERS, 0.3f, 1.55f);
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // 命中
+    // ══════════════════════════════════════════════════════════════
 
     @Override
     protected void onHitEntity(@NotNull EntityHitResult hit) {
@@ -374,10 +498,11 @@ public class OlympiadCubeEntity extends Projectile {
 
         switch (getForm()) {
             case FORM_TETRA -> {
-                // 先打固定伤害，再挂印记；带印记的目标每次受伤会被随机塞一个负面效果，那一半在 ArcaneMarkHandler 里
+                // 三棱锥：先打 10 点伤害，再挂 10 秒印记。
+                // 带印记的目标每次受伤都会再被随机塞一个负面效果，
+                // 那一半逻辑在 ArcaneMarkHandler（LivingHurtEvent）里。
                 SpellDamageUtil.prepareRepeatHit(target);
-                SpellDamageUtil.hurt(target, attackSourceOf(target), ItemStack.EMPTY,
-                        casterOrNull(), TETRA_DAMAGE);
+                SpellDamageUtil.hurt(target, attackSourceOf(target), ItemStack.EMPTY, casterOrNull(), TETRA_DAMAGE);
 
                 if (target.isAlive()) {
                     boolean applied = CustomEffects.addEffect(target,
@@ -398,35 +523,36 @@ public class OlympiadCubeEntity extends Projectile {
                 level.sendParticles(ParticleTypes.ENCHANT, target.getX(),
                         target.getY() + target.getBbHeight() * 0.5d, target.getZ(),
                         18, 0.5d, 0.6d, 0.5d, 0.15d);
-                beginBurst();   // 命中特效：原地快速放大后消失
+                beginBurst();
             }
             case FORM_CUBE -> {
-                // 造成「最大生命 × 10%」的伤害。走 SpellDamageUtil：内部直接改血（不钳制）并补击杀归因，
-                // 掉落 / 经验 / killer 条件因此与普通击杀一致。
+                // 立方体：最大生命百分比伤害走统一法术事件和击杀归因。
                 float damage = target.getMaxHealth() * CUBE_DAMAGE_PERCENT / 100.0f;
-                SpellDamageUtil.hurt(target, attackSourceOf(target), ItemStack.EMPTY,
-                        casterOrNull(), damage);
+                SpellDamageUtil.hurt(target, attackSourceOf(target), ItemStack.EMPTY, casterOrNull(), damage);
                 level.playSound(null, target.getX(), target.getY(), target.getZ(),
                         SoundEvents.GLASS_BREAK, SoundSource.PLAYERS, 0.7f, 0.9f);
                 level.sendParticles(ParticleTypes.CRIT, target.getX(),
                         target.getY() + target.getBbHeight() * 0.5d, target.getZ(),
                         14, 0.4d, 0.5d, 0.4d, 0.2d);
-                beginBurst();   // 命中特效：原地快速放大后消失
+                beginBurst();
             }
             case FORM_ICO -> {
-                // 不消失，展开成伤害场
+                // 正二十面体：不消失，展开成半径 8 格的场
+                entityData.set(DATA_EXPAND_START, level.getGameTime());
+                setExpandLife(OlympiadFieldTimeline.TOTAL_TICKS);
                 setExpanded(true);
-                setExpandLife(EXPAND_DURATION);
                 setDeltaMovement(Vec3.ZERO);
                 level.playSound(null, getX(), getY(), getZ(),
-                        SoundEvents.ENDER_DRAGON_GROWL, SoundSource.PLAYERS, 0.5f, 1.7f);
+                        SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.45f, 0.65f);
             }
             default -> discard();
         }
     }
 
-    /** 攻击来源：主人是生物就用 {@code indirectMagic}（带攻击者，击杀归因与掉落 killer 条件才认得出），
-     *  否则退化成环境 magic。 */
+    /**
+     * 这颗立方体的"攻击来源"：主人是生物就用 {@code indirectMagic}（带攻击者，
+     * 所以击杀归因、掉落 killer 条件都认得出），否则退化成环境 magic。
+     */
     @NotNull
     private DamageSource attackSourceOf(@NotNull LivingEntity target) {
         Entity owner = getOwner();
@@ -438,15 +564,16 @@ public class OlympiadCubeEntity extends Projectile {
 
     /** 主人（必须是 LivingEntity 才有意义），可能为 {@code null}。 */
     @Nullable
+    private net.minecraft.server.level.ServerPlayer casterOrNull() {
+        return getOwner() instanceof net.minecraft.server.level.ServerPlayer player ? player : null;
+    }
+
+    @Nullable
     private LivingEntity ownerOrNull() {
         return getOwner() instanceof LivingEntity living ? living : null;
     }
 
-    /** 主人是玩家时返回它 —— 给 SpellDamageUtil 补击杀归因（掉落 killer 条件依赖它）。 */
-    @Nullable
-    private net.minecraft.server.level.ServerPlayer casterOrNull() {
-        return getOwner() instanceof net.minecraft.server.level.ServerPlayer player ? player : null;
-    }
+    // ── 命中判定 ──
 
     @Override
     protected boolean canHitEntity(@NotNull Entity target) {
@@ -463,6 +590,14 @@ public class OlympiadCubeEntity extends Projectile {
                 && !target.isSpectator();
     }
 
+    // ── 客户端表现 ──
+    //  拖尾已经改成"记轨迹 + 渲染器自己画"（见 tickClientTrail / OlympiadCubeRenderer），
+    //  原先那颗借来的潜影贝 END_ROD 粒子已经删掉了。
+
+    // ══════════════════════════════════════════════════════════════
+    // 杂项
+    // ══════════════════════════════════════════════════════════════
+
     @Override
     public void addAdditionalSaveData(@NotNull CompoundTag tag) {
         super.addAdditionalSaveData(tag);
@@ -470,6 +605,7 @@ public class OlympiadCubeEntity extends Projectile {
         tag.putBoolean("Expanded", isExpanded());
         tag.putInt("ExpandLife", getExpandLife());
         tag.putInt("Age", age);
+        tag.putInt("BurstLife", getBurstLife());
     }
 
     @Override
@@ -478,7 +614,11 @@ public class OlympiadCubeEntity extends Projectile {
         setForm(tag.getInt("Form"));
         setExpanded(tag.getBoolean("Expanded"));
         setExpandLife(tag.getInt("ExpandLife"));
+        // Time spent unloaded must not skip the visual while damage ticks remain paused.
+        entityData.set(DATA_EXPAND_START,
+                level().getGameTime() - (OlympiadFieldTimeline.TOTAL_TICKS - getExpandLife()));
         age = tag.getInt("Age");
+        entityData.set(DATA_BURST_LIFE, Math.max(0, Math.min(BURST_TICKS, tag.getInt("BurstLife"))));
     }
 
     @Override

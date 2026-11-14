@@ -9,8 +9,8 @@ import org.bytechen.rottenruins.overworld.registry.capability.anomaly.AnomalyCap
 import org.bytechen.rottenruins.overworld.registry.capability.base.CapabilityProvider;
 import org.bytechen.rottenruins.overworld.registry.capability.threat.ThreatCapability;
 import org.bytechen.rottenruins.overworld.registry.capability.threat.ThreatHelper;
-import org.bytechen.rottenruins.overworld.registry.capability.PlayerMagicPool;
-import org.bytechen.rottenruins.overworld.registry.capability.TwistedPoint;
+import org.bytechen.rottenruins.platform.forge.magic.SpellInventoryProvider;
+import org.bytechen.rottenruins.platform.forge.magic.ManaProvider;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ecological.HeavyBombEntity;
 import org.bytechen.rottenruins.overworld.registry.items.DomeriteAxe;
 import org.bytechen.rottenruins.overworld.registry.items.DomeriteHoe;
@@ -18,7 +18,7 @@ import org.bytechen.rottenruins.overworld.registry.items.DomeritePickaxe;
 import org.bytechen.rottenruins.overworld.registry.items.DomeriteShovel;
 import org.bytechen.rottenruins.overworld.registry.items.DomeriteSword;
 import org.bytechen.rottenruins.utils.DomeriteStatsHelper;
-import org.bytechen.infcore.api.IInfectedEntity;
+import org.bytechen.rottenruins.api.infection.IInfectedEntity;
 import com.google.common.collect.Multimap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -66,13 +66,15 @@ public class ForgeEventHelpers {
             event.addCapability(ANOMALY_KEY,
                     new CapabilityProvider<>(CapabilityRegistry.ANOMALY_CAP, cap));
 
-            // 魔法池：法术槽（默认 5 格）+ 同名共享冷却 + 当前选中格。
-            // 它自己实现了 ICapabilitySerializable，所以直接作为 provider 挂上去，
-            // 不需要再包一层 CapabilityProvider —— 这样 Forge 才会帮我们持久化。
-            event.addCapability(MAGIC_POOL_KEY, new PlayerMagicPool(player));
+            // The capability provider owns attachment/persistence; consumers receive the game inventory.
+            SpellInventoryProvider spells = new SpellInventoryProvider(player);
+            event.addCapability(MAGIC_POOL_KEY, spells);
+            event.addListener(spells::invalidate);
 
             // 法力池：初始值直接取上限（默认 1000），所以新建角色见面就是满蓝。
-            event.addCapability(MANA_KEY, new TwistedPoint(player));
+            ManaProvider mana = new ManaProvider(player);
+            event.addCapability(MANA_KEY, mana);
+            event.addListener(mana::invalidate);
         }
 
         // 威胁点数：所有生物（含玩家）都挂，初始 0

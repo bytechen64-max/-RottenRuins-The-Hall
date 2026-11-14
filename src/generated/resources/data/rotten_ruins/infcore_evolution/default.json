@@ -54,6 +54,18 @@
       "keepNbt": false,
       "results": [
         {
+          "target": "rotten_ruins:abnormal_squid",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:scout"
+    },
+    {
+      "type": "rotten_ruins:hall_evo",
+      "keepEquipment": false,
+      "keepNbt": false,
+      "results": [
+        {
           "target": "rotten_ruins:bonecrusher",
           "weight": 50
         },

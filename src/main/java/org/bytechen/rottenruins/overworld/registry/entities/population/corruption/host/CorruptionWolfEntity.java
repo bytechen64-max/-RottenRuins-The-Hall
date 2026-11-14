@@ -68,7 +68,7 @@ public class CorruptionWolfEntity extends BaseHostEntity {
     @Override
     public void tick() {
         super.tick();
-        if (this.level().isClientSide || !this.isAlive()) return;
+        if (this.level().isClientSide || this.isFakeDying() || !this.isAlive()) return;
 
         if (howlCooldown > 0) howlCooldown--;
         if (latchCooldown > 0) latchCooldown--;

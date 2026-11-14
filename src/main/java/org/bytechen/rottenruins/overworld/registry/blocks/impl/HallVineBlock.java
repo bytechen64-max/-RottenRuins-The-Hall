@@ -21,7 +21,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.bytechen.infcore.api.block.ISpreadBlock;
+import org.bytechen.rottenruins.api.infection.block.ISpreadBlock;
 
 /**
  * 王庭藤蔓 —— 可在王庭化方块（{@link ISpreadBlock} 且 {@code getSpreadType()} 命名空间为 {@code HallMod.MODID}）上双向生长的藤蔓，

@@ -73,17 +73,17 @@ public class ShockerEntity extends BaseRefactoredEntity {
     @Override
     public void tick() {
         super.tick();
-        if (this.level().isClientSide) return;
+        if (this.level().isClientSide || this.isFakeDying() || !this.isAlive()) return;
 
         tickOverloadPulse();
 
-        // 原有目标攻击冷却
-        if (this.getTarget() != null && this.attackCooldown > 0) {
-            attackCooldown--;
-            if (attackCooldown <= 0) {
-                doAreaAttack();
-                attackCooldown = 30;
-            }
+        if (attackCooldown > 0) attackCooldown--;
+        LivingEntity attackTarget = this.getTarget();
+        if (attackTarget != null && attackTarget.isAlive()
+                && this.distanceToSqr(attackTarget) <= 3.2D * 3.2D
+                && attackCooldown == 0) {
+            doAreaAttack();
+            attackCooldown = 30;
         }
 
         if (collisionAttackCooldown > 0) collisionAttackCooldown--;

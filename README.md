@@ -65,3 +65,36 @@
 
 ## 背景
 - 发着诡灭光芒的陨石划破天际，那不只是光，是某种活着的，不可言说的某种��。当它触地的瞬间，冲击波扩散开来，碰撞的正中心，一个完美符合几何学的，伴随着刺眼白光的二十面体逐渐膨胀扩散，任何处于其中的生物都将被苍白之火绞杀吞噬，至灰飞烟灭，不..变成了另一种存在...
+
+## 内置感染核心
+
+infcore 已作为源码合并到本项目：纯规则位于 `core/infection/`，游戏执行位于 `gameplay/infection/`，平台接入位于 `platform/`，
+接口位于 `src/main/java/org/bytechen/rottenruins/api/infection/`，由王庭主入口统一初始化。
+直接运行 `gradlew build` 即可，不再需要构建 InfectionCoreFramework、发布到 Maven 或执行 `syncInfcore`。
+
+升级时请从客户端和服务端的 `mods` 目录移除独立的 `infcore-*.jar`，仅替换王庭 jar。
+已有存档的 `infcore:kill_count` 能力键、`infcore_global_difficulty` 存档文件、
+`infcore:*` 难度标识及 `infcore_evolution` / `infcore_blockspread` 数据目录均保留。
+旧数据包和 `/infcore difficulty` 命令继续可用；Java 接口包名已迁移，扩展代码需要更新引用。
+
+架构与模块职责见 [架构文档入口](docs/architecture/README.md)，后续整体升级的适配范围见 [版本迁移清单](docs/architecture/migration-checklist.md)。
+
+感染与扩散规则现支持服务端数据包覆盖和 `/reload`，详见 [规则加载与覆盖说明](docs/architecture/infection-rule-loading.md)。
+
+法术可用多个 `MagicType` 枚举组合流派，详见 [魔法数值与混合流派](docs/architecture/magic-rules.md)。
+
+实体的假死计时和爆体缩放已拆为独立组件，详见 [假死与爆体组件](docs/architecture/entity-burst.md)。
+
+法力和冷却已拆为独立状态，存档与同步分开编码；本轮不迁移旧开发存档，详见 [法力与冷却状态](docs/architecture/magic-state.md)。
+
+感染系统的包职责和核心依赖约束见 [感染系统分层](docs/architecture/infection-layers.md)。
+
+法杖与轮盘已共用独立施法时序和起手校验，详见 [施法状态与游戏执行](docs/architecture/casting-state.md)。
+
+法术物品槽、轮盘配置和 Forge 能力已分层，详见 [法术物品槽与轮盘配置](docs/architecture/spell-loadout.md)。本轮主通道协议为 3，客户端和服务端需同时更新。
+
+魔法流派／使用方式／主动被动分类已归入核心模型，实际数值查询归入游戏层，详见 [魔法类型与求值边界](docs/architecture/magic-definitions.md)。
+
+法术基础数据与具名声明见 [法术定义与物品接入](docs/architecture/spell-definition.md)。
+
+施法／感染的平台服务、法力账户和魔法内容目录见 [运行时与内容分层](docs/architecture/runtime-boundaries.md)。

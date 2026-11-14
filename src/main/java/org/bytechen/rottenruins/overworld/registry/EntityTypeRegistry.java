@@ -1,5 +1,6 @@
 package org.bytechen.rottenruins.overworld.registry;
 
+import org.bytechen.rottenruins.utils.ModUtils;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.client.entity.IAutoRenderableEntity;
 import org.bytechen.rottenruins.client.entity.IAutoRenderableProjectile;
@@ -7,13 +8,14 @@ import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenE
 import org.bytechen.rottenruins.overworld.registry.entities.base.EntityManager;
 import org.bytechen.rottenruins.overworld.registry.entities.base.HallEntityManager;
 import org.bytechen.rottenruins.overworld.registry.entities.base.HallProjectileManager;
-import org.bytechen.rottenruins.overworld.registry.entities.population.death.DeathHunter;
+import org.bytechen.rottenruins.overworld.registry.entities.population.death.DeathHunterEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.apostle.CollapsarEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.apostle.HearthstoneEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.defensive.WindingColumnEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ecological.BonecrusherEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ecological.HeavyBombEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ecological.HeavyBombTntEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ecological.RampartEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.infected.InfEndermanEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.infected.InfPlayerEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.infected.InfSkeletonArrowEntity;
@@ -32,9 +34,11 @@ import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skil
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ulcerated.MonolithEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ulcerated.PursuerEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ulcerated.ScoutEntity;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ulcerated.AbnormalSquidEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.magic.FireBallEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.magic.OlympiadCubeEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.magic.SpearOfJudgmentEntity;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -45,11 +49,14 @@ import net.minecraftforge.registries.RegistryObject;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import org.bytechen.rottenruins.utils.ModUtils;
 
 @SuppressWarnings("removal")
 public class EntityTypeRegistry {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, HallMod.MODID);
+
+    public static final RegistryObject<EntityType<org.bytechen.rottenruins.overworld.registry.entities.projectile.BoomerangEntity>> BOOMERANG =
+            registerNoopEntity("boomerang", 0.5F, 0.25F, 1,
+                    org.bytechen.rottenruins.overworld.registry.entities.projectile.BoomerangEntity::new);
 
     public static <T extends AbstractRottenEntity> RegistryObject<EntityType<T>> registerMob(
             String name, float width, float height,
@@ -95,14 +102,34 @@ public class EntityTypeRegistry {
         });
     }
 
-    /** 同上，但指定同步间隔（tick）：原版默认 3 tick 一跳，每 tick 都在变的进度条会插出台阶；设成 1 静止时不发包。 */
+    /**
+     * 同上，但把<b>同步间隔</b>调成指定的 tick 数。
+     *
+     * <p>原版默认 {@code updateInterval = 3} —— 也就是说同步数据每 3 tick
+     * 才发一次。对于"每 tick 都在变的进度条"这种量，3 tick 一跳是<b>看得见</b>的：
+     * 客户端插值只能在"收到的两个值"之间插，收得稀，插出来就是台阶。</p>
+     *
+     * <p>代价并不大：{@code SynchedEntityData.packDirty()} 在没有脏字段时返回
+     * null，所以"设成 1"只意味着"每 tick 检查一次有没有变化"，静止时一个包都不发。</p>
+     */
     public static <T extends Entity> RegistryObject<EntityType<T>> registerNoopEntity(
             String name, float width, float height, int updateInterval,
             EntityType.EntityFactory<T> factory) {
         return registerNoopEntity(name, width, height, updateInterval, 5, factory);
     }
 
-    /** 同上，并指定客户端追踪范围（区块，默认 5 = 80 格）：超出范围实体不下发给客户端，巨型法阵会在远处整个消失。 */
+    /**
+     * 同上，但把<b>同步间隔</b>与<b>客户端追踪范围</b>一起指定。
+     *
+     * <p>原版默认 {@code updateInterval = 3}（同步数据每 3 tick 才发一次）、
+     * {@code clientTrackingRange = 5}（5 区块 = 80 格）。这两个默认值对
+     * "每个技能实体都行"是对的，但对一个<b>直径 28 格的巨型法阵</b>是错的：
+     * 玩家退到 80 格外时实体根本不会被发到客户端 —— 整个法阵（连同中心的
+     * 立体）在远处直接消失，而那正是它最该被看见的时候。</p>
+     *
+     * @param updateInterval      同步间隔（tick），1 = 每 tick 检查一次变化
+     * @param clientTrackingRange 追踪范围（区块）
+     */
     public static <T extends Entity> RegistryObject<EntityType<T>> registerNoopEntity(
             String name, float width, float height, int updateInterval, int clientTrackingRange,
             EntityType.EntityFactory<T> factory) {
@@ -123,6 +150,14 @@ public class EntityTypeRegistry {
         };
     }
 
+    // Your entities here
+    // public static final RegistryObject<EntityType<ExampleEntity>> EXAMPLE =
+    //         registerMob("example", 0.6f, 0.8f,
+    //                 (type, level) -> new ExampleEntity(type, level, defaultResources("example")),
+    //                 ExampleEntity::createAttributes);
+
+
+
     public static final RegistryObject<EntityType<InfPlayerEntity>> INF_PLAYER =
             registerMob("hall_player", 1.2f, 4f,
                     (type, level) -> new InfPlayerEntity(type, level, defaultResources("hall_player")),
@@ -142,35 +177,52 @@ public class EntityTypeRegistry {
             registerSkill("hall_skeleton_arrow", 0.6f, 0.6f,
                     InfSkeletonArrowEntity::new);
 
-    // 溃烂系兜底形态：斥候 1.0×1.2（生命 12 / 伤害 5，会爬墙）
+    // ────────── 溃烂 —— 斥候 / 追蹤者 / 巨碑（无专属感染形态时的兜底形态） ──────────
+    //  斥候：碰撞箱 1.0 × 1.2（体积 1.2，落在 < 2 档），生命 12 / 伤害 5 / 移动缓慢 / 会爬墙
     public static final RegistryObject<EntityType<ScoutEntity>> SCOUT =
             registerMob("scout", 1.0f, 1.2f,
                     (type, level) -> new ScoutEntity(type, level, defaultResources("scout")),
                     ScoutEntity::createAttributes);
 
-    // 巨碑 2.4×2.8（生命 100 / 伤害 20，慢速抗击退）
+    // 畸鱿：水生溃烂种，由落单或不足五只的斥候在水中变态而来。
+    public static final RegistryObject<EntityType<AbnormalSquidEntity>> ABNORMAL_SQUID =
+            registerMob("abnormal_squid", 1.2f, 1.0f,
+                    (type, level) -> new AbnormalSquidEntity(type, level, defaultResources("abnormal_squid")),
+                    AbnormalSquidEntity::createAttributes);
+
+    // 巨碑：生命 100 / 伤害 20 / 慢速抗击退。
     public static final RegistryObject<EntityType<MonolithEntity>> MONOLITH =
             registerMob("monolith", 2.4f, 2.8f,
                     (type, level) -> new MonolithEntity(type, level, defaultResources("monolith")),
                     MonolithEntity::createAttributes);
 
-    // 追蹤者 0.8×4.0（生命 24 / 伤害 8）；geo 网格实测约 1.25 宽 × 4.0 高，模型穿箱再调这两个数
+    //  追蹤者：碰撞箱 0.8 × 1.6（体积 1.28，是 2 ~ 8 档的转化形态），生命 24 / 伤害 8 / 速度快
+    //  注：geo 网格实测约 1.25 宽 × 4.0 高，比这里给的碰撞箱大不少，若模型看起来穿箱再调这两个数
     public static final RegistryObject<EntityType<PursuerEntity>> PURSUER =
             registerMob("pursuer", 0.8f, 4,
                     (type, level) -> new PursuerEntity(type, level, defaultResources("pursuer")),
                     PursuerEntity::createAttributes);
+
 
     public static final RegistryObject<EntityType<BonecrusherEntity>> BONECRUSHER=
             registerMob("bonecrusher", 5f, 5f,
                     (type, level) -> new BonecrusherEntity(type, level, defaultResources("bonecrusher")),
                     BonecrusherEntity::createAttributes);
 
+    public static final RegistryObject<EntityType<RampartEntity>> RAMPART =
+            registerMob("rampart", 3.0f, 7.0f,
+                    (type, level) -> new RampartEntity(type, level, defaultResources("rampart")),
+                    RampartEntity::createAttributes);
+
     public static final RegistryObject<EntityType<HeavyBombEntity>> HEAVY_BOMB =
             registerMob("heavy_bomb", 3f, 3f,
                     (type, level) -> new HeavyBombEntity(type, level, HeavyBombEntity.resources()),
                     HeavyBombEntity::createAttributes);
 
-    // 缠绕之柱：不会移动，2 格内抓人、每秒抽 5 点血，挂人时按 40/30/30 分摊伤害；碰撞箱按 geo 实测 1.4×2.8
+    // ────────── 防御 —— 缠绕之柱 ──────────
+    //  不会移动的柱子：2 格内抓人、每秒抽 5 点血、身上挂着人时按 40/30/30 分摊伤害，
+    //  没有抓取物时潜进方块再从目标脚下方块冒出来。碰撞箱按 geo 网格实测给
+    //  （宽约 1.2 / 高约 2.8），只有 idle 一段动画。
     public static final RegistryObject<EntityType<WindingColumnEntity>> WINDING_COLUMN =
             registerMob("winding_column", 1.4f, 2.8f,
                     (type, level) -> new WindingColumnEntity(type, level, defaultResources("winding_column")),
@@ -180,7 +232,15 @@ public class EntityTypeRegistry {
             registerSkill("heavy_bomb_tnt", 0.8f, 0.8f,
                     HeavyBombTntEntity::new);
 
-    // 陨石事件：追踪给 32 区块（512 格）——落点可能在 100 格外、十字星再高 150 格，默认 5 区块连"事件发生了"都看不到
+
+    // ────────── 技能实体 —— 陨石 ──────────
+    /**
+     * 陨石事件实体（{@code /meteorevent}）。
+     *
+     * <p>⚠️ 不能直接用 {@code registerNoopEntity}：它的默认客户端跟踪距离是 5 个区块
+     * （80 格），而这一招的落点可能在 100 格外、天空十字星还在落点上方 150 格 ——
+     * 超了实体就不会下发给客户端，玩家连"事件发生了"都看不到。这里显式给 32 区块（512 格）。</p>
+     */
     public static final RegistryObject<EntityType<MeteorEventEntity>> METEOR_EVENT =
             ENTITY_TYPES.register("meteor_event", () -> EntityType.Builder
                     .of(MeteorEventEntity::new, MobCategory.MISC)
@@ -192,53 +252,81 @@ public class EntityTypeRegistry {
             registerNoopEntity("meteorite", 0.5f, 1.6f,
                     (type, level) -> new MeteoriteEntity(type, level));
 
+    // ────────── 技能实体 —— 冲击波 ──────────
     public static final RegistryObject<EntityType<ShockwaveEntity>> SHOCKWAVE =
             registerNoopEntity("shockwave", 0.5f, 0.5f,
                     (type, level) -> new ShockwaveEntity(type, level));
 
+    // ────────── 技能实体 —— 剑气（双锥体白色发光） ──────────
     public static final RegistryObject<EntityType<SwordAuraEntity>> SWORD_AURA =
             registerNoopEntity("sword_aura", 0.5f, 0.5f,
                     (type, level) -> new SwordAuraEntity(type, level));
 
-    // 裁决光柱：纯渲染，伤害已在 DomeriteLongsword#castBeam 结算；碰撞箱给 0.5，真实 44×5 会让区块剔除与拾取变怪
+    // ────────── 技能实体 —— 天穹裁决的垂直光柱 ──────────
+    //  纯渲染实体：伤害在 DomeriteLongsword#castBeam 里已经结算，这里只负责被看见。
+    //  碰撞箱给得很小（0.5）—— 光柱的"范围"是渲染与判定各自按 radius/length 算的，
+    //  给它一个真实的 44×5 碰撞箱会让区块剔除与拾取逻辑都变得很怪。
     public static final RegistryObject<EntityType<VerdictBeamEntity>> VERDICT_BEAM =
             registerNoopEntity("verdict_beam", 0.5f, 0.5f,
                     (type, level) -> new VerdictBeamEntity(type, level));
 
-    // 裁决领域：有逻辑，每 1.2 秒找领域内最近目标出剑结算伤害，同时承载地面光纹与悬浮棱片
+    // ────────── 技能实体 —— 天穹裁决的裁决领域 ──────────
+    //  与光柱不同，这个实体是**有逻辑的**：每 1.2 秒找领域内最近目标出剑并结算伤害。
+    //  它同时承载视觉（地面光纹 + 悬浮二十面体棱片），因为两者本来就是同一个东西。
     public static final RegistryObject<EntityType<VerdictFieldEntity>> VERDICT_FIELD =
             registerNoopEntity("verdict_field", 0.5f, 0.5f,
                     (type, level) -> new VerdictFieldEntity(type, level));
 
-    // 落剑：实体不移动，位移由渲染侧按同步数据重建；碰撞箱极小，体积是渲染出来的锥体
+    // ────────── 技能实体 —— 天穹裁决的落剑（剑阵） ──────────
+    //  视觉上是"从天而降、落地后插在地上"的剑气；实体本身不移动，
+    //  位移由渲染侧按同步数据重建（见 VerdictSwordDropEntity 的类注释）。
+    //  碰撞箱给得极小：它的"体积"是渲染出来的锥体，不是碰撞箱。
     public static final RegistryObject<EntityType<VerdictSwordDropEntity>> VERDICT_SWORD_DROP =
             registerNoopEntity("verdict_sword_drop", 0.5f, 0.5f,
                     (type, level) -> new VerdictSwordDropEntity(type, level));
 
+    // ────────── 技能实体 —— 坍缩（多类型坍缩渲染） ──────────
     public static final RegistryObject<EntityType<CollapseEntity>> COLLAPSE =
             registerNoopEntity("collapse", 0.5f, 0.5f,
                     (type, level) -> new CollapseEntity(type, level));
 
-    // 绯红誓约蓄力法阵：同步间隔 1（蓄力进度每 tick 变，3 tick 会看出台阶），追踪 8 区块（直径近 10 格）
+    // ────────── 技能实体 —— 绯红誓约的蓄力法阵 ──────────
+    //  蹲下 + 右键格挡时生成，跟着玩家走；蓄满后由它自己选点并放出下面那个巨型法阵。
+    //  碰撞箱 0.5：它的视觉范围由半径算，真实碰撞箱只会让剔除/拾取变怪。
+    //  同步间隔 = 1：蓄力进度与半径是"每 tick 都在变"的连续量，
+    //  按原版默认的 3 tick 发一次，客户端就只能插出 3 tick 一台阶的动画。
+    //  追踪 8 区块（128 格）：法阵直径近 10 格，5 区块时队友稍微走远就看不到。
     public static final RegistryObject<EntityType<CrimsonVowChargeEntity>> CRIMSON_VOW_CHARGE =
             registerNoopEntity("crimson_vow_charge", 0.5f, 0.5f, 1, 8,
                     (type, level) -> new CrimsonVowChargeEntity(type, level));
 
-    // 绯红誓约巨型法阵：同步间隔 1 让脉冲相位与冲击环同 tick；追踪 20 区块（320 格）——直径 28 格、光柱高 70 格，默认 5 区块远处整个消失
+    // ────────── 技能实体 —— 绯红誓约的巨型法阵 ──────────
+    //  有逻辑：周期扩散波 + 终末的破坏队列；也承载全部视觉（地面法阵 / 立方体核心 /
+    //  上方扭曲柱 / 自天而降的光柱）。见 CrimsonVowFieldEntity 的类注释。
+    //  同步间隔 = 1：脉冲相位（uPulse）要与真实的冲击环同一 tick 出发。
+    //  追踪 20 区块（320 格）：**这一条是"远处看不见"的直接原因之一** ——
+    //  法阵直径 28 格、终末的光柱高 70 格，按原版默认的 5 区块，
+    //  玩家退到 80 格外时整个特效根本不会被发到客户端，而那正是它最该被看见的时候。
     public static final RegistryObject<EntityType<CrimsonVowFieldEntity>> CRIMSON_VOW_FIELD =
             registerNoopEntity("crimson_vow_field", 0.5f, 0.5f, 1, 20,
                     (type, level) -> new CrimsonVowFieldEntity(type, level));
 
-    // 黑洞：纯视觉，光线追踪引力透镜
+    // ────────── 视觉实体 —— 黑洞（光线追踪引力透镜，纯视觉） ──────────
     public static final RegistryObject<EntityType<BlackHoleEntity>> BLACK_HOLE =
             registerNoopEntity("black_hole", 0.5f, 0.5f,
                     (type, level) -> new BlackHoleEntity(type, level));
 
-    // 火球：原版 Fireball 子类，渲染走原版 ThrownItemRenderer，故不走 registerProjectile/Skill；碰撞箱照抄恶魂火球 1.0×1.0
+    // ────────── 法术投射物 —— 火球 ──────────
+    //  没有走 registerProjectile / registerSkill：那两条分别要求
+    //  GeckoLib 的 IAutoRenderableProjectile / IAutoRenderableEntity，而火球是
+    //  原版 Fireball 的子类，渲染交给原版 ThrownItemRenderer（在 ClientModEventHandler 里注册）。
+    //  碰撞箱照抄原版恶魂火球的 1.0 × 1.0。
     public static final RegistryObject<EntityType<FireBallEntity>> FIRE_BALL =
             registerNoopEntity("fire_ball", 1.0f, 1.0f, FireBallEntity::new);
 
-    // 奥数立方：碰撞箱 0.4 见方便于穿缝；每 tick 同步，否则高速追踪会看出跳格
+    // ────────── 法术投射物 —— 奥数立方 ──────────
+    //  碰撞箱 0.4 见方：它自己会追目标，做小一点反而好穿缝。
+    //  每 tick 同步一次（updateInterval 默认是 3），否则高速追踪时会看出跳格。
     public static final RegistryObject<EntityType<OlympiadCubeEntity>> OLYMPIAD_CUBE =
             ENTITY_TYPES.register("olympiad_cube", () -> EntityType.Builder
                     .of(OlympiadCubeEntity::new, MobCategory.MISC)
@@ -247,7 +335,11 @@ public class EntityTypeRegistry {
                     .updateInterval(1)
                     .build("olympiad_cube"));
 
-    // 审判之矛：没有客户端预测，一秒飞 32 格，默认 3 tick 同步会看出跳格，故每 tick；追踪 10 区块（原版投射物 4~5）
+    // ────────── 法术投射物 —— 审判之矛 ──────────
+    //  这里没有复用 registerNoopEntity，唯一的原因是<b>需要 updateInterval(1)</b>：
+    //  普通实体没有客户端预测（位置的推进是服务端算的），而矛一秒飞 32 格，
+    //  按默认的每 3 tick 同步一次会看出明显的跳格。每 tick 同步则完全顺滑。
+    //  clientTrackingRange 给 10（原版投射物是 4~5）：它经常在几十格外被看到。
     public static final RegistryObject<EntityType<SpearOfJudgmentEntity>> SPEAR_OF_JUDGMENT =
             ENTITY_TYPES.register("spear_of_judgment", () -> EntityType.Builder
                     .of(SpearOfJudgmentEntity::new, MobCategory.MISC)
@@ -256,21 +348,33 @@ public class EntityTypeRegistry {
                     .updateInterval(1)
                     .build("spear_of_judgment"));
 
-    // 坍缩使徒：碰撞箱按 geo 网格实测 2.4×2.6，勿用 Blockbench 的 visible_bounds_height（3.5 是显示框，会多出一格空箱）
+    // ────────── 使徒 —— 坍缩使徒（飞行 / 坍缩黑洞 / 斩击风暴） ──────────
+    //  碰撞箱按 geo 网格实测值给（宽 2.38 / 高 2.51），不要用 Blockbench 的
+    //  visible_bounds_height（3.5 是显示框，不是网格高度），否则头顶会多出一格空箱。
     public static final RegistryObject<EntityType<CollapsarEntity>> COLLAPSAR =
             registerMob("collapsar", 2.4f, 2.6f,
                     (type, level) -> new CollapsarEntity(type, level, CollapsarEntity.resources()),
                     CollapsarEntity::createAttributes);
 
-    // 王庭炉石：碰撞箱 1.6×2.2；geo/textures/animations 的 hearthstone 三件套缺失时只会日志报错，不会崩
+    // ────────── 使徒 —— 王庭炉石（支援型 boss：治疗 / 减伤光环 / 强化 / 王庭坍缩） ──────────
+    //  碰撞箱暂给 1.6 × 2.2（1.5 格宽、2 格高的方块状体量）。
+    //  模型资源路径是 geo/hearthstone.geo.json + textures/entity/hearthstone.png
+    //  + animations/hearthstone.animation.json —— 这三个文件由美术提供，
+    //  缺的时候 GeckoLib 只会在日志里报缺资源，不会崩。
     public static final RegistryObject<EntityType<HearthstoneEntity>> HEARTHSTONE =
             registerMob("hearthstone", 1.6f, 2.2f,
                     (type, level) -> new HearthstoneEntity(type, level, HearthstoneEntity.resources()),
                     HearthstoneEntity::createAttributes);
 
-    // 死亡猎手：碰撞箱 = 恼鬼 0.4×0.8 各乘 1.2；资源按 death_hunter 小写命名
-    public static final RegistryObject<EntityType<DeathHunter>> DEATH_HUNTER =
-            registerMob("death_hunter", DeathHunter.WIDTH, DeathHunter.HEIGHT,
-                    (type, level) -> new DeathHunter(type, level, DeathHunter.resources()),
-                    DeathHunter::createAttributes);
+    //  ────────── 死亡猎手（照恼鬼：穿墙飞行 / 冲刺 / 随机游荡，数值 ×1.2） ──────────
+    //  碰撞箱 0.48 × 0.96 = 恼鬼的 0.4 × 0.8 各乘 1.2。
+    //  继承 AbstractDeathEntity：独立 DEATH 阵营（不属于王庭 / 腐化），
+    //  受伤不溅血、死亡不爆体（死亡系约定）。
+    //  动画只有 idle / fly / attack：移动控制器用 idle / fly，出手时触发 attack。
+    //  资源按小写命名：geo/death_hunter.geo.json + textures/entity/death_hunter.png
+    //  + animations/death_hunter.animation.json。
+    public static final RegistryObject<EntityType<DeathHunterEntity>> DEATH_HUNTER =
+            registerMob("death_hunter", DeathHunterEntity.WIDTH, DeathHunterEntity.HEIGHT,
+                    (type, level) -> new DeathHunterEntity(type, level, DeathHunterEntity.resources()),
+                    DeathHunterEntity::createAttributes);
 }

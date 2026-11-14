@@ -8,7 +8,7 @@ import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.bytechen.rottenruins.overworld.registry.items.BaseGlowingGeoItem;
-import org.bytechen.rottenruins.overworld.registry.items.magic.bases.StaffBase;
+import org.bytechen.rottenruins.content.magic.base.StaffBase;
 
 import java.util.Set;
 
@@ -57,6 +57,10 @@ public class ItemGenData extends ItemModelProvider {
             if (loc != null && loc.getNamespace().equals(HallMod.MODID)) {
                 if(item instanceof BaseGlowingGeoItem)return;
                 String path = loc.getPath();
+                if (path.equals("rampart_spawn_egg")) {
+                    withExistingParent(path, mcLoc("item/template_spawn_egg"));
+                    return;
+                }
                 if (item instanceof BlockItem || MANUAL_WHITELIST.contains(path)) return;
                 if (path.equals("simple_field_meter")) {
                     fieldMeter(path);

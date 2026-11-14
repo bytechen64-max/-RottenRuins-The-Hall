@@ -12,7 +12,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.level.Level;
@@ -22,11 +21,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.event.impl.HeavyBombDeathEffect;
-import org.bytechen.rottenruins.overworld.registry.entities.ai.FaceTargetGoal;
 import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
-import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.BlackHoleEntity;
-import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.ShockwaveEntity;
-import org.bytechen.infcore.api.goal.InfectedTargetGoal;
+import org.bytechen.rottenruins.api.infection.goal.InfectedTargetGoal;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.object.PlayState;
@@ -47,6 +43,9 @@ public class HeavyBombEntity extends BaseEcologicalEntity {
     private static final double MIN_GROUND_CLEARANCE = 2.0D;
     /** 距离调整速度倍率 */
     private static final double DISTANCE_ADJUST_SPEED = 0.8D;
+    private static final double FACING_DEADZONE_SQR = 2.25D;
+    private static final double FACING_VELOCITY_EPSILON = 5.0E-3D;
+    private static final float TURN_SPEED = 6.0F;
 
     public HeavyBombEntity(EntityType<? extends BaseEcologicalEntity> entityType, Level level,
                            Consumer<AbstractRottenEntity> consumer) {
@@ -73,8 +72,18 @@ public class HeavyBombEntity extends BaseEcologicalEntity {
     public void tick() {
         super.tick();
         // 爆体期间只播缩放与 idle，不再飞行/投弹调度；结束时再触发死亡爆炸。
-        if (!level().isClientSide() && !isFakeDying()) {
+        if (!level().isClientSide() && !isFakeDying() && !isNoAi()) {
             tickFlightBehavior();
+        }
+    }
+
+    @Override
+    protected void tickChase() {
+        LivingEntity target = getTarget();
+        if (target != null && target.isAlive() && !isNoAi()
+                && getBoundingBoxDistanceSqrExact(target) <= doHurtDistance * doHurtDistance
+                && hasLineOfSight(target) && doHurtCooldown == 0 && doHurtGoal(target)) {
+            doHurtCooldown = doHurtTime;
         }
     }
 
@@ -96,14 +105,27 @@ public class HeavyBombEntity extends BaseEcologicalEntity {
         }
 
         if (desired.distanceToSqr(position()) > 1.0E-4D) {
-            getNavigation().stop();
             getMoveControl().setWantedPosition(desired.x, desired.y, desired.z, DISTANCE_ADJUST_SPEED);
         }
+        updateFacing(target != null && target.isAlive() ? target : null);
+    }
+
+    private void updateFacing(LivingEntity target) {
+        Vec3 horizontal = target == null ? getDeltaMovement()
+                : target.position().subtract(position());
+        if (horizontal.x * horizontal.x + horizontal.z * horizontal.z <
+                (target == null ? FACING_VELOCITY_EPSILON : FACING_DEADZONE_SQR)) return;
+
+        float yaw = (float) (Mth.atan2(horizontal.z, horizontal.x) * (180.0D / Math.PI)) - 90.0F;
+        float next = Mth.approachDegrees(getYRot(), yaw, TURN_SPEED);
+        setYRot(next);
+        yHeadRot = next;
+        yBodyRot = next;
     }
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 50)
+                .add(Attributes.MAX_HEALTH, 140)
                 .add(Attributes.MOVEMENT_SPEED, 0.3)
                 .add(Attributes.ATTACK_DAMAGE, 10)
                 .add(Attributes.ARMOR, 8)
@@ -120,16 +142,14 @@ public class HeavyBombEntity extends BaseEcologicalEntity {
 
     @Override
     protected void registerGoals() {
-        this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
+        this.targetSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .targetOtherInfected(true)   // 王庭 vs 腐化：跨阵营索敌（同阵营仍被 infcore 过滤）
                 .range(40.0)
                 .mustSee(false)
                 // 威胁点数过滤器：玩家威胁 < 5 不主动索敌；非玩家生物照常索敌
                 .filter(this)
                 .build());
-        this.goalSelector.addGoal(2, new FaceTargetGoal(this, 40));
         this.goalSelector.addGoal(5, new RandomFlyGoal());
-        this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
         super.registerGoals();
     }
 
@@ -183,9 +203,11 @@ public class HeavyBombEntity extends BaseEcologicalEntity {
     }
 
     private class RandomFlyGoal extends Goal {
+        private int nextFlightTick;
+
         @Override
         public boolean canUse() {
-            return getTarget() == null && !getMoveControl().hasWanted();
+            return getTarget() == null && tickCount >= nextFlightTick;
         }
 
         @Override
@@ -195,6 +217,7 @@ public class HeavyBombEntity extends BaseEcologicalEntity {
 
         @Override
         public void start() {
+            nextFlightTick = tickCount + 40 + random.nextInt(20);
             double x = getX() + (random.nextDouble() - 0.5D) * 16.0D;
             double y = getY() + (random.nextDouble() - 0.5D) * 8.0D;
             double z = getZ() + (random.nextDouble() - 0.5D) * 16.0D;
@@ -218,7 +241,7 @@ public class HeavyBombEntity extends BaseEcologicalEntity {
                 double dz = wantedZ - mob.getZ();
                 double distSq = dx * dx + dy * dy + dz * dz;
 
-                if (distSq < 2.5000003E-7F) {
+                if (distSq < 0.25D) {
                     operation = Operation.WAIT;
                     return;
                 }
@@ -226,22 +249,14 @@ public class HeavyBombEntity extends BaseEcologicalEntity {
                 double dist = Math.sqrt(distSq);
                 Vec3 dir = new Vec3(dx / dist, dy / dist, dz / dist);
 
-                if (!canReach(dir, Mth.ceil(dist))) {
+                if (!canReach(dir, Mth.clamp(Mth.ceil(dist), 1, 16))) {
                     operation = Operation.WAIT;
                     return;
                 }
 
                 double maxSpeed = speedModifier * mob.getAttributeValue(Attributes.MOVEMENT_SPEED);
-                Vec3 delta = mob.getDeltaMovement().add(dir.scale(0.1D));
-                double speed = delta.length();
-                if (speed > maxSpeed) {
-                    delta = delta.scale(maxSpeed / speed);
-                }
-                mob.setDeltaMovement(delta);
-
-                float yRot = (float) (Mth.atan2(dz, dx) * (180F / Math.PI)) - 90.0F;
-                mob.setYRot(rotlerp(mob.getYRot(), yRot, 90.0F));
-                // 保持直立，不随高度差俯仰，避免看起来像在疯狂旋转
+                Vec3 desiredVelocity = dir.scale(Math.min(maxSpeed, dist * 0.12D));
+                mob.setDeltaMovement(mob.getDeltaMovement().lerp(desiredVelocity, 0.25D));
             } else {
                 Vec3 delta = mob.getDeltaMovement();
                 if (delta.lengthSqr() > 1.0E-6D) {

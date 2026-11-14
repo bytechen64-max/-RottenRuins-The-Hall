@@ -7,6 +7,8 @@ import org.bytechen.rottenruins.HallMod;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.util.*;
 
 /**
@@ -16,6 +18,8 @@ import java.util.*;
  * 格式：调色板 + 压缩坐标索引。
  */
 public class HallDiskStorage {
+
+    private static final int FORMAT_V2 = 0x48445332; // HDS2
 
     private final Path storageDir;
 
@@ -37,17 +41,22 @@ public class HallDiskStorage {
      * <p>
      * 格式：
      * <pre>
-     * [Int: 调色板大小] -> [String(UTF): 调色板项...] -> [Int: 数据量] ->
-     *  循环 [Short: packedPos (x4|y12|z4), Short: paletteIndex]
+     * [Int: HDS2] [Int: 调色板大小] [UTF: 调色板项...] [Int: 数据量]
+     * 循环 [Byte: localX] [Int: y] [Byte: localZ] [Int: paletteIndex]。
+     * 旧格式把 20 位坐标压进 short，读取时仅作兼容；新写入不再丢失 X 或负 Y。
      * </pre>
      */
     public void writeChunk(ChunkPos pos, Map<BlockPos, String> snapshots) {
         File file = getFileForChunk(pos);
+        Path target = file.toPath();
+        Path temporary = target.resolveSibling(file.getName() + ".tmp");
         try (DataOutputStream out = new DataOutputStream(
-                new BufferedOutputStream(new FileOutputStream(file)))) {
+                new BufferedOutputStream(new FileOutputStream(temporary.toFile())))) {
 
-            // 构建调色板
-            List<String> palette = new ArrayList<>(new HashSet<>(snapshots.values()));
+            List<String> palette = new ArrayList<>(new LinkedHashSet<>(snapshots.values()));
+            Map<String, Integer> paletteIndex = new HashMap<>();
+            for (int i = 0; i < palette.size(); i++) paletteIndex.put(palette.get(i), i);
+            out.writeInt(FORMAT_V2);
             out.writeInt(palette.size());
             for (String s : palette) {
                 out.writeUTF(s);
@@ -57,15 +66,25 @@ public class HallDiskStorage {
             out.writeInt(snapshots.size());
             for (Map.Entry<BlockPos, String> entry : snapshots.entrySet()) {
                 BlockPos p = entry.getKey();
-                // 压缩坐标：x(4bits) | y(12bits) | z(4bits)
-                short packedPos = (short) (((p.getX() & 15) << 12)
-                        | ((p.getY() & 4095) << 4)
-                        | (p.getZ() & 15));
-                out.writeShort(packedPos);
-                out.writeShort(palette.indexOf(entry.getValue()));
+                out.writeByte(p.getX() & 15);
+                out.writeInt(p.getY());
+                out.writeByte(p.getZ() & 15);
+                out.writeInt(paletteIndex.get(entry.getValue()));
             }
         } catch (IOException e) {
             HallMod.LOGGER.error("[HallDisk] 写入区块 {} 失败", pos, e);
+            try { Files.deleteIfExists(temporary); } catch (IOException ignored) {}
+            return;
+        }
+        try {
+            try {
+                Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException e) {
+            HallMod.LOGGER.error("[HallDisk] 替换区块 {} 快照失败", pos, e);
         }
     }
 
@@ -80,20 +99,31 @@ public class HallDiskStorage {
         try (DataInputStream in = new DataInputStream(
                 new BufferedInputStream(new FileInputStream(file)))) {
 
-            int paletteSize = in.readInt();
+            int header = in.readInt();
+            boolean v2 = header == FORMAT_V2;
+            int paletteSize = v2 ? in.readInt() : header;
+            if (paletteSize < 0 || paletteSize > 65536) throw new IOException("无效的调色板大小: " + paletteSize);
             String[] palette = new String[paletteSize];
             for (int i = 0; i < paletteSize; i++) {
                 palette[i] = in.readUTF();
             }
 
             int count = in.readInt();
+            if (count < 0 || count > 1_000_000) throw new IOException("无效的快照数量: " + count);
             for (int i = 0; i < count; i++) {
-                short packed = in.readShort();
-                int paletteIdx = in.readShort();
-
-                int x = (packed >> 12) & 15;
-                int y = (packed >> 4) & 4095;
-                int z = packed & 15;
+                int x, y, z, paletteIdx;
+                if (v2) {
+                    x = in.readUnsignedByte();
+                    y = in.readInt();
+                    z = in.readUnsignedByte();
+                    paletteIdx = in.readInt();
+                } else {
+                    int packed = in.readUnsignedShort();
+                    x = (packed >> 12) & 15;
+                    y = (packed >> 4) & 4095;
+                    z = packed & 15;
+                    paletteIdx = in.readShort();
+                }
 
                 BlockPos worldPos = new BlockPos(
                         pos.getMinBlockX() + x,

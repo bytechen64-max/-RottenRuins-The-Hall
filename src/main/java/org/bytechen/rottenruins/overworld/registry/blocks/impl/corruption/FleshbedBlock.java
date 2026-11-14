@@ -25,7 +25,37 @@ import javax.annotation.Nullable;
  * <p>TODO（机制层，后续补）：原工程的 BlockEntity（培养物/生物量）、
  * 配方配置 {@code FleshbedRecipeConfig}、与 {@code InfectionItem} 的交互都尚未移植。</p>
  */
-public class FleshbedBlock extends HorizontalDirectionalBlock {
+public class FleshbedBlock extends HorizontalDirectionalBlock implements net.minecraft.world.level.block.EntityBlock {
+
+    @Override
+    public net.minecraft.world.level.block.entity.BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new org.bytechen.rottenruins.overworld.registry.blockentity.FleshbedBlockEntity(pos, state);
+    }
+
+    @Override
+    public <T extends net.minecraft.world.level.block.entity.BlockEntity> net.minecraft.world.level.block.entity.BlockEntityTicker<T>
+    getTicker(net.minecraft.world.level.Level level, BlockState state, net.minecraft.world.level.block.entity.BlockEntityType<T> type) {
+        if (level.isClientSide || type != org.bytechen.rottenruins.overworld.registry.RegisterBlockEntities.FLESHBED.get()) return null;
+        return (world, pos, block, entity) -> org.bytechen.rottenruins.overworld.registry.blockentity.FleshbedBlockEntity.tick(
+                world, pos, block, (org.bytechen.rottenruins.overworld.registry.blockentity.FleshbedBlockEntity) entity);
+    }
+
+    @Override
+    public net.minecraft.world.InteractionResult use(BlockState state, net.minecraft.world.level.Level level, BlockPos pos,
+            net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+        if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer
+                && level.getBlockEntity(pos) instanceof org.bytechen.rottenruins.overworld.registry.blockentity.FleshbedBlockEntity bed) {
+            bed.interact(serverPlayer, hand);
+        }
+        return net.minecraft.world.InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    @Override
+    public void onRemove(BlockState state, net.minecraft.world.level.Level level, BlockPos pos, BlockState next, boolean moving) {
+        if (!state.is(next.getBlock()) && level.getBlockEntity(pos) instanceof
+                org.bytechen.rottenruins.overworld.registry.blockentity.FleshbedBlockEntity bed) bed.cancel();
+        super.onRemove(state, level, pos, next, moving);
+    }
 
     public FleshbedBlock() {
         super(BlockBehaviour.Properties.of()

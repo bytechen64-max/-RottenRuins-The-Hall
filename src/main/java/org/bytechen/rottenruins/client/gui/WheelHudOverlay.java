@@ -18,12 +18,13 @@ import org.bytechen.rottenruins.client.gui.wheel.WheelClientState;
 import org.bytechen.rottenruins.client.gui.wheel.WheelData;
 import org.bytechen.rottenruins.client.gui.wheel.WheelRenderer;
 import org.bytechen.rottenruins.client.gui.wheel.WheelI18n;
-import org.bytechen.rottenruins.api.magic.MagicStats;
-import org.bytechen.rottenruins.overworld.registry.capability.PlayerMagicPool;
-import org.bytechen.rottenruins.overworld.registry.items.magic.WandItem;
-import org.bytechen.rottenruins.overworld.registry.items.magic.bases.MagicHandle;
-import org.bytechen.rottenruins.overworld.registry.items.magic.bases.IMagicBaseItem;
+import org.bytechen.rottenruins.gameplay.magic.stats.MagicStats;
+import org.bytechen.rottenruins.gameplay.magic.inventory.SpellInventory;
+import org.bytechen.rottenruins.content.magic.WandItem;
+import org.bytechen.rottenruins.gameplay.magic.casting.MagicHandle;
+import org.bytechen.rottenruins.gameplay.magic.spell.IMagicBaseItem;
 import org.bytechen.rottenruins.client.rend.gui.WheelGuiShaders;
+import org.bytechen.rottenruins.platform.forge.magic.network.c2s.MagicPoolActionPacket;
 
 /**
  * 持杖时显示玩家法力、法杖储能和当前技能；聊天界面呼出鼠标后可直接调整布局。
@@ -54,6 +55,13 @@ public final class WheelHudOverlay {
     private static WandHudMotion.Spring hudSize = new WandHudMotion.Spring();
     private static Object lastWorld;
     private static float shownPointerAngle;
+    private static boolean pickerOpen;
+    private static int pickerPage;
+    private static WandHudMotion.Spring pickerExpansion = new WandHudMotion.Spring();
+    private static final WandHudMotion.Spring[] pickerHovers = java.util.stream.IntStream.range(0, 8)
+            .mapToObj(i -> new WandHudMotion.Spring()).toArray(WandHudMotion.Spring[]::new);
+    private static float renderedCx, renderedCy, renderedScale = 1;
+    private static ItemStack pickerWand = ItemStack.EMPTY;
     private static String readoutDetail = "";
     private static int readoutColor = 0xFF9CCBDF;
 
@@ -68,8 +76,11 @@ public final class WheelHudOverlay {
         }
         Minecraft mc = Minecraft.getInstance();
         if (mc.options.hideGui || mc.player == null || mc.level == null) {
+            pickerOpen = false;
             return;
         }
+        if (!(mc.screen instanceof ChatScreen) || mc.options.hideGui
+                || !(mc.player.getMainHandItem().getItem() instanceof WandItem)) pickerOpen = false;
         GuiGraphics gui = event.getGuiGraphics();
         WandHudLayout layout = WandHudLayout.get();
         if (!layout.hidden() && mc.screen == null
@@ -102,9 +113,9 @@ public final class WheelHudOverlay {
         renderWandStatus(event.getGuiGraphics(), wand, true, hovered || drag != Drag.NONE,
                 event.getMouseX(), event.getMouseY());
         Rect hide = hideButtonRect(layout, sw, sh);
-        drawHideButton(event.getGuiGraphics(), hide,
+        if (!pickerOpen && pickerExpansion.value < 0.05F) drawHideButton(event.getGuiGraphics(), hide,
                 hide.contains(event.getMouseX(), event.getMouseY()));
-        if (hide.contains(event.getMouseX(), event.getMouseY())) {
+        if (!pickerOpen && hide.contains(event.getMouseX(), event.getMouseY())) {
             event.getGuiGraphics().renderTooltip(mc.font,
                     Component.literal(WheelI18n.tr("rotten_ruins.wand_hud.hide")),
                     event.getMouseX(), event.getMouseY());
@@ -126,11 +137,39 @@ public final class WheelHudOverlay {
             }
             return;
         }
-        if (hideButtonRect(layout, sw, sh).contains(event.getMouseX(), event.getMouseY())) {
+        if (!pickerOpen && hideButtonRect(layout, sw, sh).contains(event.getMouseX(), event.getMouseY())) {
             if (event.getButton() == 0) {
                 drag = Drag.NONE;
+                pickerOpen = false;
                 layout.setHidden(true);
                 layout.save();
+            }
+            event.setCanceled(true);
+            return;
+        }
+        double localX = (event.getMouseX() - renderedCx) / renderedScale;
+        double localY = (event.getMouseY() - renderedCy) / renderedScale;
+        if (event.getButton() == 1 && Math.hypot(localX, localY) <= 20) {
+            pickerOpen = !pickerOpen;
+            if (pickerOpen) {
+                pickerPage = WheelClientState.page();
+                pickerWand = mc.player.getMainHandItem();
+                for (int i = 0; i < pickerHovers.length; i++) pickerHovers[i] = new WandHudMotion.Spring();
+                MagicPoolActionPacket.sendSyncRequest();
+            }
+            drag = Drag.NONE;
+            event.setCanceled(true);
+            return;
+        }
+        if (pickerOpen) {
+            WheelData.Slot[] slots = pickerSlots();
+            int hit = WandHudPicker.hit(localX, localY, pickerIndices(slots), pickerExpansion.value);
+            if (event.getButton() == 0 && hit >= 0) {
+                // Existing SELECT only changes the prepared spell; it never begins a cast.
+                MagicPoolActionPacket.sendSelect(slots[hit].poolSlot());
+                pickerOpen = false;
+            } else if (Math.hypot(localX, localY) > WandHudPicker.MARGIN || event.getButton() == 1) {
+                pickerOpen = false;
             }
             event.setCanceled(true);
             return;
@@ -189,6 +228,11 @@ public final class WheelHudOverlay {
         if (layout.hidden()) return;
         Minecraft mc = Minecraft.getInstance();
         int sw = mc.getWindow().getGuiScaledWidth(), sh = mc.getWindow().getGuiScaledHeight();
+        if (pickerOpen && Math.hypot((event.getMouseX() - renderedCx) / renderedScale,
+                (event.getMouseY() - renderedCy) / renderedScale) <= WandHudPicker.MARGIN) {
+            event.setCanceled(true);
+            return;
+        }
         if (!contains(layout, event.getMouseX(), event.getMouseY(), sw, sh)) return;
         float step = (float) Math.signum(event.getScrollDelta()) * 0.05F;
         layout.resize(layout.requestedWidthScale() + step, layout.requestedHeightScale() + step);
@@ -199,6 +243,7 @@ public final class WheelHudOverlay {
 
     @SubscribeEvent
     public static void onChatClosed(ScreenEvent.Closing event) {
+        if (event.getScreen() instanceof ChatScreen) pickerOpen = false;
         if (event.getScreen() instanceof ChatScreen && drag != Drag.NONE) {
             drag = Drag.NONE;
             WandHudLayout.get().save();
@@ -289,13 +334,19 @@ public final class WheelHudOverlay {
             hudSize = new WandHudMotion.Spring();
             hudSize.value = size;
             readoutDetail = "";
+            pickerOpen = false;
+            pickerExpansion = new WandHudMotion.Spring();
         }
         lastFrameMs = now;
         lastWorld = mc.level;
         if (drag == Drag.RESIZE) hudSize.value = size;
         else hudSize.step(size, dt);
         float scale = hudSize.value / WandHudLayout.WIDTH;
-        float cx = x + size / 2.0F, cy = y + size / 2.0F;
+        if (!chatControls || mc.player.getMainHandItem() != pickerWand) pickerOpen = false;
+        pickerExpansion.step(pickerOpen ? 1 : 0, dt);
+        float cx = WandHudPicker.safeCenter(x + size / 2.0F, sw, scale, pickerExpansion.value);
+        float cy = WandHudPicker.safeCenter(y + size / 2.0F, sh, scale, pickerExpansion.value);
+        renderedCx = cx; renderedCy = cy; renderedScale = scale;
         WandHudGeometry.Target target = chatControls && drag == Drag.NONE
                 && !hideButtonRect(layout, sw, sh).contains(mouseX, mouseY)
                 ? WandHudGeometry.target((mouseX - cx) / scale, (mouseY - cy) / scale,
@@ -304,7 +355,7 @@ public final class WheelHudOverlay {
         ItemStack held = mc.player.getMainHandItem();
         int playerMana = WheelData.mana(), maxMana = WheelData.maxMana();
         int wandMana = wand.mana(held), capacity = wand.capacity();
-        PlayerMagicPool pool = MagicHandle.getPool(mc.player);
+        SpellInventory pool = MagicHandle.getPool(mc.player);
         ItemStack selected = MagicHandle.selectedSpell(mc.player);
         if (pool != null && WheelClientState.phase() == WheelClientState.Phase.MAINTAINING
                 && pool.isValidSlot(WheelClientState.poolSlot())) {
@@ -315,7 +366,12 @@ public final class WheelHudOverlay {
         float playerFraction = maxMana > 0 ? Math.min(1.0F, Math.max(0, playerMana / (float) maxMana)) : 0;
         float reserveFraction = capacity > 0 ? Math.min(1.0F, Math.max(0, wandMana / (float) capacity)) : 0;
         float cooldown = spell == null ? 0 : cooldownFraction(mc, pool, selected);
-        motion.update(dt, target, playerFraction, reserveFraction, cooldown,
+        WheelData.Slot[] quickSlots = chatControls && (pickerOpen || pickerExpansion.value > 0.02F)
+                ? pickerSlots() : new WheelData.Slot[0];
+        int quickHover = pickerOpen ? WandHudPicker.hit((mouseX - cx) / scale, (mouseY - cy) / scale,
+                pickerIndices(quickSlots), pickerExpansion.value) : -1;
+        motion.update(dt, quickHover >= 0 || (pickerOpen && target == WandHudGeometry.Target.NONE)
+                ? WandHudGeometry.Target.ICON : target, playerFraction, reserveFraction, cooldown,
                 String.valueOf(MagicStats.magicId(selected)), String.valueOf(held.getItem()));
         if (target != WandHudGeometry.Target.NONE) {
             float angle = (float) Math.atan2(mouseY - cy, mouseX - cx);
@@ -362,11 +418,19 @@ public final class WheelHudOverlay {
             gui.drawString(mc.font, "?", 5, 4, WheelRenderer.TEXT_FAINT, false);
         }
         gui.pose().popPose();
-        if (editing) {
+        if (chatControls && pickerExpansion.value > 0.02F) {
+            renderPicker(gui, quickSlots, quickHover, cx, cy, scale, dt);
+        }
+        if (editing && !pickerOpen) {
             gui.fill(x + size - 11, y + size - 4, x + size - 3, y + size - 3, WheelRenderer.GOLD_BRIGHT);
             gui.fill(x + size - 4, y + size - 11, x + size - 3, y + size - 3, WheelRenderer.GOLD_BRIGHT);
         }
-        if (target != WandHudGeometry.Target.NONE) {
+        if (quickHover >= 0) {
+            readoutColor = WheelData.argb(quickSlots[quickHover].type(), 1);
+            readoutDetail = WheelI18n.tr("rotten_ruins.wand_hud.picker_select", quickSlots[quickHover].name());
+        } else if (pickerOpen && pickerIndices(quickSlots).length == 0) {
+            readoutDetail = WheelI18n.tr("rotten_ruins.wand_hud.picker_empty");
+        } else if (target != WandHudGeometry.Target.NONE) {
             readoutColor = target == WandHudGeometry.Target.PLAYER ? palette.player()
                     : target == WandHudGeometry.Target.WAND ? palette.reserve() : palette.skill();
             readoutDetail = switch (target) {
@@ -389,14 +453,23 @@ public final class WheelHudOverlay {
         if (opacity < 0.02F || detail.isEmpty()) return;
         Minecraft mc = Minecraft.getInstance();
         int sw = gui.guiWidth(), sh = gui.guiHeight();
-        String hint = WheelI18n.tr("rotten_ruins.wand_hud.chat_hint");
+        String hint = WheelI18n.tr(pickerOpen ? "rotten_ruins.wand_hud.picker_hint"
+                : "rotten_ruins.wand_hud.chat_hint");
         int width = Math.min(sw - 12, Math.max(mc.font.width(detail), (int) (mc.font.width(hint) * 0.8F)) + 24);
-        float gap = 44 * scale + 9 + (1 - opacity) * 7;
+        float gap = (44 + 36 * Math.max(0, Math.min(1, pickerExpansion.value))) * scale + 9 + (1 - opacity) * 7;
         int px = Math.round(cx + gap);
-        boolean left = px + width > sw - 6;
-        if (left) px = Math.round(cx - gap - width);
-        px = Math.max(6, Math.min(sw - width - 6, px));
         int py = Math.max(6, Math.min(sh - 42, Math.round(cy - 19)));
+        if (px + width > sw - 6) {
+            px = Math.round(cx - gap - width);
+            if (px < 6) {
+                // Centered HUDs may lack room on either side; keep the card clear of spell nodes.
+                px = Math.round(cx - width / 2.0F);
+                py = Math.round(cy + gap + 5);
+                if (py + 36 > sh - 6) py = Math.round(cy - gap - 41);
+            }
+        }
+        px = Math.max(6, Math.min(sw - width - 6, px));
+        py = Math.max(6, Math.min(sh - 42, py));
         gui.pose().pushPose();
         gui.pose().translate(0, 0, 300);
         int background = WandHudVisuals.alpha(0x091321, 233 * opacity);
@@ -420,7 +493,51 @@ public final class WheelHudOverlay {
         gui.pose().popPose();
     }
 
-    private static float cooldownFraction(Minecraft mc, PlayerMagicPool pool, ItemStack selected) {
+    private static WheelData.Slot[] pickerSlots() {
+        return WheelData.page(pickerPage);
+    }
+
+    private static int[] pickerIndices(WheelData.Slot[] slots) {
+        Minecraft mc = Minecraft.getInstance();
+        SpellInventory pool = mc.player == null ? null : MagicHandle.getPool(mc.player);
+        int selected = pool == null ? -1 : pool.getSelectedSlot();
+        return java.util.stream.IntStream.range(0, slots.length)
+                .filter(i -> slots[i].occupied() && slots[i].active() && slots[i].poolSlot() != selected).toArray();
+    }
+
+    private static void renderPicker(GuiGraphics gui, WheelData.Slot[] slots, int hovered,
+                                     float cx, float cy, float scale, float dt) {
+        float open = Math.max(0, Math.min(1, pickerExpansion.value));
+        drawArc(gui, cx, cy, 57.7F * scale, 58.2F * scale, 1,
+                WandHudVisuals.alpha(0x8CAFC6, 65 * open));
+        for (int index : pickerIndices(slots)) {
+            pickerHovers[index].step(hovered == index ? 1 : 0, dt);
+            float hover = Math.max(0, pickerHovers[index].value);
+            WandHudPicker.Point p = WandHudPicker.position(index, pickerExpansion.value);
+            float px = cx + p.x() * scale, py = cy + p.y() * scale;
+            float radius = (10 + hover * 1.8F) * scale;
+            int color = WheelData.argb(slots[index].type(), 1);
+            drawArc(gui, px, py, 0, radius + 2 * scale, 1,
+                    WandHudVisuals.alpha(color, open * (18 + hover * 35)));
+            drawArc(gui, px, py, 0, radius, 1, WandHudVisuals.alpha(0x091320, 240 * open));
+            drawArc(gui, px, py, radius - 0.7F * scale, radius, 1,
+                    WandHudVisuals.alpha(color, open * (110 + hover * 120)));
+            float iconScale = scale * open * (1 + hover * 0.12F);
+            gui.pose().pushPose();
+            gui.pose().translate(px - 8 * iconScale, py - 8 * iconScale, 0);
+            gui.pose().scale(iconScale, iconScale, 1);
+            gui.renderItem(slots[index].stack(), 0, 0);
+            float cooldown = slots[index].cooldownFrac();
+            if (cooldown > 0) {
+                gui.pose().translate(0, 0, 200);
+                gui.pose().scale(cooldown, 1, 1);
+                gui.fill(0, 0, 16, 16, 0x99050A16);
+            }
+            gui.pose().popPose();
+        }
+    }
+
+    private static float cooldownFraction(Minecraft mc, SpellInventory pool, ItemStack selected) {
         if (pool == null) return 0;
         int remaining = pool.getCooldownRemaining(MagicStats.magicId(selected));
         if (remaining <= 0) return 0;

@@ -28,10 +28,15 @@ cmd /c "tools\gui-preview\gui_preview.cmd"                                  # sm
 cmd /c "tools\gui-preview\gui_preview.cmd -Scene tooltip -Time 4.5"          # tooltip 预览
 cmd /c "tools\gui-preview\gui_preview.cmd -Scene collapsar_bar -Time 1.5"    # 坍缩使徒血条
 cmd /c "tools\gui-preview\gui_preview.cmd -Scene gui_effects -Time 2.0"      # GUI 特效
-cmd /c "tools\gui-preview\gui_preview.cmd -Scene tab_divider -Time 2.0"      # 创造栏隔断
+cmd /c "tools\gui-preview\gui_preview.cmd -Scene creative_inventory"      # 创造栏隔断
 cmd /c "tools\gui-preview\gui_preview.cmd -Scene difficulty -Time 2.0"       # 难度选择界面
 cmd /c "tools\gui-preview\gui_preview.cmd -Scene spell_wheel -Time 3.4"      # 魔法轮盘施法 HUD（设计稿）
 cmd /c "tools\gui-preview\gui_preview.cmd -Scene spell_loadout -Time 2.0"    # 魔法装载界面（设计稿）
+cmd /c "tools\gui-preview\gui_preview.cmd -Scene spell_forge -Time 2.4"      # 法术合台（金色星空设计稿）
+cmd /c "tools\gui-preview\gui_preview.cmd -Scene spell_forge_styles -Time 2.4" # 法术合台：原版绘制 / 占位纹理两套方案
+cmd /c "tools\gui-preview\gui_preview.cmd -Scene spell_weave -Time 2.4"        # 织星台：画星座织法术（平滑发光概念稿）
+cmd /c "tools\gui-preview\gui_preview.cmd -Scene spell_weave_styles -Time 2.4" # 织星台：像素风格 A 绘制 / B 占位纹理
+cmd /c "tools\gui-preview\gui_preview.cmd -Scene spell_weave_hybrid -Time 2.4" # 织星台：像素骨架 + 平滑能量混合渲染
 cmd /c "tools\gui-preview\gui_preview.cmd -Scene wand_hud -Height 300 -Time 2" # 法杖 HUD 静态对照
 cmd /c "tools\gui-preview\gui_preview.cmd -Scene wand_hud -Height 300 -Time -1" # 导出 204 帧动效序列
 cmd /c "tools\gui-preview\gui_preview.cmd -All"                              # 全部场景
@@ -60,17 +65,23 @@ cmd /c "tools\gui-preview\gui_preview.cmd -All"                              # �
 | `tooltip` | `SceneTooltip.java` | 绯红誓约物品 tooltip：热力底板 + 1px 渐变边框 + 流动名字 + lore + 格挡减伤条 | `tooltip_ingame.png`(+`_t3`)、`tooltip_flat.png`(+`_t3`)、`tooltip_plain.png`、`tooltip.png` |
 | `collapsar_bar` | `SceneCollapsarBar.java` | 坍缩使徒 boss 血条：mask 内容 + outline 框架 + 星尘 + 低血抖动（`-Time 4.985` 时抖动最明显） | `collapsar_bar.png`、`collapsar_stars.png` |
 | `gui_effects` | `SceneGuiEffects.java` | 恐怖 Voronoi 全屏叠加（3 档强度）、难度图标径向光晕（`gui_glow`） | `gui_effects.png`、`gui_voronoi.png`、`gui_glow.png` |
-| `tab_divider` | `SceneTabDivider.java` | 创造物品栏分区隔断：`gui_tab_divider` 色带 + 逐字流动彩字标题 | `tab_divider.png`、`tab_divider_flow.png` |
+| `creative_inventory` | `SceneCreativeInventory.java` | 创造物品栏：冷蓝灰银边、金属铭牌与固定银色标题，读取正式贴图 | `creative_inventory.png` |
 | `difficulty` | `SceneDifficulty.java` | 难度选择界面：卡片 + 柔光 + 程序化法阵（`difficulty_sigil`，UV 编码逐字移植）+ 图标 + 文字 | `difficulty_screen.png`、`difficulty_sigils.png`、`difficulty.png` |
 | `spell_wheel` | `SceneSpellWheel.java` | **魔法轮盘施法 HUD（设计稿）**：8 方位花瓣轮盘、只显示已绑定主动法术、中心核心/冷却环/蓄力环、法力条、夜空山景模拟 | `spell_wheel.png`、`spell_wheel_idle.png`、`spell_wheel_charge.png`、`spell_wheel_cooldown.png`、`spell_wheel_empty.png` |
 | `spell_loadout` | `SceneSpellLoadout.java` | **魔法装载界面（设计稿）**：左侧法术图鉴（ACTIVE/PASSIVE 页签）、中间轮盘配置预览、右侧详情、拖拽绑定态、被动只读态 | `spell_loadout.png`、`spell_loadout_drag.png`、`spell_loadout_passive.png` |
+| `spell_forge` | `SceneSpellForge.java` | **法术合台（金色星空设计稿）**：蓝图 / 材料输入、七学派熔炉核心与刻录进度、法术预览、图鉴未知态 | `spell_forge.png`（刻录中）、`spell_forge_ready.png`、`spell_forge_codex.png` |
+| `spell_forge_styles` | `SceneSpellForgeStyles.java` | **法术合台：两套原版风格提案**：A 纯 fill 绘制原版斜角 / B 读取占位 PNG（`textures/gui/spell_forge/`）；含 Forge/Codex 页与 1280×440 并排对比 | `spell_forge_a_drawn*.png`、`spell_forge_b_textured*.png`；`-Width 1280 -Height 440 -Scale 1` 出对比图 |
+| `spell_weave` | `SceneSpellWeave.java` | **织星台（自由合成概念稿）**：可复用符印托盘 + 星空连线星座 + 实时推演（名称/数值/效果/稳定性/复杂度）+ 星砂燃料；稳定与不稳定两张，用项目 `magic_starfield` / `magic_constellation` / `magic_pulse` 着色器 | `spell_weave.png`、`spell_weave_unstable.png` |
+| `spell_weave_styles` | `SceneSpellWeaveStyles.java` | **织星台像素 A/B**：A 全部 `fill` 画像素面板/符文/点阵星云，B 读取 `textures/gui/spell_weave/` 占位 PNG（生成器 `tools/generate-spell-weave-gui-placeholders.py`）；几何完全一致 | `spell_weave_a_pixel*.png`、`spell_weave_b_tex*.png`；`-Width 1280 -Height 470 -Scale 1` 出对比图 |
+| `spell_weave_hybrid` | `SceneSpellWeaveHybrid.java` | **织星台混合渲染**：像素 chrome（面板/文字/按钮/符印框）+ 平滑魔法层（`magic_starfield` / `magic_constellation` / `magic_pulse` / SDF 辉光）；含纯像素 vs 混合对比 | `spell_weave_hybrid.png`、`spell_weave_hybrid_unstable.png`、`spell_weave_hybrid_compare.png` |
 | `wheel_shader_lab` | `SceneWheelShaderLab.java` | 轮盘三支设计着色器的实验台（扇形状态 / 光环 / 核心，不含完整界面） | `wheel_shader_lab.png`、`wheel_shader_lab_t2.png`、`wheel_shader_lab_t4.png` |
 | `sdf_test` | `SceneSdfTest.java` | **SDF 平滑形状自检**（disc / ring / roundRect / capsule line / star / 细环），改 `sdf_ui` 或 `SdfShapes` 后先跑它 | `sdf_test.png` |
+| `wand_picker` | `SceneWandPicker.java` | 法杖图标右键展开的外圈法术快选：保持装载方位，排除当前法术，展开/悬停态 | `wand_picker.png` |
 | `wand_hud` | `SceneWandHud.java` | 与游戏共用圆环绘制和弹簧状态：细轨道、外置刻度、悬停推挤、高光、扣蓝残影和就绪扩散；`-Time -1` 导出 30 FPS 动效序列 | `wand_hud.png`、`wand_motion/frame_*.png` |
 | `source_machines` | `SceneSourceMachines.java` | 源荷滤波器手动 / 懒人预设 / 波段表与集荷器；复用实机波形线带，需先将 `ElementBand.java` 和 `SourceWaveform.java` 编译到 `build/circuit-test` | `source_filter_manual.png`、`source_filter_quick.png`、`source_filter_bands.png`、`source_collector_modern.png` |
 | `debug` | `SceneDebug.java` | 框架调试：分阶段画 fill/渐变/文字/贴图/shader，用来定位渲染问题 | `debug_*.png` |
 
-`-All` 目前跑 `smoke / tooltip / collapsar_bar / gui_effects / tab_divider / difficulty /
+`-All` 目前跑 `smoke / tooltip / collapsar_bar / gui_effects / creative_inventory / difficulty /
 spell_wheel / spell_loadout`（`wheel_shader_lab`、`sdf_test` 与 `debug` 是排错用的，不自动跑）。
 
 轮盘/装载界面的完整设计规格见 [`docs/spell-wheel-design.md`](../../docs/spell-wheel-design.md)
@@ -89,8 +100,8 @@ spell_wheel / spell_loadout`（`wheel_shader_lab`、`sdf_test` 与 `debug` 是�
   0/255 alpha 且四周有透明边距 —— **实机里这层光晕本来就几乎不可见**。预览如实画出来，
   另给一张"绕过 gate"的参考光晕（`gui_glow.png` 的 B 行）验证径向衰减/颜色/居中的几何是对的。
   如果美术预期实机应有明显光晕，需要回头查 gate 或 `IconUVMin/Max`。
-- **tab_divider**：色带 shader、逐字 HSV、标题文案都照 `CreativeTabDividerRenderer`；
-  物品栏面板是程序化深色面板 + 18px 槽位井近似，不提取原版 `tab_items.png`。
+- **creative_inventory**：使用正式底板、标签页和铭牌 PNG，与 `CreativeTabDividerRenderer` 相同的固定银色标题；
+  按原版 195×136 面板与 9×5 槽位几何绘制，物品排列为展示样例。
 - **difficulty**：布局、四档 rings、`bakeRing` 的 Position+UV0 编码、`gui_glow`/`difficulty_sigil`
   的 uniform 全部按源码移植（并用数值采样验证过 pattern 分支）；hint 在标题上方是
   `DifficultySelectScreen` 源码如此；不画鼠标 hover tooltip，背景用 `c.backdrop()` 代替真实世界。
@@ -101,6 +112,28 @@ spell_wheel / spell_loadout`（`wheel_shader_lab`、`sdf_test` 与 `debug` 是�
   （不是真实世界渲染）；装载界面的法术图鉴/轮盘配置交互是静态模拟（拖拽态、被动只读态）。
   界面里的圆/圆环/扇区/圆角面板/胶囊/星形全部走 `sdf_ui` 的逐物理像素抗锯齿
   （参考 FIS-Cordyceps 的 `wheel_sdf` 方案，见 `FRAMEWORK.md` 与 `shaders/README.md`）。
+- **spell_forge**：这是**设计稿**（对应"发现蓝图 → 解析 → 刻录"的获取思路），不是现状复刻。
+  蓝图 / 残页物品目前游戏里还不存在，卡面是程序化绘制的占位；法术数值取自实机
+  Fireball / Tidal Pulse / Arcane Step 的 `SpellDefinition`；图鉴里的 5 张未知卡是留白占位。
+  三张图（就绪 / 刻录中 / 图鉴）用于讨论布局与信息密度，不代表最终交互。
+- **spell_forge_styles**：两套原版风格提案共享同一几何。A 全部用 `fill` 画 1px 斜角；
+  B 读取 `textures/gui/spell_forge/` 下的程序生成占位 PNG（生成器
+  `tools/generate-spell-forge-gui-placeholders.py`）。文字 / 物品图标 / 进度 / 选中态
+  没有烘焙进底板。资源清单、切片表和布局锚点见
+  [`docs/proposals/spell-forge/README.md`](../../docs/proposals/spell-forge/README.md)；
+  尚未接入实机 `Screen`。
+- **spell_weave**：自由合成概念稿（把材料清单换成画星座）。符印种类、法术名/数值/效果与燃料
+  数量都是占位；星图连线用项目真实 `magic_constellation` / `magic_pulse` 着色器，节点辉光
+  走 SDF。未实现图案校验、实机 `Screen` 与"织法法术"的 NBT 身份；设计说明见
+  [`docs/proposals/spell-weave/README.md`](../../docs/proposals/spell-weave/README.md)。
+- **spell_weave_styles**：织星台的像素 A/B。A 不加载贴图，全部 `fill` 画 1px 像素面板、
+  点阵星云、像素符文与 Bresenham 星座线；B 读取 `textures/gui/spell_weave/` 下的
+  `weave_bg.png` / `sky.png` / `widgets.png` 占位图，仅覆盖静态外观。坐标 / 交互两套完全一致；
+  资源清单与重绘约定见
+  [`docs/proposals/spell-weave/README.md`](../../docs/proposals/spell-weave/README.md)。
+- **spell_weave_hybrid**：像素 chrome + 平滑魔法层的混合稿。面板 / 文字 / 按钮 / 符印框沿用
+  像素绘制；星空、连线、光脉冲、节点辉光、法阵徽记走项目真实 GUI 着色器与 SDF。对比图左侧是
+  纯像素版，右侧是混合版，可直观看哪些层该平滑、哪些该保持像素。设计说明同上。
 - 通用边界见下一节。
 
 ## 它是怎么工作的

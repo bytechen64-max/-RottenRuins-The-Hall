@@ -9,13 +9,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.bytechen.rottenruins.api.magic.MagicStats;
+import org.bytechen.rottenruins.gameplay.magic.stats.MagicStats;
 import org.bytechen.rottenruins.client.MagicClientHandler;
 import org.bytechen.rottenruins.client.gui.wheel.WheelClientState;
 import org.bytechen.rottenruins.client.gui.wheel.WheelData;
 import org.bytechen.rottenruins.client.gui.wheel.WheelRenderer;
-import org.bytechen.rottenruins.network.c2s.WheelActionPacket;
-import org.bytechen.rottenruins.overworld.registry.items.magic.bases.UsingType;
+import org.bytechen.rottenruins.platform.forge.magic.network.c2s.WheelActionPacket;
+import org.bytechen.rottenruins.core.magic.model.UsingType;
 import org.lwjgl.glfw.GLFW;
 
 /**

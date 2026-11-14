@@ -14,7 +14,11 @@ import org.bytechen.rottenruins.utils.DomeriteStatsHelper;
 
 import java.util.Map;
 
-public class DomeriteSword extends SwordItem {
+public class DomeriteSword extends SwordItem implements org.bytechen.rottenruins.api.combat.slash.ISlashWeapon {
+    @Override
+    public org.bytechen.rottenruins.api.combat.slash.SlashSpec slashSpec(net.minecraft.world.entity.player.Player player, ItemStack stack) {
+        return org.bytechen.rottenruins.content.combat.slash.domerite.DomeriteSlash.SPEC;
+    }
 
     private static final float BASE_DAMAGE = 3.0F; // vanilla sword base before tier bonus
 

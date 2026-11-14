@@ -12,15 +12,15 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.bytechen.rottenruins.api.magic.MagicStats;
+import org.bytechen.rottenruins.gameplay.magic.stats.MagicStats;
 import org.bytechen.rottenruins.client.gui.wheel.WheelData;
 import org.bytechen.rottenruins.client.gui.wheel.WheelRenderer;
 import org.bytechen.rottenruins.client.gui.wheel.WheelI18n;
 import org.bytechen.rottenruins.client.rend.gui.WheelGuiShaders;
-import org.bytechen.rottenruins.network.c2s.WheelActionPacket;
-import org.bytechen.rottenruins.overworld.registry.capability.PlayerMagicPool;
-import org.bytechen.rottenruins.overworld.registry.items.magic.bases.IMagicBaseItem;
-import org.bytechen.rottenruins.overworld.registry.items.magic.bases.UsingType;
+import org.bytechen.rottenruins.platform.forge.magic.network.c2s.WheelActionPacket;
+import org.bytechen.rottenruins.gameplay.magic.inventory.SpellInventory;
+import org.bytechen.rottenruins.gameplay.magic.spell.IMagicBaseItem;
+import org.bytechen.rottenruins.core.magic.model.UsingType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +43,7 @@ import net.minecraft.util.Mth;
  * </ul>
  *
  * <h3>草稿与保存</h3>
- * <p>打开时把 {@code PlayerMagicPool#copyWheelPage(p)} 的三页映射读进本地草稿；拖拽 / 右键 / 按钮
+ * <p>打开时把 {@code SpellInventory#copyWheelPage(p)} 的三页映射读进本地草稿；拖拽 / 右键 / 按钮
  * 只改草稿，点 <b>SAVE</b> 时把当前页发 {@link WheelActionPacket#sendConfig(int, int[])}（服务端
  * 会重新校验并全量同步回来）。离开界面不保存 = 放弃草稿，这是本界面「非即时生效」的一处刻意简化。</p>
  *
@@ -236,7 +236,7 @@ public final class SpellLoadoutScreen extends Screen {
 
     // 草稿：读取 / 同步 / 校验
 
-    private PlayerMagicPool pool() {
+    private SpellInventory pool() {
         return WheelData.pool();
     }
 
@@ -244,7 +244,7 @@ public final class SpellLoadoutScreen extends Screen {
         if (draftsLoaded) {
             return;
         }
-        PlayerMagicPool pool = pool();
+        SpellInventory pool = pool();
         if (pool == null) {
             return;
         }
@@ -264,7 +264,7 @@ public final class SpellLoadoutScreen extends Screen {
         if (!draftsLoaded || dirty) {
             return;
         }
-        PlayerMagicPool pool = pool();
+        SpellInventory pool = pool();
         if (pool == null) {
             return;
         }
@@ -282,7 +282,7 @@ public final class SpellLoadoutScreen extends Screen {
 
     /** PASSIVE 页只读列表：魔法池里的被动法术（目前只有规划中的示例，框架就绪后自然出现）。 */
     private WheelData.Slot[] passiveSlots() {
-        PlayerMagicPool pool = pool();
+        SpellInventory pool = pool();
         if (pool == null) {
             return new WheelData.Slot[0];
         }
@@ -1254,7 +1254,7 @@ public final class SpellLoadoutScreen extends Screen {
             playUiSound(SoundEvents.NOTE_BLOCK_BASS.value(), 0.6F, 0.4F);
             return;
         }
-        PlayerMagicPool pool = pool();
+        SpellInventory pool = pool();
         int poolCount = pool == null ? 0 : Math.max(1, pool.getSlots());
         boolean[] used = new boolean[poolCount];
         for (int i = 0; i < SLOTS; i++) {

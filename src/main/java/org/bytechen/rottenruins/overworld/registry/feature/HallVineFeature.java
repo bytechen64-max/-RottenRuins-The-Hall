@@ -13,7 +13,7 @@ import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.FeatureConfiguration;
 import org.bytechen.rottenruins.overworld.registry.RegisterBlock;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.HallVineBlock;
-import org.bytechen.infcore.api.block.ISpreadBlock;
+import org.bytechen.rottenruins.api.infection.block.ISpreadBlock;
 
 /**
  * 王庭藤蔓地物：让藤蔓从王庭方块上自然附着生长，支持向上与向下两种形态。

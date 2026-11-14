@@ -5,7 +5,7 @@ import com.mojang.serialization.Codec;
 import net.minecraft.resources.ResourceLocation;
 import org.bytechen.rottenruins.advancement.RotAdvancementTriggers;
 import org.bytechen.rottenruins.config.ConfigHelper;
-import org.bytechen.rottenruins.api.magic.MagicAttributeProvider;
+import org.bytechen.rottenruins.platform.forge.magic.MagicAttributeProvider;
 import org.bytechen.rottenruins.api.magic.MagicStatRegistry;
 import org.bytechen.rottenruins.overworld.difficulty.HallDifficulty;
 import org.bytechen.rottenruins.network.NetworkHelper;
@@ -37,6 +37,10 @@ public class HallMod {
     @SuppressWarnings("removal")
     public HallMod() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+
+        org.bytechen.rottenruins.gameplay.magic.MagicRuntime.install(
+                new org.bytechen.rottenruins.platform.forge.magic.ForgeMagicServices());
+        org.bytechen.rottenruins.platform.forge.infection.InfectionBootstrap.init(modEventBus);
 
         // 确保 BlockSetType / WoodType 在方块注册前初始化
         HallBlockSetTypes.init();
@@ -94,6 +98,9 @@ public class HallMod {
         event.enqueueWork(RotAdvancementTriggers::registerAll);
 
         NetworkHelper.register();
+        org.bytechen.rottenruins.platform.forge.combat.slash.SlashNetwork.register();
+        org.bytechen.rottenruins.gameplay.story.StoryRuntime.install(
+                new org.bytechen.rottenruins.platform.forge.story.ForgeStoryServices());
         ConfigHelper.registry();
 
         // 注册 Hall 自定义难度

@@ -20,6 +20,10 @@ param(
     [float]$Width = 10,
     # FireStrength：0 = 不画火焰光环，1 = 开（fire_2 默认 1）。
     [float]$Fire = 1,
+    [int]$ItemSize = 64,
+    [int]$CanvasSize = 320,
+    [float]$Halo = 0.9,
+    [int]$NeighborSize = 0,
     [switch]$CompileOnly
 )
 
@@ -53,7 +57,7 @@ if ($CompileOnly) {
     if ($LASTEXITCODE -ne 0) { throw "着色器没通过编译/链接检查" }
 } else {
     # 第 7 个参数是贴图（空串 = 1×1 白贴图），第 8 个是描边宽度
-    java -cp "$cp;$classes" ShaderPreview $ShaderDir $OutDir $ColorMode $Time $FreqX $Floor $ItemTexture $Width $Fire
+    java -cp "$cp;$classes" ShaderPreview $ShaderDir $OutDir $ColorMode $Time $FreqX $Floor $ItemTexture $Width $Fire $ItemSize $CanvasSize $Halo $NeighborSize
     if ($LASTEXITCODE -ne 0) { throw "ShaderPreview 失败" }
     Write-Host "`n导出：$OutDir\mask.png（剪影遮罩）/ $OutDir\ring.png（合成结果）" -ForegroundColor Green
 }

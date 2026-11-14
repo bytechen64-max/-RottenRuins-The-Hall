@@ -1,5 +1,4 @@
 package org.bytechen.rottenruins.api.mask;
-import org.bytechen.rottenruins.HallMod;
 
 import net.minecraft.world.item.ItemStack;
 

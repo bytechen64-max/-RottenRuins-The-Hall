@@ -5,6 +5,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -19,7 +20,7 @@ import java.util.Set;
  * 模组的创造模式标签。
  *
  * <p>物品表按 {@link SectionedCreativeModeTab 分区}声明：每个分区在网格里以一行
- * 流动色带 + 居中彩色标题开头，分区之间自动补空到整行。</p>
+ * 金属铭牌 + 居中银色标题开头，分区之间自动补空到整行。</p>
  *
  * <p>合并后内容分 6 类：刷怪蛋 / 材料 / 魔法 / 武器与工具 / 方块 / 其它。
  * 每类里先列王庭（原 Hall）内容，再列腐化（原 corruption）内容。</p>
@@ -53,7 +54,14 @@ public class RegisterTab {
             () -> SectionedCreativeModeTab.builder()
                     .title(Component.translatable("itemGroup." + HallMod.MODID + ".main"))
                     .icon(() -> new ItemStack(RegisterItem.EXAMPLE_ITEM.get()))
+                    .withBackgroundLocation(new ResourceLocation(HallMod.MODID,
+                            "textures/gui/creative_inventory/tab_items.png"))
+                    .withTabsImage(new ResourceLocation(HallMod.MODID,
+                            "textures/gui/creative_inventory/tabs.png"))
+                    .withLabelColor(0xBDCCDF)
+                    .withSlotColor(0x40667A94)
 
+                    // ─────────────────────────── 刷怪蛋（33） ───────────────────────────
                     .section(section("creatures"), (params, output) -> {
                         // 王庭系（原 Hall，畸骸种 hall_*）
                         items(output,
@@ -61,10 +69,12 @@ public class RegisterTab {
                         RegisterItem.INF_ENDERMAN_SPAWN_EGG.get(),
                         RegisterItem.INF_SKELETON_SPAWN_EGG.get(),
                         RegisterItem.SCOUT_SPAWN_EGG.get(),
+                        RegisterItem.ABNORMAL_SQUID_SPAWN_EGG.get(),
                         RegisterItem.PURSUER_SPAWN_EGG.get(),
                         RegisterItem.MONOLITH_SPAWN_EGG.get(),
                         RegisterItem.BONECRUSHER_SPAWN_EGG.get(),
                         RegisterItem.HEAVY_BOMB_SPAWN_EGG.get(),
+                        RegisterItem.RAMPART_SPAWN_EGG.get(),
                         RegisterItem.COLLAPSAR_SPAWN_EGG.get(),
                         RegisterItem.WINDING_COLUMN_SPAWN_EGG.get());
                         // 腐化系（原 corruption，同化种 corruption_*）
@@ -95,11 +105,13 @@ public class RegisterTab {
                         CorruptionItems.ORIGINAL_BUG_SPAWN_EGG.get());
                     })
 
+                    // ─────────────────────────── 材料（23） ───────────────────────────
                     .section(section("materials"), (params, output) -> {
                         // 王庭材料
                         items(output,
                         RegisterItem.HALL_TENDON.get(),
                         RegisterItem.HALL_BONE_FRAGMENTS.get(),
+                        RegisterItem.VOID_SHARD.get(),
                         RegisterItem.BONECRUSHER_CORE.get(),
                         RegisterItem.DOMITE_ORE.get(),
                         RegisterItem.DOMITE_CRYSTAL.get(),
@@ -126,8 +138,9 @@ public class RegisterTab {
 
                     })
 
+                    // ─────────────────────────── 魔法（13） ───────────────────────────
                     .section(section("magic"), (params, output) -> {
-                        items(output,RegisterBlock.SOURCE_FILTER.get().asItem(),RegisterBlock.SOURCE_COLLECTOR.get().asItem());
+                        items(output,RegisterBlock.SOURCE_FILTER.get().asItem(),RegisterBlock.SOURCE_COLLECTOR.get().asItem(),RegisterBlock.ANALYZER.get().asItem());
                         items(output, RegisterBlock.GROUNDING_STAKE.get().asItem(), RegisterBlock.SOURCE_WIRE.get().asItem());
                         items(output, RegisterBlock.POTENTIAL_CRAFTING_TABLE.get().asItem());
                         // 储魔瓶与魔法材料
@@ -173,9 +186,12 @@ public class RegisterTab {
                         RegisterItem.BRIAR_SNARE.get(),
                         RegisterItem.PURIFYING_LIGHT.get(),
                         RegisterItem.ARCANE_STEP.get(),
-                        RegisterItem.SOUL_DRINK.get());
+                        RegisterItem.SOUL_DRINK.get(),
+                        RegisterItem.OLYMPIAD_CUBE.get(),RegisterItem.SPRINT.get())
+                        ;
                     })
 
+                    // ─────────────────────── 武器与工具（16） ───────────────────────
                     .section(section("gear"), (params, output) -> {
                         // 王庭武器与工具
                         items(output,
@@ -186,7 +202,10 @@ public class RegisterTab {
                         RegisterItem.DOMERITE_PICKAXE.get(),
                         RegisterItem.DOMERITE_SHOVEL.get(),
                         RegisterItem.DOMERITE_HOE.get(),
+                        RegisterItem.HALL_BOOMERANG.get(),
                         RegisterItem.VOID_SWORD.get(),
+                        RegisterItem.DEATH_DAGGER.get(),
+                        RegisterItem.TRUE_COPPER.get(),
                         RegisterItem.CRIMSON_VOW.get(),
                         RegisterItem.SILENT_DAYLIGHT.get());
                         // 腐化工具与注射器
@@ -200,6 +219,7 @@ public class RegisterTab {
                         CorruptionItems.SYRINGE_BLOODY_CONCENTRATE.get());
                     })
 
+                    // ─────────────────────── 方块（54） ───────────────────────
                     .section(section("blocks"), (params, output) -> {
                         // 王庭：地表 / 石系
                         items(output,
@@ -266,6 +286,7 @@ public class RegisterTab {
                         Item.byBlock(CorruptionBlocks.REFACTORED_REMAINS_LARGE.get()));
                     })
 
+                    // ─────────────────────── 其它（兜底） ───────────────────────
                     .section(section("misc"), (params, output) -> {
                         // 先放已经明确归入"其它"的物品
                         items(output,

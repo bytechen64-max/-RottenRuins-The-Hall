@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 势能合成台的方块实体：16 个环形材料槽（每格 1 个物品）+ 圆心产物槽。
+ * 势能合成台的方块实体：15 个环形材料槽（每格 1 个物品）+ 圆心产物槽。
  *
  * <p>进度按势能单位累计：每 tick {@code 15 + power}，需求 {@code 配方tick × 15}。
  * 因此势能 0 不工作、势能 15（满）正好 2 倍速 = 时间减半，中间线性。

@@ -72,7 +72,7 @@ public class GrovelerEntity extends BaseDeterioratedEntity {
     @Override
     public void tick() {
         super.tick();
-        if (this.level().isClientSide || !this.isAlive()) return;
+        if (this.level().isClientSide || this.isFakeDying() || !this.isAlive()) return;
 
         if (burrowCooldown > 0) burrowCooldown--;
 

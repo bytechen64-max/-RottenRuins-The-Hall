@@ -1,0 +1,18 @@
+{
+  "event": "respawn",
+  "priority": 50,
+  "delay_ticks": 40,
+  "repeat_group": "rotten_ruins:respawn",
+  "avoid_repeat": true,
+  "conditions": {
+    "cause": "drown"
+  },
+  "choices": [
+    {
+      "story": "rotten_ruins:respawn/drown_0"
+    },
+    {
+      "story": "rotten_ruins:respawn/drown_1"
+    }
+  ]
+}

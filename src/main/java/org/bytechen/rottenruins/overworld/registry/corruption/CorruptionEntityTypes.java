@@ -9,7 +9,6 @@ import net.minecraftforge.registries.RegistryObject;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.base.HallEntityManager;
-import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.BaseCorruptionEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.degenerate.DegenerateCowEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.degenerate.DegeneratePigEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.degenerate.DegenerateVillagerEntity;

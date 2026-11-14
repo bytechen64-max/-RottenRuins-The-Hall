@@ -76,7 +76,7 @@ public class SummoningPillarEntity extends BaseLinkedEntity {
     @Override
     public void tick() {
         super.tick();
-        if (this.level().isClientSide || !this.isAlive()) return;
+        if (this.level().isClientSide || this.isFakeDying() || !this.isAlive()) return;
 
         // 常驻回血：每 20t 恢复 1 点
         if (this.tickCount % 20 == 0) {

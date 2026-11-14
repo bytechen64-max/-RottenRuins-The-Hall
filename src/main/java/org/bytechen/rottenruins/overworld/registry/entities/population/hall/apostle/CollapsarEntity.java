@@ -38,8 +38,8 @@ import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenE
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.BlackHoleEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.ShockwaveEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.SwordAuraEntity;
-import org.bytechen.infcore.api.IInfectedEntity;
-import org.bytechen.infcore.api.goal.InfectedTargetGoal;
+import org.bytechen.rottenruins.api.infection.IInfectedEntity;
+import org.bytechen.rottenruins.api.infection.goal.InfectedTargetGoal;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.object.PlayState;
@@ -216,7 +216,7 @@ public class CollapsarEntity extends BaseApostleEntity {
     @Override
     protected void registerGoals() {
         // 索敌：64 格内看见就打（不需要视线 —— 它靠悬停俯视，隔着树叶也应该锁人）
-        this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
+        this.targetSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .targetOtherInfected(true)   // 王庭 vs 腐化：跨阵营索敌
                 .range(FOLLOW_RANGE)
                 .mustSee(false)

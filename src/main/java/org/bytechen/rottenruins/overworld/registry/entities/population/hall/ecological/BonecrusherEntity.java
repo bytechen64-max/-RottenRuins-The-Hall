@@ -15,7 +15,7 @@ import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenE
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.SwordAuraEntity;
 import org.bytechen.rottenruins.utils.TickUtils;
 import org.bytechen.rottenruins.utils.entity.EntityBreakUtils;
-import org.bytechen.infcore.api.goal.InfectedTargetGoal;
+import org.bytechen.rottenruins.api.infection.goal.InfectedTargetGoal;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.object.PlayState;
@@ -107,10 +107,10 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 80)
+                .add(Attributes.MAX_HEALTH, 200)
                 .add(Attributes.MOVEMENT_SPEED, 0.25)
                 .add(Attributes.ATTACK_DAMAGE, 25)
-                .add(Attributes.ARMOR, 20)
+                .add(Attributes.ARMOR, 40)
                 .add(Attributes.FOLLOW_RANGE, 32.0)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1f);
     }
@@ -120,7 +120,7 @@ public class BonecrusherEntity extends BaseEcologicalEntity {
         // 追击占位（只占 MOVE）：有目标时压住 RandomStrollGoal，
         // 免得"追击路径"被随机散步顶掉（位移本身仍由 AbstractRottenEntity#tickChase 发起）
         this.goalSelector.addGoal(1, new ChaseLockGoal(this));
-        this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
+        this.targetSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .targetOtherInfected(true)   // 王庭 vs 腐化：跨阵营索敌（同阵营仍被 infcore 过滤）
                 .range(40.0)
                 // 威胁点数过滤器：玩家威胁 < 5 不主动索敌；非玩家生物照常索敌

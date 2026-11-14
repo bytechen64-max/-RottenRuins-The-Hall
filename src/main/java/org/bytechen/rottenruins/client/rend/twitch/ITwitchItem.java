@@ -1,7 +1,6 @@
 package org.bytechen.rottenruins.client.rend.twitch;
 
 import net.minecraft.world.item.ItemDisplayContext;
-import org.bytechen.rottenruins.client.cosmic.BakedModelCosmic;
 
 /** 标记接口：渲染时给物品模型加抽动特效；走 cosmic 模型加载器的物品已由 BakedModelCosmic 自动获得。 */
 public interface ITwitchItem {

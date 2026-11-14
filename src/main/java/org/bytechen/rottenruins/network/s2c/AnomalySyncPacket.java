@@ -1,6 +1,5 @@
 package org.bytechen.rottenruins.network.s2c;
 
-import org.bytechen.rottenruins.api.anomaly.AnomalyType;
 import org.bytechen.rottenruins.overworld.registry.capability.CapabilityAttacher;
 import org.bytechen.rottenruins.overworld.registry.capability.anomaly.AnomalyCapability;
 import org.bytechen.rottenruins.overworld.registry.CapabilityRegistry;

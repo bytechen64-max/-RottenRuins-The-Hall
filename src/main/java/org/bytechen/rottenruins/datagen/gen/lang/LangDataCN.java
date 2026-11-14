@@ -19,6 +19,55 @@ public class LangDataCN extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
+        add(RegisterItem.HALL_BOOMERANG.get(), "王庭回旋镖");
+        add(EntityTypeRegistry.BOOMERANG.get(), "王庭回旋镖");
+        add("gui.rotten_ruins.potential_crafting.start", "开始合成");
+        add("gui.rotten_ruins.potential_crafting.crafting", "合成中…");
+        add(RegisterItem.SOUL_DRINK.get(), "灵魂吸引");
+        add("staff_grade.rotten_ruins.common", "等级：普通");
+        add("staff_grade.rotten_ruins.epic", "等级：史诗");
+        add("staff_grade.rotten_ruins.legendary", "等级：传说");
+        add("tooltip.rotten_ruins.staff_grade_bonus", "同流派法术伤害 +%s");
+        add("effect.rotten_ruins.arcane_mark", "奥数印记");
+        add("effect.rotten_ruins.corrosion", "腐蚀");
+        add("effect.rotten_ruins.lethargy", "迟滞");
+        add("effect.rotten_ruins.frailty", "衰竭");
+        add("gui.rotten_ruins.jade.crafting", "合成中 %s%% · 约 %s 秒");
+
+        add("rotten_ruins.story.unknown", "未知剧情：%s");
+        add("rotten_ruins.story.missing_ritual", "仪式剧情不可用，请检查剧情数据包中的 fleshbed_start 规则与固定时间剧情。");
+        add("rotten_ruins.story.respawn.first.0", "……你回来了。\n别紧张，我还在这里。先看看自己有没有缺少什么吧。");
+        add("rotten_ruins.story.respawn.normal.0", "欢迎回来，要休息一下吗？");
+        add("rotten_ruins.story.respawn.normal.1", "刚才的路，我还记得。\n我们再走一次吧。");
+        add("rotten_ruins.story.respawn.normal.2", "至少这一次，你知道危险在哪里了。");
+        add("rotten_ruins.story.respawn.normal.3", "先站稳脚步。\n等你准备好了，我们再出发。");
+        add("rotten_ruins.story.respawn.rapid.0", "慢一点，我们还有时间。");
+        add("rotten_ruins.story.respawn.rapid.1", "……真的还有很多时间吗？");
+        add("rotten_ruins.story.respawn.fall.0", "下次落脚之前，先往下看一眼吧。");
+        add("rotten_ruins.story.respawn.fall.1", "这次，试着找一条平稳些的路吧。");
+        add("rotten_ruins.story.respawn.drown.0", "现在，试着深呼吸。\n已经没事了。");
+        add("rotten_ruins.story.respawn.drown.1", "听，空气流动的声音。\n这一次，记得及时浮上来。");
+        add("rotten_ruins.story.respawn.mob.0", "它还在那里等你。\n准备好了再回去吧。");
+        add("rotten_ruins.story.respawn.mob.1", "我看到了，那个家伙不好对付。\n换个办法试试吧。");
+        add(RegisterItem.VOID_SHARD.get(), "虚空碎片");
+        add("rotten_ruins.story.fleshbed.1", "生命易逝，万物终将归为腐朽");
+        add("rotten_ruins.story.fleshbed.2", "你将带来本不属于这的东西...");
+        add("rotten_ruins.story.fleshbed.3", "如果执意如此，那便去做吧");
+        add("rotten_ruins.story.fleshbed.4", "遵循你内心的选择...");
+        add("rotten_ruins.fleshbed.feed", "血肉温床：已喂养 %s/%s 个腐肉");
+        add("rotten_ruins.fleshbed.ready", "已喂满 %s/%s 个腐肉。再次右键启动仪式。");
+        add("rotten_ruins.fleshbed.started", "你赐予了生命");
+        add("rotten_ruins.fleshbed.running", "请等待...马上就好");
+        add("rotten_ruins.fleshbed.complete", "欣赏我们的杰作...");
+        add("rotten_ruins.fleshbed.space", "温床周围空间不足，请在四周预留可站立的空地。");
+        add("rotten_ruins.story.opening", "你好呀，我是腐朽之疫的看板娘\n但是我暂时没有形象哦...\n不过我会带你逐渐了解这个世界的！");
+        add(RegisterItem.TRUE_COPPER.get(), "§[rrs:grad:#B87333:#FFD1A3]真铜短剑§[/]");
+        add(RegisterItem.DEATH_DAGGER.get(), "死亡匕首");
+        add(RegisterEffect.APOPTOSIS.get(), "凋亡");
+        add("tooltip.rotten_ruins.death_dagger", "攻击有25%概率施加凋亡 I，持续8秒");
+        add("death.attack.apoptosis", "%1$s因凋亡而死");
+        add("death.attack.apoptosis.player", "%1$s在与%2$s战斗时因凋亡而死");
+
         // 创造栏标签页 / 界面左上角的面板标题：带流动渐变（§6 垫底，特效关闭时退回原版金色）。
         add("itemGroup." + HallMod.MODID + ".main",
                 "§6§[rrs:grad:#6FBF4A:#8B1E2D:speed=0.6]腐朽之疫§[/]");
@@ -56,10 +105,12 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.INF_ENDERMAN_SPAWN_EGG.get(), "畸骸末影人刷怪蛋");
         add(RegisterItem.INF_SKELETON_SPAWN_EGG.get(), "畸骸骷髅刷怪蛋");
         add(RegisterItem.SCOUT_SPAWN_EGG.get(), "溃烂纠察刷怪蛋");
+        add(RegisterItem.ABNORMAL_SQUID_SPAWN_EGG.get(), "畸鱿刷怪蛋");
         add(RegisterItem.PURSUER_SPAWN_EGG.get(), "溃烂追蹤者刷怪蛋");
         add(RegisterItem.MONOLITH_SPAWN_EGG.get(), "溃烂巨岩刷怪蛋");
         add(RegisterItem.BONECRUSHER_SPAWN_EGG.get(), "王庭碎骨刷怪蛋");
         add(RegisterItem.HEAVY_BOMB_SPAWN_EGG.get(), "王庭重型轰炸刷怪蛋");
+        add(RegisterItem.RAMPART_SPAWN_EGG.get(), "王庭城墙刷怪蛋");
         add(RegisterItem.COLLAPSAR_SPAWN_EGG.get(), "萨米使徒刷怪蛋【未完成】");
         add(RegisterItem.WINDING_COLUMN_SPAWN_EGG.get(), "缠绕之柱刷怪蛋");
         add(RegisterBlock.HALL_GRASS_BLOCK.get(), "王庭草方块");
@@ -99,12 +150,14 @@ public class LangDataCN extends LanguageProvider {
         add(EntityTypeRegistry.INF_SKELETON.get(), "畸骸骷髅");
         add(EntityTypeRegistry.INF_SKELETON_ARROW.get(), "畸骸骷髅炸弹");
         add(EntityTypeRegistry.HEAVY_BOMB.get(), "王庭重型轰炸");
+        add(EntityTypeRegistry.RAMPART.get(), "王庭城墙");
         add(EntityTypeRegistry.HEAVY_BOMB_TNT.get(), "重型炸弹TNT");
         add(EntityTypeRegistry.HEARTHSTONE.get(), "王庭炉石");
         add(EntityTypeRegistry.DEATH_HUNTER.get(), "死亡猎手");
         add(EntityTypeRegistry.BONECRUSHER.get(), "王庭碎骨");
         add(EntityTypeRegistry.COLLAPSAR.get(), "萨米使徒");
         add(EntityTypeRegistry.SCOUT.get(), "溃烂纠察");
+        add(EntityTypeRegistry.ABNORMAL_SQUID.get(), "畸鱿");
         add(EntityTypeRegistry.PURSUER.get(), "溃烂追蹤者");
         add(EntityTypeRegistry.MONOLITH.get(), "溃烂巨岩");
         // 防御型生物：缠绕之柱（不会移动 · 抓取 · 伤害传导 · 潜地偷袭）
@@ -117,6 +170,7 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterEffect.COLD_ANOMALY_ADAPTATION.get(), "冷异常适应");
         add(RegisterEffect.HEAT_ANOMALY_ADAPTATION.get(), "热异常适应");
         add(RegisterEffect.VERDICT.get(), "裁决");
+        add(RegisterEffect.MANIC_DISCOMFORT.get(), "狂躁不适");
         // 天穹裁决：冷却中右键时的动作栏提示
         add("item.rotten_ruins.domerite_longsword.cooldown", "裁决尚未就绪（%s 秒）");
         // 天穹裁决：抬头不足，光柱无法立起（原本这一下是完全静默的）
@@ -137,6 +191,7 @@ public class LangDataCN extends LanguageProvider {
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_TITLE, "选择难度");
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_HINT, "请选择世界难度");
 
+        // ---- tooltip 文案（占位文案，待定稿） ----
         // 机制说明共用一份（几把格挡武器是同一件事）；各物品只拥有自己的风味。
         // "标签 + 正文"拆成两个键：渐变的逐字上色会把整行拍平，合成一条
         // "%s …" 模板就分不出两种颜色（见 client.rend.text.TooltipLines）。
@@ -174,14 +229,17 @@ public class LangDataCN extends LanguageProvider {
         add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_DEBUG,
                 "调试 · 格挡结算 ×%s%% · 仅正面 %s · 使用时长 %s tick");
 
+        // ---- 血肉庭园维度（hall:heall） ----
         // 该维度的地形完全复用现有王庭方块，因此这里只有通道方块的译名
         add(RegisterBlock.FLESH_RIFT.get(), "血肉裂隙");
         // 死亡核心：第一个通过 BER 绘制 mask 着色器层的方块
         add(RegisterBlock.DEATH_CORE.get(), "死亡核心");
         add("dimension." + HallMod.MODID + ".heall", "血肉庭园");
         add("biome." + HallMod.MODID + ".flesh_marrow", "血肉庭园");
+        add("biome." + HallMod.MODID + ".hall_ocean", "王庭海洋");
         add(RegisterBlock.FLESH_RIFT.get().getDescriptionId() + ".no_dimension", "裂隙的另一端尚未形成……");
 
+        // ---- 魔法：流派名 + 物品介绍（见 MagicType / MagicTooltips） ----
         // 流派名会被法术/饰品的介绍行用到；颜色由 MagicType#rgb() 提供，这里只管文字。
         add("magic_type." + HallMod.MODID + ".water", "水");
         add("magic_type." + HallMod.MODID + ".fire", "火焰");
@@ -198,6 +256,7 @@ public class LangDataCN extends LanguageProvider {
         add("tooltip." + HallMod.MODID + ".magic.mana.none", "消耗：无");
         add("tooltip." + HallMod.MODID + ".magic.keep_cost", "维持：%s 法力/秒");
 
+        // ---- 魔法属性（见 RegisterAttributes） ----
         // 键名必须与 RangedAttribute 构造器里写死的那个字符串**完全一致**，
         // 对不上就会在属性界面里显示原始键名。
         add("attribute.name." + HallMod.MODID + ".max_mana", "法力上限");        add("attribute.name." + HallMod.MODID + ".mana_regeneration", "法力回复速度");
@@ -215,6 +274,7 @@ public class LangDataCN extends LanguageProvider {
         add("attribute.name." + HallMod.MODID + ".spell_power_void", "虚空法术强度");
         add("attribute.name." + HallMod.MODID + ".spell_power_mysterious", "神秘法术强度");
 
+        // ---- 魔法体系 · 物品 ----
         // 七个流派各有对应法力板，可用于合成与补充法杖魔能。
         add(RegisterItem.DEATH_MANA_PLATE.get(), "死亡魔法版材");
         add(RegisterItem.SOURCE_MANA_PLATE.get(), "源荷板材");
@@ -253,20 +313,7 @@ public class LangDataCN extends LanguageProvider {
         add("gui.rotten_ruins.potential_crafting.needs_power", "需要接入势能");
         add("gui.rotten_ruins.potential_crafting.idle", "放入材料开始合成");
         add("gui.rotten_ruins.potential_crafting.no_recipe", "没有匹配的配方");
-        add("gui.rotten_ruins.potential_crafting.start", "开始合成");
-        add("gui.rotten_ruins.potential_crafting.crafting", "合成中…");
-        // 自定义效果（HUD / Jade 显示用）
-        // 法杖等级 & 灵魂吸引
-        add(RegisterItem.SOUL_DRINK.get(), "灵魂吸引");
-        add("staff_grade.rotten_ruins.common", "等级：普通");
-        add("staff_grade.rotten_ruins.epic", "等级：史诗");
-        add("staff_grade.rotten_ruins.legendary", "等级：传说");
-        add("tooltip.rotten_ruins.staff_grade_bonus", "同流派法术伤害 +%s");
-        add("effect.rotten_ruins.arcane_mark", "奥数印记");
-        add("effect.rotten_ruins.corrosion", "腐蚀");
-        add("effect.rotten_ruins.lethargy", "迟滞");
-        add("effect.rotten_ruins.frailty", "衰竭");
-        add("gui.rotten_ruins.jade.crafting", "合成中 %s%% · 约 %s 秒");
+        add(RegisterBlock.ANALYZER.get(), "解析仪");
         add("gui.rotten_ruins.source.reference", "波段表");
         add("gui.rotten_ruins.source.mode.0", "手动调谐");
         add("gui.rotten_ruins.source.mode.1", "懒人模式");
@@ -336,6 +383,7 @@ public class LangDataCN extends LanguageProvider {
         // 死亡之星：下界之星 + 凋零玫瑰
         add(RegisterItem.DEATH_STAR.get(), "死亡之星");
 
+        // ---- 魔法星图 GUI / 按键 ----
         add("key.categories." + HallMod.MODID, "腐朽之疫");
         add("key." + HallMod.MODID + ".open_magic", "打开魔法星图");
         add("rotten_ruins.gui.magic.title", "魔法星图");
@@ -348,6 +396,7 @@ public class LangDataCN extends LanguageProvider {
         add("rotten_ruins.gui.magic.mana", "耗蓝 %s");
         add("rotten_ruins.gui.magic.cooldown", "冷却 %s 秒");
         add("rotten_ruins.gui.magic.charge", "蓄力 %s 秒");
+        // ---- 施法轮盘 / 装载界面 ----
         add("key." + HallMod.MODID + ".cast_wheel", "打开/关闭施法轮盘");
         add("key." + HallMod.MODID + ".open_loadout", "魔法装载界面");
         add("rotten_ruins.gui.wheel.title", "施法轮盘");
@@ -378,7 +427,10 @@ public class LangDataCN extends LanguageProvider {
         add("rotten_ruins.wand_hud.no_reserve", "法杖无元素储能");
         add("rotten_ruins.wand_hud.skill", "当前技能  %s");
         add("rotten_ruins.wand_hud.no_skill", "未选择");
-        add("rotten_ruins.wand_hud.chat_hint", "拖动位置 · 滚轮/右下角缩放 · 右键重置");
+        add("rotten_ruins.wand_hud.picker_hint", "左键切换预备法术 · 右键/点击外侧收起");
+        add("rotten_ruins.wand_hud.picker_select", "预备：%s");
+        add("rotten_ruins.wand_hud.picker_empty", "本页没有其他已装载法术");
+        add("rotten_ruins.wand_hud.chat_hint", "右键图标选法术 · 滚轮缩放 · 拖动位置");
         add("rotten_ruins.wand_hud.hide", "隐藏法杖状态");
         add("rotten_ruins.wand_hud.show", "显示法杖状态");
         add("rotten_ruins.wheel.release_to_cast", "点击方位施法");
@@ -471,18 +523,24 @@ public class LangDataCN extends LanguageProvider {
         add("rotten_ruins.wheel.loadout.per_second", "%s / 秒");
         add("rotten_ruins.wheel.loadout.bind_to_slot", "绑定到方位 %s");
         add("rotten_ruins.wheel.loadout.release_on_socket", "松开到方位");
+        // ---- 分节符文本特效 · 预览屏 / 命令 ----
         add("rotten_ruins.gui.textfx.title", "§[rrs:grad:#6FBF4A:#8B1E2D]分节符文本特效§[/]");
         add("rotten_ruins.gui.textfx.hint", "每行实时动画；按 ESC 关闭；输入 /rrsfx 查看更多");
         add("rotten_ruins.command.rrsfx.enabled", "§a文本特效：开");
         add("rotten_ruins.command.rrsfx.disabled", "§c文本特效：关");
 
+        // ---- 音效字幕（见 SoundData）----
         // 爆体音效：与 corruption 的 rip_body 同一条字幕文案，只是命名空间换成 hall。
         add("subtitles." + HallMod.MODID + ".rip_body", "躯体爆裂");
 
+        // ====================================================================
+        // ---- 简化版腐化内容（自 corruption 工程迁入，沿用 rotten_ruins 命名空间）----
         // 方块/物品/实体/效果都直接引用注册对象（CorruptionBlocks / CorruptionItems /
         // CorruptionEntityTypes / CorruptionEffects），翻译键由注册 ID 自动推导，
         // 注册名改动时编译器会直接报错，不会出现键名与注册名脱节。
+        // ====================================================================
 
+        // ---- A. 方块 block.rotten_ruins.<id>（21 个）----
         add(CorruptionBlocks.SPREAD_DIRT.get(), "腐染泥土");
         add(CorruptionBlocks.SPREAD_STONE.get(), "腐染原石");
         add(CorruptionBlocks.INFECTION_COBBLESTONE_BLOCK.get(), "腐染圆石");
@@ -506,6 +564,7 @@ public class LangDataCN extends LanguageProvider {
         add(CorruptionBlocks.VARIABLE_HEIGHT_CROP.get(), "腐染经络");
         add(CorruptionBlocks.SPIRACLE_BLOCK.get(), "活体气门");
 
+        // ---- B. 物品 item.rotten_ruins.<id>（42 个：材料 14 + 工具 5 + 刷怪蛋 23）----
         // 材料
         add(CorruptionItems.INFECTION_BONE.get(), "感染的骨头");
         add(CorruptionItems.HARD_FRAGMENTS.get(), "硬质碎片");
@@ -552,6 +611,7 @@ public class LangDataCN extends LanguageProvider {
         add(CorruptionItems.SUMMONING_PILLAR_SPAWN_EGG.get(), "Ⅰ阶召唤柱刷怪蛋");
         add(CorruptionItems.ORIGINAL_BUG_SPAWN_EGG.get(), "原虫刷怪蛋");
 
+        // ---- C. 实体 entity.rotten_ruins.<id>（23 个）----
         add(CorruptionEntityTypes.CORRUPTION_ZOMBIE.get(), "同化僵尸");
         add(CorruptionEntityTypes.CORRUPTION_PLAYER.get(), "同化玩家");
         add(CorruptionEntityTypes.CORRUPTION_COW.get(), "同化牛");
@@ -576,6 +636,7 @@ public class LangDataCN extends LanguageProvider {
         add(CorruptionEntityTypes.SUMMONING_PILLAR.get(), "Ⅰ阶召唤柱");
         add(CorruptionEntityTypes.ORIGINAL_BUG.get(), "原虫");
 
+        // ---- D. 状态效果 effect.rotten_ruins.<id>（6 个）----
         add(CorruptionEffects.CORRUPTION.get(), "腐化");
         add(CorruptionEffects.LYSIS.get(), "裂解");
         add(CorruptionEffects.MIASMA.get(), "绝望");
@@ -583,6 +644,7 @@ public class LangDataCN extends LanguageProvider {
         add(CorruptionEffects.BLEEDING.get(), "流血");
         add(CorruptionEffects.FEAR.get(), "恐惧");
 
+        // ---- E. 成就 advancements.rotten_ruins.<path> ----
         // 键名与 AdvancementProviderData 里生成 display 时用的键同源，避免两边手写不一致。
         // 树根：玩家第一次进入世界时触发；标题另起，悬浮说明按需求原文显示。
         // 成就标题/说明都是单个 Component 直接绘制（成就界面/Toast），可以安全使用文本特效标记。

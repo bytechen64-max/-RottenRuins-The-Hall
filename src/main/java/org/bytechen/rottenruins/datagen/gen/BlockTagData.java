@@ -34,8 +34,7 @@ public class BlockTagData extends BlockTagsProvider {
         tag(BlockTags.MINEABLE_WITH_PICKAXE)
                 .add(RegisterBlock.DEATH_CORE.get())
                 .add(RegisterBlock.GROUNDING_STAKE.get());
-        tag(BlockTags.MINEABLE_WITH_PICKAXE).add(RegisterBlock.SOURCE_FILTER.get(),RegisterBlock.SOURCE_COLLECTOR.get());
-        // 势能合成台：铁质设备手感，同样用镐挖
+        tag(BlockTags.MINEABLE_WITH_PICKAXE).add(RegisterBlock.SOURCE_FILTER.get(),RegisterBlock.SOURCE_COLLECTOR.get(),RegisterBlock.ANALYZER.get());
         tag(BlockTags.MINEABLE_WITH_PICKAXE).add(RegisterBlock.POTENTIAL_CRAFTING_TABLE.get());
 
         // 工具类型：木板类方块使用斧

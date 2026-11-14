@@ -8,7 +8,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.overworld.registry.items.magic.bases.StaffBase;
+import org.bytechen.rottenruins.content.magic.base.StaffBase;
 
 public final class WandEnchantments {
     public static final DeferredRegister<Enchantment> ENCHANTMENTS =

@@ -18,7 +18,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
-import org.bytechen.infcore.api.goal.InfectedTargetGoal;
+import org.bytechen.rottenruins.api.infection.goal.InfectedTargetGoal;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.object.PlayState;
@@ -27,15 +27,24 @@ import java.util.function.Consumer;
 
 public class InfSkeletonEntity extends BaseInfectedEntity {
 
+    /** 与目标保持距离的最小值 */
     private static final double MIN_TARGET_DISTANCE = 8.0D;
+    /** 与目标保持距离的最大值 */
     private static final double MAX_TARGET_DISTANCE = 20.0D;
+    /** 与地面保持的最小高度（格） */
     private static final double MIN_GROUND_CLEARANCE = 2.0D;
+    /** 距离调整时的飞行速度倍率 */
     private static final double DISTANCE_ADJUST_SPEED = 0.8D;
 
-    /** 转向死区（格）：水平距离小于此值不转向 —— 否则到位后 dx/dz 只剩噪声，atan2 每 tick 都跳。 */
+    /**
+     * 转向死区（格）：目标水平距离小于这个值就不再转向。
+     * <p>
+     * 悬停到目标距离区间内以后，dx/dz 只剩噪声量级，{@code atan2} 的结果每 tick 都在跳，
+     * 渲染出来就是"站在原地疯狂转头"。死区把这段噪声整个挡在转向逻辑之外。
+     */
     private static final double FACING_DEADZONE = 1.5D;
 
-    /** 每 tick 最大转向角度（度），约 120°/秒。 */
+    /** 每 tick 最大转向角度（度）。约 120°/秒，肉眼可见的顺滑转向。 */
     private static final float TURN_SPEED = 6.0F;
 
     /** 无目标时，只有水平速度大于这个值才按速度方向转向（避免悬停时的速度噪声）。 */
@@ -45,6 +54,7 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
                              Consumer<AbstractRottenEntity> consumer) {
         super(entityType, level);
         consumer.accept(this);
+        // 飞行生物：无重力 + 飞行寻路 + 顺滑飞行控制
         this.moveControl = new SmoothFlyingMoveControl(this);
         this.setNoGravity(true);
         this.setHasWalkAnim(false);
@@ -58,14 +68,27 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
     public void tick() {
         super.tick();
         // 爆体期间只播缩放与 idle，不再走飞行调度。
-        if (!level().isClientSide() && !isFakeDying()) {
+        if (!level().isClientSide() && !isFakeDying() && !isNoAi()) {
             tickFlightBehavior();
         }
     }
 
+    @Override
+    protected void tickChase() {
+        LivingEntity target = getTarget();
+        if (target != null && target.isAlive() && !isNoAi()
+                && getBoundingBoxDistanceSqrExact(target) <= doHurtDistance * doHurtDistance
+                && hasLineOfSight(target) && doHurtCooldown == 0 && doHurtGoal(target)) {
+            doHurtCooldown = doHurtTime;
+        }
+    }
+
     /**
-     * 服务端飞行行为：与目标保持距离、离地至少 2 格、并统一转向。
-     * 转向只能在这里发生（唯一写入点）—— 之前 MoveControl 也写 yRot，两者互相抢导致飞行中乱转头。
+     * 服务端飞行行为：自动与目标保持距离、始终离地面至少 2 格，并统一处理转向。
+     * <p>
+     * 转向必须<b>只在这里</b>发生（唯一写入者）。之前 {@link SmoothFlyingMoveControl}
+     * 也写 yRot，两个写入者互相抢，加上 {@code rotlerp(..., 90F)} 的转向速度过快，
+     * 表现出来就是飞行途中不停乱转头。
      */
     private void tickFlightBehavior() {
         double groundY = level().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
@@ -80,24 +103,28 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
             double dist = distanceTo(target);
 
             if (dist < MIN_TARGET_DISTANCE) {
+                // 太近：水平拉开距离
                 Vec3 away = new Vec3(getX() - target.getX(), 0, getZ() - target.getZ());
                 if (away.lengthSqr() < 1.0E-4D) {
                     away = new Vec3(random.nextDouble() - 0.5D, 0, random.nextDouble() - 0.5D);
                 }
                 desired = desired.add(away.normalize().scale(4.0D));
             } else if (dist > MAX_TARGET_DISTANCE) {
+                // 太远：飞近一点
                 Vec3 toward = target.position().subtract(position()).normalize();
                 desired = desired.add(toward.scale(4.0D));
             }
         }
 
+        // 高度低于地面 + 2 格时强制抬升
         if (desired.y < minY) {
             desired = new Vec3(desired.x, minY + 1.0D, desired.z);
         }
 
         if (desired.distanceToSqr(position()) > 1.0E-4D) {
-            getNavigation().stop();
             getMoveControl().setWantedPosition(desired.x, desired.y, desired.z, DISTANCE_ADJUST_SPEED);
+        } else if (hasTarget) {
+            ((SmoothFlyingMoveControl) getMoveControl()).stopMoving();
         }
 
         // 移动指令下完再转向：此时的位置与速度都是本 tick 的最终值
@@ -105,10 +132,19 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
     }
 
     /**
-     * 慢速转向 —— 全实体唯一的 yRot 写入点。GeckoLib 模型只按实体 {@code yRot} 旋转（不读
-     * yHeadRot / yBodyRot / xRot），所以「面向哪里」完全由这里决定：带死区（距离过近不转）、
-     * 限速 {@link #TURN_SPEED} 度/tick，并用 {@link Mth#approachDegrees} 走最短弧。
-     * 无目标时按实际速度方向转，且速度要够大才转 —— 悬停时速度接近 0，方向没有意义。
+     * 慢速转向 —— 全实体唯一的 yRot 写入点。
+     *
+     * <h3>为什么必须带死区 + 限速</h3>
+     * GeckoLib 的模型整体按实体 {@code yRot} 旋转（不读 yHeadRot / yBodyRot / xRot），
+     * 所以"面向哪里"完全由这里决定：
+     * <ul>
+     *   <li>有目标且水平距离超过 {@link #FACING_DEADZONE} 时朝目标转；距离太近不转，
+     *       噪声被挡在门外；</li>
+     *   <li>无目标时按<b>实际速度</b>方向转，且速度要够大才转 —— 悬停时速度接近 0，
+     *       方向没有意义；</li>
+     *   <li>转向速度限死在 {@link #TURN_SPEED} 度/tick，并用
+     *       {@link Mth#approachDegrees} 走最短弧，不会在 ±180° 处抽一下。</li>
+     * </ul>
      */
     private void updateFacing(LivingEntity target) {
         Float desiredYaw = null;
@@ -137,7 +173,7 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 30)
+                .add(Attributes.MAX_HEALTH, 50)
                 .add(Attributes.MOVEMENT_SPEED, 0.35)
                 .add(Attributes.ATTACK_DAMAGE, 12)
                 .add(Attributes.ARMOR, 6)
@@ -155,15 +191,19 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
     @Override
     protected void registerGoals() {
         // 与 hall_player 相同的索敌：40 格、无需视线
-        this.goalSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
+        this.targetSelector.addGoal(2, new InfectedTargetGoal.Builder(this)
                 .targetOtherInfected(true)   // 王庭 vs 腐化：跨阵营索敌（同阵营仍被 infcore 过滤）
                 .range(40.0)
                 .mustSee(false)
+                // 威胁点数过滤器：玩家威胁 < 5 不主动索敌；非玩家生物照常索敌
                 .filter(this)
                 .build());
-        // 刻意不加 FaceTargetGoal / RandomLookAroundGoal：它们写 yHeadRot / yBodyRot / xRot，
-        // 而 GeckoLib 模型只按实体 yRot 旋转，等于多了个看不见的第二写入者（还白费同步带宽）；
-        // 朝向统一交给 tickFlightBehavior() 里的 updateFacing()。
+        // 刻意不加 FaceTargetGoal：它写的是 yHeadRot / yBodyRot / xRot，
+        // 而 GeckoLib 模型只按实体 yRot 旋转，头/身旋转量没有任何模型去读 ——
+        // 加了就是个看不见的第二方在抢写旋转。朝向统一交给 tickFlightBehavior() 里的
+        // updateFacing()（唯一写入者，带死区 + 限速）。
+        // RandomLookAroundGoal 同理：它改的也是 yHeadRot / xRot，对 GeckoLib 模型无效，
+        // 只会让服务端每 tick 把旋转量同步给客户端，白费带宽。
         this.goalSelector.addGoal(5, new RandomFlyGoal());
         super.registerGoals();
     }
@@ -181,6 +221,7 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
 
     @Override
     public void checkFallDamage(double y, boolean onGround, BlockState state, BlockPos pos) {
+        // 飞行生物不受到摔落伤害
     }
 
     @Override
@@ -201,6 +242,7 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
         if (!defaultControllersEnabled) return;
+        // 只有 idle 动画
         registrar.add(new AnimationController<>(this, "idle_controller", 3, state -> {
             if (isDeadOrDying() || isBurstAnimating()) return PlayState.STOP;
             state.setControllerSpeed(getIdleAnimSpeed());
@@ -209,14 +251,16 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
     }
 
     /**
-     * 无目标时在周围 3D 空间随机漂浮，避免呆站在空中。{@link #canUse()} 只看有没有移动指令、
-     * 不判断 {@code getMoveControl().hasWanted()}：MoveControl 撞墙会停在 {@code WAIT} 且
-     * {@code hasWanted()} 恒为 true，旧写法撞墙后会永久卡死不再选新目的地。
+     * 无目标时在周围 3D 空间随机漂浮，避免一直呆站在空中。
+     * <p>
+     * 定期选择新目的地；不能依赖 hasWanted()，撞墙后旧移动指令可能一直保留。
      */
     private class RandomFlyGoal extends Goal {
+        private int nextFlightTick;
+
         @Override
         public boolean canUse() {
-            return getTarget() == null && !getMoveControl().hasWanted();
+            return getTarget() == null && tickCount >= nextFlightTick;
         }
 
         @Override
@@ -226,6 +270,7 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
 
         @Override
         public void start() {
+            nextFlightTick = tickCount + 40 + random.nextInt(20);
             double x = getX() + (random.nextDouble() - 0.5D) * 16.0D;
             double y = getY() + (random.nextDouble() - 0.5D) * 8.0D;
             double z = getZ() + (random.nextDouble() - 0.5D) * 16.0D;
@@ -234,8 +279,11 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
     }
 
     /**
-     * 没有移动指令时缓慢减速、保持悬浮。这里不写 yRot —— 悬浮到位后 dx/dz 只剩噪声，
-     * 每 tick 乱跳正是「飞行时乱转头」的来源，转向统一由 {@link InfSkeletonEntity#updateFacing} 负责。
+     * 没有移动指令时缓慢减速，保持悬浮。
+     * <p>
+     * <b>这里不再写 yRot。</b> 之前用 {@code atan2(dz, dx)} 求朝向，但悬浮到位后
+     * dx/dz 只剩噪声量级，结果每 tick 都在乱跳 —— 这就是"飞行时乱转头"的直接来源。
+     * 转向现在统一由 {@link InfSkeletonEntity#updateFacing} 负责。
      */
     private static class SmoothFlyingMoveControl extends MoveControl {
         private final InfSkeletonEntity mob;
@@ -243,6 +291,10 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
         public SmoothFlyingMoveControl(InfSkeletonEntity mob) {
             super(mob);
             this.mob = mob;
+        }
+
+        private void stopMoving() {
+            operation = Operation.WAIT;
         }
 
         @Override
@@ -253,7 +305,7 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
                 double dz = wantedZ - mob.getZ();
                 double distSq = dx * dx + dy * dy + dz * dz;
 
-                if (distSq < 2.5000003E-7F) {
+                if (distSq < 0.25D) {
                     operation = Operation.WAIT;
                     return;
                 }
@@ -268,13 +320,10 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
                 }
 
                 double maxSpeed = speedModifier * mob.getAttributeValue(Attributes.MOVEMENT_SPEED);
-                Vec3 delta = mob.getDeltaMovement().add(dir.scale(0.1D));
-                double speed = delta.length();
-                if (speed > maxSpeed) {
-                    delta = delta.scale(maxSpeed / speed);
-                }
-                mob.setDeltaMovement(delta);
+                Vec3 desiredVelocity = dir.scale(Math.min(maxSpeed, dist * 0.12D));
+                mob.setDeltaMovement(mob.getDeltaMovement().lerp(desiredVelocity, 0.25D));
             } else {
+                // 没有移动指令时缓慢减速，保持悬浮
                 Vec3 delta = mob.getDeltaMovement();
                 if (delta.lengthSqr() > 1.0E-6D) {
                     mob.setDeltaMovement(delta.scale(0.8D));
