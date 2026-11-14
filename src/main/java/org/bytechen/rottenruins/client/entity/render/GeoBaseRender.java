@@ -21,7 +21,11 @@ import java.util.List;
 public class GeoBaseRender<T extends LivingEntity & IAutoRenderableEntity> extends GeoEntityRenderer<T> {
 
     public GeoBaseRender(EntityRendererProvider.Context renderManager) {
-        super(renderManager, new GeoBaseModel<>());
+        this(renderManager, new GeoBaseModel<>());
+    }
+
+    protected GeoBaseRender(EntityRendererProvider.Context renderManager, GeoBaseModel<T> model) {
+        super(renderManager, model);
         this.addRenderLayer(new UniversalDelegateLayer(this));
     }
 

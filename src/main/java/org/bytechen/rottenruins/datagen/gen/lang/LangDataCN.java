@@ -19,6 +19,8 @@ public class LangDataCN extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
+        add("tooltip.rotten_ruins.boomerang.damage", "投掷伤害：%s");
+        add("tooltip.rotten_ruins.boomerang.cooldown", "投掷冷却：%s 秒");
         add(RegisterItem.HALL_BOOMERANG.get(), "王庭回旋镖");
         add(EntityTypeRegistry.BOOMERANG.get(), "王庭回旋镖");
         add("gui.rotten_ruins.potential_crafting.start", "开始合成");
@@ -89,7 +91,7 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.DOMERITE_ORE.get(), "穹顶云铁矿");
         add(RegisterItem.DOMITE_CRYSTAL.get(), "穹顶胚晶");
         add(RegisterItem.DOMERITE_INGOT.get(), "穹顶云铁锭");
-        add(RegisterItem.DOMERITE_STICK.get(), "穹顶只杖");
+        add(RegisterItem.DOMERITE_STICK.get(), "穹顶之杖");
         add(RegisterItem.DOMERITE_SWORD.get(), "云顶之剑");
         add(RegisterItem.DOMERITE_PICKAXE.get(), "云顶之镐");
         add(RegisterItem.DOMERITE_AXE.get(), "云顶之斧");

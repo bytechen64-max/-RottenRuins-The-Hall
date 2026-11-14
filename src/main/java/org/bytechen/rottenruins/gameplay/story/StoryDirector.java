@@ -1,6 +1,6 @@
 package org.bytechen.rottenruins.gameplay.story;
 
-import net.minecraft.nbt.CompoundTag;
+import org.bytechen.rottenruins.core.story.StoryMemory;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import org.bytechen.rottenruins.core.story.StoryRule;
@@ -8,7 +8,6 @@ import java.util.*;
 
 /** Server-thread gameplay scheduling. Pending jobs capture definitions, never live reload lookups. */
 public final class StoryDirector {
-    public static final String STATE = "rotten_ruins:story_state";
     private static final Map<UUID, List<Job>> PENDING = new HashMap<>();
     public record Selection(StoryRule rule, StoryDefinition story) {}
     private static final class Job {
@@ -22,47 +21,36 @@ public final class StoryDirector {
         }
     }
     private StoryDirector() {}
-    private static CompoundTag persisted(ServerPlayer player) {
-        CompoundTag root = player.getPersistentData();
-        if (!root.contains(Player.PERSISTED_NBT_TAG)) root.put(Player.PERSISTED_NBT_TAG, new CompoundTag());
-        return root.getCompound(Player.PERSISTED_NBT_TAG);
-    }
-    private static CompoundTag state(ServerPlayer player) {
-        CompoundTag persisted = persisted(player);
-        if (!persisted.contains(STATE)) persisted.put(STATE, new CompoundTag());
-        return persisted.getCompound(STATE);
-    }
+    private static StoryMemory memory(Player player) { return StoryRuntime.services().loadMemory(player); }
     public static StoryRule.Context context(ServerPlayer player) {
         return context(player, 0, 0, Integer.MAX_VALUE, "");
     }
     public static StoryRule.Context context(ServerPlayer player, int deaths, int streak, int interval, String cause) {
-        CompoundTag flags = state(player).getCompound("flags");
         Set<String> enabled = new HashSet<>();
-        for (String key : flags.getAllKeys()) if (flags.getBoolean(key)) enabled.add(key);
+        memory(player).flags().forEach((key, value) -> { if (value) enabled.add(key); });
         return new StoryRule.Context(deaths, streak, interval, cause, player.level().dimension().location().toString(), enabled);
     }
     public static void flag(ServerPlayer player, String key, boolean enabled) {
-        CompoundTag state = state(player);
-        CompoundTag flags = state.getCompound("flags");
-        flags.putBoolean(key, enabled);
-        state.put("flags", flags);
+        StoryMemory memory = memory(player);
+        memory.flag(key, enabled);
+        StoryRuntime.services().saveMemory(player, memory);
     }
     public static Selection select(ServerPlayer player, String event, StoryRule.Context context) {
         var snapshot = StoryCatalog.snapshot();
-        var state = state(player);
+        var state = memory(player);
         long now = player.server.overworld().getGameTime();
         for (var rule : snapshot.rules()) {
             if (!rule.event().equals(event) || !rule.conditions().matches(context)) continue;
-            if (!rule.onceKey().isEmpty() && persisted(player).getBoolean(rule.onceKey())) continue;
-            CompoundTag cooldowns = state.getCompound("cooldowns");
-            if (cooldowns.contains(rule.id())) {
-                long elapsed = now - cooldowns.getLong(rule.id());
+            if (!rule.onceKey().isEmpty() && state.consumed(rule.onceKey())) continue;
+            Long lastPlayed = state.lastPlayed(rule.id());
+            if (lastPlayed != null) {
+                long elapsed = now - lastPlayed;
                 if (elapsed >= 0 && elapsed < rule.cooldownTicks()) continue;
             }
             if (PENDING.getOrDefault(player.getUUID(), List.of()).stream()
                     .anyMatch(job -> job.selection.rule().id().equals(rule.id()) || (!rule.onceKey().isEmpty()
                             && job.selection.rule().onceKey().equals(rule.onceKey())))) continue;
-            String story = rule.choose(state.getCompound("previous").getString(rule.repeatGroup()), player.getRandom()::nextInt);
+            String story = rule.choose(state.previous(rule.repeatGroup()), player.getRandom()::nextInt);
             if (story != null) return new Selection(rule, snapshot.stories().get(net.minecraft.resources.ResourceLocation.parse(story)));
         }
         return null;
@@ -78,19 +66,10 @@ public final class StoryDirector {
     }
     public static void commit(ServerPlayer player, Selection selection) {
         var rule = selection.rule();
-        CompoundTag state = state(player);
-        CompoundTag previous = state.getCompound("previous");
-        previous.putString(rule.repeatGroup(), selection.story().id().toString());
-        state.put("previous", previous);
-        CompoundTag cooldowns = state.getCompound("cooldowns");
-        cooldowns.putLong(rule.id(), player.server.overworld().getGameTime());
-        state.put("cooldowns", cooldowns);
-        if (!rule.onceKey().isEmpty()) persisted(player).putBoolean(rule.onceKey(), true);
-        if (!rule.onceKey().isEmpty()) {
-            CompoundTag keys = state.getCompound("once_keys");
-            keys.putBoolean(rule.onceKey(), true);
-            state.put("once_keys", keys);
-        }
+        StoryMemory memory = memory(player);
+        memory.commit(rule.id(), rule.repeatGroup(), selection.story().id().toString(), rule.onceKey(),
+                player.server.overworld().getGameTime());
+        StoryRuntime.services().saveMemory(player, memory);
     }
     public static void tick(ServerPlayer player) { tick(player, true); }
     private static void tick(ServerPlayer player, boolean decrement) {
@@ -104,29 +83,22 @@ public final class StoryDirector {
             if (decrement) job.remaining--;
             if (job.remaining > 0) continue;
             iterator.remove();
-            if (!job.selection.rule().onceKey().isEmpty() && persisted(player).getBoolean(job.selection.rule().onceKey())) continue;
+            if (!job.selection.rule().onceKey().isEmpty() && memory(player).consumed(job.selection.rule().onceKey())) continue;
             play(player, job.selection.story());
             commit(player, job.selection);
         }
         if (jobs.isEmpty()) PENDING.remove(player.getUUID());
     }
     public static void play(ServerPlayer player, StoryDefinition story) {
-        StoryText.sendEncoded(player, StoryText.encode(story, player.level().getGameTime(), UUID.randomUUID()));
+        StoryText.play(player, story, player.level().getGameTime(), UUID.randomUUID());
     }
     public static void cancel(ServerPlayer player) { PENDING.remove(player.getUUID()); }
     public static void clearAll() { PENDING.clear(); }
     public static int pendingCount(ServerPlayer player) { return PENDING.getOrDefault(player.getUUID(), List.of()).size(); }
-    public static String previous(ServerPlayer player, String group) { return state(player).getCompound("previous").getString(group); }
+    public static String previous(ServerPlayer player, String group) { return memory(player).previous(group); }
     public static void copyMemory(Player original, Player replacement) {
-        CompoundTag from = original.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
-        CompoundTag to = replacement.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
-        if (from.contains(STATE)) to.put(STATE, from.getCompound(STATE).copy());
-        for (String key : from.getCompound(STATE).getCompound("once_keys").getAllKeys())
-            if (from.contains(key)) to.putBoolean(key, from.getBoolean(key));
-        if (from.contains("rotten_ruins:opening_story_seen")) to.putBoolean("rotten_ruins:opening_story_seen", from.getBoolean("rotten_ruins:opening_story_seen"));
-        for (var rule : StoryCatalog.snapshot().rules()) {
-            if (!rule.onceKey().isEmpty() && from.contains(rule.onceKey())) to.putBoolean(rule.onceKey(), from.getBoolean(rule.onceKey()));
-        }
-        replacement.getPersistentData().put(Player.PERSISTED_NBT_TAG, to);
+        Set<String> keys = new HashSet<>();
+        for (var rule : StoryCatalog.snapshot().rules()) if (!rule.onceKey().isEmpty()) keys.add(rule.onceKey());
+        StoryRuntime.services().copyMemory(original, replacement, keys);
     }
 }

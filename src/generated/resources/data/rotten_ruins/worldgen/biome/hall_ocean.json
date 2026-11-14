@@ -28,7 +28,18 @@
     "water_color": 8949912,
     "water_fog_color": 6844536
   },
-  "features": [],
+  "features": [
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+      "rotten_ruins:ore_domite",
+      "rotten_ruins:ore_domerite"
+    ]
+  ],
   "has_precipitation": true,
   "spawn_costs": {},
   "spawners": {

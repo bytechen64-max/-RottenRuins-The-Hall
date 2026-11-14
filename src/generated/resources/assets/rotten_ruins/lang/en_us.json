@@ -1,4 +1,6 @@
 {
+  "tooltip.rotten_ruins.boomerang.damage": "Throw damage: %s",
+  "tooltip.rotten_ruins.boomerang.cooldown": "Throw cooldown: %s s",
   "item.rotten_ruins.hall_boomerang": "Hall Boomerang",
   "entity.rotten_ruins.boomerang": "Hall Boomerang",
   "advancements.rotten_ruins.death.description": "§[rrs:glitch:amp=1.5]Obtain the Death Star§[/]",

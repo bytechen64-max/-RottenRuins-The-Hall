@@ -427,7 +427,7 @@ tasks.register('checkGameplayDependencies') {
             def code = sourceFile.getText('UTF-8')
                 .replaceAll('(?s)/\\*.*?\\*/', '')
                 .replaceAll('(?m)//.*$', '')
-            if (code =~ /net\.minecraftforge\b|org\.bytechen\.rottenruins\.(?:platform|content|overworld\.registry)\b/) {
+            if (code =~ /net\.minecraftforge\b|net\.minecraft\.client\b|org\.bytechen\.rottenruins\.(?:platform|content|client|overworld\.registry)\b|\b(?:getPersistentData|PERSISTED_NBT_TAG)\b/) {
                 violations.add(project.relativePath(sourceFile))
             }
         }
@@ -459,3 +459,46 @@ tasks.register('checkMagicPacketDependencies') {
 }
 tasks.named('compileJava').configure { dependsOn 'checkMagicPacketDependencies' }
 tasks.named('check').configure { dependsOn 'checkMagicPacketDependencies' }
+
+tasks.register('checkExtensionApiDependencies') {
+    group = 'verification'
+    description = 'Keep boomerang and combat extension APIs independent of concrete implementations'
+    def apiSources = fileTree('src/main/java/org/bytechen/rottenruins/api') {
+        include 'boomerang/**/*.java', 'combat/**/*.java'
+    }
+    inputs.files(apiSources)
+    doLast {
+        def violations = []
+        apiSources.files.each { sourceFile ->
+            def code = sourceFile.getText('UTF-8')
+                .replaceAll('(?s)/\\*.*?\\*/', '')
+                .replaceAll('(?m)//.*$', '')
+            def refs = code =~ /org\.bytechen\.rottenruins\.(?!(?:api|core)\.)[\w.]+/
+            refs.each { ref -> violations.add("${project.relativePath(sourceFile)} -> ${ref}") }
+        }
+        if (!violations.isEmpty()) throw new GradleException('Extension APIs must not reference concrete implementations:\n' + violations.join('\n'))
+        logger.lifecycle("Extension API dependencies checked: ${apiSources.files.size()} Java files")
+    }
+}
+
+tasks.register('checkStoryDependencies') {
+    group = 'verification'
+    description = 'Keep story scheduling separate from persistence and wire encodings'
+    def storySources = fileTree('src/main/java/org/bytechen/rottenruins/gameplay/story') { include '**/*.java' }
+    inputs.files(storySources)
+    doLast {
+        def violations = []
+        storySources.files.each { sourceFile ->
+            def code = sourceFile.getText('UTF-8')
+                .replaceAll('(?s)/\\*.*?\\*/', '')
+                .replaceAll('(?m)//.*$', '')
+            if (code =~ /net\.minecraft\.nbt\b|\b(?:CompoundTag|ListTag|FriendlyByteBuf|getPersistentData|PERSISTED_NBT_TAG)\b/) {
+                violations.add(project.relativePath(sourceFile))
+            }
+        }
+        if (!violations.isEmpty()) throw new GradleException('Use story messages/memory and platform codecs instead of NBT/player persistence in gameplay:\n' + violations.join('\n'))
+        logger.lifecycle("Story dependencies checked: ${storySources.files.size()} Java files")
+    }
+}
+tasks.named('compileJava').configure { dependsOn 'checkExtensionApiDependencies', 'checkStoryDependencies' }
+tasks.named('check').configure { dependsOn 'checkExtensionApiDependencies', 'checkStoryDependencies' }

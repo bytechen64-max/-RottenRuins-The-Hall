@@ -35,7 +35,10 @@
     [],
     [],
     [],
-    [],
+    [
+      "rotten_ruins:ore_domite",
+      "rotten_ruins:ore_domerite"
+    ],
     [],
     [],
     [

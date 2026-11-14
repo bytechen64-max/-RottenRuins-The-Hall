@@ -5,8 +5,12 @@
 
 ## 按工作内容查阅
 
+所有 agent 修改前遵守根目录 [AGENTS.md](../../AGENTS.md)。新增模块的依赖修复见 [回旋镖、剧情与刀光边界](boundary-repair.md)。
+
 | 工作 | 文档 |
 | --- | --- |
+| 调整血肉庭园的王座与海冠巨构 | [庭园超现实巨构](garden-monuments.md) |
+| 调整血肉庭园与王庭海洋的矿脉 | [庭园矿脉生成](garden-ores.md) |
 | 查看运行时接入、内容与平台边界 | [运行时与内容分层](runtime-boundaries.md) |
 | 接入武器挥砍、范围命中、回调和刀光 | [武器挥砍接口](../slash-api.md) |
 | 准备升级版本、了解剩余耦合 | [版本迁移清单](migration-checklist.md) |

@@ -23,7 +23,7 @@ public final class SlashNetwork {
     public static void register() {
         CHANNEL.registerMessage(0, Request.class, (p, b) -> {}, b -> new Request(), (p, supplier) -> {
             var context = supplier.get();
-            context.enqueueWork(() -> { if (context.getSender() != null) SlashServer.request(context.getSender()); });
+            context.enqueueWork(() -> { if (context.getSender() != null) org.bytechen.rottenruins.gameplay.combat.slash.SlashEngine.request(context.getSender()); });
             context.setPacketHandled(true);
         }, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CHANNEL.registerMessage(1, Visual.class, SlashNetwork::encode, SlashNetwork::decode, (p, supplier) -> {

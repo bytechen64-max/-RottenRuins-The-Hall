@@ -18,6 +18,8 @@
 
 接入武器为 `rotten_ruins:true_copper`、`rotten_ruins:domerite_sword` 和天穹裁决 `rotten_ruins:domerite_longsword`。其他特殊武器保持各自现有攻击行为。
 
+通用挥砍通过玩家攻击力属性取得力量加成。天穹裁决保留独立伤害模型：普通伤害为 25 + 力量加成 + 附魔，力量每级增加 3 点并随基础部分参与暴击；额外 5 点直伤保持固定。右键技能数值不受此调整影响。
+
 ```java
 public class MySword extends SwordItem implements ISlashWeapon {
     private static final SlashSpec SLASH = SlashSpec.builder()

@@ -51,7 +51,7 @@ import java.util.UUID;
 
 /**
  * 天穹裁决（{@code domerite_longsword}）—— 单支线次毕业级长剑。
- * <p>伤害统一走 {@link VerdictDamage} 的「原版 hurt + 原版 setHealth」两道：平砍与突进 25+5，光柱两波 24+5 与 12+4，领域剑气 18+5；属性面板只负责<b>显示</b>与兼容兜底。
+ * <p>伤害统一走 {@link VerdictDamage} 的「原版 hurt + 原版 setHealth」两道：平砍基础与突进 25+5，光柱两波 24+5 与 12+4，领域剑气 18+5；平砍的 hurt 部分另加力量与附魔，并参与暴击。
  * <p>三个技能共用同一个 {@link VerdictCooldown} 冷却池：短按 &lt; 8 tick 突进，蓄满松手光柱，潜行 + 按住 14 tick 领域（三态全靠原版使用机制区分，不需要自定义网络包）。
  * <p><b>必须让 {@link #useOnRelease} 返回 true</b>：否则按满时长会走 {@code completeUsingItem()} 而跳过 {@code releaseUsing()}，蓄满松手的光柱放不出来。
  */
@@ -60,7 +60,12 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline, org.
         return org.bytechen.rottenruins.content.combat.slash.verdict.VerdictSlash.SPEC;
     }
     @Override public float slashDamage(org.bytechen.rottenruins.api.combat.slash.SlashContext context,LivingEntity target) {
-        return VerdictDamage.HURT_PART+net.minecraft.world.item.enchantment.EnchantmentHelper.getDamageBonus(context.stack(),target.getMobType());
+        // Keep Verdict's fixed base; only import Strength's attack bonus, not the display-only weapon attribute.
+        var strength = context.player().getEffect(MobEffects.DAMAGE_BOOST);
+        float strengthBonus = strength == null ? 0 : (float) MobEffects.DAMAGE_BOOST.getAttributeModifierValue(
+                strength.getAmplifier(), MobEffects.DAMAGE_BOOST.getAttributeModifiers().get(Attributes.ATTACK_DAMAGE));
+        return VerdictDamage.HURT_PART + strengthBonus
+                + net.minecraft.world.item.enchantment.EnchantmentHelper.getDamageBonus(context.stack(),target.getMobType());
     }
     @Override public boolean applySlashDamage(org.bytechen.rottenruins.api.combat.slash.SlashContext context,LivingEntity target,float damage) {
         return VerdictDamage.strike(target,context.player().damageSources().playerAttack(context.player()),damage,VerdictDamage.BYPASS_PART,context.player());
@@ -152,7 +157,7 @@ public class DomeriteLongsword extends SwordItem implements ICustomOutline, org.
         return ctx != ItemDisplayContext.HEAD;
     }
 
-    /** 面板基准伤害：只是<b>显示值</b>与兼容兜底，实际伤害由 {@link VerdictDamage} 固定结算成 25 + 5。 */
+    /** 面板基准伤害：只是<b>显示值</b>与兼容兜底，平砍以 25 + 5 为基础，另计力量、附魔与暴击。 */
     private static final float BASE_DAMAGE = 8.0F;
 
     public DomeriteLongsword(Properties properties) {

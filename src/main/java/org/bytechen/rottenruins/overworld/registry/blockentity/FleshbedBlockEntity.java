@@ -1,5 +1,7 @@
 package org.bytechen.rottenruins.overworld.registry.blockentity;
 
+import org.bytechen.rottenruins.platform.forge.story.ForgeStoryServices;
+import org.bytechen.rottenruins.platform.minecraft.story.StoryPacketCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -84,7 +86,7 @@ public final class FleshbedBlockEntity extends BlockEntity {
         initiator = player.getUUID();
         session = UUID.randomUUID();
         ritualTicks = selected.story().durationTicks();
-        storySnapshot = StoryText.encode(selected.story(), startTime, session);
+        storySnapshot = StoryPacketCodec.encode(selected.story(), startTime, session);
         StoryDirector.commit(player, selected);
         setChanged();
         forceChunks(server, true);
@@ -104,7 +106,7 @@ public final class FleshbedBlockEntity extends BlockEntity {
     }
 
     private void showStory(ServerPlayer player) {
-        if (storySnapshot != null) StoryText.sendEncoded(player, storySnapshot);
+        if (storySnapshot != null) ForgeStoryServices.sendEncoded(player, storySnapshot);
         else StoryText.timedSequence(player, storyPages(), PAGE_TICKS, startTime, session);
     }
 

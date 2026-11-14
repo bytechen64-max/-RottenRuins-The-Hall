@@ -9,6 +9,7 @@ import org.bytechen.rottenruins.client.entity.render.impl.CrimsonVowChargeRender
 import org.bytechen.rottenruins.client.entity.render.impl.CrimsonVowFieldRenderer;
 import org.bytechen.rottenruins.client.entity.render.impl.MeteorEventRenderer;
 import org.bytechen.rottenruins.client.entity.render.GeoBaseRender;
+import org.bytechen.rottenruins.client.entity.render.CorruptionPlayerRenderer;
 import org.bytechen.rottenruins.client.entity.render.GeoEntityRender;
 import org.bytechen.rottenruins.client.entity.render.GeoProjectileRenderer;
 import org.bytechen.rottenruins.client.entity.render.impl.MeteoriteRenderer;
@@ -73,6 +74,8 @@ public class ClientModEventHandler {
     public static void onEntityRenderersRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         for (EntityType<?> type : HallEntityManager.consumeRenderTypes())
             registerGeoBaseRenderer(event, type);
+        event.registerEntityRenderer(CorruptionEntityTypes.CORRUPTION_PLAYER.get(),
+                CorruptionPlayerRenderer::new);
         for (EntityType<?> type : HallProjectileManager.consumeProjectileTypes())
             registerGeoProjectileRenderer(event, type);
 

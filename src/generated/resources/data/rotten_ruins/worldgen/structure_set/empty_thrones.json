@@ -1,0 +1,14 @@
+{
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 193847561,
+    "separation": 24,
+    "spacing": 64
+  },
+  "structures": [
+    {
+      "structure": "rotten_ruins:empty_throne",
+      "weight": 1
+    }
+  ]
+}

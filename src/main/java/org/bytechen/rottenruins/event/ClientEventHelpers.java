@@ -6,10 +6,12 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.bytechen.rottenruins.client.entity.layer.GlowLayer;
+import org.bytechen.rottenruins.client.entity.layer.CorruptionPlayerLayer;
 import org.bytechen.rottenruins.client.entity.model.GeoBaseModel;
 import org.bytechen.rottenruins.client.entity.IGeoModelBehavior;
 import org.bytechen.rottenruins.overworld.registry.ClientRenderRegistry;
 import org.bytechen.rottenruins.overworld.registry.EntityTypeRegistry;
+import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionEntityTypes;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
 
@@ -17,6 +19,8 @@ import software.bernie.geckolib.core.animation.AnimationState;
 public class ClientEventHelpers {
 
     public static void setupClientRenderLayers() {
+        ClientRenderRegistry.registerRenderLayer(
+                CorruptionEntityTypes.CORRUPTION_PLAYER.get(), new CorruptionPlayerLayer());
         ClientRenderRegistry.registerModelBehavior(EntityTypeRegistry.ABNORMAL_SQUID.get(), new IGeoModelBehavior() {
             @Override
             public void onModelCustomAnimations(GeoBaseModel<?> model, LivingEntity entity,

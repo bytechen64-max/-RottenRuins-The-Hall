@@ -21,6 +21,8 @@ public class LangDataEN extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
+        add("tooltip.rotten_ruins.boomerang.damage", "Throw damage: %s");
+        add("tooltip.rotten_ruins.boomerang.cooldown", "Throw cooldown: %s s");
         add(RegisterItem.HALL_BOOMERANG.get(), "Hall Boomerang");
         add(EntityTypeRegistry.BOOMERANG.get(), "Hall Boomerang");
         add("gui.rotten_ruins.potential_crafting.start", "Craft");

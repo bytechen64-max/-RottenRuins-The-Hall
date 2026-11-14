@@ -1,4 +1,6 @@
 {
+  "tooltip.rotten_ruins.boomerang.damage": "投掷伤害：%s",
+  "tooltip.rotten_ruins.boomerang.cooldown": "投掷冷却：%s 秒",
   "item.rotten_ruins.hall_boomerang": "王庭回旋镖",
   "entity.rotten_ruins.boomerang": "王庭回旋镖",
   "advancements.rotten_ruins.death.description": "§[rrs:glitch:amp=1.5]获得死亡之星§[/]",

@@ -55,10 +55,12 @@ public class HallBiomeData {
         MobSpawnSettings.Builder spawns = new MobSpawnSettings.Builder();
         spawns.addSpawn(MobCategory.MONSTER, new MobSpawnSettings.SpawnerData(
                 EntityTypeRegistry.ABNORMAL_SQUID.get(), 30, 1, 3));
+        BiomeGenerationSettings.Builder genSettings = new BiomeGenerationSettings.Builder(features, carvers);
+        addGardenOres(genSettings);
         return new Biome.BiomeBuilder().hasPrecipitation(true).temperature(0.5F).downfall(0.3F)
                 .specialEffects(createFleshBiome(features, carvers).getSpecialEffects())
                 .mobSpawnSettings(spawns.build())
-                .generationSettings(new BiomeGenerationSettings.Builder(features, carvers).build()).build();
+                .generationSettings(genSettings.build()).build();
     }
 
     /**
@@ -94,6 +96,7 @@ public class HallBiomeData {
         // 而不是 minecraft:patch_grass_plain / flower_plains ——
         // 那两个会长出<b>原版</b>的草与花，与王庭的视觉语言不一致。
         BiomeGenerationSettings.Builder genSettings = new BiomeGenerationSettings.Builder(features, carvers);
+        addGardenOres(genSettings);
         genSettings.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION,
                 HallFeatureData.HALL_TREES);
         genSettings.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION,
@@ -140,6 +143,11 @@ public class HallBiomeData {
                 .mobSpawnSettings(spawnSettings.build())
                 .generationSettings(genSettings.build())
                 .build();
+    }
+
+    private static void addGardenOres(BiomeGenerationSettings.Builder settings) {
+        settings.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, HallOreData.DOMITE_ORE_PLACED);
+        settings.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, HallOreData.DOMERITE_ORE_PLACED);
     }
 
     /**

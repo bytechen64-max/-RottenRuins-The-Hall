@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /** Server-authoritative swept collision, automatic homing return and a bounded lifetime. */
-public class BoomerangEntity extends Projectile implements ItemSupplier {
+public class BoomerangEntity extends Projectile implements ItemSupplier, org.bytechen.rottenruins.api.boomerang.BoomerangFlight {
     private static final EntityDataAccessor<ItemStack> ITEM = SynchedEntityData.defineId(BoomerangEntity.class, EntityDataSerializers.ITEM_STACK);
     private static final EntityDataAccessor<Boolean> RETURNING = SynchedEntityData.defineId(BoomerangEntity.class, EntityDataSerializers.BOOLEAN);
     private final Set<UUID> hitTargets = new HashSet<>();
@@ -54,6 +54,7 @@ public class BoomerangEntity extends Projectile implements ItemSupplier {
         entityData.define(RETURNING, false);
     }
     @Override public ItemStack getItem() { return entityData.get(ITEM); }
+    @Override public Projectile projectile() { return this; }
     public boolean isReturning() { return entityData.get(RETURNING); }
     private IBoomerangItem behavior() { return (IBoomerangItem) getItem().getItem(); }
 

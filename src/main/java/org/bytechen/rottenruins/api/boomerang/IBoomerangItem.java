@@ -5,7 +5,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
-import org.bytechen.rottenruins.overworld.registry.entities.projectile.BoomerangEntity;
 
 /** Server-side behavior hooks. Stack arguments are projectile snapshots, not inventory stacks. */
 public interface IBoomerangItem {
@@ -19,10 +18,10 @@ public interface IBoomerangItem {
     default int maxLifetimeTicks(ItemStack stack) { return 160; }
     /** Null disables the trail. */
     default ParticleOptions trailParticle(ItemStack stack) { return null; }
-    default void onThrown(BoomerangEntity projectile, Player player, ItemStack stack) {}
+    default void onThrown(BoomerangFlight projectile, Player player, ItemStack stack) {}
     /** Called once per target per flight leg, including rejected damage (damaged=false). */
-    default void onEntityHit(BoomerangEntity projectile, ItemStack stack, EntityHitResult hit, boolean damaged) {}
-    default void onBlockHit(BoomerangEntity projectile, ItemStack stack, BlockHitResult hit) {}
+    default void onEntityHit(BoomerangFlight projectile, ItemStack stack, EntityHitResult hit, boolean damaged) {}
+    default void onBlockHit(BoomerangFlight projectile, ItemStack stack, BlockHitResult hit) {}
     /** Notification only: no inventory item is created on return. */
-    default void onReturned(BoomerangEntity projectile, Player player, ItemStack stack) {}
+    default void onReturned(BoomerangFlight projectile, Player player, ItemStack stack) {}
 }

@@ -1,5 +1,6 @@
 package org.bytechen.rottenruins.gametest;
 
+import org.bytechen.rottenruins.platform.minecraft.story.StoryPacketCodec;
 import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.gametest.framework.*;
@@ -26,7 +27,7 @@ public final class StoryJsonGameTests {
     @GameTest(template = "potential_empty", batch = "story_json")
     public static void ritualSnapshotSurvivesSaveAndCatalogChange(GameTestHelper helper) {
         var definition = StoryCatalog.snapshot().stories().get(ResourceLocation.parse("rotten_ruins:fleshbed"));
-        var snapshot = StoryText.encode(definition, 1000, UUID.randomUUID());
+        var snapshot = StoryPacketCodec.encode(definition, 1000, UUID.randomUUID());
         var tag = new net.minecraft.nbt.CompoundTag();
         tag.putInt("Fed", 128);
         tag.putLong("StartTime", 1000);
@@ -141,7 +142,7 @@ public final class StoryJsonGameTests {
             var state = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
             state.remove("test:once");
             helper.assertTrue(!StoryDirector.trigger(player, "test", StoryDirector.context(player)), "Cooldown still blocks after once flag cleared");
-            var packet = StoryText.encode(story, 100, UUID.randomUUID());
+            var packet = StoryPacketCodec.encode(story, 100, UUID.randomUUID());
             var entries = packet.getList("entries", net.minecraft.nbt.Tag.TAG_COMPOUND);
             helper.assertTrue(entries.size() == 2 && !entries.getCompound(0).getBoolean("shadow"), "Multi-page/options sent atomically");
             helper.assertTrue(entries.getCompound(0).getFloat("entry_speed") == 7 && entries.getCompound(1).getFloat("exit_speed") == 12, "Page speeds encoded");
@@ -149,7 +150,7 @@ public final class StoryJsonGameTests {
             var clocked = StoryJsonLoader.story(ID, JsonParser.parseString("""
                     {"timing":"clocked","pages":[{"text":"one","duration_ticks":80},{"text":"two","duration_ticks":120}]}
                     """).getAsJsonObject());
-            var timeline = StoryText.encode(clocked, 1000, UUID.randomUUID()).getList("entries", net.minecraft.nbt.Tag.TAG_COMPOUND);
+            var timeline = StoryPacketCodec.encode(clocked, 1000, UUID.randomUUID()).getList("entries", net.minecraft.nbt.Tag.TAG_COMPOUND);
             helper.assertTrue(clocked.durationTicks() == 200 && timeline.getCompound(1).getLong("startTime") == 1080,
                     "Unequal clocked page durations retain exact server timeline");
             var dispatcher = player.server.getCommands().getDispatcher();

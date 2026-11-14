@@ -41,13 +41,21 @@ public class HallWorldGenData extends DatapackBuiltinEntriesProvider {
                             net.minecraft.world.damagesource.DamageScaling.NEVER, 0.0F)))
             .add(Registries.NOISE, HallNoiseData::bootstrap)
             .add(Registries.NOISE_SETTINGS, FleshDimensionData::bootstrapNoiseSettings)
-            .add(Registries.CONFIGURED_FEATURE, HallFeatureData::bootstrapConfiguredFeatures)
-            .add(Registries.PLACED_FEATURE, HallFeatureData::bootstrapPlacedFeatures)
+            .add(Registries.CONFIGURED_FEATURE, ctx -> {
+                HallFeatureData.bootstrapConfiguredFeatures(ctx);
+                HallOreData.bootstrapConfiguredFeatures(ctx);
+            })
+            .add(Registries.PLACED_FEATURE, ctx -> {
+                HallFeatureData.bootstrapPlacedFeatures(ctx);
+                HallOreData.bootstrapPlacedFeatures(ctx);
+            })
             .add(Registries.BIOME, ctx -> {
                         HallBiomeData.bootstrap(ctx);
                         org.bytechen.rottenruins.datagen.gen.corruption.CorruptionBiomeData.bootstrap(ctx);
                     })
             .add(Registries.DIMENSION_TYPE, FleshDimensionData::bootstrapDimensionType)
+            .add(Registries.STRUCTURE, GardenStructureData::bootstrapStructures)
+            .add(Registries.STRUCTURE_SET, GardenStructureData::bootstrapStructureSets)
             .add(Registries.LEVEL_STEM, Lifecycle.stable(), FleshDimensionData::bootstrapLevelStem);
 
     public HallWorldGenData(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {

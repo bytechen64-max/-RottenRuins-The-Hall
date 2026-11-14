@@ -1,5 +1,7 @@
 package org.bytechen.rottenruins.overworld.registry.items;
 
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
@@ -8,14 +10,34 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
 import org.bytechen.rottenruins.api.boomerang.IBoomerangItem;
 import org.bytechen.rottenruins.api.boomerang.BoomerangConsumption;
 import org.bytechen.rottenruins.overworld.registry.entities.projectile.BoomerangEntity;
 
+import java.util.List;
+
 /** Reusable right-click launcher; subclasses customize the IBoomerangItem hooks. */
 public class BoomerangItem extends Item implements IBoomerangItem {
     public BoomerangItem(Properties properties) { super(properties); }
+
+    @Override
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, level, tooltip, flag);
+        tooltip.add(tooltipLine("damage", number(ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(throwDamage(stack)))));
+        tooltip.add(tooltipLine("cooldown", number(ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(
+                Math.max(1, cooldownTicks(stack)) / 20.0D))));
+    }
+
+    private static Component tooltipLine(String suffix, Object... values) {
+        return Component.translatable("tooltip.rotten_ruins.boomerang." + suffix, values).withStyle(ChatFormatting.GRAY);
+    }
+
+    private static Component number(String value) {
+        return Component.literal(value).withStyle(ChatFormatting.AQUA);
+    }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
