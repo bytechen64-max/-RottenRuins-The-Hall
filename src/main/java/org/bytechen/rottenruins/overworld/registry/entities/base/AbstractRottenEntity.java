@@ -1,6 +1,6 @@
 package org.bytechen.rottenruins.overworld.registry.entities.base;
 
-import org.bytechen.rottenruins.client.entity.IAutoRenderableEntity;
+import org.bytechen.rottenruins.api.render.IAutoRenderableEntity;
 import org.bytechen.rottenruins.network.c2s.IKeyframeHandler;
 import org.bytechen.rottenruins.network.s2c.BloodBurstPacket;
 import org.bytechen.rottenruins.network.s2c.MeatBurstPacket;

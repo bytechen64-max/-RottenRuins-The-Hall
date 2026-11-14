@@ -46,7 +46,9 @@ configurations {
 minecraft {
     jarJar.enable()
     accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
-    mappings channel: 'official', version: '1.20.1'
+    // 单一真相：映射配置只在 gradle.properties 里维护（mapping_channel / mapping_version），
+    // 这里不要再写死一份，否则升级时改一处漏一处。
+    mappings channel: project.property('mapping_channel'), version: project.property('mapping_version')
 
     copyIdeResources = true
 
@@ -97,6 +99,18 @@ tasks.register('copyRefmap', Copy) {
     from layout.buildDirectory.dir("tmp/compileJava")
     into layout.buildDirectory.dir("resources/main")
     include "${mod_id}.refmap.json"
+    // 改名前遗留的 *.refmap.json（例如 hall.refmap.json）不匹配上面的 include，
+    // 所以不会被覆盖，会一路跟着 processResources 打进 release jar。复制前先清掉。
+    doFirst {
+        def keep = "${mod_id}.refmap.json"
+        def outDir = layout.buildDirectory.dir("resources/main").get().asFile
+        outDir.listFiles()?.each { f ->
+            if (f.name.endsWith('.refmap.json') && f.name != keep) {
+                logger.lifecycle("copyRefmap: 删除过期的 ${f.name}")
+                f.delete()
+            }
+        }
+    }
 }
 tasks.named('processResources').configure { dependsOn 'copyRefmap' }
 
@@ -254,6 +268,13 @@ tasks.named('processResources', ProcessResources).configure {
 
 tasks.named('jar', Jar).configure {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    // 兜底：即使 copyRefmap 被判定 up-to-date 没跑，也不让任何非当前 mod_id 的
+    // refmap 进 jar（历史遗留的 hall.refmap.json 曾这么混进来过）。
+    eachFile { fcd ->
+        if (fcd.name.endsWith('.refmap.json') && fcd.name != "${mod_id}.refmap.json") {
+            fcd.exclude()
+        }
+    }
     manifest {
         attributes([
                 "Specification-Title"     : mod_id,
@@ -502,3 +523,34 @@ tasks.register('checkStoryDependencies') {
 }
 tasks.named('compileJava').configure { dependsOn 'checkExtensionApiDependencies', 'checkStoryDependencies' }
 tasks.named('check').configure { dependsOn 'checkExtensionApiDependencies', 'checkStoryDependencies' }
+
+// Parse every maintained Java source, including legacy content and optional integrations.
+tasks.register('compileArchitectureChecker', JavaCompile) {
+    source fileTree('tools/architecture') { include '*.java' }
+    classpath = files()
+    destinationDirectory = layout.buildDirectory.dir('architecture-check/classes')
+    javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(17) }
+    options.release = 17
+    options.compilerArgs.add('-proc:none')
+}
+tasks.register('checkArchitectureDependencies', JavaExec) {
+    group = 'verification'
+    description = 'Check all maintained source boundaries, helper dependencies and reviewed legacy coupling'
+    dependsOn 'testArchitectureChecker'
+    classpath = files(layout.buildDirectory.dir('architecture-check/classes'))
+    mainClass = 'ArchitectureCheck'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(17) }
+    args file('src/main/java/org/bytechen/rottenruins').absolutePath,
+            file('tools/architecture/reviewed-coupling.txt').absolutePath
+    inputs.files(fileTree('src/main/java') { include '**/*.java' }, file('tools/architecture/reviewed-coupling.txt'))
+}
+tasks.register('testArchitectureChecker', JavaExec) {
+    group = 'verification'
+    description = 'Run JDK-only boundary regression fixtures (no game runtime)'
+    dependsOn 'compileArchitectureChecker'
+    classpath = files(layout.buildDirectory.dir('architecture-check/classes'))
+    mainClass = 'ArchitectureCheckTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(17) }
+}
+tasks.named('compileJava').configure { dependsOn 'checkArchitectureDependencies' }
+tasks.named('check').configure { dependsOn 'checkArchitectureDependencies' }

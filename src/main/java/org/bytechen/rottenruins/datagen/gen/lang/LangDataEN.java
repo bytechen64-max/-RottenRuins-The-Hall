@@ -176,6 +176,20 @@ public class LangDataEN extends LanguageProvider {
         // Skyfall Verdict: the field's descending blade (a pure-VFX skill entity,
         // but it still gets a readable name for debugging)
         add(EntityTypeRegistry.VERDICT_SWORD_DROP.get(), "Verdict Blade");
+        // Skill / projectile entities: not listed as mobs, but damage-death messages and
+        // third-party overlays (Jade/TOP) read entity.<namespace>.<id>; a missing key
+        // prints the raw key into the player's screen.
+        add(EntityTypeRegistry.FIRE_BALL.get(), "Fireball");
+        add(EntityTypeRegistry.SPEAR_OF_JUDGMENT.get(), "Spear of Judgment");
+        add(EntityTypeRegistry.BLACK_HOLE.get(), "Black Hole");
+        add(EntityTypeRegistry.COLLAPSE.get(), "Collapse");
+        add(EntityTypeRegistry.SWORD_AURA.get(), "Sword Aura");
+        add(EntityTypeRegistry.METEOR_EVENT.get(), "Cataclysm Meteor");
+        add(EntityTypeRegistry.OLYMPIAD_CUBE.get(), "Olympiad Cube");
+        add(EntityTypeRegistry.VERDICT_BEAM.get(), "Verdict Beam");
+        add(EntityTypeRegistry.VERDICT_FIELD.get(), "Verdict Field");
+        add(EntityTypeRegistry.CRIMSON_VOW_CHARGE.get(), "Crimson Vow Charge");
+        add(EntityTypeRegistry.CRIMSON_VOW_FIELD.get(), "Crimson Vow Field");
         add(EntityTypeRegistry.SCOUT.get(), "Ulcerated Scout");
         add(EntityTypeRegistry.ABNORMAL_SQUID.get(), "Abnormal Squid");
         add(EntityTypeRegistry.PURSUER.get(), "Ulcerated Pursuer");
@@ -211,7 +225,7 @@ public class LangDataEN extends LanguageProvider {
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_TITLE, "Select Difficulty");
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_HINT, "Choose the world difficulty (can be changed later via commands)");
 
-        // Tooltip copy (placeholder, pending final wording)
+        // Tooltip copy
         // Shared mechanic lines live once (several blocking weapons share them);
         // each item only owns its own flavour. A "label + body" line is split into
         // two keys because the per-character gradient flattens a line via getString()
@@ -658,6 +672,15 @@ public class LangDataEN extends LanguageProvider {
         add(CorruptionEntityTypes.HUMUS_COLUMN.get(), "Stage I Humus Column");
         add(CorruptionEntityTypes.SUMMONING_PILLAR.get(), "Stage I Summoning Pillar");
         add(CorruptionEntityTypes.ORIGINAL_BUG.get(), "Primordial Worm");
+        // Corruption skill projectiles: same reason as above — readable names for
+        // death messages and third-party overlays.
+        add(CorruptionEntityTypes.BONE_SPIKE.get(), "Bone Spike");
+        add(CorruptionEntityTypes.ACID_BALL.get(), "Acid Ball");
+        add(CorruptionEntityTypes.POISON_ARROW.get(), "Poison Arrow");
+        add(CorruptionEntityTypes.CORRUPTION_DART.get(), "Corruption Dart");
+        add(CorruptionEntityTypes.CORRUPTION_POOL.get(), "Corruption Pool");
+        add(CorruptionEntityTypes.CUBOID.get(), "Flesh Wall");
+        add(CorruptionEntityTypes.SHIELD.get(), "Flesh Shield");
 
         // ---- D. Effects: effect.rotten_ruins.<id> (6) ----
         add(CorruptionEffects.CORRUPTION.get(), "Corruption");

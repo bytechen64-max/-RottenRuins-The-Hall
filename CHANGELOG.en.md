@@ -54,22 +54,17 @@
   the colours flow along the text over time (seamless cyclic wrap), while the default `0` keeps the old
   static look used by existing content and the preview GIFs. `TextEffectText.gradient(text, from, to, speed)`
   exposes the same option.
-- **Migrated display texts now flow**: Spell Constellation title (`speed=0.5`), the `/anomaly` status header
+- **Migrated display texts now flow**: the `/anomaly` status header
   and `/collapse types` header (`speed=0.5`), the "Rotten Ruins" advancement title (`speed=0.5`), and the
-  creative-tab label / panel title `itemGroup.rotten_ruins.main` ("Rotten Ruins" / "腐朽之疫", `speed=0.6`);
-  the creative-tab section titles keep using `rainbow` (speed raised to 2.2).
+  creative-tab label / panel title `itemGroup.rotten_ruins.main` ("Rotten Ruins" / "腐朽之疫", `speed=0.6`).
+  The Spell Constellation title still uses plain font drawing (`MagicScreen#drawHeader`) and is not wired to
+  the text-effect system.
 - **Flow speed semantics**: `grad`'s `speed` now means cycles per second (`speed=0.5` ≈ a 2 s loop), 4× faster
   than the first revision so the motion is clearly visible.
-- **Creative-tab section titles**: removed the private per-glyph HSV implementation in
-  `CreativeTabDividerRenderer` (the `drawFlowingText` helper and its two constants) and replaced it
-  with a single `drawString(Component)` using `§[rrs:rainbow:sat=0.45:speed=1.3]`, sharing one
-  implementation/config with all other rainbow text; a leading `§6` keeps the title gold when effects are off.
 - **"Incomprehensible" difficulty tier**: `HallDifficultyEventHandler.resolveDisplayName` now uses
   `§4§[rrs:glitch:amp=2.0]…§[/]` instead of the `§c§k!!` fake-obfuscation (the `§4` keeps the fallback red).
 - **Command feedback headers**: the `/anomaly` status header and `/collapse types` `═══ … ═══` line
   now use a gold gradient (with `§6` as the degraded fallback).
-- **Spell Constellation title**: `MagicScreen#drawHeader` now uses a bright-gold → dark-gold gradient
-  (`§6` fallback).
 - **datagen copy**: the "Incomprehensible" difficulty name/tooltips (hard = shake, incomprehensible = glitch),
   the "Rotten Ruins" advancement title (gradient) and the "Obtain the Death Star" description (glitch)
   now carry section-code markers.
@@ -150,8 +145,9 @@
 
 ### Added
 - **Sectioned creative tab (`SectionedCreativeModeTab`).** One tab whose items are cut into
-  sections, each introduced by a divider row: a flowing colour ribbon plus a centred,
-  colour-cycling title. Sections are padded to whole rows automatically.
+  sections, each introduced by a divider row: a colour ribbon plus a centred title.
+  The ribbon is the `textures/gui/creative_inventory/dividers.png` texture and the title is
+  drawn in a fixed colour. Sections are padded to whole rows automatically.
   - Declared from the registry side with
     `SectionedCreativeModeTab.builder().section(title, generator)...`.
     The inherited `displayItems()` is disabled — it would be overwritten in `build()`,
@@ -159,10 +155,6 @@
   - Items are de-duplicated across sections (first section wins), which is why the trailing
     "Miscellaneous" section can simply sweep the whole namespace: newly added items can never
     be lost by forgetting to register them.
-- **Divider shader `hall:gui_tab_divider`.** An aurora ribbon in GUI space (horizontally
-  flowing multi-colour noise, a bright core filament, soft vertical falloff), submitted
-  immediately via `BufferUploader.drawWithShader`. If the shader fails to load, the divider
-  falls back to a plain solid line — sectioning itself keeps working.
 - **`CreativeModeInventoryScreenMixin`.** Inserts nine empty slots as a divider row into the
   vanilla "flat item list + 5×9 viewport" grid, then draws the ribbon and the title on
   `ContainerScreenEvent.Render.Foreground`. While the search box has a query, the vanilla flat

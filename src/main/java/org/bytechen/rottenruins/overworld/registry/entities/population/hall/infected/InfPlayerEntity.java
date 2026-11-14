@@ -17,7 +17,6 @@ import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.network.NetworkHelper;
-import org.bytechen.rottenruins.client.rend.gui.GuiShaderManager;
 import org.bytechen.rottenruins.overworld.difficulty.HallDifficultyAttributes;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.ChaseLockGoal;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.FaceTargetGoal;
@@ -183,7 +182,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
 
         if (target instanceof ServerPlayer player && !level().isClientSide()) {
             NetworkHelper.sendGuiShaderToPlayer(player,
-                    GuiShaderManager.TYPE_HORROR_VORONOI,
+                    org.bytechen.rottenruins.api.render.GuiEffectTypes.TYPE_HORROR_VORONOI,
                     UUID.randomUUID(),
                     HORROR_SHADER_DURATION,
                     HORROR_SHADER_FADE_IN,

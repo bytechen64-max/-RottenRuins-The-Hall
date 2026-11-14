@@ -23,7 +23,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.client.entity.IAutoRenderableEntity;
+import org.bytechen.rottenruins.api.render.IAutoRenderableEntity;
 import org.bytechen.rottenruins.config.ConfigHelper;
 import org.bytechen.rottenruins.config.data.MeteorShowerConfig;
 import org.bytechen.rottenruins.overworld.manager.BlockSpreadManager;

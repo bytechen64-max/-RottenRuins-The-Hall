@@ -15,7 +15,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.client.entity.IAutoRenderableEntity;
+import org.bytechen.rottenruins.api.render.IAutoRenderableEntity;
 import org.bytechen.rottenruins.overworld.registry.EntityTypeRegistry;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.ShockwaveEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;

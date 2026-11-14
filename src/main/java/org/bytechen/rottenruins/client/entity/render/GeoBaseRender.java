@@ -2,7 +2,7 @@ package org.bytechen.rottenruins.client.entity.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import org.bytechen.rottenruins.client.entity.IAutoRenderableEntity;
+import org.bytechen.rottenruins.api.render.IAutoRenderableEntity;
 import org.bytechen.rottenruins.client.entity.IGeoLayerProvider;
 import org.bytechen.rottenruins.client.entity.IGeoModelBehavior;
 import org.bytechen.rottenruins.client.entity.model.GeoBaseModel;

@@ -1,7 +1,7 @@
 package org.bytechen.rottenruins.api;
 
 import net.minecraft.resources.ResourceLocation;
-import org.bytechen.rottenruins.client.entity.IGeoResources;
+import org.bytechen.rottenruins.api.render.IGeoResources;
 import software.bernie.geckolib.animatable.GeoItem;
 
 /**

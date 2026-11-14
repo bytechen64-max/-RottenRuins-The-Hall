@@ -71,6 +71,6 @@
 `checkMagicApiDependencies` 阻止魔法扩展契约依赖项目内 api／core 之外的实现包，但允许游戏和 Forge 类型。
 checkGameplayDependencies 覆盖整个 gameplay，禁止直接 Forge、platform 和旧注册实现引用；
 checkMagicPacketDependencies 禁止通用魔法同步包直接使用 Minecraft 客户端类型。
-这些检查不分析所有传递依赖，也不代表运行或视觉测试通过。
+此外，checkArchitectureDependencies 检查整个 API、gameplay 工具链、通用网络客户端守卫和全源码存量耦合，见[全源码依赖门禁](dependency-gates.md)。这些检查仍不分析所有第三方传递依赖，也不代表运行或视觉测试通过。
 
 其他模块说明见 [架构文档入口](README.md)。

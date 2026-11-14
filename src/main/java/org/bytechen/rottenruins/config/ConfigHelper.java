@@ -23,12 +23,27 @@ public class ConfigHelper {
         // 迁移必须在读取配置之前完成，否则本局仍然用旧值
         migrateSplendidingConfig();
 
+        // 诊断写盘开关跟着配置走：发布态默认关，排查时把 debug 打开才落盘。
+        applyDebugSwitches();
+
         if (configHolder.get() != null) {
             HallMod.LOGGER.info("Splendiding config loaded");
         }
         if (meteorConfigHolder.get() != null) {
             HallMod.LOGGER.info("MeteorShower config loaded");
         }
+    }
+
+    /**
+     * 把 {@code SplendidingConfig.debug} 同步给那些"会往磁盘写诊断日志"的静态开关。
+     *
+     * <p>这些开关原先硬编码为 {@code true}，发布版一玩就在工作目录里长出一个日志文件。
+     * 现在默认关闭，只有玩家/开发者在配置里打开 {@code debug} 才会写。</p>
+     */
+    private static void applyDebugSwitches() {
+        SplendidingConfig cfg = configHolder == null ? null : configHolder.get();
+        boolean on = cfg != null && cfg.debug;
+        org.bytechen.rottenruins.overworld.registry.items.verdict.VerdictDebug.ENABLED = on;
     }
 
     /**

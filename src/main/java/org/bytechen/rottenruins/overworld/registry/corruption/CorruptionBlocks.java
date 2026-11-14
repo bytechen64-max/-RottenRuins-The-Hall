@@ -20,13 +20,17 @@ import java.util.function.Supplier;
 /**
  * 腐化系方块注册表。
  *
- * <p>大部分地形方块仍按普通满方块占位（扩散/群系机制后续补）；以下"特殊模型/数据格式"
- * 的方块已经按 corruption 原实现移植：</p>
+ * <p>{@code spread_dirt} / {@code spread_stone} / {@code infection_cobblestone_block} /
+ * {@code spread_infection_leaves} / {@code spread_infection_wood} 已是
+ * {@link CorruptionSpreadBlock}（随机刻自主扩散，并触发群系跟随）；其余地貌方块仍是
+ * {@code cube_all} 满方块，等美术出图后再换模型。以下"特殊模型/数据格式"的方块
+ * 已经按 corruption 原实现移植：</p>
  * <ul>
  *   <li>残骸 ×9：{@link RemainsBlock}（六向 facing + 十字交叉模型，datagen 生成）</li>
  *   <li>腐染矮草：{@link CorruptionGrassBlock}（cutout cross，只认腐染泥土）</li>
  *   <li>腐染经络：{@link CorruptionVariableHeightCropBlock}（age/section 三段模型 + 生长）</li>
- *   <li>血肉温床：{@link FleshbedBlock}（手写模型 + 水平朝向；BlockEntity/交互后续补）</li>
+ *   <li>血肉温床：{@link FleshbedBlock}（手写模型 + 水平朝向 + BlockEntity 交互；
+ *       原工程的配方配置与 InfectionItem 转化仍是缺口）</li>
  * </ul>
  * <p>id 沿用 corruption 原 id（KING 系列已剔除）。</p>
  */

@@ -38,7 +38,7 @@ SlashNetwork 的通道、消息布局与客户端表现不因本轮结构调整�
 扩展 `checkGameplayDependencies`，检查客户端类型以及没有 Forge import 的 getPersistentData／PERSISTED_NBT_TAG。
 上述任务均加入 compileJava 与 check，普通 build 自动执行。
 
-当前检查是源码约束与核心独立编译，不能检测全部传递依赖；旧 anomaly／自动渲染 API 的历史问题仍需单独整理。
+后续已增加[全源码依赖门禁](dependency-gates.md)，检查 gameplay 工具依赖，并修复 anomaly／自动渲染 API 的实现引用。原有检查继续保留；语法树检查仍不等价于完整传递链接或运行验证。
 本轮只编译打包和静态核对，GameTest 源码更新迁移调用点并参与编译，运行与视觉验收继续由用户负责。
 
 跨 agent 规则见根目录 [AGENTS.md](../../AGENTS.md)。

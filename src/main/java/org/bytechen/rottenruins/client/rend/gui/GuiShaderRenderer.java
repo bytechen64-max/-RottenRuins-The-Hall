@@ -97,7 +97,7 @@ public final class GuiShaderRenderer {
     @Nullable
     static ShaderInstance getShader(String effectType) {
         return switch (effectType) {
-            case GuiShaderManager.TYPE_HORROR_VORONOI -> SplendidingShaders.guiHorrorVoronoiShader;
+            case org.bytechen.rottenruins.api.render.GuiEffectTypes.TYPE_HORROR_VORONOI -> SplendidingShaders.guiHorrorVoronoiShader;
             default -> null;
         };
     }

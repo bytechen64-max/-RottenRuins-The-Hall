@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *       {@code assets/hall/shaders/core/}.</li>
  *   <li>Register the {@code ShaderInstance} in
  *       {@link org.bytechen.rottenruins.client.rend.SplendidingShaders}.</li>
- *   <li>Define a unique effect type key constant below.</li>
+ *   <li>Define a shared effect type key in api.render.GuiEffectTypes.</li>
  *   <li>Add a render branch in
  *       {@link GuiShaderRenderer#getShader} for the new key.</li>
  *   <li>Call {@link #addEffect(GuiShaderEffect)} from the packet handler.</li>
@@ -76,10 +76,6 @@ public final class GuiShaderManager {
     public Collection<GuiShaderEffect> getActiveEffects() {
         return Collections.unmodifiableCollection(activeEffects.values());
     }
-
-    // ── Type key constants — add new keys here ────────────────────
-
-    public static final String TYPE_HORROR_VORONOI = "horror_voronoi";
 
     // ── Serialisation ──────────────────────────────────────────────
 

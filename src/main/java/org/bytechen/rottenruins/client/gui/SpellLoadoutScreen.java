@@ -56,8 +56,8 @@ import net.minecraft.util.Mth;
  *   <li>鼠标滚轮在图鉴列表上翻页（池槽数可被属性抬高，卡片放不下时）。</li>
  * </ul>
  *
- * <p>所有画面文案为英文 ASCII（MC 位图字体只保证拉丁字符；本界面暂未接 lang key，
- * 待 i18n 阶段再统一收口）。</p>
+ * <p>所有画面文案都走 {@link WheelI18n}（datagen 生成 en_us/zh_cn），
+ * 新增文案请加 lang key，不要在代码里硬编码英文。</p>
  */
 @OnlyIn(Dist.CLIENT)
 public final class SpellLoadoutScreen extends Screen {

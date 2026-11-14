@@ -1,6 +1,6 @@
 package org.bytechen.rottenruins.overworld.registry.entities.base;
 
-import org.bytechen.rottenruins.client.entity.IAutoRenderableProjectile;
+import org.bytechen.rottenruins.api.render.IAutoRenderableProjectile;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;

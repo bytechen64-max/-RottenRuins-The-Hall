@@ -1,11 +1,7 @@
 package org.bytechen.rottenruins.network.s2c;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.NetworkEvent;
-import org.bytechen.rottenruins.client.gui.DifficultySelectScreen;
 
 import java.util.function.Supplier;
 
@@ -24,12 +20,15 @@ public class S2COpenDifficultySelectPacket {
     }
 
     public static void handle(S2COpenDifficultySelectPacket msg, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> openScreen());
+        var context = ctx.get();
+        if (context.getDirection() != net.minecraftforge.network.NetworkDirection.PLAY_TO_CLIENT) {
+            context.setPacketHandled(true);
+            return;
+        }
+        context.enqueueWork(() -> net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(
+                net.minecraftforge.api.distmarker.Dist.CLIENT,
+                () -> () -> org.bytechen.rottenruins.client.network.CommonPacketHandlers.openDifficulty()));
         ctx.get().setPacketHandled(true);
     }
 
-    @OnlyIn(Dist.CLIENT)
-    private static void openScreen() {
-        Minecraft.getInstance().setScreen(new DifficultySelectScreen());
-    }
 }

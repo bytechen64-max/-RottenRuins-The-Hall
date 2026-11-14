@@ -147,12 +147,10 @@
 
 ### 变更 (Changed)
 - **`grad` 支持流动**：新增参数 `speed=`（`§[rrs:grad:#a:#b:speed=0.4]`），`speed>0` 时颜色沿文字随时间流动（首尾闭环无缝）；默认 `0` 保持旧内容/预览 GIF 的静止观感。`TextEffectText.gradient(text, from, to, speed)` 同步提供。
-- **已迁移的显示文本改为流动**：魔法星图标题（`speed=0.5`）、`/anomaly` 状态头与 `/collapse types` 标题（`speed=0.5`）、成就「腐朽之疫」标题（`speed=0.5`）、创造栏标签页/面板标题 `itemGroup.rotten_ruins.main`（"腐朽之疫" / "Rotten Ruins"，`speed=0.6`）；创造栏分区标题继续用 `rainbow`（速度提到 2.2）。
+- **已迁移的显示文本改为流动**：`/anomaly` 状态头与 `/collapse types` 标题（`speed=0.5`）、成就「腐朽之疫」标题（`speed=0.5`）、创造栏标签页/面板标题 `itemGroup.rotten_ruins.main`（"腐朽之疫" / "Rotten Ruins"，`speed=0.6`）。魔法星图标题仍走普通字体绘制（`MagicScreen#drawHeader`），不接文本特效系统。
 - **流动速度口径**：`grad` 的 `speed` 直接表示"每秒走完多少个周期"（`speed=0.5` ≈ 2 秒一圈），比初版映射快 4 倍，肉眼可辨。
-- **创造栏分区标题**：删掉 `CreativeTabDividerRenderer` 里逐字算 HSV 的私有实现（`drawFlowingText` 与两个常量），改为一次 `drawString(Component)` + `§[rrs:rainbow:sat=0.45:speed=1.3]`，与其它彩虹文字共用同一套实现/配置；前缀 `§6` 保证特效关闭时仍是金色。
 - **难度「无法理解」档**：`HallDifficultyEventHandler.resolveDisplayName` 的 `§c§k!!` 假乱码改为 `§4§[rrs:glitch:amp=2.0]无法理解§[/]`（垫 `§4` 做降级）。
 - **命令反馈标题**：`/anomaly` 状态头与 `/collapse types` 的 `═══ … ═══` 改为金字渐变（`§6` 垫底降级）。
-- **魔法星图标题**：`MagicScreen#drawHeader` 改为亮金→暗金渐变（`§6` 垫底降级）。
 - **datagen 文案**：难度名「无法理解」/难度提示（困难=抖动、无法理解=故障）、成就「腐朽之疫」标题（渐变）与「获得死亡之星」说明（故障）改用分节符标记。
   - **注意**：走 `FlowingNameColors` / `TooltipLines` 逐字拍平的 lore/风味行**没有**加标记 —— 逐字重建会把标记拆散到不同组件里，反而显示成原文。
 
@@ -224,15 +222,12 @@
 
 ### 新增 (Added)
 - **带分区的创造标签 `SectionedCreativeModeTab`**：一个标签里用「隔断行」把物品切成
-  若干分区，每段以一行流动色带 + 居中彩色标题开头，段尾自动补空到整行。
+  若干分区，每段以一行色带 + 居中标题开头，段尾自动补空到整行。
+  色带是贴图 `textures/gui/creative_inventory/dividers.png`，标题用固定颜色绘制。
   - 注册侧用 `SectionedCreativeModeTab.builder().section(标题, 生成器)...` 声明，
     父类 `displayItems()` 被禁用（设了也会被覆盖，不如直接抛）。
   - 跨分区按物品去重，先声明的分区赢 —— 所以最后一个「其它」分区可以直接
     遍历整个命名空间兜底，新加的物品不会因为忘了登记而消失。
-- **隔断行着色器 `hall:gui_tab_divider`**：GUI 空间里的一条极光缎带
-  （横向流动的多色噪声 + 中央亮芯丝 + 上下淡出），Java 侧走
-  `BufferUploader.drawWithShader` 立即绘制。着色器没加载成功时退回一条纯色细线，
-  分区功能本身不受影响。
 - **`CreativeModeInventoryScreenMixin`**：在原版「扁平物品表 + 5×9 取景窗」的网格里
   插入 9 个空槽当隔断行，并在 `ContainerScreenEvent.Render.Foreground` 上绘制色带与标题。
   搜索框有关键字时保持原版的扁平结果，不做分区。

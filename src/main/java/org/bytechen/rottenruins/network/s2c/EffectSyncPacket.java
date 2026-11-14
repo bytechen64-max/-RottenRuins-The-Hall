@@ -1,11 +1,6 @@
 package org.bytechen.rottenruins.network.s2c;
 
 
-import org.bytechen.rottenruins.client.rend.HitboxCubeRenderer;
-import org.bytechen.rottenruins.client.rend.LightningEffectRenderer;
-import org.bytechen.rottenruins.client.rend.MeteoriteGroundEffectRenderer;
-import org.bytechen.rottenruins.client.rend.gui.GuiShaderEffect;
-import org.bytechen.rottenruins.client.rend.gui.GuiShaderManager;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -38,21 +33,14 @@ public class EffectSyncPacket {
     }
 
     public static void handle(EffectSyncPacket msg, Supplier<NetworkEvent.Context> ctx) {
+        if (ctx.get().getDirection() != net.minecraftforge.network.NetworkDirection.PLAY_TO_CLIENT) {
+            ctx.get().setPacketHandled(true);
+            return;
+        }
         ctx.get().enqueueWork(() -> {
-            // 根据 typeId 分发给对应的渲染器
-            if ("lightning".equals(msg.typeId)) {
-                LightningEffectRenderer.handleSyncPacket(msg.instanceId, msg.data);
-            } else if ("hitbox_cube".equals(msg.typeId)) {
-                HitboxCubeRenderer.handleSyncPacket(msg.instanceId, msg.data);
-            } else if ("meteorite_ground".equals(msg.typeId)) {
-                MeteoriteGroundEffectRenderer.handleSyncPacket(msg.instanceId, msg.data);
-            } else if ("gui_shader".equals(msg.typeId)) {
-                // GUI shader overlay effect dispatch
-                GuiShaderEffect effect = GuiShaderManager.fromNbt(msg.data);
-                if (effect != null) {
-                    GuiShaderManager.getInstance().addEffect(msg.instanceId, effect);
-                }
-            }
+            net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(
+                    net.minecraftforge.api.distmarker.Dist.CLIENT,
+                    () -> () -> org.bytechen.rottenruins.client.network.CommonPacketHandlers.applyEffect(msg.typeId, msg.instanceId, msg.data));
         });
         ctx.get().setPacketHandled(true);
     }

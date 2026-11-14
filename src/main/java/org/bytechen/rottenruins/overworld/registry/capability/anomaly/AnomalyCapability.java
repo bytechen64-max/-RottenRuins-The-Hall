@@ -84,7 +84,7 @@ public class AnomalyCapability extends AbstractCapability<AnomalyCapability> imp
 
     /** 实体是否拥有对应异常的适应 Buff */
     public boolean hasAdaptation(LivingEntity entity, AnomalyType type) {
-        return entity.hasEffect(type.getAdaptationEffect());
+        return entity.hasEffect(org.bytechen.rottenruins.platform.forge.anomaly.AnomalyEffects.adaptation(type));
     }
 
     // —— 触发逻辑 ——
@@ -103,7 +103,7 @@ public class AnomalyCapability extends AbstractCapability<AnomalyCapability> imp
 
         // 给予适应 Buff
         entity.addEffect(new MobEffectInstance(
-                type.getAdaptationEffect(),
+                org.bytechen.rottenruins.platform.forge.anomaly.AnomalyEffects.adaptation(type),
                 type.getAdaptationDurationTicks(),
                 0,  // amplifier
                 false,  // ambient

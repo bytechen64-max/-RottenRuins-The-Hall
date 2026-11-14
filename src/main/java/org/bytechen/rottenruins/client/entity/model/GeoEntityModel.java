@@ -1,6 +1,6 @@
 package org.bytechen.rottenruins.client.entity.model;
 
-import org.bytechen.rottenruins.client.entity.IAutoRenderableEntity;
+import org.bytechen.rottenruins.api.render.IAutoRenderableEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import software.bernie.geckolib.model.GeoModel;

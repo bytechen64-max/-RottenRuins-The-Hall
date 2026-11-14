@@ -1,6 +1,5 @@
 package org.bytechen.rottenruins.api;
 
-import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
@@ -162,25 +161,6 @@ public interface ICustomOutline {
      * </ul>
      */
     default String outlineShaderKey() { return null; }
-
-    /**
-     * @deprecated 新管线在遮罩 pass 里直接算颜色，不再把 ShaderInstance 交出去配置。
-     *     这个方法仍然会被调用（传的是剪影遮罩着色器），且所有 uniform 名都变了，
-     *     所以旧实现里的 {@code ColorCount} / {@code FlowSpeed} 之类设置不会生效。
-     *     请改用 {@link #outlineShaderKey()} 与 {@link #outlineSecondaryColor()}。
-     */
-    @Deprecated
-    default void configureOutlineShader(ShaderInstance shader) {}
-
-    /** Convenience: set a float uniform (no‑op if uniform missing). */
-    default void setFloatUniform(ShaderInstance s, String name, float value) {
-        if (s != null && s.getUniform(name) != null) s.safeGetUniform(name).set(value);
-    }
-
-    /** Convenience: set an int uniform (no‑op if uniform missing). */
-    default void setIntUniform(ShaderInstance s, String name, int value) {
-        if (s != null && s.getUniform(name) != null) s.safeGetUniform(name).set(value);
-    }
 
     enum BlendMode {
         TRANSLUCENT,  // srcAlpha, 1-srcAlpha

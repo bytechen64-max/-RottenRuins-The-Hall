@@ -1,7 +1,6 @@
 package org.bytechen.rottenruins.gameplay.story;
 
 import net.minecraft.resources.ResourceLocation;
-import org.bytechen.rottenruins.HallMod;
 
 import java.util.List;
 
@@ -22,6 +21,6 @@ public final class StoryFonts {
     }
 
     private static Preset preset(String key, String name, String resource) {
-        return new Preset(key, name, ResourceLocation.fromNamespaceAndPath(HallMod.MODID, resource));
+        return new Preset(key, name, ResourceLocation.fromNamespaceAndPath("rotten_ruins", resource));
     }
 }

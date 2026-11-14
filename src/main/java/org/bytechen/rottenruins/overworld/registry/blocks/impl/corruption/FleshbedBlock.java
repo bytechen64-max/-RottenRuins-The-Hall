@@ -22,8 +22,9 @@ import javax.annotation.Nullable;
  * {@code horizontal_facing} 属性；blockstate 与物品模型由 datagen 的
  * {@code horizontalBlockStateWithItem} 生成。</p>
  *
- * <p>TODO（机制层，后续补）：原工程的 BlockEntity（培养物/生物量）、
- * 配方配置 {@code FleshbedRecipeConfig}、与 {@code InfectionItem} 的交互都尚未移植。</p>
+ * <p>已带 {@code FleshbedBlockEntity}（培养物/生物量、tick 与交互）。
+ * 仍未移植的是原工程的配方配置 {@code FleshbedRecipeConfig}，以及与 {@code InfectionItem}
+ * 的转化交互。</p>
  */
 public class FleshbedBlock extends HorizontalDirectionalBlock implements net.minecraft.world.level.block.EntityBlock {
 

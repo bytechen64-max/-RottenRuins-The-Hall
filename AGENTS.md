@@ -28,7 +28,7 @@
 - 法术用 `SpellDefinition` 声明，多流派加成取平均；法杖用 CastingStaff / ManaReserve 契约接入。
 - 回旋镖回调用 BoomerangFlight，不把 BoomerangEntity 写进 API；刀光调度位于 SlashEngine，Forge 入口只转发事件与平台钩子。
 - `overworld/registry` 尚有历史内容实现。已有债务不代表新模块可以照抄；已隔离模块不得退回该目录。
-- 历史 `api/anomaly` 与 `IAutoRenderableItem` 尚有实现依赖，不得扩散这种模式。当前严格 API 检查覆盖 magic、boomerang、combat。
+- 整个 `api` 禁止项目实现层与客户端类型依赖；渲染资源／标记契约位于 `api/render`，异常适应效果由平台解析，不在 API 枚举引用注册效果。
 
 ## 数据、网络与生命周期
 
@@ -42,6 +42,7 @@
 ## 检查与交付
 
 - 不删除、放宽、跳过依赖检查来让新代码通过。增加新扩展域时同步扩大检查范围。
+- `checkArchitectureDependencies` 扫描全部维护源码（暂不含 `mexin`／`mexinlauncher`），追踪 gameplay 的工具依赖。`tools/architecture/reviewed-coupling.txt` 仅记录已有逐文件／逐类型耦合；不得自动重建清单以通过检查，新增条目必须说明侧入口或迁移债务，移除依赖也必须移除对应条目。
 - 常规构建：`./gradlew.bat build -x test --offline --console=plain`；核心、玩法、扩展 API、剧情和魔法包依赖检查由构建自动触发。
 - 当前协作约定由用户负责实机／视觉验收。除非用户后续明确要求，不启动客户端、GameTest server 或运行时测试，不操作用户正在运行的游戏。
 - 保留现有测试并更新真实迁移调用点；不得删断言、加无条件成功或改预期来掩盖错误。

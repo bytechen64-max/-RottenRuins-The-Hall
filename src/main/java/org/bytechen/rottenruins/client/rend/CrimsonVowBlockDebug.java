@@ -12,8 +12,11 @@ import java.nio.file.StandardOpenOption;
 /** 举剑格挡的临时诊断探针：日志写进 run/logs/crimsonvow-blockpose.log，区分"路径没执行"与"摆到画面外"。 */
 public final class CrimsonVowBlockDebug {
 
-    /** 总开关：排查期置 true，之后置 false。 */
-    public static boolean enabled = true;
+    /**
+     * 总开关：<b>默认关闭</b>（发布版不应往 run/logs 写诊断文件）。排查期临时置 true。
+     * 目前 {@code log/logPose} 没有任何调用方，属于待清理的诊断探针。
+     */
+    public static boolean enabled = false;
 
     /** 只记录前若干次，避免每帧刷屏。 */
     private static final int MAX_LINES = 60;

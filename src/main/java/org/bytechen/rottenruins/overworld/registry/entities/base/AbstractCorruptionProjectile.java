@@ -1,6 +1,6 @@
 package org.bytechen.rottenruins.overworld.registry.entities.base;
 
-import org.bytechen.rottenruins.client.entity.IAutoRenderableProjectile;
+import org.bytechen.rottenruins.api.render.IAutoRenderableProjectile;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;

@@ -1,4 +1,4 @@
-package org.bytechen.rottenruins.client.entity;
+package org.bytechen.rottenruins.api.render;
 
 import software.bernie.geckolib.animatable.GeoEntity;
 

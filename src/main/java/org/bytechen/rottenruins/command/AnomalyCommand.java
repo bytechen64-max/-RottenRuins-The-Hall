@@ -321,7 +321,7 @@ public final class AnomalyCommand {
         ServerPlayer self = getSelf(ctx);
         if (self == null) return 0;
         self.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-                type.getAdaptationEffect(), 300, 0, false, true, true));
+                org.bytechen.rottenruins.platform.forge.anomaly.AnomalyEffects.adaptation(type), 300, 0, false, true, true));
         ctx.getSource().sendSuccess(
                 () -> Component.literal("§a已给予" + typeName(type) + "适应 Buff§a（15s）"), true);
         return 1;
@@ -346,7 +346,7 @@ public final class AnomalyCommand {
         // 显示是否有适应
         sb.append("§8──────────────\n");
         for (AnomalyType t : AnomalyType.values()) {
-            boolean adapt = target.hasEffect(t.getAdaptationEffect());
+            boolean adapt = target.hasEffect(org.bytechen.rottenruins.platform.forge.anomaly.AnomalyEffects.adaptation(t));
             if (adapt) {
                 sb.append(typeName(t)).append("§8: ");
                 sb.append("§d适应 ");

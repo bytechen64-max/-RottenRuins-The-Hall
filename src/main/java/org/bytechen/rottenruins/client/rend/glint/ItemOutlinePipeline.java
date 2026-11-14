@@ -1057,12 +1057,6 @@ public final class ItemOutlinePipeline {
                                    @Nullable RenderTarget main) {
         applyMaskUniforms(shader, entry);
 
-        // 兼容旧接口：仍然给物品一次调 uniform 的机会（传的是剪影遮罩着色器）。
-        // 它跑在标准 uniform 之后，所以物品自己设的值优先。
-        if (entry.custom() != null) {
-            entry.custom().configureOutlineShader(shader);
-        }
-
         // 状态全部交给 RenderType（LEQUAL 深度 + 不写深度 + 不混合 + 不剔面），
         // 所以这里不手改 GL —— 手改一定会在批次 flush 时被 setupRenderState 覆盖掉，
         // 那正是旧实现"想要的混合模式和深度测试从来没生效过"的原因。

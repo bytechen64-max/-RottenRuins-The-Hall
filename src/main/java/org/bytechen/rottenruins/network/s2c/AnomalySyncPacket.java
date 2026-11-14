@@ -1,15 +1,7 @@
 package org.bytechen.rottenruins.network.s2c;
 
-import org.bytechen.rottenruins.overworld.registry.capability.CapabilityAttacher;
-import org.bytechen.rottenruins.overworld.registry.capability.anomaly.AnomalyCapability;
-import org.bytechen.rottenruins.overworld.registry.CapabilityRegistry;
-import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -37,21 +29,15 @@ public class AnomalySyncPacket {
     }
 
     public static void handle(AnomalySyncPacket msg, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> handleClient(msg));
+        var context = ctx.get();
+        if (context.getDirection() != net.minecraftforge.network.NetworkDirection.PLAY_TO_CLIENT) {
+            context.setPacketHandled(true);
+            return;
+        }
+        context.enqueueWork(() -> net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(
+                net.minecraftforge.api.distmarker.Dist.CLIENT,
+                () -> () -> org.bytechen.rottenruins.client.network.CommonPacketHandlers.applyAnomaly(msg.entityId, msg.anomalyData)));
         ctx.get().setPacketHandled(true);
     }
 
-    @OnlyIn(Dist.CLIENT)
-    private static void handleClient(AnomalySyncPacket msg) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) return;
-        Entity entity = mc.level.getEntity(msg.entityId);
-        if (!(entity instanceof LivingEntity living)) return;
-
-        AnomalyCapability cap = CapabilityAttacher.getCapability(
-                living, CapabilityRegistry.ANOMALY_CAP, null);
-        if (cap != null && msg.anomalyData != null) {
-            cap.deserializeNBT(msg.anomalyData);
-        }
-    }
 }

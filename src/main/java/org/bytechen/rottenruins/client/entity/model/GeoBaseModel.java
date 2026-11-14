@@ -1,6 +1,6 @@
 package org.bytechen.rottenruins.client.entity.model;
 
-import org.bytechen.rottenruins.client.entity.IAutoRenderableEntity;
+import org.bytechen.rottenruins.api.render.IAutoRenderableEntity;
 import org.bytechen.rottenruins.client.entity.IGeoModelBehavior;
 import org.bytechen.rottenruins.overworld.registry.ClientRenderRegistry;
 import net.minecraft.resources.ResourceLocation;

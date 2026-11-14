@@ -87,14 +87,14 @@ public interface IBlockingWeapon {
         Item item = stack.getItem();
         UseAnim anim = item.getUseAnimation(stack);
         if (anim != UseAnim.NONE) {
-            org.bytechen.rottenruins.utils.ModUtils.LOGGER.warn(
+            org.slf4j.LoggerFactory.getLogger("org.bytechen.rottenruins").warn(
                     "[IBlockingWeapon] {} 的 getUseAnimation() 返回 {}，不是 NONE。"
                             + "1.20 对 BLOCK 会走盾牌分支（隐藏手臂 + 画盾模型），武器会整个消失；"
                             + "请改成 UseAnim.NONE 再由客户端混入套格挡姿态。",
                     net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item), anim);
         }
         if (item.getUseDuration(stack) < 3600) {
-            org.bytechen.rottenruins.utils.ModUtils.LOGGER.warn(
+            org.slf4j.LoggerFactory.getLogger("org.bytechen.rottenruins").warn(
                     "[IBlockingWeapon] {} 的 getUseDuration() 只有 {}，格挡是"
                             + "\"按住直到松开\"，建议返回 IBlockingWeapon.BLOCK_USE_DURATION(72000)。",
                     net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item),

@@ -1,15 +1,8 @@
 package org.bytechen.rottenruins.network.s2c;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.NetworkEvent;
-import org.bytechen.rottenruins.overworld.registry.effect.customEffect.CustomEffectHolder;
-import org.bytechen.rottenruins.overworld.registry.effect.customEffect.CustomEffects;
 
 import java.util.function.Supplier;
 
@@ -43,23 +36,15 @@ public class CustomEffectSyncPacket {
     }
 
     public static void handle(CustomEffectSyncPacket msg, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> handleClient(msg));
+        var context = ctx.get();
+        if (context.getDirection() != net.minecraftforge.network.NetworkDirection.PLAY_TO_CLIENT) {
+            context.setPacketHandled(true);
+            return;
+        }
+        context.enqueueWork(() -> net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(
+                net.minecraftforge.api.distmarker.Dist.CLIENT,
+                () -> () -> org.bytechen.rottenruins.client.network.CommonPacketHandlers.applyCustomEffect(msg.entityId, msg.data)));
         ctx.get().setPacketHandled(true);
     }
 
-    @OnlyIn(Dist.CLIENT)
-    private static void handleClient(CustomEffectSyncPacket msg) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
-            return;
-        }
-        Entity entity = mc.level.getEntity(msg.entityId);
-        if (!(entity instanceof LivingEntity living) || msg.data == null) {
-            return;
-        }
-        CustomEffectHolder holder = CustomEffects.getHolder(living);
-        if (holder != null) {
-            holder.readSnapshot(msg.data);
-        }
-    }
 }

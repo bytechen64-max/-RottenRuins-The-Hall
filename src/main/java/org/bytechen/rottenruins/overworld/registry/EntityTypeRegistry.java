@@ -2,8 +2,8 @@ package org.bytechen.rottenruins.overworld.registry;
 
 import org.bytechen.rottenruins.utils.ModUtils;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.client.entity.IAutoRenderableEntity;
-import org.bytechen.rottenruins.client.entity.IAutoRenderableProjectile;
+import org.bytechen.rottenruins.api.render.IAutoRenderableEntity;
+import org.bytechen.rottenruins.api.render.IAutoRenderableProjectile;
 import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.base.EntityManager;
 import org.bytechen.rottenruins.overworld.registry.entities.base.HallEntityManager;

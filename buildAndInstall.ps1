@@ -11,13 +11,36 @@
 # 所以脚本最后一定会校验 SRG 数量，不合格就直接拒绝安装。
 
 param(
-    [string]$Instance = "C:\Users\chy20\Desktop\desktop\pcl\.minecraft\versions\优化底包",
-    [string]$ModJarName = "rotten_ruins-1.0.0-all.jar"
+    # 目标实例目录：优先用参数，其次环境变量 RRS_TEST_INSTANCE。
+    # 不再写死本机路径 —— 换机器/换实例就失效，且会让人误以为脚本坏了。
+    [string]$Instance = $env:RRS_TEST_INSTANCE,
+    # 留空则按 gradle.properties 的 mod_id/mod_version 自动拼：<mod_id>-<version>-all.jar
+    [string]$ModJarName
 )
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $root
+
+# ---- 版本号只从 gradle.properties 读，避免脚本与工程版本脱节 ----
+$propsPath = Join-Path $root "gradle.properties"
+if (-not (Test-Path $propsPath)) { throw "找不到 $propsPath" }
+$props = @{}
+Get-Content $propsPath -Encoding UTF8 | ForEach-Object {
+    if ($_ -match '^\s*([A-Za-z0-9_.]+)\s*=\s*(.*)$') { $props[$Matches[1]] = $Matches[2].Trim() }
+}
+$modId  = $props['mod_id']
+$modVer = $props['mod_version']
+if (-not $modId -or -not $modVer) { throw "gradle.properties 缺少 mod_id / mod_version" }
+
+if (-not $ModJarName) { $ModJarName = "$modId-$modVer-all.jar" }
+
+if (-not $Instance) {
+    throw "请用 -Instance <实例目录> 指定目标（或设置环境变量 RRS_TEST_INSTANCE）。当前版本: $modId $modVer"
+}
+if (-not (Test-Path $Instance)) { throw "实例目录不存在: $Instance" }
+
+Write-Host ("== 目标: {0}  产物: {1} ==" -f $Instance, $ModJarName) -ForegroundColor DarkGray
 
 Write-Host "== 1/4 构建（gradlew build：含 reobfJarJar） ==" -ForegroundColor Cyan
 & .\gradlew.bat build --offline --console=plain

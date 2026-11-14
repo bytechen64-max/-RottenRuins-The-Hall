@@ -13,8 +13,12 @@ import java.time.format.DateTimeFormatter;
 /** 天穹裁决的诊断日志：把技能按键链路每一步的实际取值落盘到 run/verdict-debug.log，tick 相位差随机器变化、光看代码猜不出。 */
 public final class VerdictDebug {
 
-    /** 总开关；调参结束后置 false 并重编译，不影响任何玩法逻辑。 */
-    public static final boolean ENABLED = true;
+    /**
+     * 总开关。默认 <b>false</b>：发布版不应该在工作目录里写诊断日志。
+     * 运行期由 {@code ConfigHelper.applyDebugSwitches()} 按 {@code SplendidingConfig.debug} 赋值，
+     * 即排查时改配置即可，不需要重新编译。
+     */
+    public static boolean ENABLED = false;
 
     private static final Path LOG = Path.of("verdict-debug.log");
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");

@@ -168,6 +168,19 @@ public class LangDataCN extends LanguageProvider {
         add(EntityTypeRegistry.METEORITE.get(), "陨石");
         // 天穹裁决 · 裁决领域的落剑（纯视觉技能实体，但仍给一个可读名字便于调试）
         add(EntityTypeRegistry.VERDICT_SWORD_DROP.get(), "裁决落剑");
+        // 技能/投射物实体：不上生物列表，但受击死亡消息、Jade/TOP 等第三方读
+        // entity.<namespace>.<id>，缺键就会把 key 原文印到玩家界面上。
+        add(EntityTypeRegistry.FIRE_BALL.get(), "火球");
+        add(EntityTypeRegistry.SPEAR_OF_JUDGMENT.get(), "审判之矛");
+        add(EntityTypeRegistry.BLACK_HOLE.get(), "黑洞");
+        add(EntityTypeRegistry.COLLAPSE.get(), "坍缩");
+        add(EntityTypeRegistry.SWORD_AURA.get(), "剑气");
+        add(EntityTypeRegistry.METEOR_EVENT.get(), "天灾陨星");
+        add(EntityTypeRegistry.OLYMPIAD_CUBE.get(), "奥数立方");
+        add(EntityTypeRegistry.VERDICT_BEAM.get(), "裁决光柱");
+        add(EntityTypeRegistry.VERDICT_FIELD.get(), "裁决领域");
+        add(EntityTypeRegistry.CRIMSON_VOW_CHARGE.get(), "赤红誓约·蓄势");
+        add(EntityTypeRegistry.CRIMSON_VOW_FIELD.get(), "赤红誓约·血域");
         add(RegisterEffect.ACID_ANOMALY_ADAPTATION.get(), "酸异常适应");
         add(RegisterEffect.COLD_ANOMALY_ADAPTATION.get(), "冷异常适应");
         add(RegisterEffect.HEAT_ANOMALY_ADAPTATION.get(), "热异常适应");
@@ -193,7 +206,7 @@ public class LangDataCN extends LanguageProvider {
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_TITLE, "选择难度");
         add(TranslateUtils.GUI_DIFFICULTY_SELECT_HINT, "请选择世界难度");
 
-        // ---- tooltip 文案（占位文案，待定稿） ----
+        // ---- tooltip 文案 ----
         // 机制说明共用一份（几把格挡武器是同一件事）；各物品只拥有自己的风味。
         // "标签 + 正文"拆成两个键：渐变的逐字上色会把整行拍平，合成一条
         // "%s …" 模板就分不出两种颜色（见 client.rend.text.TooltipLines）。
@@ -637,6 +650,14 @@ public class LangDataCN extends LanguageProvider {
         add(CorruptionEntityTypes.HUMUS_COLUMN.get(), "Ⅰ阶腐植柱");
         add(CorruptionEntityTypes.SUMMONING_PILLAR.get(), "Ⅰ阶召唤柱");
         add(CorruptionEntityTypes.ORIGINAL_BUG.get(), "原虫");
+        // 腐化技能弹体：同上，只为死亡消息与第三方展示提供可读名字。
+        add(CorruptionEntityTypes.BONE_SPIKE.get(), "骨刺");
+        add(CorruptionEntityTypes.ACID_BALL.get(), "酸液球");
+        add(CorruptionEntityTypes.POISON_ARROW.get(), "腐毒箭");
+        add(CorruptionEntityTypes.CORRUPTION_DART.get(), "腐蚀弹");
+        add(CorruptionEntityTypes.CORRUPTION_POOL.get(), "腐蚀池");
+        add(CorruptionEntityTypes.CUBOID.get(), "血肉墙");
+        add(CorruptionEntityTypes.SHIELD.get(), "血肉护盾");
 
         // ---- D. 状态效果 effect.rotten_ruins.<id>（6 个）----
         add(CorruptionEffects.CORRUPTION.get(), "腐化");
