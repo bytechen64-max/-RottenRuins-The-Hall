@@ -27,6 +27,9 @@ public final class HallOreData {
     public static final ResourceKey<PlacedFeature> DOMITE_ORE_PLACED = placedKey("ore_domite");
     public static final ResourceKey<PlacedFeature> DOMERITE_ORE_PLACED = placedKey("ore_domerite");
 
+    public static final ResourceKey<PlacedFeature> DOMITE_SKY = placedKey("ore_domite_sky");
+    public static final ResourceKey<PlacedFeature> DOMERITE_SKY = placedKey("ore_domerite_sky");
+
     private HallOreData() {}
 
     public static void bootstrapConfiguredFeatures(BootstapContext<ConfiguredFeature<?, ?>> context) {
@@ -40,6 +43,8 @@ public final class HallOreData {
     public static void bootstrapPlacedFeatures(BootstapContext<PlacedFeature> context) {
         HolderGetter<ConfiguredFeature<?, ?>> features = context.lookup(Registries.CONFIGURED_FEATURE);
         // 三角分布：胚晶集中在 Y=36 附近，云铁集中在 Y=68 附近。
+        context.register(DOMITE_SKY, placed(features, DOMITE_ORE, 4, 128, 672));
+        context.register(DOMERITE_SKY, placed(features, DOMERITE_ORE, 8, 128, 672));
         context.register(DOMITE_ORE_PLACED, placed(features, DOMITE_ORE, 4, 8, 64));
         context.register(DOMERITE_ORE_PLACED, placed(features, DOMERITE_ORE, 8, 8, 128));
     }

@@ -16,5 +16,9 @@
 高度范围控制矿脉起点，矿脉边缘可以跨出该范围。海底与陆地使用相同参数。
 修改仅在新生成的区块生效，不补写已有区块。
 
+新增的破碎之地、折叠原野、穿孔大陆另引用 `ore_domite_sky` / `ore_domerite_sky`，
+在 Y=128～672 三角分布，次数与大小参数沿用上表。旧低层放置规则保持，
+普通庭园与海洋不添加高层矿脉。地貌与高度范围见 [庭园区域地貌](surreal-terrain.md)。
+
 数据生成产物位于 `src/generated/resources/data/rotten_ruins/worldgen/`。
 调整参数时同步生成并提交 configured_feature、placed_feature 和两个 biome 的 JSON。

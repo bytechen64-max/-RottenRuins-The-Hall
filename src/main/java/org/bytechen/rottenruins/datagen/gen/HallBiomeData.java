@@ -34,6 +34,10 @@ public class HallBiomeData {
     public static final ResourceKey<Biome> FLESH_MARROW = ResourceKey.create(
             Registries.BIOME, ModUtils.modLoc("flesh_marrow"));
 
+    public static final ResourceKey<Biome> SHATTERED_LANDS = ResourceKey.create(Registries.BIOME, ModUtils.modLoc("shattered_lands"));
+    public static final ResourceKey<Biome> FOLDED_FIELDS = ResourceKey.create(Registries.BIOME, ModUtils.modLoc("folded_fields"));
+    public static final ResourceKey<Biome> PIERCED_CONTINENT = ResourceKey.create(Registries.BIOME, ModUtils.modLoc("pierced_continent"));
+
     public static final ResourceKey<Biome> HALL_OCEAN = ResourceKey.create(
             Registries.BIOME, ModUtils.modLoc("hall_ocean"));
 
@@ -47,6 +51,9 @@ public class HallBiomeData {
         context.register(HALL_WASTELAND, createHallBiome(placedFeatures, configuredCarvers));
         context.register(FLESH_MARROW, createFleshBiome(placedFeatures, configuredCarvers));
         context.register(HALL_OCEAN, createHallOcean(placedFeatures, configuredCarvers));
+        context.register(SHATTERED_LANDS, createFleshBiome(placedFeatures, configuredCarvers, true));
+        context.register(FOLDED_FIELDS, createFleshBiome(placedFeatures, configuredCarvers, true));
+        context.register(PIERCED_CONTINENT, createFleshBiome(placedFeatures, configuredCarvers, true));
     }
 
     /** 海洋不放陆地树草，只在水体内生成畸鱿。 */
@@ -78,6 +85,11 @@ public class HallBiomeData {
      */
     public static Biome createFleshBiome(HolderGetter<PlacedFeature> features,
                                         HolderGetter<ConfiguredWorldCarver<?>> carvers) {
+        return createFleshBiome(features, carvers, false);
+    }
+
+    private static Biome createFleshBiome(HolderGetter<PlacedFeature> features,
+                                           HolderGetter<ConfiguredWorldCarver<?>> carvers, boolean surreal) {
         // 1. 生物生成：王庭溃烂系生物栖息于此，可长期对抗
         MobSpawnSettings.Builder spawnSettings = new MobSpawnSettings.Builder();
         spawnSettings.addSpawn(MobCategory.MONSTER,
@@ -97,6 +109,11 @@ public class HallBiomeData {
         // 那两个会长出<b>原版</b>的草与花，与王庭的视觉语言不一致。
         BiomeGenerationSettings.Builder genSettings = new BiomeGenerationSettings.Builder(features, carvers);
         addGardenOres(genSettings);
+        if (surreal) {
+            genSettings.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, HallOreData.DOMITE_SKY);
+            genSettings.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, HallOreData.DOMERITE_SKY);
+            genSettings.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SurrealFeatureData.ISLAND_VEGETATION);
+        }
         genSettings.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION,
                 HallFeatureData.HALL_TREES);
         genSettings.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION,

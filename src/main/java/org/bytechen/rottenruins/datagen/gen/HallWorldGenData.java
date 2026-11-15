@@ -44,18 +44,18 @@ public class HallWorldGenData extends DatapackBuiltinEntriesProvider {
             .add(Registries.CONFIGURED_FEATURE, ctx -> {
                 HallFeatureData.bootstrapConfiguredFeatures(ctx);
                 HallOreData.bootstrapConfiguredFeatures(ctx);
+                SurrealFeatureData.configured(ctx);
             })
             .add(Registries.PLACED_FEATURE, ctx -> {
                 HallFeatureData.bootstrapPlacedFeatures(ctx);
                 HallOreData.bootstrapPlacedFeatures(ctx);
+                SurrealFeatureData.placed(ctx);
             })
             .add(Registries.BIOME, ctx -> {
                         HallBiomeData.bootstrap(ctx);
                         org.bytechen.rottenruins.datagen.gen.corruption.CorruptionBiomeData.bootstrap(ctx);
                     })
             .add(Registries.DIMENSION_TYPE, FleshDimensionData::bootstrapDimensionType)
-            .add(Registries.STRUCTURE, GardenStructureData::bootstrapStructures)
-            .add(Registries.STRUCTURE_SET, GardenStructureData::bootstrapStructureSets)
             .add(Registries.LEVEL_STEM, Lifecycle.stable(), FleshDimensionData::bootstrapLevelStem);
 
     public HallWorldGenData(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {

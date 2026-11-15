@@ -25,7 +25,7 @@ import java.util.UUID;
 
 public class NetworkHelper {
     private static int packetId = 0;
-    private static final String PROTOCOL_VERSION = "3";
+    private static final String PROTOCOL_VERSION = "4";
 
     public static final SimpleChannel NETWORK = NetworkRegistry.newSimpleChannel(
             ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "main"), () -> PROTOCOL_VERSION,

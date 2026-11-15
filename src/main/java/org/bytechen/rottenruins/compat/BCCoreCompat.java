@@ -173,6 +173,10 @@ public final class BCCoreCompat {
                     if (after <= 0f) {
                         finishOff(target, source);
                     }
+                    // Successful health writes bypass LivingDamageEvent; vanilla fallback uses the event inbox.
+                    if (source != null) {
+                        org.bytechen.rottenruins.gameplay.anomaly.AnomalyEngine.onDamage(target, source, amount);
+                    }
                     return true;
                 }
             }

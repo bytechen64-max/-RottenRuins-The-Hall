@@ -6,6 +6,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -44,6 +45,9 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
             SynchedEntityData.defineId(InfPlayerEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> LEAP_COOLDOWN =
             SynchedEntityData.defineId(InfPlayerEntity.class, EntityDataSerializers.INT);
+    /** 起手朝向同步到客户端；NaN 表示当前没有需要锁定朝向的攻击。 */
+    private static final EntityDataAccessor<Float> ATTACK_FACING_YAW =
+            SynchedEntityData.defineId(InfPlayerEntity.class, EntityDataSerializers.FLOAT);
 
     /** 大跳：冷却 15s（300 tick）、触发半径 8 格、垂直初速度 0.7、水平速度系数 0.18。 */
     private static final int LEAP_COOLDOWN_MAX = 300;
@@ -173,7 +177,9 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
         float baseDamage = HallDifficultyAttributes.effectiveAttackDamage(this, 15.0F);
 
         if (this.getRandom().nextInt(100) < SWORD_AURA_CHANCE) {
-            target.hurt(this.damageSources().mobAttack(this), baseDamage * SWORD_AURA_DAMAGE_MULT);
+            target.hurt(new org.bytechen.rottenruins.api.anomaly.AnomalyDamageSource(
+                    this.damageSources().mobAttack(this), getUUID(),
+                    org.bytechen.rottenruins.content.anomaly.HallAnomalyAttacks.HEAT_HEAVY), baseDamage * SWORD_AURA_DAMAGE_MULT);
             SwordAuraEntity.spawn(level(), target.getBoundingBox().getCenter(),
                     SWORD_AURA_SCALE, 40, SWORD_AURA_SHRINK);
         } else {
@@ -225,6 +231,10 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
         AttackVariant variant = variants[this.getRandom().nextInt(variants.length)];
 
         Vec3 aim = horizontalDirectionTo(target);
+        // 身体朝向取未偏移的目标方向，左右手的扇面偏移只影响命中几何。
+        this.entityData.set(ATTACK_FACING_YAW,
+                (float) (Mth.atan2(aim.z, aim.x) * (180.0D / Math.PI)) - 90.0F);
+        applyAttackFacing();
         pendingAttackTarget = target;
         switch (variant) {
             case BOTH -> {
@@ -280,6 +290,17 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
         setMadnessCooldown(getMadnessCooldown() - 1);
         setLeapCooldown(getLeapCooldown() - 1);
         super.tick();
+        // AI、寻路和原版身体转向都在 super.tick 中运行；最后覆盖，双方保持同一刀的起手朝向。
+        if (!isFakeDying() && !isDeadOrDying()) applyAttackFacing();
+    }
+
+    private void applyAttackFacing() {
+        float yaw = this.entityData.get(ATTACK_FACING_YAW);
+        if (Float.isNaN(yaw)) return;
+        // 保持角度连续，避免跨过 ±180° 时插值绕远路。
+        this.setYRot(this.yRotO + Mth.wrapDegrees(yaw - this.yRotO));
+        this.setYHeadRot(this.yHeadRotO + Mth.wrapDegrees(yaw - this.yHeadRotO));
+        this.yBodyRot = this.yBodyRotO + Mth.wrapDegrees(yaw - this.yBodyRotO);
     }
 
     public void clientTick()
@@ -324,6 +345,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
             attackAnimTimer = 0;
             pendingAttackTarget = null;
             pendingAttackDirection = null;
+            this.entityData.set(ATTACK_FACING_YAW, Float.NaN);
             return;
         }
 
@@ -339,7 +361,10 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
 
         if (attackAnimTimer > 0) {
             attackAnimTimer--;
-            if (attackAnimTimer == 0) pendingAttackTarget = null;
+            if (attackAnimTimer == 0) {
+                pendingAttackTarget = null;
+                this.entityData.set(ATTACK_FACING_YAW, Float.NaN);
+            }
         }
     }
 
@@ -414,6 +439,7 @@ public class InfPlayerEntity extends BaseInfectedEntity implements RangeAttackCa
         super.defineSynchedData();
         this.entityData.define(MADNESS_COOLDOWN, 0);
         this.entityData.define(LEAP_COOLDOWN, 0);
+        this.entityData.define(ATTACK_FACING_YAW, Float.NaN);
     }
 
     protected static final RawAnimation ANIM_IDLE_MADNESS  = RawAnimation.begin().thenPlay("idle_madness");

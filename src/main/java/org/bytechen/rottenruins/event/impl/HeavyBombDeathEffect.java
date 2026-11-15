@@ -5,6 +5,8 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.HallMod;
+import org.bytechen.rottenruins.api.anomaly.AnomalyDamageSource;
+import org.bytechen.rottenruins.content.anomaly.HallAnomalyAttacks;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ecological.HeavyBombEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.BlackHoleEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.ShockwaveEntity;
@@ -58,7 +60,7 @@ public final class HeavyBombDeathEffect {
             DamageSource source = bomb.getLastDamageSource() != null
                     ? bomb.getLastDamageSource()
                     : level.damageSources().magic();
-            level.explode(bomb, source, null,
+            level.explode(bomb, new AnomalyDamageSource(source, bomb.getUUID(), HallAnomalyAttacks.HEAT_HEAVY), null,
                     center.x, center.y, center.z,
                     EXPLOSION_RADIUS, false,
                     EXPLOSION_BREAKS_BLOCKS
@@ -73,6 +75,7 @@ public final class HeavyBombDeathEffect {
             BlackHoleEntity hole = BlackHoleEntity.spawnSmall(
                     level, center, BLACK_HOLE_LIFE,
                     BLACK_HOLE_RADIUS, BLACK_HOLE_KILL_RADIUS);
+            hole.setAnomalyAttacker(bomb.getUUID());
             HallMod.LOGGER.debug("[HeavyBomb] black hole spawned: id={} mass={}",
                     hole.getId(), hole.getColliderVolume());
         } catch (Throwable t) {

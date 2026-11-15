@@ -1,7 +1,0 @@
-{
-  "type": "rotten_ruins:garden_monument",
-  "biomes": "rotten_ruins:flesh_marrow",
-  "monument": "empty_throne",
-  "spawn_overrides": {},
-  "step": "top_layer_modification"
-}

@@ -29,7 +29,7 @@ public final class CommonPacketHandlers {
         AnomalyCapability cap = CapabilityAttacher.getCapability(
                 living, CapabilityRegistry.ANOMALY_CAP, null);
         if (cap != null && anomalyData != null) {
-            cap.deserializeNBT(anomalyData);
+            cap.applySyncData(anomalyData);
         }
     }
 

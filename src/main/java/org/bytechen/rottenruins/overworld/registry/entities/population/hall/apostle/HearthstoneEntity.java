@@ -777,7 +777,8 @@ public class HearthstoneEntity extends BaseApostleEntity {
             default -> this.damageSources().sonicBoom(this);
         };
         enemy.invulnerableTime = 0;
-        enemy.hurt(source, damage);
+        enemy.hurt(new org.bytechen.rottenruins.api.anomaly.AnomalyDamageSource(source, getUUID(),
+                org.bytechen.rottenruins.content.anomaly.HallAnomalyAttacks.HEAT_HEAVY), damage);
     }
 
     private void spawnCollapseParticles(@NotNull CollapseSpec spec) {

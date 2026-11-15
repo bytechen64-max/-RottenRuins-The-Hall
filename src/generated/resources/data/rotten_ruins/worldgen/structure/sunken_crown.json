@@ -1,7 +1,0 @@
-{
-  "type": "rotten_ruins:garden_monument",
-  "biomes": "rotten_ruins:hall_ocean",
-  "monument": "sunken_crown",
-  "spawn_overrides": {},
-  "step": "top_layer_modification"
-}

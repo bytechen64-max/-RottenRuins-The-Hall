@@ -706,7 +706,7 @@ public class CollapsarEntity extends BaseApostleEntity {
                 FINISHER_BH_GRAVITY_RADIUS,
                 FINISHER_BH_KILL_RADIUS,
                 FINISHER_BH_DAMAGE_PER_TICK,
-                FINISHER_BH_LIFETIME);
+                FINISHER_BH_LIFETIME).setAnomalyAttacker(getUUID());
 
         finisherHoleSpawned = true;
         anchor = center;
@@ -776,7 +776,7 @@ public class CollapsarEntity extends BaseApostleEntity {
         if (!(this.level() instanceof ServerLevel serverLevel) || anchor == null) return;
         BlackHoleEntity.spawnSkill(serverLevel, anchor,
                 BH_LIFETIME, BH_RADIUS, BH_GRAVITY_RADIUS, BH_KILL_RADIUS,
-                BH_DAMAGE_PER_TICK, BH_DAMAGE_TICKS);
+                BH_DAMAGE_PER_TICK, BH_DAMAGE_TICKS).setAnomalyAttacker(getUUID());
         ApostleSounds.blackHoleOpen(serverLevel, anchor);
         blackHoleHumTicks = BH_LIFETIME;    // 嗡鸣跟着黑洞寿命走
     }

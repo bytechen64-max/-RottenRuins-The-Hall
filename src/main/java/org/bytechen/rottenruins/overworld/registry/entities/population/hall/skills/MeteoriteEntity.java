@@ -260,7 +260,9 @@ public class MeteoriteEntity extends Entity implements IAutoRenderableEntity {
                         // 注意：陨石本身不感染生物 —— 感染由「王庭感染生物击杀生物」触发
                         // （见 AbstractRottenEntity#onKilledEntity）
                         target.invulnerableTime = 0;
-                        target.hurt(level().damageSources().magic(), cfgAoeDamage);
+                        target.hurt(new org.bytechen.rottenruins.api.anomaly.AnomalyDamageSource(
+                                level().damageSources().magic(), getUUID(),
+                                org.bytechen.rottenruins.content.anomaly.HallAnomalyAttacks.METEOR), cfgAoeDamage);
                     }
                 }
             }

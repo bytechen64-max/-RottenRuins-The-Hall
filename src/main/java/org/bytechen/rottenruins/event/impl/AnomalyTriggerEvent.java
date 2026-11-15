@@ -2,6 +2,7 @@ package org.bytechen.rottenruins.event.impl;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.eventbus.api.Cancelable;
 import org.bytechen.rottenruins.api.anomaly.AnomalyType;
 
 /**
@@ -10,6 +11,7 @@ import org.bytechen.rottenruins.api.anomaly.AnomalyType;
  * 可被取消；取消后进度仍会清零并给予适应 Buff，但不会执行额外的触发逻辑。
  * 监听此事件来实现不同异常类型的触发效果（伤害、粒子、debuff 等）。
  */
+@Cancelable
 public class AnomalyTriggerEvent extends Event {
     private final LivingEntity entity;
     private final AnomalyType type;

@@ -46,7 +46,7 @@ import java.util.OptionalLong;
  * </ul>
  *
  * <h2>高度约定</h2>
- * 维度类型（min_y=0 / height=256）必须与噪声设置的
+ * 维度类型（min_y=0 / height=768）必须与噪声设置的
  * {@code min_y / height} 完全一致，否则区块生成会越界。
  *
  * <h2>天空为什么可见（踩过的坑）</h2>
@@ -101,13 +101,13 @@ public final class FleshDimensionData {
      * 必须给山留足空间。最初用的是 min_y=0 / height=128，结果地表峰顶
      * 越过 y=128 后被建筑高度上限削掉，最上面一层变成一望无际的平顶
      * （方块上限之外是 out of this world，无法生成方块）。
-     * 现在抬到 256 格，并把地表基准放在 y=128，上下各留约 128 格给起伏。
+     * 现在高度为 768 格；普通地表基准仍为 y=128，为多层浮岛和折面地貌保留空间。
      * <p>
      * 此值必须与 {@code NoiseSettings.create(...)} 的参数以及
      * {@code DimensionType} 的 min_y / height / logical_height 三者保持一致。
      */
     private static final int MIN_Y = 0;
-    private static final int HEIGHT = 256;
+    private static final int HEIGHT = org.bytechen.rottenruins.core.worldgen.SurrealTerrain.HEIGHT;
     public static final int SEA_LEVEL = 96;
     /** 海岸附近大陆值约为 0.05，地形与群系必须使用同一条分界。 */
     private static final float OCEAN_BOUNDARY = 0.05F;
@@ -160,7 +160,9 @@ public final class FleshDimensionData {
                         DensityFunctions.mul(DensityFunctions.constant(DETAIL_GAIN), detailNoise)));
 
         DensityFunction finalDensity = DensityFunctions.interpolated(
-                DensityFunctions.blendDensity(shaped));
+                DensityFunctions.blendDensity(new org.bytechen.rottenruins.platform.minecraft.worldgen.SurrealTerrainDensity(
+                        shaped, continents, new DensityFunction.NoiseHolder(noises.getOrThrow(HallNoiseData.REGIONS)),
+                        new DensityFunction.NoiseHolder(noises.getOrThrow(HallNoiseData.CELLS)))));
 
         DensityFunction zero = DensityFunctions.zero();
 
@@ -169,7 +171,7 @@ public final class FleshDimensionData {
                 zero,                              // fluidLevelFloodednessNoise
                 zero,                              // fluidLevelSpreadNoise
                 zero,                              // lavaNoise
-                zero,                              // temperature
+                DensityFunctions.noise(noises.getOrThrow(HallNoiseData.REGIONS), 1.0D, 0.0D), // region selector
                 zero,                              // vegetation
                 continents,                        // continents
                 zero,                              // erosion
@@ -290,7 +292,13 @@ public final class FleshDimensionData {
         MultiNoiseBiomeSource biomeSource = MultiNoiseBiomeSource.createFromList(new Climate.ParameterList<>(List.of(
                 Pair.of(Climate.parameters(any, any, Climate.Parameter.span(-2.0F, OCEAN_BOUNDARY),
                         any, any, any, 0.0F), biomes.getOrThrow(HallBiomeData.HALL_OCEAN)),
-                Pair.of(Climate.parameters(any, any, Climate.Parameter.span(OCEAN_BOUNDARY, 2.0F),
+                Pair.of(Climate.parameters(Climate.Parameter.span(-2.0F, -0.35F), any, Climate.Parameter.span(OCEAN_BOUNDARY, 2.0F),
+                        any, any, any, 0.0F), biomes.getOrThrow(HallBiomeData.SHATTERED_LANDS)),
+                Pair.of(Climate.parameters(Climate.Parameter.span(-0.35F, -0.05F), any, Climate.Parameter.span(OCEAN_BOUNDARY, 2.0F),
+                        any, any, any, 0.0F), biomes.getOrThrow(HallBiomeData.FOLDED_FIELDS)),
+                Pair.of(Climate.parameters(Climate.Parameter.span(-0.05F, 0.25F), any, Climate.Parameter.span(OCEAN_BOUNDARY, 2.0F),
+                        any, any, any, 0.0F), biomes.getOrThrow(HallBiomeData.PIERCED_CONTINENT)),
+                Pair.of(Climate.parameters(Climate.Parameter.span(0.25F, 2.0F), any, Climate.Parameter.span(OCEAN_BOUNDARY, 2.0F),
                         any, any, any, 0.0F), biomes.getOrThrow(HallBiomeData.FLESH_MARROW)))));
         NoiseBasedChunkGenerator generator = new NoiseBasedChunkGenerator(
                 biomeSource,

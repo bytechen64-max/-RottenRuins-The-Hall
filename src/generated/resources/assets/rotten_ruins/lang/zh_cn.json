@@ -1,4 +1,7 @@
 {
+  "biome.rotten_ruins.folded_fields": "折叠原野",
+  "biome.rotten_ruins.pierced_continent": "穿孔大陆",
+  "biome.rotten_ruins.shattered_lands": "破碎之地",
   "tooltip.rotten_ruins.boomerang.damage": "投掷伤害：%s",
   "tooltip.rotten_ruins.boomerang.cooldown": "投掷冷却：%s 秒",
   "item.rotten_ruins.hall_boomerang": "王庭回旋镖",

@@ -48,6 +48,11 @@ public final class HallNoiseData {
             ResourceKey.create(Registries.NOISE,
                     ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "hall_continents"));
 
+    public static final ResourceKey<NormalNoise.NoiseParameters> REGIONS = ResourceKey.create(
+            Registries.NOISE, ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "surreal_regions"));
+    public static final ResourceKey<NormalNoise.NoiseParameters> CELLS = ResourceKey.create(
+            Registries.NOISE, ResourceLocation.fromNamespaceAndPath(HallMod.MODID, "surreal_cells"));
+
     private HallNoiseData() {}
 
     /**
@@ -60,6 +65,8 @@ public final class HallNoiseData {
     public static void bootstrap(BootstapContext<NormalNoise.NoiseParameters> context) {
         // 1. 原版噪声
         NoiseData.bootstrap(context);
+        context.register(REGIONS, new NormalNoise.NoiseParameters(-11, 1.0D));
+        context.register(CELLS, new NormalNoise.NoiseParameters(-4, 1.0D));
 
         // 2. 本模组噪声（八度与幅度显式写死）
         context.register(CONTINENTS, new NormalNoise.NoiseParameters(-9, 1.0D, 0.5D));

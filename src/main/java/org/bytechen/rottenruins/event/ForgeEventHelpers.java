@@ -152,7 +152,7 @@ public class ForgeEventHelpers {
         AnomalyCapability cap = player.getCapability(CapabilityRegistry.ANOMALY_CAP).orElse(null);
         if (cap == null) return;
         NetworkHelper.sendToPlayer(player,
-                new AnomalySyncPacket(player.getId(), cap.serializeNBT()));
+                new AnomalySyncPacket(player.getId(), cap.syncData()));
     }
 
     /** 立即同步指定实体的异常数据到所有追踪的客户端 */
@@ -162,7 +162,7 @@ public class ForgeEventHelpers {
         AnomalyCapability cap = living.getCapability(CapabilityRegistry.ANOMALY_CAP).orElse(null);
         if (cap == null) return;
         NetworkHelper.sendToClient(entity,
-                new AnomalySyncPacket(entity.getId(), cap.serializeNBT()));
+                new AnomalySyncPacket(entity.getId(), cap.syncData()));
     }
 
     public static void handleLivingHurt(LivingHurtEvent event) {

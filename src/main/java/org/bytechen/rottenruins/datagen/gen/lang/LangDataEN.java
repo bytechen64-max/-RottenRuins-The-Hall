@@ -21,6 +21,10 @@ public class LangDataEN extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
+        add("biome.rotten_ruins.shattered_lands", "Shattered Lands");
+        add("biome.rotten_ruins.folded_fields", "Folded Fields");
+        add("biome.rotten_ruins.pierced_continent", "Pierced Continent");
+
         add("tooltip.rotten_ruins.boomerang.damage", "Throw damage: %s");
         add("tooltip.rotten_ruins.boomerang.cooldown", "Throw cooldown: %s s");
         add(RegisterItem.HALL_BOOMERANG.get(), "Hall Boomerang");

@@ -1,6 +1,7 @@
 package org.bytechen.rottenruins.overworld.registry.entities.population.hall.infected;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -19,6 +20,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.api.infection.goal.InfectedTargetGoal;
+import org.bytechen.rottenruins.core.anomaly.SkeletonShotCycle;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.object.PlayState;
@@ -26,6 +28,7 @@ import software.bernie.geckolib.core.object.PlayState;
 import java.util.function.Consumer;
 
 public class InfSkeletonEntity extends BaseInfectedEntity {
+    private final SkeletonShotCycle shotCycle = new SkeletonShotCycle();
 
     /** 与目标保持距离的最小值 */
     private static final double MIN_TARGET_DISTANCE = 8.0D;
@@ -214,9 +217,21 @@ public class InfSkeletonEntity extends BaseInfectedEntity {
             Vec3 eyePos = position().add(0, getEyeHeight(), 0);
             Vec3 dir = target.getBoundingBox().getCenter().subtract(eyePos).normalize();
             Vec3 spawnPos = eyePos.add(dir.scale(0.8D));
-            InfSkeletonArrowEntity.spawn(level(), this, target, spawnPos);
+            InfSkeletonArrowEntity.spawn(level(), this, target, spawnPos, shotCycle.nextIsGhost());
         }
         return true;
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        tag.putInt("NormalShotsFired", shotCycle.normalShots());
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        shotCycle.restore(tag.getInt("NormalShotsFired"));
     }
 
     @Override

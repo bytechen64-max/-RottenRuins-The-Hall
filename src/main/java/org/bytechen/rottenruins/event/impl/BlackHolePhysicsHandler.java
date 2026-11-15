@@ -14,6 +14,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.compat.BCCoreCompat;
+import org.bytechen.rottenruins.api.anomaly.AnomalyDamageSource;
+import org.bytechen.rottenruins.content.anomaly.HallAnomalyAttacks;
+import net.minecraft.world.damagesource.DamageSource;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.BlackHoleEntity;
 import org.bytechen.rottenruins.api.infection.IInfectedEntity;
 
@@ -165,13 +168,15 @@ public final class BlackHolePhysicsHandler {
             double distSqr = distanceSqrToBox(target, center);
             if (distSqr > radiusSqr) continue;
 
+            DamageSource source = new AnomalyDamageSource(level.damageSources().magic(),
+                    hole.getAnomalyAttacker(), HallAnomalyAttacks.BLACK_HOLE);
             if (bcMode) {
                 // 改血绕过无敌帧/护甲/抗性，≤0 时由 BCCoreCompat 终结
-                BCCoreCompat.damage(target, bcDamage, level.damageSources().magic());
+                BCCoreCompat.damage(target, bcDamage, source);
             } else {
                 // 清零无敌帧，保证每 tick 都能吃到 20 点 —— 与 MeteoriteEntity 的 AoE 一致
                 target.invulnerableTime = 0;
-                target.hurt(level.damageSources().magic(), HORIZON_DAMAGE_PER_TICK);
+                target.hurt(source, HORIZON_DAMAGE_PER_TICK);
             }
         }
 

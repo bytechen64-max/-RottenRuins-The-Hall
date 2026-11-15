@@ -1,4 +1,7 @@
 {
+  "biome.rotten_ruins.folded_fields": "Folded Fields",
+  "biome.rotten_ruins.pierced_continent": "Pierced Continent",
+  "biome.rotten_ruins.shattered_lands": "Shattered Lands",
   "tooltip.rotten_ruins.boomerang.damage": "Throw damage: %s",
   "tooltip.rotten_ruins.boomerang.cooldown": "Throw cooldown: %s s",
   "item.rotten_ruins.hall_boomerang": "Hall Boomerang",

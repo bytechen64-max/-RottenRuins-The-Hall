@@ -2,15 +2,14 @@ package org.bytechen.rottenruins.overworld.registry.capability.anomaly;
 
 import org.bytechen.rottenruins.event.impl.AnomalyTriggerEvent;
 import org.bytechen.rottenruins.api.anomaly.AnomalyType;
+import org.bytechen.rottenruins.core.anomaly.AnomalyState;
+import org.bytechen.rottenruins.platform.forge.anomaly.AnomalyDamageInbox;
 import org.bytechen.rottenruins.overworld.registry.capability.base.AbstractCapability;
 import org.bytechen.rottenruins.overworld.registry.capability.base.IModCapability;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.common.MinecraftForge;
-
-import java.util.EnumMap;
-import java.util.Map;
 
 /**
  * 异常能力 —— 管理一个生物的多种异常进度。
@@ -22,28 +21,28 @@ import java.util.Map;
  */
 public class AnomalyCapability extends AbstractCapability<AnomalyCapability> implements IModCapability {
 
-    private final Map<AnomalyType, Integer> progressMap = new EnumMap<>(AnomalyType.class);
+    private final AnomalyState<AnomalyType> state =
+            new AnomalyState<>(AnomalyType.class, AnomalyType::getMaxProgress);
+
+    public AnomalyState<AnomalyType> state() { return state; }
+    private final AnomalyDamageInbox damageInbox = new AnomalyDamageInbox();
+    public AnomalyDamageInbox damageInbox() { return damageInbox; }
 
     // —— 进度读写 ——
 
     /** 获取指定异常的当前进度（0 ~ maxProgress） */
     public int getProgress(AnomalyType type) {
-        return progressMap.getOrDefault(type, 0);
+        return state.get(type);
     }
 
     /** 设置指定异常的进度（会被钳制到 [0, maxProgress]） */
     public void setProgress(AnomalyType type, int value) {
-        int clamped = Math.max(0, Math.min(type.getMaxProgress(), value));
-        if (clamped == 0) {
-            progressMap.remove(type);
-        } else {
-            progressMap.put(type, clamped);
-        }
+        state.set(type, value);
     }
 
     /** 是否有任意一种异常进度 > 0 */
     public boolean hasAnyAnomaly() {
-        return progressMap.values().stream().anyMatch(p -> p > 0);
+        return state.hasAny();
     }
 
     /** 指定异常进度是否 > 0 */
@@ -53,7 +52,7 @@ public class AnomalyCapability extends AbstractCapability<AnomalyCapability> imp
 
     /** 所有异常进度清零 */
     public void clearAll() {
-        progressMap.clear();
+        state.clear();
     }
 
     /**
@@ -68,13 +67,8 @@ public class AnomalyCapability extends AbstractCapability<AnomalyCapability> imp
         if (amount <= 0) return false;
         if (hasAdaptation(entity, type)) return false;
 
-        int current = getProgress(type);
-        int max = type.getMaxProgress();
-        int next = Math.min(max, current + amount);
-        progressMap.put(type, next);
-
         // 叠满 → 触发
-        if (next >= max) {
+        if (state.add(type, amount)) {
             trigger(entity, type);
         }
         return true;
@@ -90,12 +84,12 @@ public class AnomalyCapability extends AbstractCapability<AnomalyCapability> imp
     // —— 触发逻辑 ——
 
     /**
-     * 异常叠满触发：抛事件 → 清零进度 → 给予适应 Buff。
+     * 异常叠满触发：清零进度 → 抛事件 → 给予适应 Buff。
      * 调用者应确保进度已达到 maxProgress。
      */
     public void trigger(LivingEntity entity, AnomalyType type) {
         // 先清零进度，避免触发伤害被 LivingHurtEvent 放大
-        progressMap.remove(type);
+        state.set(type, 0);
 
         // 抛事件（事件监听者实现具体触发效果）
         AnomalyTriggerEvent event = new AnomalyTriggerEvent(entity, type);
@@ -116,25 +110,42 @@ public class AnomalyCapability extends AbstractCapability<AnomalyCapability> imp
 
     @Override
     public CompoundTag serializeNBT() {
-        CompoundTag tag = new CompoundTag();
-        for (Map.Entry<AnomalyType, Integer> entry : progressMap.entrySet()) {
-            int p = entry.getValue();
+        CompoundTag tag = syncData();
+        CompoundTag idle = new CompoundTag();
+        for (AnomalyType type : AnomalyType.values()) {
+            int p = state.get(type);
             if (p > 0) {
-                tag.putInt(entry.getKey().getId(), p);
+                idle.putInt(type.getId(), state.idleTicks(type));
             }
+        }
+        tag.put("IdleTicks", idle);
+        return tag;
+    }
+
+    /** Wire snapshot deliberately excludes persistence clocks and attacker cooldowns. */
+    public CompoundTag syncData() {
+        CompoundTag tag = new CompoundTag();
+        for (AnomalyType type : AnomalyType.values()) {
+            if (state.get(type) > 0) tag.putInt(type.getId(), state.get(type));
         }
         return tag;
     }
 
+    public void applySyncData(CompoundTag tag) {
+        state.clear();
+        for (AnomalyType type : AnomalyType.values()) state.set(type, tag.getInt(type.getId()));
+    }
+
     @Override
     public void deserializeNBT(CompoundTag nbt) {
-        progressMap.clear();
+        state.clear();
+        CompoundTag idle = nbt.getCompound("IdleTicks");
         for (AnomalyType type : AnomalyType.values()) {
             String key = type.getId();
             if (nbt.contains(key)) {
                 int p = nbt.getInt(key);
                 if (p > 0) {
-                    progressMap.put(type, Math.min(p, type.getMaxProgress()));
+                    state.restore(type, p, idle.getInt(key));
                 }
             }
         }

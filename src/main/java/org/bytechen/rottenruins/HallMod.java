@@ -42,6 +42,8 @@ public class HallMod {
                 new org.bytechen.rottenruins.platform.forge.combat.slash.ForgeSlashServices());
         org.bytechen.rottenruins.gameplay.magic.MagicRuntime.install(
                 new org.bytechen.rottenruins.platform.forge.magic.ForgeMagicServices());
+        org.bytechen.rottenruins.gameplay.anomaly.AnomalyRuntime.install(
+                new org.bytechen.rottenruins.platform.forge.anomaly.ForgeAnomalyServices());
         org.bytechen.rottenruins.platform.forge.infection.InfectionBootstrap.init(modEventBus);
 
         // 确保 BlockSetType / WoodType 在方块注册前初始化
@@ -63,7 +65,7 @@ public class HallMod {
         RegisterBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         SourceMenus.MENUS.register(modEventBus);
         RegisterFeature.FEATURES.register(modEventBus);
-        org.bytechen.rottenruins.platform.forge.worldgen.GardenWorldgen.register(modEventBus);
+        org.bytechen.rottenruins.platform.forge.worldgen.SurrealWorldgen.register(modEventBus);
         RegisterLootModifiers.SERIALIZERS.register(modEventBus);
 
         // 腐化系内容（原 corruption 工程，简化移植）：方块 / 物品 / 生物 / 效果

@@ -14,6 +14,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
 import org.bytechen.rottenruins.event.impl.BlackHolePhysicsHandler;
 import org.bytechen.rottenruins.overworld.registry.EntityTypeRegistry;
+import java.util.UUID;
 
 /**
  * 黑洞实体 —— 只承载状态，不含任何效果逻辑：作为 {@code BlackHoleRenderer} 的渲染锚点，
@@ -62,6 +63,11 @@ public class BlackHoleEntity extends Entity {
     private static final float DENSITY = 24.0f;
 
     private int age;
+    private UUID anomalyAttacker;
+
+    /** Only an identifier is retained, so multiple holes from one caster share anomaly throttling. */
+    public UUID getAnomalyAttacker() { return anomalyAttacker == null ? getUUID() : anomalyAttacker; }
+    public void setAnomalyAttacker(UUID attacker) { anomalyAttacker = attacker; }
 
     public BlackHoleEntity(EntityType<?> type, Level level) {
         super(type, level);
@@ -156,6 +162,7 @@ public class BlackHoleEntity extends Entity {
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         this.age = tag.getInt("Age");
+        anomalyAttacker = tag.hasUUID("AnomalyAttacker") ? tag.getUUID("AnomalyAttacker") : null;
         if (tag.contains("Radius")) setRadius(tag.getFloat("Radius"));
         if (tag.contains("Bend")) setBend(tag.getFloat("Bend"));
         if (tag.contains("Lifetime")) setLifetime(tag.getInt("Lifetime"));
@@ -169,6 +176,7 @@ public class BlackHoleEntity extends Entity {
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("Age", this.age);
+        if (anomalyAttacker != null) tag.putUUID("AnomalyAttacker", anomalyAttacker);
         tag.putFloat("Radius", getRadius());
         tag.putFloat("Bend", getBend());
         tag.putInt("Lifetime", getLifetime());

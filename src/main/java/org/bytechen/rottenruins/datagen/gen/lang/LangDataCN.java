@@ -19,6 +19,10 @@ public class LangDataCN extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
+        add("biome.rotten_ruins.shattered_lands", "破碎之地");
+        add("biome.rotten_ruins.folded_fields", "折叠原野");
+        add("biome.rotten_ruins.pierced_continent", "穿孔大陆");
+
         add("tooltip.rotten_ruins.boomerang.damage", "投掷伤害：%s");
         add("tooltip.rotten_ruins.boomerang.cooldown", "投掷冷却：%s 秒");
         add(RegisterItem.HALL_BOOMERANG.get(), "王庭回旋镖");
