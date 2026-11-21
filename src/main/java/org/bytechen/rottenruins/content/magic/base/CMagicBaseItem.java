@@ -16,6 +16,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import org.bytechen.rottenruins.api.ITooltipStyle;
+import org.bytechen.rottenruins.api.TooltipShaderSpec;
 import org.bytechen.rottenruins.gameplay.magic.spell.IMagicBaseItem;
 import org.bytechen.rottenruins.gameplay.magic.spell.MagicCastContext;
 
@@ -56,7 +58,7 @@ import org.bytechen.rottenruins.gameplay.magic.spell.MagicCastContext;
  * <p>如果基值需要动态计算（例如读 NBT、读时间），把这些 getter 覆写掉即可 ——
  * 它们不是 final。但<b>不要</b>在里面对玩家做副作用的操作，它们会被 HUD 频繁调用。</p>
  */
-public abstract class CMagicBaseItem extends Item implements IMagicBaseItem {
+public abstract class CMagicBaseItem extends Item implements IMagicBaseItem, ITooltipStyle {
 
     private final SpellDefinition definition;
 
@@ -183,26 +185,27 @@ public abstract class CMagicBaseItem extends Item implements IMagicBaseItem {
     // ══════════════════════════════════════════════════════════════
 
     /**
-     * 法术的介绍：<b>类型 / 冷却 / 消耗</b> 三行（{@code KEEP} 模式额外加一行维持耗蓝）。
+     * 法术的常显介绍：<b>法力消耗 → 法术类型 → 冷却 → 持续消耗（{@code KEEP}）→ 蓄力时间（{@code CHARGE}）</b>。
      *
-     * <p>每一项的数值用<b>该流派的颜色</b>（{@link MagicType#rgb()}），标签是深灰 ——
-     * 所以不同流派的法术在背包里一眼能分开。文案与颜色都集中在 {@link MagicTooltips}，
-     * 饰品那边用的是同一套，改一处两边一致。</p>
+     * <p>简介与详细说明不在这里 —— 它们按需求折叠进 Shift 细节，由客户端
+     * {@code SpellTooltipSections} 追加（这里读不到 Shift 键，{@code content} 层也不能碰客户端类）。</p>
      *
-     * <p>这里显示的是<b>基值</b>（{@link #baseCooldownTicks()} / {@link #baseManaCost()}），
-     * 不是带上玩家属性修饰器之后的实际值 —— 介绍是在没有玩家的上下文里画的。
-     * 想要"当前装备下的实际冷却"，得做客户端同步或 HUD，那是另一条路。</p>
+     * <p>显示的是<b>基值</b>（{@link #baseManaCost()} 等），不是带上玩家属性修饰器之后的实际值
+     * —— 介绍是在没有玩家的上下文里画的。</p>
      */
     @Override
     public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level,
                                 @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
+        tooltip.add(MagicTooltips.manaLine(this.baseManaCost()));
         tooltip.add(MagicTooltips.typeLine(getMagicTypes()));
-        tooltip.add(MagicTooltips.cooldownLine(this.baseCooldownTicks(), getMagicType()));
-        tooltip.add(MagicTooltips.manaLine(this.baseManaCost(), getMagicType()));
-        // KEEP 模式才有维持耗蓝，其它模式显示出来只是噪音
+        tooltip.add(MagicTooltips.cooldownLine(this.baseCooldownTicks()));
+        // KEEP 才有维持耗蓝、CHARGE 才有蓄力时间，其它模式显示出来只是噪音
         if (definition.usingType() == UsingType.KEEP && this.baseKeepCostPerSecond() > 0) {
-            tooltip.add(MagicTooltips.keepCostLine(this.baseKeepCostPerSecond(), getMagicType()));
+            tooltip.add(MagicTooltips.keepCostLine(this.baseKeepCostPerSecond()));
+        }
+        if (definition.usingType() == UsingType.CHARGE && this.baseChargeTicks() > 0) {
+            tooltip.add(MagicTooltips.chargeLine(this.baseChargeTicks()));
         }
         appendSpellHoverText(stack, level, tooltip);
     }
@@ -223,5 +226,53 @@ public abstract class CMagicBaseItem extends Item implements IMagicBaseItem {
                         @NotNull ItemStack stack,
                         @NotNull MagicCastContext ctx) {
         return false;
+    }
+
+    // ── tooltip 底板 ─────────────────────────────────────────────
+
+    /** 法术物品都有自己的底板配色，所以启用；配色按流派现算。 */
+    @Override
+    public boolean tooltipStyleEnabled() {
+        return true;
+    }
+
+    @Override
+    public int tooltipBackgroundTop() {
+        return 0xF0000000 | MagicTooltips.dim(primaryRgb(), 0.16F);
+    }
+
+    @Override
+    public int tooltipBackgroundBottom() {
+        return 0xF0000000 | MagicTooltips.dim(primaryRgb(), 0.10F);
+    }
+
+    @Override
+    public int tooltipBorderTop() {
+        return 0x50000000 | MagicTooltips.lighten(primaryRgb(), 0.20F);
+    }
+
+    @Override
+    public int tooltipBorderBottom() {
+        return 0x30000000 | MagicTooltips.dim(primaryRgb(), 0.85F);
+    }
+
+    /**
+     * 细胞网络底板：底板压到很暗的流派色，连线是中等亮度的流派色，脉动点才用亮色。
+     *
+     * <p>亮度这样分配是为了文字对比度 —— 连线铺满整个面板，如果直接用亮色，紫/金字体
+     * 会被盖过去；亮点只占几像素，亮一点反而好看。</p>
+     */
+    @Override
+    public TooltipShaderSpec tooltipShader() {
+        int rgb = primaryRgb();
+        return new TooltipShaderSpec(TooltipShaderSpec.NETWORK, 0.75F,
+                0xF0000000 | MagicTooltips.dim(rgb, 0.10F),
+                MagicTooltips.dim(MagicTooltips.lighten(rgb, 0.25F), 0.62F),
+                MagicTooltips.lighten(rgb, 0.62F));
+    }
+
+    /** 展示用的主流派色；{@code MagicTypes} 保证至少一个流派。 */
+    private int primaryRgb() {
+        return MagicTooltips.accentRgb(getMagicTypes().primary());
     }
 }

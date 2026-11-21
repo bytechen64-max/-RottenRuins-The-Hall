@@ -136,12 +136,12 @@ public final class MagicStats {
      * <b>有效法术强度</b> —— 需求要的"和通用法强相加"就在这里。
      *
      * <pre>
-     *   有效法强 = spell_power（通用倍率，默认 1.0）
+     *   有效法强 = spell_power（通用，默认 0.0）
      *            + 所含不同流派的 spell_power 加成平均值（各流派默认 0.0）
      * </pre>
      *
-     * <p>例：通用 1.0、火系 +0.5 → 火球术的有效法强 = 1.5 倍；
-     * 同一时刻放虚空法术则只有 1.0 倍（虚空那段是 0）。</p>
+     * <p>例：通用 0、火系 +0.5 → 火球术的有效法强 = 0.5；
+     * 同一时刻放虚空法术则只有 0（虚空那段是 0）。</p>
      *
      * <p>它是"一个法术物品"的量，所以要带上下文：不知道是哪个流派就无从相加。
      * {@code spell} 为空或不是 {@link IMagicBaseItem} 时退化成通用法强。</p>
@@ -161,6 +161,25 @@ public final class MagicStats {
         double[] schools = types.values().stream().mapToDouble(type ->
                 MagicRuntime.services().schoolPower(player, type)).toArray();
         return MagicMath.spellPower(general, schools);
+    }
+
+    /** 以 1.0 起步的缩放（半径、治疗、升力等），0 法强 = 1.0 倍。 */
+    public static double powerScale(@Nullable Player player, @Nullable ItemStack spell) {
+        return MagicMath.powerScale(spellPower(player, spell));
+    }
+
+    /** 法术增伤倍率 {@code (通用 + 流派 × 0.75)² / 2 + 1}，0 法强 = 1.0 倍。 */
+    public static double damageMultiplier(@Nullable Player player, @Nullable ItemStack spell) {
+        if (player == null) return 1.0d;
+        IMagicBaseItem item = spellOf(spell);
+        double general = MagicRuntime.services().generalPower(player);
+        double school = 0.0d;
+        if (item != null && item.getMagicTypes() != null) {
+            school = item.getMagicTypes().values().stream()
+                    .mapToDouble(type -> MagicRuntime.services().schoolPower(player, type))
+                    .average().orElse(0.0d);
+        }
+        return MagicMath.powerMultiplier(general, school);
     }
 
     /**

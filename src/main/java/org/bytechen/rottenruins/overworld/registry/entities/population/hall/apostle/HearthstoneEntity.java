@@ -19,7 +19,10 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
+import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
+import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -32,6 +35,7 @@ import org.bytechen.rottenruins.overworld.difficulty.DifficultyScaleProfile;
 import org.bytechen.rottenruins.overworld.registry.EntityTypeRegistry;
 import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.base.RottenFaction;
+import org.bytechen.rottenruins.overworld.registry.entities.population.hall.ecological.BaseEcologicalEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,7 +53,7 @@ import java.util.function.Consumer;
  * （{@link RottenFaction#isHall}）；强化/削弱按字面倍率实现（削弱 = 敌方输出 × max(0, 1 − 倍率)）。
  * 过载（释放坍缩系有 24% 概率，持续 30 秒）：不能再放坍缩系、减伤光环失效、改为把自己受的伤按人数分给附近骸物。
  */
-public class HearthstoneEntity extends BaseApostleEntity {
+public class HearthstoneEntity extends BaseEcologicalEntity {
 
     // 基础数值
 
@@ -252,6 +256,12 @@ public class HearthstoneEntity extends BaseApostleEntity {
     public HearthstoneEntity(@NotNull EntityType<? extends Monster> type, @NotNull Level level) {
         super(type, level);
         this.xpReward = 120;
+        // 与城墙同一个直接父类（BaseEcologicalEntity），父类那两行原本由使徒父类设置
+        this.setDoHurtDistance(0.0F);
+        this.setFakeDeathEnabled(false);
+        // 会飞：空中跟随其他王庭生物
+        this.moveControl = new FlyingMoveControl(this, 20, true);
+        this.setNoGravity(true);
     }
 
     public HearthstoneEntity(@NotNull EntityType<? extends Monster> type, @NotNull Level level,
@@ -271,8 +281,19 @@ public class HearthstoneEntity extends BaseApostleEntity {
                 .add(Attributes.ARMOR, ARMOR)
                 .add(Attributes.ATTACK_DAMAGE, ATTACK_DAMAGE)
                 .add(Attributes.MOVEMENT_SPEED, MOVEMENT_SPEED)
+                // 飞行必须登记飞行速度，否则 FlyingMoveControl 每 tick 读它时直接抛
+                // IllegalArgumentException: Can't find attribute minecraft:generic.flying_speed
+                .add(Attributes.FLYING_SPEED, MOVEMENT_SPEED)
                 .add(Attributes.FOLLOW_RANGE, FOLLOW_RANGE)
                 .add(Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_RESISTANCE);
+    }
+
+    /** 飞行单位：空中跟随需要三维寻路，地面寻路会一直卡在"到不了"。 */
+    @Override
+    protected PathNavigation createNavigation(Level level) {
+        FlyingPathNavigation navigation = new FlyingPathNavigation(this, level);
+        navigation.setCanOpenDoors(false);
+        return navigation;
     }
 
     // 同步数据
@@ -449,17 +470,19 @@ public class HearthstoneEntity extends BaseApostleEntity {
             refreshBinding();
         }
 
-        HearthstoneEntity partner = boundPartner();
+        LivingEntity partner = boundPartner();
         if (partner == null) {
             return;
         }
-        // 速度与绑定目标一致：直接抄它的 MOVEMENT_SPEED 基值
-        AttributeInstance mine = this.getAttribute(Attributes.MOVEMENT_SPEED);
-        AttributeInstance theirs = partner.getAttribute(Attributes.MOVEMENT_SPEED);
-        if (mine != null && theirs != null && Math.abs(mine.getBaseValue() - theirs.getBaseValue()) > 1.0E-4) {
-            mine.setBaseValue(theirs.getBaseValue());
+        // 同类之间才同步速度；跟随别的王庭生物时保留自己的移动速度
+        if (partner instanceof HearthstoneEntity other) {
+            AttributeInstance mine = this.getAttribute(Attributes.MOVEMENT_SPEED);
+            AttributeInstance theirs = other.getAttribute(Attributes.MOVEMENT_SPEED);
+            if (mine != null && theirs != null && Math.abs(mine.getBaseValue() - theirs.getBaseValue()) > 1.0E-4) {
+                mine.setBaseValue(theirs.getBaseValue());
+            }
         }
-        // 跟随：没有攻击目标时朝绑定目标走
+        // 跟随：没有攻击目标时朝绑定目标走（自己会飞，所以贴着对方的水平位置飞过去）
         if (this.getTarget() == null && this.distanceToSqr(partner) > FOLLOW_START_DISTANCE * FOLLOW_START_DISTANCE) {
             this.getNavigation().moveTo(partner, 1.0D);
         }
@@ -467,19 +490,16 @@ public class HearthstoneEntity extends BaseApostleEntity {
 
     /** 每 {@value #BIND_CHECK_INTERVAL} tick 检查一次：绑定目标还在不在，不在就重新找一个。 */
     private void refreshBinding() {
-        HearthstoneEntity partner = boundPartner();
+        LivingEntity partner = boundPartner();
         if (partner != null) {
             return;
         }
         this.boundTo = null;
 
-        HearthstoneEntity best = null;
+        LivingEntity best = null;
         double bestDistance = BIND_RADIUS * BIND_RADIUS;
-        for (HearthstoneEntity other : this.level().getEntitiesOfClass(HearthstoneEntity.class,
-                this.getBoundingBox().inflate(BIND_RADIUS))) {
-            if (other == this || other.isPhantom() || !other.isAlive()) {
-                continue;
-            }
+        for (LivingEntity other : this.level().getEntitiesOfClass(LivingEntity.class,
+                this.getBoundingBox().inflate(BIND_RADIUS), this::isBindTarget)) {
             double d = this.distanceToSqr(other);
             if (d < bestDistance) {
                 bestDistance = d;
@@ -491,16 +511,27 @@ public class HearthstoneEntity extends BaseApostleEntity {
         }
     }
 
+    /** 能跟随的对象：活着的王庭生物（含别的炉石，不含幻影状态的同类）。 */
+    private boolean isBindTarget(@NotNull LivingEntity other) {
+        if (other == this || !other.isAlive()) {
+            return false;
+        }
+        if (other instanceof HearthstoneEntity hearthstone && hearthstone.isPhantom()) {
+            return false;
+        }
+        return other instanceof IInfectedEntity infected
+                && RottenFaction.HALL.matches(infected.getInfectionType());
+    }
+
     @Nullable
-    private HearthstoneEntity boundPartner() {
+    private LivingEntity boundPartner() {
         if (this.boundTo == null) {
             return null;
         }
-        for (HearthstoneEntity other : this.level().getEntitiesOfClass(HearthstoneEntity.class,
-                this.getBoundingBox().inflate(BIND_RADIUS * 2.0D))) {
-            if (other.getUUID().equals(this.boundTo) && other.isAlive()) {
-                return other;
-            }
+        for (LivingEntity other : this.level().getEntitiesOfClass(LivingEntity.class,
+                this.getBoundingBox().inflate(BIND_RADIUS * 2.0D),
+                candidate -> candidate.getUUID().equals(this.boundTo) && candidate.isAlive())) {
+            return other;
         }
         return null;
     }

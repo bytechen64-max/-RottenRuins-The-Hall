@@ -14,6 +14,7 @@ import org.bytechen.rottenruins.client.MagicClientHandler;
 import org.bytechen.rottenruins.client.gui.wheel.WheelClientState;
 import org.bytechen.rottenruins.client.gui.wheel.WheelData;
 import org.bytechen.rottenruins.client.gui.wheel.WheelRenderer;
+import org.bytechen.rottenruins.platform.forge.magic.network.c2s.MagicPoolActionPacket;
 import org.bytechen.rottenruins.platform.forge.magic.network.c2s.WheelActionPacket;
 import org.bytechen.rottenruins.core.magic.model.UsingType;
 import org.lwjgl.glfw.GLFW;
@@ -270,7 +271,7 @@ public final class SpellWheelScreen extends Screen {
         closeNow();
     }
 
-    /** 左键点击方位施法；右键关闭。 */
+    /** 左键点选方位（只记录选择，不释放）；右键关闭。 */
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 1) {
@@ -283,8 +284,7 @@ public final class SpellWheelScreen extends Screen {
         if (charging || keepPending) {
             return true;
         }
-        Player player = this.minecraft == null ? null : this.minecraft.player;
-        if (player == null) {
+        if (this.minecraft == null || this.minecraft.player == null) {
             return true;
         }
         float[] layout = WheelRenderer.layout(width, height);
@@ -300,16 +300,11 @@ public final class SpellWheelScreen extends Screen {
         }
         hovered = index;
         selected = index;
-        UsingType using = slot.spell().getUsingType();
-        if (using == UsingType.IMMEDIATELY) {
-            WheelActionPacket.sendCast(page, index);
-            terminalActionSent = true;
-            closeNow();
-        } else if (using == UsingType.CHARGE) {
-            beginCharge(player, slot);
-        } else if (using == UsingType.KEEP) {
-            beginKeep(player, slot);
-        }
+        WheelClientState.rememberSelection(page, index, slot.poolSlot());
+        // 同步给服务端：HUD 与"法杖右键放哪个"都读池子的选中槽位。
+        MagicPoolActionPacket.sendSelect(slot.poolSlot());
+        terminalActionSent = true;
+        closeNow();
         return true;
     }
 

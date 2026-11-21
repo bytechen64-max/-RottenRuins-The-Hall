@@ -23,6 +23,10 @@ import org.bytechen.rottenruins.overworld.registry.RegisterBlockEntities;
 import org.bytechen.rottenruins.overworld.registry.blocks.impl.SourceMachineBlock;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import software.bernie.geckolib.animatable.GeoBlockEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 /**
  * 势能合成台的方块实体：15 个环形材料槽（每格 1 个物品）+ 圆心产物槽。
@@ -35,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
  * 中途拆机会先按已锁定的消耗量扣掉，剩下的才掉落。</p>
  */
 public final class PotentialCraftingTableBlockEntity extends BlockEntity
-        implements WorldlyContainer, MenuProvider {
+        implements WorldlyContainer, MenuProvider, GeoBlockEntity {
 
     public static final int RING_SLOTS = 15;
     public static final int OUTPUT_SLOT = RING_SLOTS;
@@ -57,6 +61,18 @@ public final class PotentialCraftingTableBlockEntity extends BlockEntity
     private int totalTicks;
     private final int[] consume = new int[RING_SLOTS];
     private ItemStack pendingOutput = ItemStack.EMPTY;
+
+    private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        // geo 里没有动画
+    }
+
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return geoCache;
+    }
 
     /** 同步给界面的数据（注意：ContainerData 走 short，值必须 < 32767）。 */
     public final ContainerData data = new ContainerData() {
@@ -121,6 +137,10 @@ public final class PotentialCraftingTableBlockEntity extends BlockEntity
         }
         station.progress += POWER_UNITS + power;
         station.setChanged();
+        // 客户端要靠进度决定"已经消散了几份材料"，每半秒同步一次就够（消散是台阶式的）。
+        if (level.getGameTime() % 10L == 0L) {
+            station.syncToClient();
+        }
         if (station.progress >= station.requiredProgress) {
             station.finishCraft();
         }
@@ -157,6 +177,7 @@ public final class PotentialCraftingTableBlockEntity extends BlockEntity
         requiredProgress = recipe.timeTicks() * POWER_UNITS;
         progress = 0;
         setChanged();
+        syncToClient();
         return true;
     }
 
@@ -188,6 +209,7 @@ public final class PotentialCraftingTableBlockEntity extends BlockEntity
                     worldPosition.getZ() + 0.5d, output);
         }
         resetCraft();
+        syncToClient();
     }
 
     private void resetCraft() {
@@ -236,6 +258,7 @@ public final class PotentialCraftingTableBlockEntity extends BlockEntity
         ItemStack result = ContainerHelper.removeItem(items, slot, amount);
         if (!result.isEmpty()) {
             setChanged();
+            syncToClient();
         }
         return result;
     }
@@ -253,6 +276,26 @@ public final class PotentialCraftingTableBlockEntity extends BlockEntity
         stack.setCount(Math.min(stack.getCount(), limit));
         items.set(slot, stack);
         setChanged();
+        syncToClient();
+    }
+
+    /** 环绕渲染要看到环上的物品，所以容器一有变化就把整份内容发给周围客户端。 */
+    private void syncToClient() {
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    @Override
+    @NotNull
+    public CompoundTag getUpdateTag() {
+        return saveWithoutMetadata();
+    }
+
+    @Override
+    public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener>
+    getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override

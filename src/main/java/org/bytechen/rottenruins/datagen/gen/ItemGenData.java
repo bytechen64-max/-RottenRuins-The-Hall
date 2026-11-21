@@ -50,7 +50,12 @@ public class ItemGenData extends ItemModelProvider {
             "sprint",
             "olympiad_cube",
             // 灵魂吸引：贴图仍缺（textures/item/soul_drink.png 不存在，模型暂借 minecraft:item/ghast_tear）
-            "soul_drink"
+            "soul_drink",
+            // 新法术 / 虚空精粹：贴图未到位，模型借用原版或 void_bottle（见 models/item/*.json）
+            "shield_ward", "bark_armor", "freezing_rain", "flame_slash", "holy_wings", "black_hole",
+            "void_essence",
+            // 奥秘仪台：方块几何由 GeckoLib 提供，方块模型留空；物品图标单独手写。
+            "potential_crafting_table"
     );
 
     @Override

@@ -43,8 +43,8 @@ import org.jetbrains.annotations.NotNull;
  *   <tr><td>{@code cooldown_reduction}</td><td>0</td><td>加成（比例，<b>上限 0.5</b>）</td>
  *       <td>{@code MagicAttributeProvider#modifyCooldownTicks} →
  *           冷却 = 基值 × (1 − 它)，对全部法术生效</td></tr>
- *   <tr><td>{@code spell_power}</td><td>1.0</td><td><b>倍率</b>（通用）</td>
- *       <td>{@code MagicStats.spellPower} → 法术伤害 / 半径 ×（它 + 流派法强）</td></tr>
+ *   <tr><td>{@code spell_power}</td><td>0</td><td>加成（通用）</td>
+ *       <td>增伤 {@code (通用 + 流派×0.75)²/2 + 1}；半径/治疗等走 {@code 1 + 法强}</td></tr>
  *   <tr><td>{@code spell_power_&lt;流派&gt;}</td><td>0</td><td>加成（每个流派一个）</td>
  *       <td>同上，<b>与通用法强相加</b>。流派取 {@link MagicType}，共
  *           {@code WATER / FIRE / DEATH / NATURE / LIGHT / VOID / MYSTERIOUS} 七个</td></tr>
@@ -91,11 +91,11 @@ public class RegisterAttributes {
                     () -> new RangedAttribute("attribute.name.rotten_ruins.mana_restore",
                             1.0d, 0.0d, 100.0d).setSyncable(true));
 
-    /** 法术伤害的<b>倍率</b>。默认 1.0。 */
+    /** 通用法强。默认 0，0 时法术造成原伤害（增伤公式见 {@code MagicMath.powerMultiplier}）。 */
     public static final RegistryObject<Attribute> SPELL_POWER =
             ATTRIBUTES.register("spell_power",
                     () -> new RangedAttribute("attribute.name.rotten_ruins.spell_power",
-                            1.0d, 0.0d, 100.0d).setSyncable(true));
+                            0.0d, 0.0d, 100.0d).setSyncable(true));
 
     /** 魔法槽位数加成。默认 0 → 槽位 = 10 + 它（最终上限 {@code MagicStats.MAX_SLOT_COUNT}）。 */
     public static final RegistryObject<Attribute> MAGIC_SLOTS = ATTRIBUTES.register("magic_slots",

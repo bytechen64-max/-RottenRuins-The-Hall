@@ -29,17 +29,24 @@ public final class TooltipShaders {
     /** 对流速度（噪声空间/秒）：约 15 GUI 像素/秒的上升。 */
     private static final float THERMAL_SPEED = 0.16F;
 
+    /** 细胞网络的叠加层数：4 层已经够密，再加会明显吃 GPU（每像素 13 条线 × 层数）。 */
+    private static final float NETWORK_LAYERS = 4.0F;
+
     /** 这个 key 现在能不能画；false 时调用方要退回纯色底板（着色器加载失败不该变成一块透明玻璃）。 */
     public static boolean isReady(String key) {
-        return TooltipShaderSpec.THERMAL.equals(key) && SplendidingShaders.tooltipThermalShader != null;
+        if (TooltipShaderSpec.THERMAL.equals(key)) return SplendidingShaders.tooltipThermalShader != null;
+        if (TooltipShaderSpec.NETWORK.equals(key)) return SplendidingShaders.tooltipNetworkShader != null;
+        return false;
     }
 
-    /** 在 (x, y, w, h) 上画效果（矩形由调用方按内容区外扩 4px 算）；time 单位为秒，取游戏时间 + 帧插值，暂停时热流也停住。 */
+    /** 在 (x, y, w, h) 上画效果（矩形由调用方按内容区外扩 4px 算）；time 单位为秒，取游戏时间 + 帧插值，暂停时图案也停住。 */
     public static void draw(String key, GuiGraphics gui, int x, int y, int w, int h,
                             TooltipShaderSpec spec, float time) {
         if (!isReady(key)) return;
         if (TooltipShaderSpec.THERMAL.equals(key)) {
             drawThermal(gui, x, y, w, h, spec, time);
+        } else if (TooltipShaderSpec.NETWORK.equals(key)) {
+            drawNetwork(gui, x, y, w, h, spec, time);
         }
     }
 
@@ -57,6 +64,31 @@ public final class TooltipShaders {
         set4(shader, "uFlowColor", spec.flowColor());
         set4(shader, "uHotColor", spec.hotColor());
 
+        beginFloor(gui, shader);
+        drawQuad(gui.pose().last().pose(), x, y, w, h);
+        endFloor();
+    }
+
+    private static void drawNetwork(GuiGraphics gui, int x, int y, int w, int h,
+                                    TooltipShaderSpec spec, float time) {
+        ShaderInstance shader = SplendidingShaders.tooltipNetworkShader;
+        if (shader == null) return;
+
+        set1(shader, "uTime", time);
+        set1(shader, "uIntensity", spec.intensity());
+        set1(shader, "uLayers", NETWORK_LAYERS);
+        set2(shader, "uPanelSize", w, h);
+        set4(shader, "uBaseColor", spec.baseColor());
+        set4(shader, "uFlowColor", spec.flowColor());
+        set4(shader, "uHotColor", spec.hotColor());
+
+        beginFloor(gui, shader);
+        drawQuad(gui.pose().last().pose(), x, y, w, h);
+        endFloor();
+    }
+
+    /** 画底板前的公共准备：先 flush 掉之前的 GUI 顶点，再切到「不着色、不写深度、按 alpha 混合」。 */
+    private static void beginFloor(GuiGraphics gui, ShaderInstance shader) {
         gui.flush();
 
         RenderSystem.enableBlend();
@@ -65,17 +97,23 @@ public final class TooltipShaders {
         RenderSystem.depthMask(false);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.setShader(() -> shader);
+    }
 
-        drawQuad(x, y, w, h);
-
+    /** 还原 beginFloor 改过的状态，免得影响后面画的文字与其它 GUI。 */
+    private static void endFloor() {
         RenderSystem.depthMask(true);
         RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
     }
 
-    /** 发一个 UV 0..1 的矩形（左上角在 x, y）：顶点用 GUI 缩放坐标、矩阵用单位阵，ProjMat/ModelViewMat 由 RenderSystem 提供；uv.y = 0 在上沿，「热源在下沿」靠这个约定。 */
-    private static void drawQuad(int x, int y, int w, int h) {
-        Matrix4f pose = new Matrix4f();
+    /**
+     * 发一个 UV 0..1 的矩形（左上角在 x, y）。
+     *
+     * <p>顶点坐标走<b>当前 GUI pose</b>：tooltip 的底板与文字都是这么画的，这样开启/关闭动画的
+     * 缩放（见 {@code SpellTooltipAnimator}）也会作用到效果层，不会出现"底板在缩、网格不动"。
+     * uv.y = 0 在上沿，热流"热源在下沿"靠这个约定。</p>
+     */
+    private static void drawQuad(Matrix4f pose, int x, int y, int w, int h) {
         BufferBuilder buffer = Tesselator.getInstance().getBuilder();
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
         buffer.vertex(pose, x,     y,     0.0F).uv(0.0F, 0.0F).endVertex();

@@ -25,6 +25,12 @@ import org.bytechen.rottenruins.content.magic.spell.BriarSnare;
 import org.bytechen.rottenruins.content.magic.spell.PurifyingLight;
 import org.bytechen.rottenruins.content.magic.spell.ArcaneStep;
 import org.bytechen.rottenruins.content.magic.spell.Sprint;
+import org.bytechen.rottenruins.content.magic.spell.ShieldWard;
+import org.bytechen.rottenruins.content.magic.spell.BarkArmor;
+import org.bytechen.rottenruins.content.magic.spell.FreezingRain;
+import org.bytechen.rottenruins.content.magic.spell.FlameSlash;
+import org.bytechen.rottenruins.content.magic.spell.HolyWings;
+import org.bytechen.rottenruins.content.magic.spell.BlackHoleSpell;
 
 import java.util.function.Supplier;
 
@@ -291,6 +297,29 @@ public class RegisterItem {
     /** 奥数立方：三形态追踪立方体。 */
     public static final RegistryObject<Item> OLYMPIAD_CUBE =
             ITEMS.register("olympiad_cube", org.bytechen.rottenruins.content.magic.spell.OlympiadCube::new);
+
+    public static final RegistryObject<Item> SHIELD_WARD =
+            ITEMS.register("shield_ward", ShieldWard::new);
+
+    public static final RegistryObject<Item> BARK_ARMOR =
+            ITEMS.register("bark_armor", BarkArmor::new);
+
+    public static final RegistryObject<Item> FREEZING_RAIN =
+            ITEMS.register("freezing_rain", FreezingRain::new);
+
+    public static final RegistryObject<Item> FLAME_SLASH =
+            ITEMS.register("flame_slash", FlameSlash::new);
+
+    public static final RegistryObject<Item> HOLY_WINGS =
+            ITEMS.register("holy_wings", HolyWings::new);
+
+    public static final RegistryObject<Item> BLACK_HOLE =
+            ITEMS.register("black_hole", BlackHoleSpell::new);
+
+    /** 虚空精粹：末地 y&lt;0 用玻璃瓶采集，可食用。 */
+    public static final RegistryObject<Item> VOID_ESSENCE =
+            ITEMS.register("void_essence", org.bytechen.rottenruins.content.magic.item.VoidEssence::new);
+
 
     public static final RegistryObject<Item> INF_PLAYER_SPAWN_EGG = registerSpawnEgg("hall_player",EntityTypeRegistry.INF_PLAYER);
     public static final RegistryObject<Item> INF_ENDERMAN_SPAWN_EGG = registerSpawnEgg("hall_enderman",EntityTypeRegistry.INF_ENDERMAN);

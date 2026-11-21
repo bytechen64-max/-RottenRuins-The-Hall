@@ -137,10 +137,10 @@ public class SoulDrink extends CMagicBaseItem {
             return;
         }
 
-        // 伤害 = 基础 + count×0.5 → 加法杖等级加成 → 乘法术强度
+        // 伤害 = 基础 + count×0.5 → 加法杖等级加成 → 乘 1 + 法术强度
         float base = SKULL_BASE_DAMAGE + count * SKULL_PER_COUNT;
         base += MagicStats.staffGradeBonus(caster, stack);
-        float damage = base * (float) Math.max(0.0d, MagicStats.spellPower(caster, stack));
+        float damage = base * (float) MagicStats.powerScale(caster, stack);
 
         Vec3 look = caster.getViewVector(1.0f);
         WitherSkull skull = new WitherSkull(level, caster, look.x, look.y, look.z);

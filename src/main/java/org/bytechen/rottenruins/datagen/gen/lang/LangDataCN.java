@@ -38,6 +38,11 @@ public class LangDataCN extends LanguageProvider {
         add("effect.rotten_ruins.corrosion", "腐蚀");
         add("effect.rotten_ruins.lethargy", "迟滞");
         add("effect.rotten_ruins.frailty", "衰竭");
+        add("effect.rotten_ruins.shield", "护盾");
+        add("effect.rotten_ruins.bark_armor", "藤甲");
+        add("effect.rotten_ruins.holy_wings", "圣翼");
+        add("effect.rotten_ruins.flame_slash", "焰斩");
+        add("effect.rotten_ruins.stun", "晕眩");
         add("gui.rotten_ruins.jade.crafting", "合成中 %s%% · 约 %s 秒");
 
         add("rotten_ruins.story.unknown", "未知剧情：%s");
@@ -268,12 +273,15 @@ public class LangDataCN extends LanguageProvider {
         add("magic_type." + HallMod.MODID + ".void", "虚空");
         add("magic_type." + HallMod.MODID + ".mysterious", "神秘");
         // 介绍行：参数统一 %s，数值部分在代码里按流派上色
-        add("tooltip." + HallMod.MODID + ".magic.type", "类型：%s");
+        add("tooltip." + HallMod.MODID + ".magic.type", "法术类型：%s");
         add("tooltip." + HallMod.MODID + ".magic.cooldown", "冷却：%s 秒");
         add("tooltip." + HallMod.MODID + ".magic.cooldown.none", "冷却：无");
-        add("tooltip." + HallMod.MODID + ".magic.mana", "消耗：%s 法力");
-        add("tooltip." + HallMod.MODID + ".magic.mana.none", "消耗：无");
-        add("tooltip." + HallMod.MODID + ".magic.keep_cost", "维持：%s 法力/秒");
+        add("tooltip." + HallMod.MODID + ".magic.mana", "法力消耗：%s");
+        add("tooltip." + HallMod.MODID + ".magic.mana.none", "法力消耗：无");
+        add("tooltip." + HallMod.MODID + ".magic.keep_cost", "持续消耗：%s 法力/秒");
+        add("tooltip." + HallMod.MODID + ".magic.charge", "蓄力时间：%s 秒");
+        add("tooltip." + HallMod.MODID + ".magic.shift_hint", "按住 %s 获取更多信息");
+        add("tooltip." + HallMod.MODID + ".magic.shift_key", "Shift");
 
         // ---- 魔法属性（见 RegisterAttributes） ----
         // 键名必须与 RangedAttribute 构造器里写死的那个字符串**完全一致**，
@@ -332,6 +340,8 @@ public class LangDataCN extends LanguageProvider {
         add("gui.rotten_ruins.potential_crafting.needs_power", "需要接入势能");
         add("gui.rotten_ruins.potential_crafting.idle", "放入材料开始合成");
         add("gui.rotten_ruins.potential_crafting.no_recipe", "没有匹配的配方");
+        add("gui.rotten_ruins.potential_crafting.time", "耗时 %s 秒");
+        add("gui.rotten_ruins.potential_crafting.missing", "背包里缺少这件材料");
         add(RegisterBlock.ANALYZER.get(), "解析仪");
         add("gui.rotten_ruins.source.reference", "波段表");
         add("gui.rotten_ruins.source.mode.0", "手动调谐");
@@ -398,7 +408,45 @@ public class LangDataCN extends LanguageProvider {
         add("item.rotten_ruins.briar_snare.desc", "在准星处伤害并强力减速生物，附加虚弱与中毒");
         add("item.rotten_ruins.purifying_light.desc", "治疗、净化并保护友方；伤害敌对生物，对亡灵更强");
         add("item.rotten_ruins.arcane_step.desc", "闪现至准星附近可站立的位置，短暂获得速度提升");
-        add("item.rotten_ruins.sprint.desc", "沿视线方向冲刺，动量等效于垂直抬升 5×法术强度（上限 30 格）后再放大 3 倍，伴随电火花；特殊使用时冷却减半");
+        add("item.rotten_ruins.sprint.desc", "沿视线方向高速冲刺，伴随电火花");
+        add("item.rotten_ruins.fire_ball.desc", "掷出一颗火球，接触即爆");
+        add("item.rotten_ruins.olympiad_cube.desc", "掷出奥数立方，每一颗的形态都不同");
+        add("item.rotten_ruins.soul_drink.desc", "按住持续吸取周围生物的生命并回复自身，松手甩出骷髅头");
+        add("item.rotten_ruins.spear_of_judgment.desc", "蓄满后自身身后上方降下长矛，贯穿方块与生物");
+        add("item.rotten_ruins.suppression_field.desc", "按住压制周围空间，伤害并压下空中的目标");
+        // 1.0.0beta13 新增法术
+        add(RegisterItem.SHIELD_WARD.get(), "护盾术");
+        add(RegisterItem.BARK_ARMOR.get(), "藤甲术");
+        add(RegisterItem.FREEZING_RAIN.get(), "冻雨");
+        add(RegisterItem.FLAME_SLASH.get(), "焰斩");
+        add(RegisterItem.HOLY_WINGS.get(), "圣翼");
+        add(RegisterItem.BLACK_HOLE.get(), "黑洞术");
+        add(RegisterItem.VOID_ESSENCE.get(), "虚空精粹");
+        add("item.rotten_ruins.shield_ward.desc", "蓄力后架起护盾，抵挡数次伤害后破碎");
+        add("item.rotten_ruins.bark_armor.desc", "披上藤甲：免疫雷电与火焰之外的伤害，但怕火");
+        add("item.rotten_ruins.freezing_rain.desc", "按住召来冻雨，持续冻伤并减速范围内的目标");
+        add("item.rotten_ruins.flame_slash.desc", "持剑期间横扫出红色剑气，可连挥数次");
+        add("item.rotten_ruins.holy_wings.desc", "长出圣翼：空中可以滑翔，双击空格向前冲刺");
+        add("item.rotten_ruins.black_hole.desc", "在视线前方撕开黑洞，把周围一切拖向中心");
+        // Shift 折叠段的细节行（item.<id>.detail.1..N，从 1 连续编号，缺号即止）
+        add("item.rotten_ruins.briar_snare.detail.1", "蓝银囚笼！");
+        add("item.rotten_ruins.briar_snare.detail.2", "你已有取似之道");
+        add("item.rotten_ruins.suppression_field.detail.1", "曼巴out");
+        add("item.rotten_ruins.fire_ball.detail.1", "烈阳！撕裂长空!");
+        add("item.rotten_ruins.sprint.detail.1", "为我趋势的发射聚晶哀悼");
+        add("item.rotten_ruins.tidal_pulse.detail.1", "芜汐葱鸡💦");
+        add("item.rotten_ruins.purifying_light.detail.1", "光よ!");
+        add("item.rotten_ruins.arcane_step.detail.1", "我闪，年轻人不讲武德");
+        add("item.rotten_ruins.soul_drink.detail.1", "我吃吃吃");
+        add("item.rotten_ruins.olympiad_cube.detail.1", "是魔法，我加了魔法");
+        // 新法术：常显段是我总结的效果，update.txt 里的原话放进 Shift 折叠段
+        add("item.rotten_ruins.shield_ward.detail.1", "凝神定气，做好准备");
+        add("item.rotten_ruins.bark_armor.detail.1", "藤甲菌从无对手!饿啊,好热啊!");
+        add("item.rotten_ruins.freezing_rain.detail.1", "冰冰冰");
+        add("item.rotten_ruins.flame_slash.detail.1", "为世界上所有的美好而战！");
+        add("item.rotten_ruins.holy_wings.detail.1", "中国人能飞~");
+        add("item.rotten_ruins.black_hole.detail.1", "见识下星星粉碎的样子吧");
+        // Shift 折叠段的细节行由策划自行添加：item.<id>.detail.1..N，从 1 连续编号，缺号即止
         // 死亡之星：下界之星 + 凋零玫瑰
         add(RegisterItem.DEATH_STAR.get(), "死亡之星");
 
@@ -425,10 +473,10 @@ public class LangDataCN extends LanguageProvider {
         add("rotten_ruins.wheel.begin.sustaining", "维持中 — 右键或再按 R 结束");
         add("rotten_ruins.wheel.result.success", "施法成功");
         add("rotten_ruins.wheel.result.invalid_staff", "需要手持法杖");
-        add("rotten_ruins.wheel.result.no_spell", "该方位没有法术");
+        add("rotten_ruins.wheel.result.no_spell", "当前无法术，释放失败");
         add("rotten_ruins.wheel.result.passive_spell", "被动法术不能施放");
         add("rotten_ruins.wheel.result.on_cooldown", "冷却中");
-        add("rotten_ruins.wheel.result.not_enough_mana", "法力不足");
+        add("rotten_ruins.wheel.result.not_enough_mana", "法力值不足，释放失败");
         add("rotten_ruins.wheel.result.not_charged", "蓄力不足");
         add("rotten_ruins.wheel.result.no_target", "没有目标");
         add("rotten_ruins.wheel.result.cancelled", "已取消");
@@ -698,6 +746,9 @@ public class LangDataCN extends LanguageProvider {
         sourceAdvancement("source_plate","万法之基","获得源荷板材");
         sourceAdvancement("element_plate","魔法有了形状","获得任意一种元素魔法板材");
         sourceAdvancement("all_plates","万象归板","分别获得全部七系魔法板材，无需同时持有");
+        // 【味大，无需多盐】：吃掉虚空精粹
+        add(AdvancementProviderData.titleKey(AdvancementProviderData.VOID_ESSENCE_PATH), "味大，无需多盐");
+        add(AdvancementProviderData.descriptionKey(AdvancementProviderData.VOID_ESSENCE_PATH), "嗯啊，劲啊");
     }
 
     private void sourceAdvancement(String name,String title,String description) {

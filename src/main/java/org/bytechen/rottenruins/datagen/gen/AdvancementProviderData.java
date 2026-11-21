@@ -3,6 +3,7 @@ package org.bytechen.rottenruins.datagen.gen;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.FrameType;
 import net.minecraft.advancements.RequirementsStrategy;
+import net.minecraft.advancements.critereon.ConsumeItemTrigger;
 import net.minecraft.advancements.critereon.ContextAwarePredicate;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.core.HolderLookup;
@@ -47,6 +48,9 @@ public class AdvancementProviderData extends ForgeAdvancementProvider {
 
     /** 「魔法」分支的 path；完整 id 是 {@code rotten_ruins:magic}。 */
     public static final String MAGIC_PATH = "magic";
+
+    /** 【味大，无需多盐】：吃掉虚空精粹。 */
+    public static final String VOID_ESSENCE_PATH = MAGIC_PATH + "/void_essence";
 
     /** 源荷生产线位于魔法分支下。 */
     public static String sourcePath(String name) { return MAGIC_PATH+"/"+name; }
@@ -139,6 +143,12 @@ public class AdvancementProviderData extends ForgeAdvancementProvider {
                             InventoryChangeTrigger.TriggerInstance.hasItems(RegisterItem.SOURCE_CHARGE_SAND.get()))
                     .save(saver, id(MAGIC_PATH), fileHelper);
             buildSourceBranch(magic,saver,fileHelper);
+
+            // 虚空精粹：吃下去就算完成（判据是原版 consume_item）。
+            node(magic, VOID_ESSENCE_PATH, RegisterItem.VOID_ESSENCE.get(), FrameType.TASK)
+                    .addCriterion("eat_void_essence",
+                            ConsumeItemTrigger.TriggerInstance.usedItem(RegisterItem.VOID_ESSENCE.get()))
+                    .save(saver, id(VOID_ESSENCE_PATH), fileHelper);
         }
 
         private static void buildSourceBranch(Advancement magic,Consumer<Advancement> saver,ExistingFileHelper helper) {

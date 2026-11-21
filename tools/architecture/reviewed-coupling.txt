@@ -488,3 +488,34 @@ common-client | platform/forge/magic/network/s2c/ManaSyncPacket.java -> org.byte
 utility-platform | utils/SpellDamageUtil.java -> net.minecraftforge.common.MinecraftForge
 utility-platform | utils/SpellDamageUtil.java -> net.minecraftforge.event.entity.living.LivingDamageEvent
 utility-platform | utils/SpellDamageUtil.java -> net.minecraftforge.event.entity.living.LivingHurtEvent
+
+# Spell tooltip rework: client-layer text sections + open/close animation.
+# Both files live under client/, so client + Forge-client events are their sanctioned layer surface.
+# The mixin invoker is the documented side entry for the otherwise private
+# GuiGraphics#renderTooltipInternal (1.20.1 has no post-render tooltip event);
+# it only re-invokes the vanilla method, no gameplay/api/core edge is introduced.
+client-forge | client/tooltip/SpellTooltipAnimator.java -> net.minecraftforge.api.distmarker.Dist
+client-forge | client/tooltip/SpellTooltipAnimator.java -> net.minecraftforge.api.distmarker.OnlyIn
+client-forge | client/tooltip/SpellTooltipAnimator.java -> net.minecraftforge.client.event.RenderGuiEvent
+client-forge | client/ClientPacketHandlers.java -> net.minecraftforge.eventbus.api.EventPriority
+client-forge | client/tooltip/SpellTooltipAnimator.java -> net.minecraftforge.client.event.RenderTooltipEvent
+client-forge | client/tooltip/SpellTooltipAnimator.java -> net.minecraftforge.client.event.ScreenEvent
+client-forge | client/tooltip/SpellTooltipSections.java -> net.minecraftforge.api.distmarker.Dist
+client-forge | client/tooltip/SpellTooltipSections.java -> net.minecraftforge.api.distmarker.OnlyIn
+client-forge | client/tooltip/SpellTooltipSections.java -> net.minecraftforge.event.entity.player.ItemTooltipEvent
+common-client | mixin/GuiGraphicsTooltipInvoker.java -> net.minecraft.client.gui.Font
+common-client | mixin/GuiGraphicsTooltipInvoker.java -> net.minecraft.client.gui.GuiGraphics
+common-client | mixin/GuiGraphicsTooltipInvoker.java -> net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent
+common-client | mixin/GuiGraphicsTooltipInvoker.java -> net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner
+
+# 格挡姿势：IBlockingWeapon 的武器必须返回 UseAnim.NONE，原版第三人称不会给 BLOCK 手臂姿态，
+# 由该 mixin 在 PlayerRenderer#getArmPose 返回处补上；只读姿态、不写玩法状态。
+common-client | mixin/PlayerBlockPoseMixin.java -> net.minecraft.client.model.HumanoidModel
+common-client | mixin/PlayerBlockPoseMixin.java -> net.minecraft.client.player.AbstractClientPlayer
+common-client | mixin/PlayerBlockPoseMixin.java -> net.minecraft.client.renderer.entity.player.PlayerRenderer
+
+# 奥秘仪台的主渲染器（GeckoLib 主体 + 环绕物品）在客户端事件里注册，和其它方块实体渲染器同一入口。
+common-client | event/ClientModEventHandler.java -> org.bytechen.rottenruins.client.entity.render.impl.PotentialCraftingTableRenderer
+# JEI 分类本就要画界面，所以直接引用客户端绘制类型；配方列表仍从服务端配方管理器读取。
+common-client | compat/jei/PotentialCraftingJeiCategory.java -> net.minecraft.client.Minecraft
+common-client | compat/jei/PotentialCraftingJeiCategory.java -> net.minecraft.client.gui.GuiGraphics

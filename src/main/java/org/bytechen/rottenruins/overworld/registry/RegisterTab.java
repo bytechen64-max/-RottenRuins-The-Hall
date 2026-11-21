@@ -187,7 +187,13 @@ public class RegisterTab {
                         RegisterItem.PURIFYING_LIGHT.get(),
                         RegisterItem.ARCANE_STEP.get(),
                         RegisterItem.SOUL_DRINK.get(),
-                        RegisterItem.OLYMPIAD_CUBE.get(),RegisterItem.SPRINT.get())
+                        RegisterItem.OLYMPIAD_CUBE.get(),RegisterItem.SPRINT.get(),
+                        RegisterItem.SHIELD_WARD.get(),
+                        RegisterItem.BARK_ARMOR.get(),
+                        RegisterItem.FREEZING_RAIN.get(),
+                        RegisterItem.FLAME_SLASH.get(),
+                        RegisterItem.HOLY_WINGS.get(),
+                        RegisterItem.BLACK_HOLE.get())
                         ;
                     })
 

@@ -40,6 +40,11 @@ public class LangDataEN extends LanguageProvider {
         add("effect.rotten_ruins.corrosion", "Corrosion");
         add("effect.rotten_ruins.lethargy", "Lethargy");
         add("effect.rotten_ruins.frailty", "Frailty");
+        add("effect.rotten_ruins.shield", "Shield");
+        add("effect.rotten_ruins.bark_armor", "Bark Armor");
+        add("effect.rotten_ruins.holy_wings", "Holy Wings");
+        add("effect.rotten_ruins.flame_slash", "Flame Cleave");
+        add("effect.rotten_ruins.stun", "Stunned");
         add("gui.rotten_ruins.jade.crafting", "Crafting %s%% · ~%s s");
 
         add("rotten_ruins.story.unknown", "Unknown story: %s");
@@ -287,12 +292,15 @@ public class LangDataEN extends LanguageProvider {
         add("magic_type." + HallMod.MODID + ".light", "Light");
         add("magic_type." + HallMod.MODID + ".void", "Void");
         add("magic_type." + HallMod.MODID + ".mysterious", "Mysterious");
-        add("tooltip." + HallMod.MODID + ".magic.type", "Type: %s");
+        add("tooltip." + HallMod.MODID + ".magic.type", "Spell Type: %s");
         add("tooltip." + HallMod.MODID + ".magic.cooldown", "Cooldown: %s s");
         add("tooltip." + HallMod.MODID + ".magic.cooldown.none", "Cooldown: none");
-        add("tooltip." + HallMod.MODID + ".magic.mana", "Cost: %s mana");
-        add("tooltip." + HallMod.MODID + ".magic.mana.none", "Cost: none");
-        add("tooltip." + HallMod.MODID + ".magic.keep_cost", "Upkeep: %s mana/s");
+        add("tooltip." + HallMod.MODID + ".magic.mana", "Mana Cost: %s");
+        add("tooltip." + HallMod.MODID + ".magic.mana.none", "Mana Cost: none");
+        add("tooltip." + HallMod.MODID + ".magic.keep_cost", "Drains: %s mana/s");
+        add("tooltip." + HallMod.MODID + ".magic.charge", "Charge Time: %s s");
+        add("tooltip." + HallMod.MODID + ".magic.shift_hint", "Hold %s for more info");
+        add("tooltip." + HallMod.MODID + ".magic.shift_key", "Shift");
 
         // Keys must match the strings hard-coded in the RangedAttribute constructors exactly.
         add("attribute.name." + HallMod.MODID + ".max_mana", "Max Mana");        add("attribute.name." + HallMod.MODID + ".mana_regeneration", "Mana Regeneration");
@@ -349,6 +357,8 @@ public class LangDataEN extends LanguageProvider {
         add("gui.rotten_ruins.potential_crafting.needs_power", "Requires potential");
         add("gui.rotten_ruins.potential_crafting.idle", "Place ingredients to begin");
         add("gui.rotten_ruins.potential_crafting.no_recipe", "No matching recipe");
+        add("gui.rotten_ruins.potential_crafting.time", "%s s");
+        add("gui.rotten_ruins.potential_crafting.missing", "Missing ingredients in your inventory");
         add(RegisterBlock.ANALYZER.get(), "Analyzer");
         add("gui.rotten_ruins.source.reference", "Bands");
         add("gui.rotten_ruins.source.mode.0", "Manual");
@@ -415,7 +425,44 @@ public class LangDataEN extends LanguageProvider {
         add("item.rotten_ruins.briar_snare.desc", "Entangles creatures near your crosshair with weakness and poison");
         add("item.rotten_ruins.purifying_light.desc", "Heals, cleanses and shields allies; harms hostiles, especially undead");
         add("item.rotten_ruins.arcane_step.desc", "Blink to solid ground near your crosshair and gain a short speed boost");
-        add("item.rotten_ruins.sprint.desc", "Dashes along your view direction; momentum equals a 5 x spell power block vertical lift (max 30) multiplied by 3, with sparks; half cooldown on a special use");
+        add("item.rotten_ruins.sprint.desc", "Dashes along your view direction in a burst of sparks");
+        add("item.rotten_ruins.fire_ball.desc", "Hurls a fireball that explodes on contact");
+        add("item.rotten_ruins.olympiad_cube.desc", "Hurls an arcane solid; every cube takes a different form");
+        add("item.rotten_ruins.soul_drink.desc", "Hold to drain life from nearby creatures and heal yourself; release to fling a skull");
+        add("item.rotten_ruins.spear_of_judgment.desc", "When fully charged, spears descend from behind and above you, piercing blocks and creatures");
+        add("item.rotten_ruins.suppression_field.desc", "Hold to crush the space around you, damaging and slamming airborne targets down");
+        // Spells added in 1.0.0beta13
+        add(RegisterItem.SHIELD_WARD.get(), "Shield Ward");
+        add(RegisterItem.BARK_ARMOR.get(), "Bark Armor");
+        add(RegisterItem.FREEZING_RAIN.get(), "Freezing Rain");
+        add(RegisterItem.FLAME_SLASH.get(), "Flame Cleave");
+        add(RegisterItem.HOLY_WINGS.get(), "Holy Wings");
+        add(RegisterItem.BLACK_HOLE.get(), "Black Hole");
+        add(RegisterItem.VOID_ESSENCE.get(), "Void Essence");
+        add("item.rotten_ruins.shield_ward.desc", "Raise a shield that absorbs a few hits before shattering");
+        add("item.rotten_ruins.bark_armor.desc", "Wear bark armor: immune to all but lightning and fire, yet weak to fire");
+        add("item.rotten_ruins.freezing_rain.desc", "Hold to summon freezing rain, chilling and slowing targets in range");
+        add("item.rotten_ruins.flame_slash.desc", "Sweep out red sword waves while holding a blade, a few swings per cast");
+        add("item.rotten_ruins.holy_wings.desc", "Grow holy wings: glide in the air, double-tap jump to dash");
+        add("item.rotten_ruins.black_hole.desc", "Tear a black hole ahead of you and drag everything toward it");
+        // Detail lines for the Shift fold (item.<id>.detail.1..N, contiguous from 1)
+        add("item.rotten_ruins.briar_snare.detail.1", "Blue silver cage!");
+        add("item.rotten_ruins.briar_snare.detail.2", "You already have a way to die");
+        add("item.rotten_ruins.suppression_field.detail.1", "Mamba out");
+        add("item.rotten_ruins.fire_ball.detail.1", "Blazing sun! Tear the sky!");
+        add("item.rotten_ruins.sprint.detail.1", "Mourn the crystal of my charge");
+        add("item.rotten_ruins.tidal_pulse.detail.1", "Splash splash");
+        add("item.rotten_ruins.purifying_light.detail.1", "Hikari yo!");
+        add("item.rotten_ruins.arcane_step.detail.1", "Blink! Young people don't play fair");
+        add("item.rotten_ruins.soul_drink.detail.1", "Nom nom nom");
+        add("item.rotten_ruins.olympiad_cube.detail.1", "It's magic. I added magic.");
+        add("item.rotten_ruins.shield_ward.detail.1", "Steady your breath. Get ready.");
+        add("item.rotten_ruins.bark_armor.detail.1", "The bark fungus has no rival! Ugh, so hot!");
+        add("item.rotten_ruins.freezing_rain.detail.1", "Brrr. Cold. Cold. Cold.");
+        add("item.rotten_ruins.flame_slash.detail.1", "Fight for all that is beautiful in the world!");
+        add("item.rotten_ruins.holy_wings.detail.1", "Yes, we can fly~");
+        add("item.rotten_ruins.black_hole.detail.1", "Witness the stars being crushed");
+        // Detail lines for the Shift fold are authored separately: item.<id>.detail.1..N, contiguous from 1.
         // Death Star: nether star + wither roses
         add(RegisterItem.DEATH_STAR.get(), "Death Star");
 
@@ -443,10 +490,10 @@ public class LangDataEN extends LanguageProvider {
         add("rotten_ruins.wheel.begin.sustaining", "SUSTAINING - RMB / R to end");
         add("rotten_ruins.wheel.result.success", "Cast");
         add("rotten_ruins.wheel.result.invalid_staff", "Hold a staff");
-        add("rotten_ruins.wheel.result.no_spell", "Empty socket");
+        add("rotten_ruins.wheel.result.no_spell", "No spell selected - cast failed");
         add("rotten_ruins.wheel.result.passive_spell", "Passive spells cannot be cast");
         add("rotten_ruins.wheel.result.on_cooldown", "On cooldown");
-        add("rotten_ruins.wheel.result.not_enough_mana", "Not enough mana");
+        add("rotten_ruins.wheel.result.not_enough_mana", "Not enough mana - cast failed");
         add("rotten_ruins.wheel.result.not_charged", "Not charged");
         add("rotten_ruins.wheel.result.no_target", "No target");
         add("rotten_ruins.wheel.result.cancelled", "Cancelled");
@@ -722,6 +769,8 @@ public class LangDataEN extends LanguageProvider {
         sourceAdvancement("source_plate","A Foundation for Magic","Obtain a Source Mana Plate");
         sourceAdvancement("element_plate","Magic Takes Shape","Obtain any elemental mana plate");
         sourceAdvancement("all_plates","All Elements Accounted For","Obtain all seven elemental mana plates over time");
+        add(AdvancementProviderData.titleKey(AdvancementProviderData.VOID_ESSENCE_PATH), "Big Flavor, No Extra Salt");
+        add(AdvancementProviderData.descriptionKey(AdvancementProviderData.VOID_ESSENCE_PATH), "Mmh. Strong stuff.");
     }
 
     private void sourceAdvancement(String name,String title,String description) {

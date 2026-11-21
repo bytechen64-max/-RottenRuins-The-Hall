@@ -10,7 +10,9 @@ public final class MagicMath {
     public static final int MAX_KEEP_TRIGGER_INTERVAL = 200;
     public static final double MAX_TARGET_RANGE = 128.0d;
     public static final double MAX_COOLDOWN_REDUCTION = 0.5d;
-    public static final double BASE_SPELL_POWER = 1.0d;
+    public static final double BASE_SPELL_POWER = 0.0d;
+    /** 流派法强在增伤公式里的权重。 */
+    public static final double SCHOOL_POWER_WEIGHT = 0.75d;
 
     private MagicMath() {}
 
@@ -40,6 +42,17 @@ public final class MagicMath {
         // Sum the scaled terms to avoid overflowing a sum of finite large inputs.
         for (double bonus : schoolBonuses) average += bonus / schoolBonuses.length;
         return Math.max(0.0d, general + average);
+    }
+
+    /** 0 法强时正好 1.0 倍，用于半径、治疗、升力这类"原本就按 1.0 起步"的数值。 */
+    public static double powerScale(double power) {
+        return 1.0d + Math.max(0.0d, power);
+    }
+
+    /** 法术增伤倍率：{@code (通用法强 + 流派法强 × 0.75)² / 2 + 1}，0 法强时正好 1.0。 */
+    public static double powerMultiplier(double general, double schoolAverage) {
+        double power = general + schoolAverage * SCHOOL_POWER_WEIGHT;
+        return power * power / 2.0d + 1.0d;
     }
 
     public static int reducedCooldown(int base, double reduction) {

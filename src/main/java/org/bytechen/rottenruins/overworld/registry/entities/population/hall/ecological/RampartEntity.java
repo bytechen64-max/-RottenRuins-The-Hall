@@ -38,6 +38,9 @@ import org.bytechen.rottenruins.overworld.difficulty.HallDifficultyAttributes;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.ChaseLockGoal;
 import org.bytechen.rottenruins.overworld.registry.entities.ai.FaceTargetGoal;
 import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
+import org.bytechen.rottenruins.overworld.registry.effect.customEffect.CustomEffects;
+import org.bytechen.rottenruins.overworld.registry.effect.customEffect.RegisterCustomEffect;
+import org.bytechen.rottenruins.utils.combat.RangeAttackCallback;
 import org.bytechen.rottenruins.utils.combat.RangeAttackUtils;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
@@ -58,23 +61,34 @@ public class RampartEntity extends BaseEcologicalEntity {
     private static final int PUNCH_HIT_TICKS = 20;
     private static final int SLAM_DURATION_TICKS = 35;
     private static final int PUNCH_DURATION_TICKS = 34;
+    // 重击（attack3）总长 4.33 秒，1.75 秒与 3.75 秒各一次判定，第二次附带晕眩。
+    private static final int HEAVY_HIT_TICKS = 35;
+    private static final int HEAVY_STUN_TICKS = 75;
+    private static final int HEAVY_DURATION_TICKS = 87;
+    private static final int HEAVY_STUN_DURATION = 100;
+    private static final float HEAVY_RADIUS = 5.0F;
+    private static final int HEAVY_ANGLE = 120;
     private static final EntityDataAccessor<Boolean> SHIELDING = SynchedEntityData.defineId(RampartEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> ATTACKING = SynchedEntityData.defineId(RampartEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Float> ATTACK_YAW = SynchedEntityData.defineId(RampartEntity.class, EntityDataSerializers.FLOAT);
     private static final RawAnimation SHIELD = RawAnimation.begin().thenLoop("shield");
     private static final RawAnimation UNSHIELD = RawAnimation.begin().thenLoop("unshield");
-    // 将 idle 按骨骼拆层，避免底层 idle 在攻击控制器停止时直接覆盖攻击末帧。
-    private static final RawAnimation IDLE_BODY = RawAnimation.begin().thenLoop("idle_body");
-    private static final RawAnimation IDLE_ACTION = RawAnimation.begin().thenLoop("idle_action");
+    // 当前动画导出只有合并后的 idle（原来的 idle_body / idle_action 已并入），
+    // 两个控制器都指向它：底层待机常驻，攻击控制器停止时自然回落到同一姿态。
+    private static final RawAnimation IDLE_BODY = RawAnimation.begin().thenLoop("idle");
+    private static final RawAnimation IDLE_ACTION = RawAnimation.begin().thenLoop("idle");
     private static final RawAnimation SLAM = RawAnimation.begin().thenPlay("attack");
     private static final RawAnimation PUNCH = RawAnimation.begin().thenPlay("attack2");
+    private static final RawAnimation HEAVY = RawAnimation.begin().thenPlay("attack3");
 
     private final ServerBossEvent bossEvent = new ServerBossEvent(getDisplayName(), BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.PROGRESS);
     private int shieldBreakTicks;
     private int combatTicks;
     private int attackTicks;
     private int hitTicks;
+    private int stunTicks;
     private boolean slam;
+    private boolean heavy;
     private Vec3 attackDirection = Vec3.ZERO;
     private Player shieldAttacker;
 
@@ -154,6 +168,7 @@ public class RampartEntity extends BaseEcologicalEntity {
     protected boolean getAttack(LivingEntity target) {
         if (isAttacking() || isFakeDying() || isDeadOrDying()) return false;
         slam = random.nextBoolean();
+        heavy = !slam && random.nextFloat() < 0.5F;
         attackDirection = horizontalDirectionTo(target);
         float yaw = (float) (Mth.atan2(attackDirection.z, attackDirection.x) * Mth.RAD_TO_DEG) - 90;
         entityData.set(ATTACK_YAW, yaw);
@@ -161,11 +176,28 @@ public class RampartEntity extends BaseEcologicalEntity {
         lockAttackRotation();
         getNavigation().stop();
         setSpeed(0);
-        hitTicks = ANIMATION_TRANSITION_TICKS + (slam ? SLAM_HIT_TICKS : PUNCH_HIT_TICKS);
-        attackTicks = ANIMATION_TRANSITION_TICKS + (slam ? SLAM_DURATION_TICKS : PUNCH_DURATION_TICKS);
+        hitTicks = ANIMATION_TRANSITION_TICKS + (heavy ? HEAVY_HIT_TICKS : slam ? SLAM_HIT_TICKS : PUNCH_HIT_TICKS);
+        stunTicks = heavy ? ANIMATION_TRANSITION_TICKS + HEAVY_STUN_TICKS : 0;
+        attackTicks = ANIMATION_TRANSITION_TICKS + (heavy ? HEAVY_DURATION_TICKS : slam ? SLAM_DURATION_TICKS : PUNCH_DURATION_TICKS);
         combatTicks = COMBAT_TIMEOUT_TICKS;
-        triggerAnim("attack_controller", slam ? "attack" : "attack2");
+        triggerAnim("attack_controller", heavy ? "attack3" : slam ? "attack" : "attack2");
         return true;
+    }
+
+    /** 重击的两次判定：前方扇形 5 格内 20 伤害，第二次命中额外挂 5 秒晕眩。 */
+    private void performHeavyHit(boolean withStun) {
+        RangeAttackUtils.Builder builder = RangeAttackUtils.sector()
+                .origin(position().add(0, 1.5, 0)).direction(attackDirection)
+                .radius(HEAVY_RADIUS).angleDegrees(HEAVY_ANGLE)
+                .verticalRange(2.0F).requireLineOfSight(true)
+                .damage(HallDifficultyAttributes.effectiveAttackDamage(this, 20))
+                .filter(this::canHitWithRangeAttack);
+        if (!withStun) {
+            RangeAttackUtils.perform(this, builder);
+            return;
+        }
+        RangeAttackUtils.perform(this, builder, RangeAttackCallback.ofAfterHit(
+                (target, hurt) -> CustomEffects.addEffect(target, RegisterCustomEffect.STUN, HEAVY_STUN_DURATION, 0)));
     }
 
     private void lockAttackRotation() {
@@ -183,18 +215,23 @@ public class RampartEntity extends BaseEcologicalEntity {
             if (shieldBreakTicks > 0 && --shieldBreakTicks == 0) entityData.set(SHIELDING, true);
             if (combatTicks > 0) combatTicks--;
             if (isDeadOrDying() || isFakeDying() || isNoAi()) {
-                attackTicks = hitTicks = 0;
+                attackTicks = hitTicks = stunTicks = 0;
                 entityData.set(ATTACKING, false);
             } else if (attackTicks > 0) {
                 if (hitTicks > 0 && --hitTicks == 0) {
-                    if (slam) spawnSlamGroundParticles();
-                    RangeAttackUtils.perform(this, RangeAttackUtils.sector()
-                            .origin(position().add(0, 1.5, 0)).direction(attackDirection)
-                            .radius(slam ? 6.0F : 5.5F).angleDegrees(slam ? 100 : 140)
-                            .verticalRange(2.0F).requireLineOfSight(true)
-                            .damage(HallDifficultyAttributes.effectiveAttackDamage(this, 20) * (slam ? 1.25F : 1.0F))
-                            .filter(this::canHitWithRangeAttack));
+                    if (heavy) {
+                        performHeavyHit(false);
+                    } else {
+                        if (slam) spawnSlamGroundParticles();
+                        RangeAttackUtils.perform(this, RangeAttackUtils.sector()
+                                .origin(position().add(0, 1.5, 0)).direction(attackDirection)
+                                .radius(slam ? 6.0F : 5.5F).angleDegrees(slam ? 100 : 140)
+                                .verticalRange(2.0F).requireLineOfSight(true)
+                                .damage(HallDifficultyAttributes.effectiveAttackDamage(this, 20) * (slam ? 1.25F : 1.0F))
+                                .filter(this::canHitWithRangeAttack));
+                    }
                 }
+                if (stunTicks > 0 && --stunTicks == 0) performHeavyHit(true);
                 if (--attackTicks == 0) entityData.set(ATTACKING, false);
             }
         }
@@ -324,6 +361,6 @@ public class RampartEntity extends BaseEcologicalEntity {
         // 让 GeckoLib 对末帧和待机首帧做过渡，而不是 STOP 后立刻被另一层接管。
         registrar.add(new AnimationController<>(this, "attack_controller", ANIMATION_TRANSITION_TICKS,
                 state -> isAlive() ? state.setAndContinue(IDLE_ACTION) : PlayState.STOP)
-                .triggerableAnim("attack", SLAM).triggerableAnim("attack2", PUNCH));
+                .triggerableAnim("attack", SLAM).triggerableAnim("attack2", PUNCH).triggerableAnim("attack3", HEAVY));
     }
 }

@@ -99,8 +99,7 @@ public class Sprint extends CMagicBaseItem {
     @Override
     public boolean cast(@NotNull ServerPlayer player, @NotNull ItemStack stack,
                         @NotNull MagicCastContext castContext) {
-        double spellPower = MagicStats.spellPower(player, stack);
-        double lift = Math.min(MAX_LIFT, BASE_LIFT * spellPower);
+        double lift = Math.min(MAX_LIFT, BASE_LIFT * MagicStats.powerScale(player, stack));
         if (lift <= 0.0D) {
             return false;
         }

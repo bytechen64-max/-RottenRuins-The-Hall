@@ -257,10 +257,12 @@ public final class MagicHandle {
                 yield new UseStartOutcome(CastResult.SUCCESS, true);
             }
             case KEEP -> {
+                // 冷却延后到维持结束（stopChannel）再写，按下右键的瞬间不进冷却。
                 CastOutcome outcome = castNow(player, target.hand(), target.poolSlot(), target.spellStack(),
-                        target.spell(), 1.0f, 0);
+                        target.spell(), 1.0f, 0, true);
                 if (outcome.result().isSuccess()) {
                     state.beginChanneling(target.spellStack(), target.poolSlot(), target.hand(), outcome.target(), source);
+                    state.setPendingCooldownTicks(outcome.cooldownTicks());
                     yield new UseStartOutcome(CastResult.SUCCESS, true);
                 }
                 yield new UseStartOutcome(outcome.result(), false);
@@ -664,8 +666,11 @@ public final class MagicHandle {
      *
      * <p>只为了 {@code KEEP} 模式需要 —— 它要把这次解析到的目标记进
      * {@link CastSession} 供整段维持使用。其它模式只看 {@code result()}。</p>
+     *
+     * <p>{@code cooldownTicks} 是这次释放<b>本应</b>写进池子的冷却；维持型会先把它
+     * 记进 session，等维持结束再写，所以这里总是带着值返回。</p>
      */
-    private record CastOutcome(@NotNull CastResult result, @Nullable LivingEntity target) {
+    private record CastOutcome(@NotNull CastResult result, @Nullable LivingEntity target, int cooldownTicks) {
     }
 
     /**
@@ -679,7 +684,16 @@ public final class MagicHandle {
     private static void stopChannel(@NotNull ServerPlayer player, @NotNull CastSession state) {
         ItemStack spellStack = state.getSpell();
         int held = state.getHeldTicks();
+        int pendingCooldown = state.getPendingCooldownTicks();
         state.reset();
+        // 维持型法术的冷却从"结束维持"这一刻开始算，而不是按下右键的瞬间。
+        if (pendingCooldown > 0) {
+            ResourceLocation magicId = MagicStats.magicId(spellStack);
+            SpellInventory pool = getPool(player);
+            if (magicId != null && pool != null) {
+                pool.setCooldown(magicId, pendingCooldown);
+            }
+        }
         IMagicBaseItem spell = MagicStats.spellOf(spellStack);
         if (spell != null) {
             spell.onKeepStop(player, spellStack, held);
@@ -696,13 +710,29 @@ public final class MagicHandle {
                                        int slot, @NotNull ItemStack spellStack,
                                        @NotNull IMagicBaseItem spell,
                                        float chargeRatio, int heldTicks) {
+        return castNow(player, hand, slot, spellStack, spell, chargeRatio, heldTicks, false);
+    }
+
+    /**
+     * 真正的一次释放：解目标 → 事件 → 扣蓝 → 进冷却 → 出效果 → Post 事件。
+     *
+     * <p>走到这里说明冷却、{@code canCast} 已经过了（蓄力型的最低门槛也过了）。</p>
+     *
+     * @param deferCooldown 维持型专用：把冷却记进返回值而不写进池子，交给
+     *                      {@link #stopChannel} 在维持结束时结算
+     */
+    @NotNull
+    private static CastOutcome castNow(@NotNull ServerPlayer player, @NotNull InteractionHand hand,
+                                       int slot, @NotNull ItemStack spellStack,
+                                       @NotNull IMagicBaseItem spell,
+                                       float chargeRatio, int heldTicks, boolean deferCooldown) {
         // ---- 0. 目标解析（只对声明了 needsTarget 的法术做）----
         // 放在最前面：瞄空时连事件都不该抛、法力冷却都不该动。
         LivingEntity target = null;
         if (spell.needsTarget()) {
             target = resolveTarget(player, spellStack);
             if (target == null) {
-                return new CastOutcome(CastResult.NO_TARGET, null);
+                return new CastOutcome(CastResult.NO_TARGET, null, 0);
             }
         }
 
@@ -712,7 +742,7 @@ public final class MagicHandle {
         MagicCastEvent event = new MagicCastEvent(player, spellStack, spell.getUsingType(),
                 hand, slot, chargeRatio, target, cost);
         if (MagicRuntime.services().beforeCast(event) || event.isCanceled()) {
-            return new CastOutcome(CastResult.CANCELLED, target);
+            return new CastOutcome(CastResult.CANCELLED, target, 0);
         }
         cost = event.getManaCost();
 
@@ -725,10 +755,11 @@ public final class MagicHandle {
 
         // ---- 2. 扣蓝（事件可能改过数值，所以这里才是权威判定）----
         if (!pay(player, hand, spell, cost)) {
-            return new CastOutcome(CastResult.NOT_ENOUGH_MANA, target);
+            return new CastOutcome(CastResult.NOT_ENOUGH_MANA, target, 0);
         }
 
         // ---- 3. 冷却：键是物品注册名，所以同名物品天然共享 ----
+        int appliedCooldown = 0;
         ResourceLocation magicId = MagicStats.magicId(spellStack);
         if (magicId != null) {
             int cooldown = MagicStats.cooldownTicks(player, spellStack);
@@ -739,9 +770,12 @@ public final class MagicHandle {
                 cooldown = Math.max(0, Math.round(cooldown * multiplier));
             }
             if (cooldown > 0) {
-                SpellInventory pool = getPool(player);
-                if (pool != null) {
-                    pool.setCooldown(magicId, cooldown);
+                appliedCooldown = cooldown;
+                if (!deferCooldown) {
+                    SpellInventory pool = getPool(player);
+                    if (pool != null) {
+                        pool.setCooldown(magicId, cooldown);
+                    }
                 }
             }
         }
@@ -757,6 +791,6 @@ public final class MagicHandle {
         MagicRuntime.services().afterCast(new MagicCastEvent.Post(player, spellStack,
                 spell.getUsingType(), cost, chargeRatio, target, CastResult.SUCCESS));
 
-        return new CastOutcome(CastResult.SUCCESS, target);
+        return new CastOutcome(CastResult.SUCCESS, target, appliedCooldown);
     }
 }

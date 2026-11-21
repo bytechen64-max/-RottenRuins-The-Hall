@@ -39,8 +39,35 @@ public final class WheelClientState {
     /** 本会话最近一次服务端回执对应的动作（BEGIN/CAST/END/CANCEL）。 */
     @Nullable
     private static String lastAction;
+    /** 已选中的方位：轮盘只负责选，右键才释放，所以这份选择必须跨会话保留。 */
+    private static int selectedPage;
+    private static int selectedIndex = -1;
+    private static int selectedPoolSlot = -1;
 
     private WheelClientState() {
+    }
+
+    /** 记住轮盘上点选的方位（关闭轮盘后依然有效，直到下一次点选）。 */
+    public static void rememberSelection(int targetPage, int index, int targetPoolSlot) {
+        selectedPage = targetPage;
+        selectedIndex = index;
+        selectedPoolSlot = targetPoolSlot;
+    }
+
+    public static boolean hasSelection() {
+        return selectedIndex >= 0;
+    }
+
+    public static int selectedPage() {
+        return selectedPage;
+    }
+
+    public static int selectedIndex() {
+        return selectedIndex;
+    }
+
+    public static int selectedPoolSlot() {
+        return selectedPoolSlot;
     }
 
     public static Phase phase() {

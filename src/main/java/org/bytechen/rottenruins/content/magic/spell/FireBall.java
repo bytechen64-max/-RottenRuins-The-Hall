@@ -21,12 +21,12 @@ import org.jetbrains.annotations.NotNull;
  *
  * <h3>法术强度怎么作用到这颗火球上</h3>
  * <p>"法术强度"取的是 {@code MagicStats.spellPower} ——
- * <b>通用法强（{@code spell_power}，默认 1.0）加上火系法强
+ * <b>通用法强（{@code spell_power}，默认 0）加上火系法强
  * （{@code spell_power_fire}，默认 0）</b>。它同时影响：</p>
  * <table border="1">
  *   <tr><th>作用对象</th><th>怎么生效</th></tr>
  *   <tr><td>爆炸半径</td>
- *       <td>{@link #cast} 里现算：{@code 基值 × 法术强度}，钳在
+ *       <td>{@link #cast} 里现算：{@code 基值 × (1 + 法术强度)}，钳在
  *           {@value #MIN_EXPLOSION_RADIUS} ~ {@value #MAX_EXPLOSION_RADIUS} 格</td></tr>
  *   <tr><td>爆炸伤害</td>
  *       <td>原版爆炸的伤害由半径推出（中心约 {@code 7 × 半径 + 1}），
@@ -60,6 +60,12 @@ public class FireBall extends CMagicBaseItem {
      */
     public static final double MAX_EXPLOSION_RADIUS = 12.0d;
 
+    /** 特殊使用附带的两颗小火球：半径是主火球的比例。 */
+    public static final double SMALL_RADIUS_RATIO = 0.5d;
+
+    /** 特殊使用时左右两颗的偏转角（度）。 */
+    public static final float SPREAD_DEG = 8.0f;
+
     public FireBall() {
         super(defaultProperties(), SpellDefinition.builder(UsingType.IMMEDIATELY, MagicType.FIRE)
                 .manaCost(40)
@@ -78,14 +84,18 @@ public class FireBall extends CMagicBaseItem {
     @Override
     public boolean cast(@NotNull ServerPlayer player, @NotNull ItemStack stack,
                         @NotNull MagicCastContext castContext) {
-        // 有效法术强度 = 通用法强 + 火系法强（相加），见 MagicStats.spellPower。
-        // 属性还没挂上时它返回 fallback 1.0，所以不会因为"属性缺失"把火球缩成 0 半径。
-        double spellPower = MagicStats.spellPower(player, stack);
-        double radius = Mth.clamp(baseExplosionRadius() * spellPower,
+        // 0 法强时 powerScale = 1.0，所以不会因为属性缺失把火球缩成 0 半径。
+        double radius = Mth.clamp(baseExplosionRadius() * MagicStats.powerScale(player, stack),
                 MIN_EXPLOSION_RADIUS, MAX_EXPLOSION_RADIUS);
 
         // 火球的出生点、瞄准方向、伤害与爆炸全在实体里；这里只决定"炸多大、炸不炸方块"。
-        FireBallEntity.spawn(player, stack, radius,player.isShiftKeyDown());
+        FireBallEntity.spawn(player, stack, radius, player.isShiftKeyDown());
+        if (castContext.specialUse()) {
+            // 特殊使用：额外的两颗小火球，分别向左右偏开。
+            double small = Mth.clamp(radius * SMALL_RADIUS_RATIO, MIN_EXPLOSION_RADIUS, MAX_EXPLOSION_RADIUS);
+            FireBallEntity.spawn(player, stack, small, player.isShiftKeyDown(), -SPREAD_DEG);
+            FireBallEntity.spawn(player, stack, small, player.isShiftKeyDown(), SPREAD_DEG);
+        }
         return true;
     }
 }

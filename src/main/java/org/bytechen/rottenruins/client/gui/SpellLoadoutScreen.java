@@ -1344,7 +1344,7 @@ public final class SpellLoadoutScreen extends Screen {
         if (using == null) {
             return "";
         }
-        return switch (using) {
+        String usage = switch (using) {
             case IMMEDIATELY ->
                     tr("rotten_ruins.wheel.loadout.desc.instant");
             case CHARGE ->
@@ -1352,6 +1352,22 @@ public final class SpellLoadoutScreen extends Screen {
             case KEEP ->
                     tr("rotten_ruins.wheel.loadout.desc.keep");
         };
+        // 顺带显示物品的常显简介（就是 tooltip 里不带 Shift 的那段）
+        String lore = spellLore(slot);
+        return lore.isEmpty() ? usage : lore + " " + usage;
+    }
+
+    /** 读 {@code item.<id>.desc}；没写就返回空串。 */
+    private String spellLore(WheelData.Slot slot) {
+        net.minecraft.world.item.ItemStack stack = slot.stack();
+        if (stack == null || stack.isEmpty()) {
+            return "";
+        }
+        net.minecraft.resources.ResourceLocation id =
+                net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem());
+        String key = "item." + id.getNamespace() + "." + id.getPath() + ".desc";
+        net.minecraft.locale.Language language = net.minecraft.locale.Language.getInstance();
+        return language.has(key) ? language.getOrDefault(key) : "";
     }
 
     /**

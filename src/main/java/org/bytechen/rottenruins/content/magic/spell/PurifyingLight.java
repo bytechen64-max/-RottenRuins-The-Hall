@@ -45,17 +45,11 @@ public class PurifyingLight extends CMagicBaseItem {
     }
 
     @Override
-    protected void appendSpellHoverText(@NotNull ItemStack stack, @Nullable Level level,
-                                        @NotNull List<Component> tooltip) {
-        tooltip.add(Component.translatable("item.rotten_ruins.purifying_light.desc").withStyle(ChatFormatting.GRAY));
-    }
-
-    @Override
     public boolean cast(@NotNull ServerPlayer caster, @NotNull ItemStack stack,
                         @NotNull MagicCastContext ctx) {
         ServerLevel level = caster.serverLevel();
         Vec3 center = caster.getBoundingBox().getCenter();
-        float healing = (float) Mth.clamp(8.0d * MagicStats.spellPower(caster, stack), 2.0d, 24.0d);
+        float healing = (float) Mth.clamp(8.0d * MagicStats.powerScale(caster, stack), 2.0d, 24.0d);
         restore(caster, healing);
         for (LivingEntity victim : EntityChooseUtil.sphereAt(level, caster, center, RADIUS)) {
             if (!victim.isAlive()) continue;

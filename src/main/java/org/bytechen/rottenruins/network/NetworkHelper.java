@@ -43,6 +43,9 @@ public class NetworkHelper {
         // 轮盘施法界面的配置保存 + 手势协议（同样走 action 分发，不新增包序号）
         org.bytechen.rottenruins.platform.forge.magic.network.c2s.WheelActionPacket.register();
 
+        // JEI 一键填充：只传配方 id，材料判定与搬运在服务端
+        org.bytechen.rottenruins.network.c2s.PotentialCraftFillPacket.register();
+
         NETWORK.registerMessage(packetId++, UniversalPacket.class,
                 UniversalPacket::encode, UniversalPacket::decode, UniversalPacket::handle);
         NETWORK.registerMessage(packetId++, PacketSyncKeyframe.class,

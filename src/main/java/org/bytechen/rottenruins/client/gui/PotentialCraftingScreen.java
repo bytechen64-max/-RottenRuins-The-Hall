@@ -4,12 +4,14 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import org.bytechen.rottenruins.overworld.inventory.PotentialCraftingMenu;
 import org.bytechen.rottenruins.overworld.registry.PotentialCraftingRecipes;
 import org.bytechen.rottenruins.overworld.registry.blockentity.PotentialCraftingTableBlockEntity;
+import org.bytechen.rottenruins.utils.ModUtils;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -23,6 +25,27 @@ public final class PotentialCraftingScreen extends AbstractContainerScreen<Poten
     private static final float CONVERGED_RADIUS = 20.0f;
     private static final float SPIN_SPEED = 1.5f;
     private static final float ARC_RADIUS = 70.0f;
+
+    /** 面板外的留白：两条都画在面板外，各自离边框 BAR_MARGIN 像素。 */
+    private static final int BAR_MARGIN = 6;
+
+    /** 左侧进度条：贴图 {@code s_ui.png}（16×64）拉伸成高 BAR_HEIGHT，竖直居中于圆环。 */
+    private static final ResourceLocation BAR_TEXTURE = ModUtils.modLoc("textures/gui/s_ui.png");
+    private static final int BAR_X = -BAR_MARGIN - 16;
+    private static final int BAR_Y = PotentialCraftingMenu.RING_CENTER_Y - 96 / 2;
+    private static final int BAR_WIDTH = 16;
+    private static final int BAR_HEIGHT = 96;
+    private static final int BAR_INSET = 3;
+    /** 彩虹填充相对框内区再左右各收 1 像素，避免颜色顶到贴图边线。 */
+    private static final int BAR_FILL_INSET = 1;
+
+    /** 右侧按格分的势能条：一格 = 1 点势能，同样竖直居中于圆环。 */
+    private static final int ENERGY_CELL = 6;
+    private static final int ENERGY_GAP = 2;
+    private static final int ENERGY_WIDTH = 16;
+    private static final int ENERGY_X = PotentialCraftingMenu.IMAGE_WIDTH + BAR_MARGIN;
+    private static final int ENERGY_Y = PotentialCraftingMenu.RING_CENTER_Y
+            - (PotentialCraftingTableBlockEntity.POWER_UNITS * (ENERGY_CELL + ENERGY_GAP) - ENERGY_GAP) / 2;
 
     private static final int COLOR_PANEL = 0xF0161B26;
     private static final int COLOR_PANEL_EDGE = 0xFF05070C;
@@ -130,6 +153,9 @@ public final class PotentialCraftingScreen extends AbstractContainerScreen<Poten
         Slot output = menu.slots.get(PotentialCraftingTableBlockEntity.RING_SLOTS);
         drawSlotFrame(graphics, left + output.x, top + output.y, 0xFF1A2233, COLOR_SLOT_EDGE_HOT);
 
+        drawProgressBar(graphics, left + BAR_X, top + BAR_Y, menu.progressFraction());
+        drawEnergyCells(graphics, left + ENERGY_X, top + ENERGY_Y, menu.power());
+
         drawArc(graphics, cx, cy, ARC_RADIUS, -90.0f, 270.0f, COLOR_ARC_BACK);
         if (menu.isCrafting()) {
             drawArc(graphics, cx, cy, ARC_RADIUS, -90.0f, -90.0f + 360.0f * smoothedProgress, COLOR_ARC);
@@ -197,6 +223,37 @@ public final class PotentialCraftingScreen extends AbstractContainerScreen<Poten
     private int remainingSeconds() {
         float left = menu.totalTicks() * (1.0f - Mth.clamp(smoothedProgress, 0.0f, 1.0f));
         return Math.max(1, Mth.ceil(left / 20.0f));
+    }
+
+    /**
+     * 左侧进度条：内里自下而上填彩虹渐变（色相随进度与时间推移），再把贴图当框压在上面，
+     * 于是框的边沿会盖住填充边缘；填充左右各比框内区窄 1 像素。
+     */
+    private static void drawProgressBar(@NotNull GuiGraphics graphics, int x, int y, float progress) {
+        int innerHeight = BAR_HEIGHT - BAR_INSET * 2;
+        int filled = Mth.clamp(Math.round(innerHeight * Mth.clamp(progress, 0.0f, 1.0f)), 0, innerHeight);
+        float hueShift = (System.currentTimeMillis() % 6000L) / 6000.0f;
+        int fillLeft = x + BAR_INSET + BAR_FILL_INSET;
+        int fillRight = x + BAR_WIDTH - BAR_INSET - BAR_FILL_INSET;
+        for (int row = 0; row < filled; row++) {
+            float t = (row / (float) Math.max(1, innerHeight) + hueShift) % 1.0f;
+            int rgb = Mth.hsvToRgb(t, 0.72f, 1.0f);
+            int py = y + BAR_HEIGHT - BAR_INSET - 1 - row;
+            graphics.fill(fillLeft, py, fillRight, py + 1, 0xFF000000 | rgb);
+        }
+        graphics.blit(BAR_TEXTURE, x, y, BAR_WIDTH, BAR_HEIGHT, 0.0f, 0.0f, 16, 64, 16, 64);
+    }
+
+    /** 按格分的势能条：一格一点，未满的格子只留暗底。 */
+    private static void drawEnergyCells(@NotNull GuiGraphics graphics, int x, int y, int power) {
+        for (int index = 0; index < PotentialCraftingTableBlockEntity.POWER_UNITS; index++) {
+            int cellY = y + index * (ENERGY_CELL + ENERGY_GAP);
+            boolean lit = index < power;
+            graphics.fill(x, cellY, x + ENERGY_WIDTH, cellY + ENERGY_CELL, lit ? COLOR_POWER : 0xFF1B2634);
+            if (lit) {
+                graphics.fill(x + 1, cellY + 1, x + ENERGY_WIDTH - 1, cellY + ENERGY_CELL - 1, 0xFFBFF2FF);
+            }
+        }
     }
 
     private static int brighten(int argb) {

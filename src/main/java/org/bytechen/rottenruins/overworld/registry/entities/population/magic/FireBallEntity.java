@@ -69,13 +69,26 @@ public class FireBallEntity extends Fireball {
     @NotNull
     public static FireBallEntity spawn(@NotNull ServerPlayer caster, @NotNull ItemStack spellStack,
                                        double explosionRadius, boolean breaksBlocks) {
+        return spawn(caster, spellStack, explosionRadius, breaksBlocks, 0.0f);
+    }
+
+    /** 同上，{@code yawGapDeg} 把瞄准方向水平偏转若干度（特殊使用的连发用）。 */
+    @NotNull
+    public static FireBallEntity spawn(@NotNull ServerPlayer caster, @NotNull ItemStack spellStack,
+                                       double explosionRadius, boolean breaksBlocks, float yawGapDeg) {
         Level level = caster.level();
         Vec3 look = caster.getViewVector(1.0f);
+        if (yawGapDeg != 0.0f) {
+            double rad = Math.toRadians(yawGapDeg);
+            double cos = Math.cos(rad);
+            double sin = Math.sin(rad);
+            look = new Vec3(look.x * cos - look.z * sin, look.y, look.x * sin + look.z * cos);
+        }
 
         FireBallEntity ball = new FireBallEntity(EntityTypeRegistry.FIRE_BALL.get(), level);
         Vec3 pos = caster.getEyePosition().add(look.scale(SPAWN_OFFSET));
         ball.setPos(pos.x, pos.y, pos.z);
-        ball.setRot(caster.getYRot(), caster.getXRot());
+        ball.setRot(caster.getYRot() + yawGapDeg, caster.getXRot());
         ball.setOwner(caster);
 
         // 瞄准用原版的 xPower/yPower/zPower（AbstractHurtingProjectile 每 tick 施加并乘 0.95 阻尼），

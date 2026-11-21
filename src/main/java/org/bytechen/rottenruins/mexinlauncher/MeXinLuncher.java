@@ -50,7 +50,8 @@ import java.util.stream.Stream;
  *       逐个注册给 ModLauncher，类加载时完成注入。</li>
  * </ol>
  */
-public final class MeXinLuncher implements ITransformationService {
+public final class
+MeXinLuncher implements ITransformationService {
 
     private static final String ANNOTATION_DESC =
             "Lorg/bytechen/rottenruins/mexin/MeXin;";

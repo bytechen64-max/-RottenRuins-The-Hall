@@ -7,6 +7,7 @@
   "refmap": "rotten_ruins.refmap.json",
   "mixins": [
     "MixinAnimationController",
+    "PlayerElytraMixin", "PlayerBlockPoseMixin",
     "SilentDaylightCooldownMixin",
     "FoodDataMixin",
     "PlayerNaturalHealingMixin"
@@ -27,6 +28,7 @@
     "OutlineReplayMixin",
     "CrimsonVowBlockMixin",
     "CreativeModeInventoryScreenMixin",
+    "GuiGraphicsTooltipInvoker",
     "accessor.AccessorAbstractContainerScreen",
     "accessor.AccessorRenderStateShard",
     "TextEffectStringDecomposerMixin",

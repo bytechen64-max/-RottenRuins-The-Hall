@@ -56,14 +56,12 @@ public final class MagicAttributeHandlers {
     }
 
     /**
-     * 法术伤害：乘以施法者的<b>有效法术强度</b>。
+     * 法术伤害：乘以增伤倍率 {@code [(通用法强 + 流派法强×0.75)² / 2 + 1]}。
      *
-     * <p>有效法强 = {@code spell_power}（通用倍率）+ <b>该法术流派的法强</b>
-     * （{@code spell_power_fire} 之类，加成、默认 0）。相加这件事由
-     * {@link MagicStats#spellPower} 负责 —— 这里只乘结果，不自己算属性，
-     * 免得"相加"的规则散落到多个地方。</p>
+     * <p>属性读取与"相加"规则都在 {@link MagicStats#damageMultiplier} 里，
+     * 这里只乘一次结果，免得公式散落到多个地方。</p>
      *
-     * <p>施法者为 {@code null}（陷阱 / 环境法术）时不动 —— 那种情况没有"谁的法术强度"可言。</p>
+     * <p>施法者为 {@code null}（陷阱 / 环境法术）时不动 —— 那种情况没有"谁的法强"可言。</p>
      */
     @SubscribeEvent
     public static void onMagicDamage(MagicDamageEvent event) {
@@ -74,9 +72,10 @@ public final class MagicAttributeHandlers {
         if (caster == null) {
             return;
         }
-        double power = MagicStats.spellPower(caster, event.getSpell());
+        // 法强已并入 damageMultiplier，这里只取增伤倍率，避免重复相乘。
+        double multiplier = MagicStats.damageMultiplier(caster, event.getSpell());
         float amount = event.getAmount() + MagicStats.staffGradeBonus(caster, event.getSpell());
-        event.setAmount((float) Math.max(0.0d, amount * Math.max(0.0d, power)));
+        event.setAmount((float) Math.max(0.0d, amount * Math.max(0.0d, multiplier)));
     }
 
     /**

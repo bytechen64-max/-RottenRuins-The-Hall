@@ -120,7 +120,8 @@ public class SwordAuraRenderer extends EntityRenderer<SwordAuraEntity> {
 
         // STYLE_VERDICT 走<b>受控朝向</b>（0 = 竖直劈砍 / 1 = 横向扫击）：裁决的剑光必须读得出方向，
         // 按 entity id 派生的随机倾斜会把"领域落剑"与"突进拖尾"两个语义都糊掉。
-        if (entity.getStyle() == SwordAuraEntity.STYLE_VERDICT) {
+        if (entity.getStyle() == SwordAuraEntity.STYLE_VERDICT
+                || entity.getStyle() == SwordAuraEntity.STYLE_FLAME) {
             poseStack.mulPose(Axis.ZP.rotationDegrees(90f * entity.getVerdictOrientation()));
             poseStack.mulPose(Axis.YP.rotationDegrees(entity.getYaw()));
         } else {
@@ -164,9 +165,15 @@ public class SwordAuraRenderer extends EntityRenderer<SwordAuraEntity> {
             RenderSystem.depthMask(true);
             RenderSystem.enableDepthTest();
         } else {
+            float r = 1f, g = 1f, b = 1f;
+            if (entity.getStyle() == SwordAuraEntity.STYLE_FLAME) {
+                r = 0.86f;
+                g = 0.10f;
+                b = 0.05f;
+            }
             RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
             buffer.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-            emitCones(buffer, matrix, halfHeight, baseRadius, scale, 1f, 1f, 1f, alpha);
+            emitCones(buffer, matrix, halfHeight, baseRadius, scale, r, g, b, alpha);
             tesselator.end();
         }
 

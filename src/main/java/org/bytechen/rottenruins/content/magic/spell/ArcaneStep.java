@@ -48,12 +48,6 @@ public class ArcaneStep extends CMagicBaseItem {
     }
 
     @Override
-    protected void appendSpellHoverText(@NotNull ItemStack stack, @Nullable Level level,
-                                        @NotNull List<Component> tooltip) {
-        tooltip.add(Component.translatable("item.rotten_ruins.arcane_step.desc").withStyle(ChatFormatting.GRAY));
-    }
-
-    @Override
     public boolean canCast(@NotNull ServerPlayer caster, @NotNull ItemStack stack) {
         return !caster.isPassenger() && findDestination(caster, stack) != null;
     }

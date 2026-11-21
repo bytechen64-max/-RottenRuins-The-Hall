@@ -44,12 +44,6 @@ public class TidalPulse extends CMagicBaseItem {
     }
 
     @Override
-    protected void appendSpellHoverText(@NotNull ItemStack stack, @Nullable Level level,
-                                        @NotNull List<Component> tooltip) {
-        tooltip.add(Component.translatable("item.rotten_ruins.tidal_pulse.desc").withStyle(ChatFormatting.GRAY));
-    }
-
-    @Override
     public boolean cast(@NotNull ServerPlayer caster, @NotNull ItemStack stack,
                         @NotNull MagicCastContext ctx) {
         ServerLevel level = caster.serverLevel();

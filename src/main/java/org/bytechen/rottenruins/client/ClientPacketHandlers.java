@@ -46,6 +46,27 @@ public final class ClientPacketHandlers {
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
                 org.bytechen.rottenruins.client.tooltip.TooltipStyleHook::onTooltipColor);
 
+        // 法术物品 tooltip 的文字段：简介 / Shift 提示 / 折叠的细节行。
+        // ItemTooltipEvent 在 appendHoverText 之后触发，所以数值段在前、这里追加的在后面。
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
+                org.bytechen.rottenruins.client.tooltip.SpellTooltipSections::onItemTooltip);
+
+        // 法术物品 tooltip 的开合动画：Pre 里取消原版绘制后自己套裁剪 + 缩放重画，
+        // 关闭用上一帧的快照补画（1.20.1 没有"画完之后"的事件）。
+        // HIGHEST 优先级：Forge 先跑 HIGHEST，所以能抢在 ModernUI 之类的接管者之前取消事件。
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
+                net.minecraftforge.eventbus.api.EventPriority.HIGHEST,
+                org.bytechen.rottenruins.client.tooltip.SpellTooltipAnimator::onTooltipPre);
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
+                org.bytechen.rottenruins.client.tooltip.SpellTooltipAnimator::onScreenPre);
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
+                org.bytechen.rottenruins.client.tooltip.SpellTooltipAnimator::onScreenPost);
+        // 游戏内 HUD 没有 ScreenEvent，这两条负责"每帧清标记"和"移开后的关闭动画"。
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
+                org.bytechen.rottenruins.client.tooltip.SpellTooltipAnimator::onGuiPre);
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
+                org.bytechen.rottenruins.client.tooltip.SpellTooltipAnimator::onGuiPost);
+
         // 虚空剑「蹲下左键」的客户端选中：射线选中后发 C2S 包给服务端结算。
         // 挂在同一个 Forge 总线上，所以和上面的 tooltip 钩子一样走 addListener。
         org.bytechen.rottenruins.client.VoidSwordClientHandler.register();

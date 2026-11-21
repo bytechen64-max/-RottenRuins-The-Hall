@@ -155,6 +155,9 @@ public class SplendidingShaders {
      */
     public static ShaderInstance tooltipThermalShader;
 
+    /** tooltip 底板的细胞网络（连线 + 脉动亮点，按法术流派上色）。绘制路径同上，为 null 时退回纯色底板。 */
+    public static ShaderInstance tooltipNetworkShader;
+
     // ── render types (lazy) ──
     private static RenderType lightningOutlineRenderType;
     private static RenderType itemGlintRenderType;
@@ -492,6 +495,19 @@ public class SplendidingShaders {
                     shader -> tooltipThermalShader = shader);
         } catch (Throwable t) {
             HallMod.LOGGER.error("[Shaders] 加载 rendertype_tooltip_thermal 失败，"
+                    + "tooltip 底板将退回纯色（见 TooltipStyleHook）", t);
+        }
+
+        // tooltip 底板的细胞网络（GUI：连线 + 脉动亮点，无贴图）
+        // 与热流一样：加载失败只是没有效果，TooltipStyleHook 会退回纯色底板。
+        try {
+            event.registerShader(
+                    new ShaderInstance(event.getResourceProvider(),
+                            ModUtils.modLoc("rendertype_tooltip_network"),
+                            DefaultVertexFormat.POSITION_TEX),
+                    shader -> tooltipNetworkShader = shader);
+        } catch (Throwable t) {
+            HallMod.LOGGER.error("[Shaders] 加载 rendertype_tooltip_network 失败，"
                     + "tooltip 底板将退回纯色（见 TooltipStyleHook）", t);
         }
 

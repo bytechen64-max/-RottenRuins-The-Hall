@@ -2,6 +2,10 @@ package org.bytechen.rottenruins.overworld.registry.effect.customEffect;
 
 import net.minecraft.resources.ResourceLocation;
 import org.bytechen.rottenruins.HallMod;
+import org.bytechen.rottenruins.content.magic.effect.BarkArmorEffect;
+import org.bytechen.rottenruins.content.magic.effect.FlameSlashEffect;
+import org.bytechen.rottenruins.content.magic.effect.HolyWingsEffect;
+import org.bytechen.rottenruins.content.magic.effect.ShieldEffect;
 import org.bytechen.rottenruins.overworld.registry.effect.customEffect.effects.ArcaneMarkEffect;
 import org.bytechen.rottenruins.overworld.registry.effect.customEffect.effects.CorrosionEffect;
 import org.bytechen.rottenruins.overworld.registry.effect.customEffect.effects.FrailtyEffect;
@@ -43,6 +47,26 @@ public final class RegisterCustomEffect {
     /** 衰竭：攻击力 -2/层。 */
     public static final FrailtyEffect FRAILTY =
             CustomEffectRegistry.register(new FrailtyEffect(id("frailty")));
+
+    /** 护盾：抵挡固定次数伤害。 */
+    public static final ShieldEffect SHIELD =
+            CustomEffectRegistry.register(new ShieldEffect(id("shield")));
+
+    /** 藤甲：免疫雷电/火焰之外的伤害。 */
+    public static final BarkArmorEffect BARK_ARMOR =
+            CustomEffectRegistry.register(new BarkArmorEffect(id("bark_armor")));
+
+    /** 圣翼：鞘翅飞行 + 空中冲刺。 */
+    public static final HolyWingsEffect HOLY_WINGS =
+            CustomEffectRegistry.register(new HolyWingsEffect(id("holy_wings")));
+
+    /** 焰斩：挥剑附带剑气。 */
+    public static final FlameSlashEffect FLAME_SLASH =
+            CustomEffectRegistry.register(new FlameSlashEffect(id("flame_slash")));
+
+    /** 城墙重击附带的晕眩：生物 noai、玩家锁视角，详见 {@link org.bytechen.rottenruins.content.magic.effect.StunEffect}。 */
+    public static final org.bytechen.rottenruins.content.magic.effect.StunEffect STUN =
+            CustomEffectRegistry.register(new org.bytechen.rottenruins.content.magic.effect.StunEffect(id("stun")));
 
     private RegisterCustomEffect() {
     }

@@ -44,12 +44,6 @@ public class BriarSnare extends CMagicBaseItem {
     }
 
     @Override
-    protected void appendSpellHoverText(@NotNull ItemStack stack, @Nullable Level level,
-                                        @NotNull List<Component> tooltip) {
-        tooltip.add(Component.translatable("item.rotten_ruins.briar_snare.desc").withStyle(ChatFormatting.GRAY));
-    }
-
-    @Override
     public double baseTargetRange() {
         return 28.0d;
     }

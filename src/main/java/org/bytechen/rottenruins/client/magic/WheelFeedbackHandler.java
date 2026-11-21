@@ -3,6 +3,7 @@ package org.bytechen.rottenruins.client.magic;
 import org.bytechen.rottenruins.gameplay.magic.stats.MagicStats;
 import org.bytechen.rottenruins.core.magic.model.UsingType;
 import org.bytechen.rottenruins.gameplay.magic.casting.MagicHandle;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -115,7 +116,9 @@ public final class WheelFeedbackHandler {
             return;
         }
         // 失败/阶段提示走 actionbar；success 的维持提示也放在 actionbar，不挡视线。
-        mc.player.displayClientMessage(Component.translatable(key), true);
+        // 失败一律醒目红色，避免和成功的白色提示混在一起看漏。
+        Component line = Component.translatable(key);
+        mc.player.displayClientMessage(quiet ? line : line.copy().withStyle(ChatFormatting.RED), true);
     }
 
     private static String resultKey(CastResult result) {

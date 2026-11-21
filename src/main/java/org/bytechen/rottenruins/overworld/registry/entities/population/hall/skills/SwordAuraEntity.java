@@ -53,6 +53,9 @@ public class SwordAuraEntity extends Entity {
      *  （单开一档而不加颜色参数：加三通道要多三个 {@code EntityDataAccessor} 并多写一遍 NBT）。 */
     public static final int STYLE_FROST = 3;
 
+    /** 焰斩样式：朝向规则同 {@link #STYLE_VERDICT}，配色由渲染器换成红橙。 */
+    public static final int STYLE_FLAME = 4;
+
     /** 竖直（俯仰 0）：剑尖朝下劈。 */
     public static final float ORIENT_VERTICAL = 0.0f;
     /** 平躺（俯仰 90°）：剑身横过来扫。 */
@@ -291,6 +294,22 @@ public class SwordAuraEntity extends Entity {
     public static SwordAuraEntity spawnApostleSlash(Level level, Vec3 pos) {
         return spawnApostleSlash(level, pos,
                 DEFAULT_SCALE, APOSTLE_HEIGHT, APOSTLE_RADIUS, 14, 1.6f);
+    }
+
+    /** 焰斩专用工厂：横躺的红色剑气，朝向用 {@link #setVerdictOrientation} 控制。 */
+    public static SwordAuraEntity spawnFlameSlash(Level level, Vec3 pos, float scale, float orientation) {
+        SwordAuraEntity e = new SwordAuraEntity(EntityTypeRegistry.SWORD_AURA.get(), level);
+        e.setPos(pos);
+        e.setStyle(STYLE_FLAME);
+        e.setVerdictOrientation(orientation);
+        e.setScale(scale);
+        e.setAlpha(DEFAULT_ALPHA);
+        e.setAuraHeight(5.0f);
+        e.setAuraRadius(0.32f);
+        e.setMaxAge(18);
+        e.setShrinkSpeed(1.4f);
+        level.addFreshEntity(e);
+        return e;
     }
 
     /**

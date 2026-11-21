@@ -127,6 +127,9 @@ public class ClientModEventHandler {
         // 同样三行的 BER，然后在这里注册即可，不需要新增 mixin。
         event.registerBlockEntityRenderer(RegisterBlockEntities.DEATH_CORE.get(),
                 DeathCoreRenderer::new);
+        // 奥秘仪台：同一个 BER 同时画 GeckoLib 主体与环绕物品（注册两次只会留下最后一个）。
+        event.registerBlockEntityRenderer(RegisterBlockEntities.POTENTIAL_CRAFTING_TABLE.get(),
+                context -> new org.bytechen.rottenruins.client.entity.render.impl.PotentialCraftingTableRenderer());
         // 法术投射物 —— 火球。
         // 用原版 ThrownItemRenderer：它把 Fireball#getItem() 的那张贴图billboard 出来，
         // 也就是"火球的贴图 = 火球法术物品的贴图"（见 FireBallEntity#spawn 里的 setItem）。

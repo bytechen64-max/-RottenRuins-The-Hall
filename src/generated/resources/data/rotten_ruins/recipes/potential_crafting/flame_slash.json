@@ -1,0 +1,27 @@
+{
+  "type": "rotten_ruins:potential_crafting",
+  "ingredients": [
+    {
+      "item": "minecraft:lava_bucket"
+    },
+    {
+      "item": "minecraft:blaze_rod"
+    },
+    {
+      "item": "minecraft:nether_star"
+    },
+    {
+      "item": "minecraft:ghast_tear"
+    },
+    {
+      "item": "minecraft:netherite_ingot"
+    },
+    {
+      "item": "minecraft:iron_sword"
+    },
+    {
+      "item": "rotten_ruins:fire_mana_plate"
+    }
+  ],
+  "output": "rotten_ruins:flame_slash"
+}

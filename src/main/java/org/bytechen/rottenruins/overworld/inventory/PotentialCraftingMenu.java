@@ -29,11 +29,11 @@ public final class PotentialCraftingMenu extends AbstractContainerMenu {
     public static final int IMAGE_HEIGHT = 256;
 
     /** 圆心（= 产物槽位置）。 */
-    public static final int RING_CENTER_X = 88;
+    public static final int RING_CENTER_X = 96;
     public static final int RING_CENTER_Y = 84;
 
     /** 环形槽静止半径。 */
-    public static final int RING_RADIUS = 54;
+    public static final int RING_RADIUS = 48;
 
     /** 「开始合成」按钮（界面绘制与点击判定共用同一组常量）。 */
     public static final int BUTTON_START = 0;
@@ -108,6 +108,10 @@ public final class PotentialCraftingMenu extends AbstractContainerMenu {
     }
 
     // ── 界面读的状态 ──
+
+    public BlockPos pos() {
+        return pos;
+    }
 
     public boolean isCrafting() {
         return data.get(0) == 1;

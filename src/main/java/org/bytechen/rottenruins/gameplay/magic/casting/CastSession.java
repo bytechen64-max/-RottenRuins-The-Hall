@@ -13,6 +13,8 @@ public final class CastSession {
     private int slot = -1;
     private InteractionHand hand = InteractionHand.MAIN_HAND;
     @Nullable private LivingEntity lockedTarget;
+    /** 维持型法术的冷却先记在这，等维持结束再写进池子（否则按下的瞬间就在冷却）。 */
+    private int pendingCooldownTicks;
 
     public CastingState timing() { return timing; }
     public CastingState.Phase getPhase() { return timing.phase(); }
@@ -26,6 +28,10 @@ public final class CastSession {
     public int getHeldTicks() { return timing.heldTicks(); }
     public void setHeldTicks(int ticks) { timing.updateHeldTicks(ticks); }
     @Nullable public LivingEntity getLockedTarget() { return lockedTarget; }
+
+    public int getPendingCooldownTicks() { return pendingCooldownTicks; }
+
+    public void setPendingCooldownTicks(int ticks) { this.pendingCooldownTicks = Math.max(0, ticks); }
 
     public void beginCharging(ItemStack spell, int slot, InteractionHand hand, CastingState.Source source) {
         timing.beginCharging(source);
@@ -47,6 +53,7 @@ public final class CastSession {
 
     public void reset() {
         timing.reset();
+        pendingCooldownTicks = 0;
         bind(ItemStack.EMPTY, -1, InteractionHand.MAIN_HAND, null);
     }
 }

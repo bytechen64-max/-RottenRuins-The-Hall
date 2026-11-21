@@ -4,6 +4,7 @@ import org.bytechen.rottenruins.gameplay.magic.spell.IMagicBaseItem;
 import org.bytechen.rottenruins.gameplay.magic.stats.MagicStats;
 
 import org.bytechen.rottenruins.core.magic.model.MagicType;
+import org.bytechen.rottenruins.api.magic.CastResult;
 
 import org.bytechen.rottenruins.gameplay.magic.casting.MagicHandle;
 
@@ -181,6 +182,7 @@ public abstract class StaffBase extends Item implements org.bytechen.rottenruins
         }
 
         // 立刻释放型：已经打完了（或失败），不需要维持使用态
+        if (!outcome.result().isSuccess()) notifyFailure(serverPlayer, outcome.result());
         return outcome.result().isSuccess()
                 ? InteractionResultHolder.consume(current)
                 : InteractionResultHolder.fail(current);
@@ -279,6 +281,14 @@ public abstract class StaffBase extends Item implements org.bytechen.rottenruins
             return;
         }
         int heldTicks = MAGIC_USE_DURATION - remainingUseDuration;
-        MagicHandle.handleUseRelease(player, player.getUsedItemHand(), heldTicks);
+        CastResult result = MagicHandle.handleUseRelease(player, player.getUsedItemHand(), heldTicks);
+        if (!result.isSuccess()) notifyFailure(player, result);
+    }
+
+    /** 释放失败的操作栏提示，统一走轮盘那套 result 文案并染红。 */
+    private static void notifyFailure(@NotNull ServerPlayer player, @NotNull CastResult result) {
+        player.displayClientMessage(Component.translatable(
+                "rotten_ruins.wheel.result." + result.name().toLowerCase(java.util.Locale.ROOT))
+                .withStyle(ChatFormatting.RED), true);
     }
 }

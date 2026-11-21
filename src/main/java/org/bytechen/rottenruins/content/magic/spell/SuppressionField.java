@@ -151,9 +151,8 @@ public class SuppressionField extends CMagicBaseItem {
      * <p>减 1.0 是为了让"属性默认值（1.0）= 基础半径"成立。</p>
      */
     public static double radiusOf(@NotNull Player caster, @NotNull ItemStack stack) {
-        double spellPower = MagicStats.spellPower(caster, stack);
-        // 减 1.0 让"默认属性 = 基础半径"成立，见上面的表
-        double bonus = spellPower - 1.0d;
+        // 0 法强 = 基础半径，法强直接加在半径上（见上面的表）
+        double bonus = MagicStats.spellPower(caster, stack);
         return Mth.clamp(BASE_RADIUS * (1.0d + bonus / 4.0d), 1.0d, MAX_RADIUS);
     }
 
