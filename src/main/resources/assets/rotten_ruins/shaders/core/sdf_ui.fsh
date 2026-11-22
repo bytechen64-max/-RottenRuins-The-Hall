@@ -11,11 +11,13 @@
  *   aa = 1 / uScale（uScale = 1 个 GUI 像素对应的物理像素数）。
  *   本工具里 uScale = 原生渲染倍率（默认 2）；进游戏时传 GUI scale。
  *
- * 四种模式：
+ * 五种模式：
  *   uMode = 0 圆环 / 圆环扇区（uRIn、uROut、uA0、uA1；整圈 = a1-a0 >= TAU）
  *   uMode = 1 圆角矩形（uHalfSize、uRound、uBorder 内描边）
  *   uMode = 2 胶囊线段（uP0、uP1、uThickness）
  *   uMode = 3 星形/多边形尖角（uRIn、uROut、uPoints、uRot；极坐标半径插值近似）
+ *   uMode = 4 正多边形（uROut、uPoints、uRot；uBorder>0 时为等宽<b>内</b>描边）
+ *             六边形晶格槽、十六边形晶盘这类"整块只要一个 quad"的形状走这支。
  *
  * 颜色：uColorIn → uColorOut；uGradMode 0 = 径向，1 = 竖直，2 = 纯 uColorIn。
  */
@@ -57,6 +59,17 @@ float sdSegment(vec2 p, vec2 a, vec2 b) {
     vec2 ba = b - a;
     float h = clamp(dot(pa, ba) / max(dot(ba, ba), 1.0e-6), 0.0, 1.0);
     return length(pa - ba * h);
+}
+
+/**
+ * 正多边形：把角度折到"最近边的法线"上，返回沿法线的距离（边心距 = r·cos(π/n)）。
+ * 顶点处略欠精确，但填充与 1px 描边的抗锯齿够用，而且整块只要一个 quad。
+ */
+float sdRegularPolygon(vec2 p, float r, float n, float rot) {
+    float seg = TAU / max(n, 3.0);
+    float ang = atan(p.y, p.x) - rot;
+    float a = mod(ang + seg * 0.5, seg) - seg * 0.5;
+    return length(p) * cos(a) - r * cos(seg * 0.5);
 }
 
 /** 精确的星形 SDF：对 2n 条边求最近距离 + 奇偶规则判断内外（尖角不会变成花瓣）。 */
@@ -140,10 +153,21 @@ void main() {
         // 胶囊线段
         sdf = sdSegment(p, uP0, uP1) - uThickness;
         col = uColorIn;
-    } else {
+    } else if (uMode < 3.5) {
         // 星形（精确多边形边距离，保证尖角是尖的）
         sdf = sdStarPoly(p - uCenter, uROut, uRIn, uPoints, uRot);
         col = uColorIn;
+    } else {
+        // 正多边形：填充；uBorder>0 时下面统一改成等宽描边
+        sdf = sdRegularPolygon(p - uCenter, uROut, uPoints, uRot);
+        col = uColorIn;
+    }
+
+    // 正多边形的等宽描边：|sdf + w/2| - w/2 得到宽度 w 的环
+    if (uMode >= 3.5 && uBorder > 0.0) {
+        float band = abs(sdf + uBorder * 0.5) - uBorder * 0.5;
+        float borderCoverage = clamp(0.5 - band / aa, 0.0, 1.0);
+        col = mix(col, uBorderColor, borderCoverage * uBorderColor.a);
     }
 
     float width = aa + max(uSoft, 0.0);

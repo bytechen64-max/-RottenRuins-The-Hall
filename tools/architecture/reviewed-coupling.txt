@@ -132,6 +132,11 @@ client-forge | client/gui/MagicScreen.java -> net.minecraftforge.api.distmarker.
 client-forge | client/gui/MagicScreen.java -> net.minecraftforge.api.distmarker.OnlyIn
 client-forge | client/gui/SpellLoadoutScreen.java -> net.minecraftforge.api.distmarker.Dist
 client-forge | client/gui/SpellLoadoutScreen.java -> net.minecraftforge.api.distmarker.OnlyIn
+# 奥秘仪台界面（client/gui/PotentialCraftingScreen）：界面只在 ClientModEventHandler 的
+# 客户端屏幕注册里构造，@OnlyIn(Dist.CLIENT) 与其它 client/gui 界面同一写法；
+# 这两条只是 Forge 的侧别注解，不引入 gameplay / api / core 边。
+client-forge | client/gui/PotentialCraftingScreen.java -> net.minecraftforge.api.distmarker.Dist
+client-forge | client/gui/PotentialCraftingScreen.java -> net.minecraftforge.api.distmarker.OnlyIn
 client-forge | client/gui/SpellWheelScreen.java -> net.minecraftforge.api.distmarker.Dist
 client-forge | client/gui/SpellWheelScreen.java -> net.minecraftforge.api.distmarker.OnlyIn
 client-forge | client/gui/TextEffectPreviewScreen.java -> net.minecraftforge.api.distmarker.Dist

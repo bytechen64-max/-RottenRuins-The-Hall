@@ -37,6 +37,9 @@ public final class WheelGuiShaders {
 
     private static final Set<String> WARNED = new HashSet<>();
 
+    /** sdfBegin/sdfEnd 之间的批量模式：形状不再各自 flush / 切程序。 */
+    private static boolean sdfBatching;
+
     private WheelGuiShaders() {
     }
 
@@ -47,9 +50,33 @@ public final class WheelGuiShaders {
                 && SplendidingShaders.wheelCoreShader != null;
     }
 
-    /** SDF 形状是否可用（圆/环/圆角/胶囊/星形）。 */
+    /** SDF 形状是否可用（圆/环/圆角/胶囊/星形/正多边形）。 */
     public static boolean sdfAvailable() {
         return SplendidingShaders.wheelSdfShader != null;
+    }
+
+    /**
+     * 批量绘制开始/结束：一帧几十个 SDF 形状时，把 gui.flush() 与 GL 状态切换压成一次。
+     *
+     * <p>只影响 SDF 形状：中间的 GuiGraphics.fill 照常排进原版 GUI 缓冲，
+     * 在下一次 sdfBegin 的 flush 处落到下面。调用顺序应为
+     * 「原版几何 → sdfBegin → 一堆形状 → sdfEnd → 原版细节」。</p>
+     */
+    public static void sdfBegin(GuiGraphics gui) {
+        if (sdfBatching || !sdfAvailable()) {
+            return;
+        }
+        sdfBatching = true;
+        begin(gui, SplendidingShaders.wheelSdfShader);
+    }
+
+    /** 结束批量；未开始时调用无副作用。 */
+    public static void sdfEnd() {
+        if (!sdfBatching) {
+            return;
+        }
+        sdfBatching = false;
+        end();
     }
 
     //  轮盘三支着色器
@@ -184,7 +211,10 @@ public final class WheelGuiShaders {
         float x0 = cx - rOut - pad;
         float y0 = cy - rOut - pad;
         float span = (rOut + pad) * 2.0F;
-        begin(gui, sdf);
+        boolean own = !sdfBatching;
+        if (own) {
+            begin(gui, sdf);
+        }
         sdfBase(sdf, x0, y0, span, span);
         set(sdf, "uMode", 0.0F);
         set(sdf, "uCenter", cx - x0, cy - y0);
@@ -196,7 +226,9 @@ public final class WheelGuiShaders {
         setColor(sdf, "uColorIn", colorIn);
         setColor(sdf, "uColorOut", colorOut);
         quad(x0, y0, span, span);
-        end();
+        if (own) {
+            end();
+        }
     }
 
     /** 圆环扇区（按半径渐变）。 */
@@ -210,7 +242,10 @@ public final class WheelGuiShaders {
         float x0 = cx - rOut - pad;
         float y0 = cy - rOut - pad;
         float span = (rOut + pad) * 2.0F;
-        begin(gui, sdf);
+        boolean own = !sdfBatching;
+        if (own) {
+            begin(gui, sdf);
+        }
         sdfBase(sdf, x0, y0, span, span);
         set(sdf, "uMode", 0.0F);
         set(sdf, "uCenter", cx - x0, cy - y0);
@@ -222,7 +257,9 @@ public final class WheelGuiShaders {
         setColor(sdf, "uColorIn", colorIn);
         setColor(sdf, "uColorOut", colorOut);
         quad(x0, y0, span, span);
-        end();
+        if (own) {
+            end();
+        }
     }
 
     /** 圆角矩形（可选 1px 内描边；borderWidth<=0 表示不描边）。 */
@@ -233,7 +270,10 @@ public final class WheelGuiShaders {
         if (sdf == null || w <= 0.5F || h <= 0.5F) {
             return;
         }
-        begin(gui, sdf);
+        boolean own = !sdfBatching;
+        if (own) {
+            begin(gui, sdf);
+        }
         sdfBase(sdf, x, y, w, h);
         set(sdf, "uMode", 1.0F);
         set(sdf, "uCenter", w * 0.5F, h * 0.5F);
@@ -245,7 +285,9 @@ public final class WheelGuiShaders {
         setColor(sdf, "uColorOut", colorBottom);
         setColor(sdf, "uBorderColor", borderColor);
         quad(x, y, w, h);
-        end();
+        if (own) {
+            end();
+        }
     }
 
     /** 胶囊线段（圆头）。 */
@@ -260,7 +302,10 @@ public final class WheelGuiShaders {
         float y0 = Math.min(y1, y2) - pad;
         float w = Math.abs(x2 - x1) + pad * 2.0F;
         float h = Math.abs(y2 - y1) + pad * 2.0F;
-        begin(gui, sdf);
+        boolean own = !sdfBatching;
+        if (own) {
+            begin(gui, sdf);
+        }
         sdfBase(sdf, x0, y0, w, h);
         set(sdf, "uMode", 2.0F);
         set(sdf, "uP0", x1 - x0, y1 - y0);
@@ -270,7 +315,9 @@ public final class WheelGuiShaders {
         setColor(sdf, "uColorIn", argb);
         setColor(sdf, "uColorOut", argb);
         quad(x0, y0, w, h);
-        end();
+        if (own) {
+            end();
+        }
     }
 
     /** 星形（精确多边形尖角）。 */
@@ -286,7 +333,10 @@ public final class WheelGuiShaders {
         float x0 = cx - rOut - pad;
         float y0 = cy - rOut - pad;
         float size = (rOut + pad) * 2.0F;
-        begin(gui, sdf);
+        boolean own = !sdfBatching;
+        if (own) {
+            begin(gui, sdf);
+        }
         sdfBase(sdf, x0, y0, size, size);
         set(sdf, "uMode", 3.0F);
         set(sdf, "uCenter", cx - x0, cy - y0);
@@ -298,7 +348,45 @@ public final class WheelGuiShaders {
         setColor(sdf, "uColorIn", argb);
         setColor(sdf, "uColorOut", argb);
         quad(x0, y0, size, size);
-        end();
+        if (own) {
+            end();
+        }
+    }
+
+    /**
+     * 正多边形（六边形晶格槽、十六边形晶盘）：{@code uMode = 4}。
+     * {@code borderWidth <= 0} 是实心；否则改成等宽描边。
+     */
+    public static void sdfPolygon(GuiGraphics gui, float cx, float cy, float radius, int sides,
+                                  float rotation, int colorIn, int colorOut,
+                                  int borderColor, float borderWidth) {
+        ShaderInstance sdf = SplendidingShaders.wheelSdfShader;
+        if (sdf == null || radius <= 0.1F) {
+            return;
+        }
+        float pad = 2.0F + Math.max(0.0F, borderWidth);
+        float x0 = cx - radius - pad;
+        float y0 = cy - radius - pad;
+        float span = (radius + pad) * 2.0F;
+        boolean own = !sdfBatching;
+        if (own) {
+            begin(gui, sdf);
+        }
+        sdfBase(sdf, x0, y0, span, span);
+        set(sdf, "uMode", 4.0F);
+        set(sdf, "uCenter", cx - x0, cy - y0);
+        set(sdf, "uROut", radius);
+        set(sdf, "uPoints", (float) Math.max(3, sides));
+        set(sdf, "uRot", rotation);
+        set(sdf, "uBorder", Math.max(0.0F, borderWidth));
+        set(sdf, "uGradMode", 2.0F);
+        setColor(sdf, "uColorIn", colorIn);
+        setColor(sdf, "uColorOut", colorOut);
+        setColor(sdf, "uBorderColor", borderColor);
+        quad(x0, y0, span, span);
+        if (own) {
+            end();
+        }
     }
 
     //  内部：状态 / uniform / quad
