@@ -472,6 +472,83 @@
         }
       ],
       "source": "minecraft:stone"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_grass_block",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:corruption_grass"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_dirt",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:spread_dirt"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_stone",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:spread_stone"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_stone",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:infection_cobblestone_block"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_log",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:spread_infection_wood"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:spread_infection_leaves"
+    },
+    {
+      "type": "rotten_ruins:spread",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:hall_grass",
+          "weight": 100
+        }
+      ],
+      "source": "rotten_ruins:variable_height_crop"
     }
   ],
   "replace": false

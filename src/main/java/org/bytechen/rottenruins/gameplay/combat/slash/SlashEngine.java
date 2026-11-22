@@ -79,6 +79,8 @@ public final class SlashEngine {
             pending.resolved = true;
             sound(player, spec.swingSound(), spec);
             int attempts = 0;
+            // Knockback is read once: vanilla adds it to the swing, not per target.
+            float knockbackBonus = SlashImpactEffects.knockbackBonus(player);
             for (LivingEntity target : SlashHitResolver.collect(c)) {
                 if (attempts >= spec.maxTargets()) break;
                 if (!pending.weapon.canHitWithSlash(c, target) || !pending.weapon.beforeSlashHit(c, target)) continue;
@@ -90,6 +92,8 @@ public final class SlashEngine {
                 var hit = SlashRuntime.services().critical(c, pending.weapon, target, pending.criticalEligible);
                 float damage = hit.damage();
                 if (!Float.isFinite(damage) || damage < 0) continue;
+                // Vanilla ignites 1s before the hurt call and rolls it back if the hit is rejected.
+                var fireAspect = SlashImpactEffects.beforeHit(player, target);
                 boolean dealt = pending.weapon.applySlashDamage(c, target, damage);
                 if (dealt) {
                     pending.hits++;
@@ -99,9 +103,15 @@ public final class SlashEngine {
                         pending.weapon.onSlashCritical(c, target, hit.multiplier());
                     }
                     player.setLastHurtMob(target);
-                    if (spec.knockback() > 0) target.knockback(spec.knockback(), player.getX() - target.getX(), player.getZ() - target.getZ());
+                    float knockback = spec.knockback() + knockbackBonus;
+                    if (knockback > 0) target.knockback(knockback, player.getX() - target.getX(), player.getZ() - target.getZ());
+                    if (knockbackBonus > 0) SlashImpactEffects.playKnockbackSound(player);
                     EnchantmentHelper.doPostHurtEffects(target, player);
                     EnchantmentHelper.doPostDamageEffects(player, target);
+                    // Vanilla applies the full duration last, after the enchantment callbacks.
+                    fireAspect.afterDealt(target);
+                } else {
+                    fireAspect.afterMissed(target);
                 }
                 pending.weapon.onSlashHit(c, target, damage, dealt);
             }

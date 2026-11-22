@@ -47,6 +47,21 @@ public abstract class BaseUlceratedEntity extends BaseInfectedEntity {
         consumer.accept(this);
     }
 
+    /** 合体占用锁：同一 tick 内不会被另一场合体重复计入（见 {@link UlceratedFusion}）。 */
+    private boolean fusing;
+
+    public boolean isFusing() { return fusing; }
+
+    /** 申请合体占用；已被占用则返回 {@code false}。 */
+    public boolean beginFusion() {
+        if (fusing) return false;
+        fusing = true;
+        return true;
+    }
+
+    /** 合体失败时解锁。 */
+    public void cancelFusion() { fusing = false; }
+
     @Override
     public void tick() {
         super.tick();

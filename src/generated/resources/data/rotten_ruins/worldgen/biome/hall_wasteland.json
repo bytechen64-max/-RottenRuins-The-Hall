@@ -49,7 +49,26 @@
     "axolotls": [],
     "creature": [],
     "misc": [],
-    "monster": [],
+    "monster": [
+      {
+        "type": "rotten_ruins:scout",
+        "maxCount": 4,
+        "minCount": 2,
+        "weight": 40
+      },
+      {
+        "type": "rotten_ruins:monolith",
+        "maxCount": 2,
+        "minCount": 1,
+        "weight": 20
+      },
+      {
+        "type": "rotten_ruins:bonecrusher",
+        "maxCount": 3,
+        "minCount": 1,
+        "weight": 25
+      }
+    ],
     "underground_water_creature": [],
     "water_ambient": [],
     "water_creature": []

@@ -239,6 +239,49 @@ public final class SlashCombatGameTests {
             cleanup(helper,p,target);helper.succeed();
         });
     }
+    @GameTest(template="empty",batch="slash_fire_aspect",timeoutTicks=60)
+    public static void fireAspectIgnitesSlashTargets(GameTestHelper helper) {
+        ServerPlayer p=player(helper);ItemStack stack=new ItemStack(RegisterItem.TRUE_COPPER.get());
+        stack.enchant(net.minecraft.world.item.enchantment.Enchantments.FIRE_ASPECT,1);
+        p.setItemInHand(InteractionHand.MAIN_HAND,stack);
+        Cow target=cow(helper,p.position().add(0,0,2));
+        SlashEngine.request(p);
+        helper.runAfterDelay(8,()->{
+            helper.assertTrue(target.getHealth()<100,"Control: the slash itself landed");
+            helper.assertTrue(target.getRemainingFireTicks()>0,"Fire Aspect level 1 burns a slash target for 4 seconds");
+            cleanup(helper,p,target);helper.succeed();
+        });
+    }
+    @GameTest(template="empty",batch="slash_fire_aspect_rollback",timeoutTicks=60)
+    public static void rejectedSlashRollsBackFireAspect(GameTestHelper helper) {
+        ServerPlayer p=player(helper);ItemStack stack=new ItemStack(RegisterItem.TRUE_COPPER.get());
+        stack.enchant(net.minecraft.world.item.enchantment.Enchantments.FIRE_ASPECT,1);
+        p.setItemInHand(InteractionHand.MAIN_HAND,stack);
+        Cow target=cow(helper,p.position().add(0,0,2));
+        // 50 damage sets lastHurt=50 and a 20 tick invulnerability window, so the slash hit is rejected.
+        target.hurt(p.damageSources().playerAttack(p),50);
+        float health=target.getHealth();
+        SlashEngine.request(p);
+        helper.runAfterDelay(8,()->{
+            helper.assertTrue(target.getHealth()==health,"Invulnerable target takes no slash damage");
+            helper.assertTrue(target.getRemainingFireTicks()==0,
+                    "A rejected hit must clear the pre-hit 1s ignite instead of leaving the target burning");
+            cleanup(helper,p,target);helper.succeed();
+        });
+    }
+    @GameTest(template="empty",batch="slash_knockback_enchant",timeoutTicks=60)
+    public static void knockbackEnchantAddsToSlashKnockback(GameTestHelper helper) {
+        ServerPlayer p=player(helper);ItemStack stack=new ItemStack(RegisterItem.TRUE_COPPER.get());
+        stack.enchant(net.minecraft.world.item.enchantment.Enchantments.KNOCKBACK,2);
+        p.setItemInHand(InteractionHand.MAIN_HAND,stack);
+        Cow target=cow(helper,p.position().add(0,0,2));
+        SlashEngine.request(p);
+        helper.runAfterDelay(6,()->{
+            helper.assertTrue(Math.abs(target.getDeltaMovement().z)>0.8,
+                    "Knockback II adds 1.0 on top of the spec's 0.3 instead of being ignored (0.3 alone decays below 0.8)");
+            cleanup(helper,p,target);helper.succeed();
+        });
+    }
     private static ServerPlayer player(GameTestHelper helper) {
         // Do not invoke the real login pipeline: the mod's login sync handlers
         // expect a real Netty channel. This fixture exercises combat, not login.

@@ -82,6 +82,10 @@ public class PursuerEntity extends BaseUlceratedEntity implements RangeAttackCal
     /** 一次攻击从 triggerAnim 到动画彻底播完的总 tick = 3 + 14 = 17，用于「上一刀没播完不许重触发」。 */
     private static final int ATTACK_TOTAL_TICKS = ATTACK_TRANSITION_TICKS + ATTACK_ANIM_TICKS;
 
+    // ------ 与溃烂纠察合体（见 {@link UlceratedFusion}） ------
+    /** 合体探测间隔（tick），按实体 id 错开。 */
+    private static final int FUSION_SCAN_INTERVAL = 20;
+
     // ------ 扇形范围伤害参数（扇形轴 = 命中瞬间自身 → 主目标的水平方向） ------
     /** 扇面全角（度），不是半角：100 = 正前方左右各 50°。 */
     private static final float AOE_ANGLE_DEGREES = 100.0F;
@@ -223,6 +227,10 @@ public class PursuerEntity extends BaseUlceratedEntity implements RangeAttackCal
             tickAttack();
         }
         super.tick();
+        // 与溃烂纠察合体成畸骸：无索敌时按 id 错开每 20 tick 探一次最近的纠察。
+        if (!this.level().isClientSide() && (this.tickCount + this.getId()) % FUSION_SCAN_INTERVAL == 0) {
+            UlceratedFusion.tryFuse(this);
+        }
     }
 
     /**

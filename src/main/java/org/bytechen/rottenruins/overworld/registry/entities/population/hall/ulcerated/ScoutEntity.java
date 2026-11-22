@@ -286,8 +286,9 @@ public class ScoutEntity extends BaseUlceratedEntity {
     private void tickGather() {
         if (this.merging || this.isFakeDying()) return;
 
-        // 每 20 tick（按实体 id 错开）扫描一次：找同伴、判定合体、更新聚团中心点
+        // 每 20 tick（按实体 id 错开）扫描一次：先看能不能和追蹤者融成畸骸，再找同类合体
         if ((this.tickCount + this.getId()) % GATHER_SCAN_INTERVAL == 0) {
+            if (UlceratedFusion.tryFuse(this)) return;
             if (!scanIdleScouts()) return;
         }
         if (!this.hasGatherCenter) return;

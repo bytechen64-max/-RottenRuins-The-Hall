@@ -49,31 +49,36 @@ public class LangDataEN extends LanguageProvider {
 
         add("rotten_ruins.story.unknown", "Unknown story: %s");
         add("rotten_ruins.story.missing_ritual", "Ritual story unavailable. Check the fleshbed_start rule and its clocked story in the data pack.");
-        add("rotten_ruins.story.respawn.first.0", "...You're back.\nDon't worry. I'm still here. Check if you're missing anything.");
+        add("rotten_ruins.story.respawn.first.0", "...You're back.\nDon't worry. See what's missing.");
         add("rotten_ruins.story.respawn.normal.0", "Welcome back. Need a moment to rest?");
-        add("rotten_ruins.story.respawn.normal.1", "I remember the path we took.\nLet's walk it again.");
+        add("rotten_ruins.story.respawn.normal.1", "That road we just took.\nLet's walk it again.");
         add("rotten_ruins.story.respawn.normal.2", "At least this time, you know where the danger is.");
-        add("rotten_ruins.story.respawn.normal.3", "Get your footing first.\nWe'll set off when you're ready.");
+        add("rotten_ruins.story.respawn.normal.3", "Take it slow.\nWe'll set off when you're ready.");
         add("rotten_ruins.story.respawn.rapid.0", "Slow down. We still have time.");
-        add("rotten_ruins.story.respawn.rapid.1", "...Do we really have that much time left?");
+        add("rotten_ruins.story.respawn.rapid.1", "You're back again");
         add("rotten_ruins.story.respawn.fall.0", "Next time, take a look down before you step.");
-        add("rotten_ruins.story.respawn.fall.1", "Let's find a steadier path this time.");
-        add("rotten_ruins.story.respawn.drown.0", "Now, take a deep breath.\nYou're safe.");
-        add("rotten_ruins.story.respawn.drown.1", "Listen to the air around you.\nRemember to come up for breath this time.");
+        add("rotten_ruins.story.respawn.fall.1", "Try to find a steadier path.");
+        add("rotten_ruins.story.respawn.drown.0", "Now,\nyou're safe.");
+        add("rotten_ruins.story.respawn.drown.1", "That was close.\nThis time, surface in time.");
         add("rotten_ruins.story.respawn.mob.0", "It's still waiting for you there.\nGo back when you're ready.");
-        add("rotten_ruins.story.respawn.mob.1", "I saw that. That one's tough.\nLet's try another approach.");
+        add("rotten_ruins.story.respawn.mob.1", "That one's tough.\nLet's try another approach.");
         add(RegisterItem.VOID_SHARD.get(), "Void Shard");
         add("rotten_ruins.story.fleshbed.1", "All things return to decay. The ending is already written...");
         add("rotten_ruins.story.fleshbed.2", "Still, some things can change. You can choose to stop.");
-        add("rotten_ruins.story.fleshbed.3", "If you insist, then go and do it.");
-        add("rotten_ruins.story.fleshbed.4", "Follow the choice within your heart...");
+        add("rotten_ruins.story.fleshbed.3", "Watch out for them.");
+        add("rotten_ruins.story.fleshbed.4", "Opportunity in the challenge...");
         add("rotten_ruins.fleshbed.feed", "Fleshbed: fed %s/%s rotten flesh");
         add("rotten_ruins.fleshbed.ready", "Fed %s/%s rotten flesh. Right-click again to begin the ritual.");
         add("rotten_ruins.fleshbed.started", "The ritual has begun...");
         add("rotten_ruins.fleshbed.running", "The ritual is in progress.");
         add("rotten_ruins.fleshbed.complete", "The ritual is complete.");
         add("rotten_ruins.fleshbed.space", "Not enough room. Leave clear, solid ground around all four sides of the fleshbed.");
-        add("rotten_ruins.story.opening", "Hi there! I'm the Rotten Plague mascot.\nI don't have a character design yet...\nBut I'll help you get to know this world!");
+        add("rotten_ruins.fleshbed.catalyst", "Fleshbed: %s/%s magic catalysts inserted");
+        add("rotten_ruins.fleshbed.catalyst_ready", "%s/%s magic catalysts inserted. Right-click again to begin the hall summoning.");
+        add("rotten_ruins.fleshbed.hall_started", "The Hall is descending...");
+        add("rotten_ruins.fleshbed.hall_running", "The hall summoning is in progress.");
+        add("rotten_ruins.fleshbed.hall_complete", "The Hall has taken root here.");
+        add("rotten_ruins.story.opening", "Hi there, welcome to this time.\nYou might be a bit confused...\nI'll guide you! Try some gravel?");
         add(RegisterItem.TRUE_COPPER.get(), "§[rrs:grad:#B87333:#FFD1A3]True Copper Shortsword§[/]");
         add(RegisterItem.DEATH_DAGGER.get(), "Death Dagger");
         add(RegisterEffect.APOPTOSIS.get(), "Apoptosis");
@@ -83,7 +88,7 @@ public class LangDataEN extends LanguageProvider {
 
         // Creative tab label / panel title: flowing gradient (§6 fallback keeps it gold when effects are off).
         add("itemGroup." + HallMod.MODID + ".main",
-                "§6§[rrs:grad:#6FBF4A:#8B1E2D:speed=0.6]Rotten Ruins§[/]");
+                "§[rrs:grad:#000000:#FFD700:speed=0.6]Rotten Ruins§[/]");
         // Section header rows inside the creative tab (see SectionedCreativeModeTab / RegisterTab)
         add("itemGroup." + HallMod.MODID + ".main.section.creatures", "Spawn Eggs");
         add("itemGroup." + HallMod.MODID + ".main.section.materials", "Materials");

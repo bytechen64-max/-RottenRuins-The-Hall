@@ -5,6 +5,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import org.bytechen.rottenruins.HallMod;
 import org.bytechen.rottenruins.overworld.registry.RegisterBlock;
+import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionBlocks;
 import org.bytechen.rottenruins.core.infection.blockspread.BlockSpreadEntry;
 
 import java.util.ArrayList;
@@ -67,6 +68,19 @@ public class BlockSpreadDataProvider extends org.bytechen.rottenruins.datagen.in
             Blocks.MANGROVE_PLANKS, Blocks.CHERRY_PLANKS,
     };
 
+    /**
+     * 王庭可以反向覆盖的腐化方块：腐化地被王庭扩散时改回对应的王庭方块。
+     * <p>腐化 → 王庭这一步只用 {@code spread} 类型登记，腐化自己那套 {@code corruption}
+     * 规则不受影响；两边各自调 {@code applySpread} 时可以互相翻转，谁扩散到谁就归谁。</p>
+     */
+    private static final Block[] CORRUPTION_GRASS_SOURCES = {CorruptionBlocks.CORRUPTION_GRASS.get()};
+    private static final Block[] CORRUPTION_DIRT_SOURCES = {CorruptionBlocks.SPREAD_DIRT.get()};
+    private static final Block[] CORRUPTION_STONE_SOURCES = {
+            CorruptionBlocks.SPREAD_STONE.get(), CorruptionBlocks.INFECTION_COBBLESTONE_BLOCK.get()};
+    private static final Block[] CORRUPTION_LOG_SOURCES = {CorruptionBlocks.SPREAD_INFECTION_WOOD.get()};
+    private static final Block[] CORRUPTION_LEAVES_SOURCES = {CorruptionBlocks.SPREAD_INFECTION_LEAVES.get()};
+    private static final Block[] CORRUPTION_PLANT_SOURCES = {CorruptionBlocks.VARIABLE_HEIGHT_CROP.get()};
+
     public BlockSpreadDataProvider(PackOutput packOutput) {
         super(packOutput, HallMod.MODID, "default");
     }
@@ -83,6 +97,14 @@ public class BlockSpreadDataProvider extends org.bytechen.rottenruins.datagen.in
         addMapping(entries, GRASS_PLANT_SOURCES, RegisterBlock.HALL_GRASS.get());
         addMapping(entries, PLANKS_SOURCES, RegisterBlock.HALL_PLANKS.get());
         addMapping(entries, STONE_SOURCES, RegisterBlock.HALL_STONE.get());
+
+        // 王庭感染腐化：腐化方块被 spread 类型扩散时改回王庭方块。
+        addMapping(entries, CORRUPTION_GRASS_SOURCES, RegisterBlock.HALL_GRASS_BLOCK.get());
+        addMapping(entries, CORRUPTION_DIRT_SOURCES, RegisterBlock.HALL_DIRT.get());
+        addMapping(entries, CORRUPTION_STONE_SOURCES, RegisterBlock.HALL_STONE.get());
+        addMapping(entries, CORRUPTION_LOG_SOURCES, RegisterBlock.HALL_LOG.get());
+        addMapping(entries, CORRUPTION_LEAVES_SOURCES, RegisterBlock.HALL_LEAVES.get());
+        addMapping(entries, CORRUPTION_PLANT_SOURCES, RegisterBlock.HALL_GRASS.get());
 
         return entries;
     }

@@ -23,6 +23,8 @@ import org.bytechen.rottenruins.gameplay.story.StoryCatalog;
 import org.bytechen.rottenruins.gameplay.story.StoryDefinition;
 import org.bytechen.rottenruins.overworld.registry.RegisterBlockEntities;
 import org.bytechen.rottenruins.network.s2c.FleshbedRitualParticles;
+import org.bytechen.rottenruins.content.ritual.HallSummoningRitual;
+import org.bytechen.rottenruins.overworld.registry.RegisterItem;
 import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionEntityTypes;
 import org.bytechen.rottenruins.overworld.registry.entities.population.corruption.linked.SummoningPillarEntity;
 
@@ -35,11 +37,17 @@ public final class FleshbedBlockEntity extends BlockEntity {
     public static final int FOOD_REQUIRED = 128;
     public static final int PAGE_TICKS = 200;
     public static final int RITUAL_TICKS = PAGE_TICKS * 4;
+    /** 仪式结束后再投入的魔法催化剂数量：喂满后右键启用王庭召唤仪式。 */
+    public static final int CATALYST_REQUIRED = 20;
     private static final Direction[] DIRECTIONS = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
     private int fed;
     private long startTime = -1;
     private boolean completed;
     private int spawnedMask;
+    private int catalysts;
+    /** 王庭仪式已执行的 tick 数（-1 = 未启用）：按执行 tick 计，不按游戏时间，避免区块卸载后回来直接跳完。 */
+    private int hallElapsed = -1;
+    private boolean hallDone;
     private UUID initiator;
     private UUID session;
     private ServerPlayer lastViewer;
@@ -55,12 +63,33 @@ public final class FleshbedBlockEntity extends BlockEntity {
     public boolean isCompleted() { return completed; }
     public int spawnedCount() { return Integer.bitCount(spawnedMask); }
     public long endTime() { return startTime + ritualTicks; }
+    public int catalystCount() { return catalysts; }
+    public boolean isHallRunning() { return hallElapsed >= 0 && !hallDone; }
+    public boolean isHallDone() { return hallDone; }
     public boolean needsTicket() { return isRunning() || (completed && spawnedMask != 15); }
 
     public void interact(ServerPlayer player, InteractionHand hand) {
-        if (completed) { message(player, "complete"); return; }
-        if (isRunning()) { message(player, "running"); return; }
-        if (fed >= FOOD_REQUIRED) { start(player); return; }
+        if (!completed) {
+            if (isRunning()) { message(player, "running"); return; }
+            if (fed >= FOOD_REQUIRED) { start(player); return; }
+        } else {
+            // 仪式结束后的第二阶段：继续喂魔法催化剂，喂满再右键启用王庭召唤仪式。
+            if (isHallRunning()) { message(player, "hall_running"); return; }
+            if (hallDone) { message(player, "hall_complete"); return; }
+            if (catalysts >= CATALYST_REQUIRED) { startHall(player); return; }
+            var held = player.getItemInHand(hand);
+            if (!held.is(RegisterItem.MAGIC_CATA.get())) {
+                message(player, "catalyst", catalysts, CATALYST_REQUIRED);
+                return;
+            }
+            int count = Math.min(held.getCount(), CATALYST_REQUIRED - catalysts);
+            catalysts += count;
+            if (!player.getAbilities().instabuild) held.shrink(count);
+            setChanged();
+            message(player, catalysts == CATALYST_REQUIRED ? "catalyst_ready" : "catalyst",
+                    catalysts, CATALYST_REQUIRED);
+            return;
+        }
         var stack = player.getItemInHand(hand);
         if (!stack.is(Items.ROTTEN_FLESH)) { message(player, "feed", fed, FOOD_REQUIRED); return; }
         int count = Math.min(stack.getCount(), FOOD_REQUIRED - fed);
@@ -93,6 +122,24 @@ public final class FleshbedBlockEntity extends BlockEntity {
         showStory(player);
         lastViewer = player;
         message(player, "started");
+        return true;
+    }
+
+    /**
+     * 启用王庭召唤仪式：需要温床已完成、已投入 {@value CATALYST_REQUIRED} 个魔法催化剂。
+     *
+     * <p>仪式本身（陨石雨 + 地表/群系改造）在 {@link HallSummoningRitual} 里，
+     * 这个方块实体只负责状态、存续与喂料。</p>
+     */
+    public boolean startHall(ServerPlayer player) {
+        if (!(level instanceof ServerLevel server) || !completed || hallElapsed >= 0 || catalysts < CATALYST_REQUIRED) return false;
+        hallElapsed = 0;
+        hallDone = false;
+        initiator = player.getUUID();
+        setChanged();
+        server.playSound(null, worldPosition, net.minecraft.sounds.SoundEvents.WITHER_SPAWN,
+                net.minecraft.sounds.SoundSource.BLOCKS, 1.2f, 0.6f);
+        message(player, "hall_started");
         return true;
     }
 
@@ -136,6 +183,17 @@ public final class FleshbedBlockEntity extends BlockEntity {
         if (bed.completed) {
             if (bed.spawnedMask != 15) bed.spawnPillars(server);
             if (now < bed.endTime() + 100 && (now & 1) == 0) bed.erupt(server, 36);
+        }
+        if (bed.hallElapsed >= 0 && !bed.hallDone) {
+            if (bed.hallElapsed >= HallSummoningRitual.DURATION_TICKS) {
+                bed.hallDone = true;
+                bed.setChanged();
+                var owner = bed.initiator == null ? null : server.getServer().getPlayerList().getPlayer(bed.initiator);
+                if (owner != null && owner.serverLevel() == server) message(owner, "hall_complete");
+            } else {
+                HallSummoningRitual.tick(server, bed.worldPosition, bed.hallElapsed);
+                bed.hallElapsed++;
+            }
         }
     }
 
@@ -204,6 +262,9 @@ public final class FleshbedBlockEntity extends BlockEntity {
         tag.putBoolean("Completed", completed);
         tag.putInt("SpawnedMask", spawnedMask);
         tag.putInt("RitualTicks", ritualTicks);
+        tag.putInt("Catalysts", catalysts);
+        tag.putInt("HallElapsed", hallElapsed);
+        tag.putBoolean("HallDone", hallDone);
         if (storySnapshot != null) tag.put("StorySnapshot", storySnapshot.copy());
         if (initiator != null) tag.putUUID("Initiator", initiator);
         if (session != null) tag.putUUID("StorySession", session);
@@ -216,6 +277,9 @@ public final class FleshbedBlockEntity extends BlockEntity {
         completed = tag.getBoolean("Completed");
         spawnedMask = tag.getInt("SpawnedMask") & 15;
         ritualTicks = tag.contains("RitualTicks") ? Math.max(20, Math.min(384000, tag.getInt("RitualTicks"))) : RITUAL_TICKS;
+        catalysts = Math.max(0, Math.min(CATALYST_REQUIRED, tag.getInt("Catalysts")));
+        hallElapsed = tag.contains("HallElapsed") ? tag.getInt("HallElapsed") : -1;
+        hallDone = tag.getBoolean("HallDone");
         storySnapshot = tag.contains("StorySnapshot") ? tag.getCompound("StorySnapshot").copy() : null;
         initiator = tag.hasUUID("Initiator") ? tag.getUUID("Initiator") : null;
         session = tag.hasUUID("StorySession") ? tag.getUUID("StorySession") : null;

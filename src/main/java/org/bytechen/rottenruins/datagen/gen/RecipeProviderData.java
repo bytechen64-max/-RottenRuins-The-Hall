@@ -42,6 +42,7 @@ public class RecipeProviderData extends RecipeProvider {
         addChipRecipes(consumer);
         addSourceMachineRecipes(consumer);
         addManaPlateRecipes(consumer);
+        addMagicCatalystRecipe(consumer);
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, RegisterBlock.SOURCE_WIRE.get())
                 .requires(RegisterItem.SOURCE_CHARGE_SAND.get(), 2)
                 .unlockedBy("has_source_charge_sand", has(RegisterItem.SOURCE_CHARGE_SAND.get()))
@@ -96,6 +97,27 @@ public class RecipeProviderData extends RecipeProvider {
                 .pattern("BBB").pattern("BPB").pattern("BBB")
                 .unlockedBy("has_source_mana_plate",has(RegisterItem.SOURCE_MANA_PLATE.get()))
                 .unlockedBy("has_element_bottle",has(bottle)).save(consumer);
+    }
+
+    /**
+     * 魔法催化剂：七系储魔瓶各一支，以一块金锭为基座（无定形，瓶子按 craftRemainder 退回空瓶）。
+     *
+     * <p>七支瓶子分别要靠解析仪调七个波段灌出来，所以这条配方天然卡在"集齐全部波段"之后；
+     * 催化剂本身是同时承接所有流派的通用材料，形状上也刻意不设固定摆法。</p>
+     */
+    private void addMagicCatalystRecipe(Consumer<FinishedRecipe> consumer) {
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC,RegisterItem.MAGIC_CATA.get())
+                .requires(Items.GOLD_INGOT)
+                .requires(RegisterItem.LIGHT_MANA_BOTTLE.get())
+                .requires(RegisterItem.FIRE_MANA_BOTTLE.get())
+                .requires(RegisterItem.WATER_MANA_BOTTLE.get())
+                .requires(RegisterItem.NATURE_MANA_BOTTLE.get())
+                .requires(RegisterItem.DEATH_MANA_BOTTLE.get())
+                .requires(RegisterItem.VOID_MANA_BOTTLE.get())
+                .requires(RegisterItem.MYSTERIOUS_MANA_BOTTLE.get())
+                .unlockedBy("has_gold_ingot",has(Items.GOLD_INGOT))
+                .unlockedBy("has_mysterious_mana_bottle",has(RegisterItem.MYSTERIOUS_MANA_BOTTLE.get()))
+                .save(consumer);
     }
 
     private void addSourceMachineRecipes(Consumer<FinishedRecipe> consumer) {

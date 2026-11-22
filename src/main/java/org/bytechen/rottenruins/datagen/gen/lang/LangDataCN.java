@@ -47,31 +47,36 @@ public class LangDataCN extends LanguageProvider {
 
         add("rotten_ruins.story.unknown", "未知剧情：%s");
         add("rotten_ruins.story.missing_ritual", "仪式剧情不可用，请检查剧情数据包中的 fleshbed_start 规则与固定时间剧情。");
-        add("rotten_ruins.story.respawn.first.0", "……你回来了。\n别紧张，我还在这里。先看看自己有没有缺少什么吧。");
+        add("rotten_ruins.story.respawn.first.0", "……你回来了。\n别紧张。先看看自己有没有缺少什么吧。");
         add("rotten_ruins.story.respawn.normal.0", "欢迎回来，要休息一下吗？");
-        add("rotten_ruins.story.respawn.normal.1", "刚才的路，我还记得。\n我们再走一次吧。");
+        add("rotten_ruins.story.respawn.normal.1", "刚才的路。\n我们再走一次吧。");
         add("rotten_ruins.story.respawn.normal.2", "至少这一次，你知道危险在哪里了。");
-        add("rotten_ruins.story.respawn.normal.3", "先站稳脚步。\n等你准备好了，我们再出发。");
+        add("rotten_ruins.story.respawn.normal.3", "慢慢来。\n等你准备好了，我们再出发。");
         add("rotten_ruins.story.respawn.rapid.0", "慢一点，我们还有时间。");
-        add("rotten_ruins.story.respawn.rapid.1", "……真的还有很多时间吗？");
+        add("rotten_ruins.story.respawn.rapid.1", "你又回来了");
         add("rotten_ruins.story.respawn.fall.0", "下次落脚之前，先往下看一眼吧。");
-        add("rotten_ruins.story.respawn.fall.1", "这次，试着找一条平稳些的路吧。");
-        add("rotten_ruins.story.respawn.drown.0", "现在，试着深呼吸。\n已经没事了。");
-        add("rotten_ruins.story.respawn.drown.1", "听，空气流动的声音。\n这一次，记得及时浮上来。");
+        add("rotten_ruins.story.respawn.fall.1", "试着找一条平稳些的路吧。");
+        add("rotten_ruins.story.respawn.drown.0", "现在，\n已经没事了。");
+        add("rotten_ruins.story.respawn.drown.1", "差一点。\n这一次，记得及时上浮。");
         add("rotten_ruins.story.respawn.mob.0", "它还在那里等你。\n准备好了再回去吧。");
-        add("rotten_ruins.story.respawn.mob.1", "我看到了，那个家伙不好对付。\n换个办法试试吧。");
+        add("rotten_ruins.story.respawn.mob.1", "那个家伙不好对付。\n换个办法试试吧。");
         add(RegisterItem.VOID_SHARD.get(), "虚空碎片");
         add("rotten_ruins.story.fleshbed.1", "生命易逝，万物终将归为腐朽");
         add("rotten_ruins.story.fleshbed.2", "你将带来本不属于这的东西...");
-        add("rotten_ruins.story.fleshbed.3", "如果执意如此，那便去做吧");
-        add("rotten_ruins.story.fleshbed.4", "遵循你内心的选择...");
+        add("rotten_ruins.story.fleshbed.3", "当心它们");
+        add("rotten_ruins.story.fleshbed.4", "在挑战中寻找机遇...");
         add("rotten_ruins.fleshbed.feed", "血肉温床：已喂养 %s/%s 个腐肉");
         add("rotten_ruins.fleshbed.ready", "已喂满 %s/%s 个腐肉。再次右键启动仪式。");
         add("rotten_ruins.fleshbed.started", "你赐予了生命");
         add("rotten_ruins.fleshbed.running", "请等待...马上就好");
         add("rotten_ruins.fleshbed.complete", "欣赏我们的杰作...");
         add("rotten_ruins.fleshbed.space", "温床周围空间不足，请在四周预留可站立的空地。");
-        add("rotten_ruins.story.opening", "你好呀，我是腐朽之疫的看板娘\n但是我暂时没有形象哦...\n不过我会带你逐渐了解这个世界的！");
+        add("rotten_ruins.fleshbed.catalyst", "血肉温床：已投入 %s/%s 个魔法催化剂");
+        add("rotten_ruins.fleshbed.catalyst_ready", "已投入 %s/%s 个魔法催化剂。再次右键启用王庭召唤仪式。");
+        add("rotten_ruins.fleshbed.hall_started", "王庭正在降临……");
+        add("rotten_ruins.fleshbed.hall_running", "王庭召唤仪式进行中……");
+        add("rotten_ruins.fleshbed.hall_complete", "王庭已在此扎根。");
+        add("rotten_ruins.story.opening", "你好呀，欢迎来到这个时间\n你可能会比较迷惑...\n不过我会带你了解这个世界！去挖点沙砾试试？");
         add(RegisterItem.TRUE_COPPER.get(), "§[rrs:grad:#B87333:#FFD1A3]真铜短剑§[/]");
         add(RegisterItem.DEATH_DAGGER.get(), "死亡匕首");
         add(RegisterEffect.APOPTOSIS.get(), "凋亡");
@@ -81,7 +86,7 @@ public class LangDataCN extends LanguageProvider {
 
         // 创造栏标签页 / 界面左上角的面板标题：带流动渐变（§6 垫底，特效关闭时退回原版金色）。
         add("itemGroup." + HallMod.MODID + ".main",
-                "§6§[rrs:grad:#6FBF4A:#8B1E2D:speed=0.6]腐朽之疫§[/]");
+                "§[rrs:grad:#000000:#FFD700:speed=0.6]腐朽之疫§[/]");
         // 创造物品栏的分区隔断行标题（见 SectionedCreativeModeTab / RegisterTab）
         add("itemGroup." + HallMod.MODID + ".main.section.creatures", "刷怪蛋");
         add("itemGroup." + HallMod.MODID + ".main.section.materials", "材料");

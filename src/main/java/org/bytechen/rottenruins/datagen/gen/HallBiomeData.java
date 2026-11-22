@@ -181,8 +181,19 @@ public class HallBiomeData {
      */
     public static Biome createHallBiome(HolderGetter<PlacedFeature> features,
                                          HolderGetter<ConfiguredWorldCarver<?>> carvers) {
-        // 1. 生物生成设置：空（死寂群系）
+        // 1. 生物生成设置：与维度陆生群系同一套王庭怪刷新表。
+        // 这个群系只作为"入侵目标"使用（HallSpreadEventHandler 把主世界映射到这里），
+        // 之前留空会让整片被感染的主世界永远不刷王庭生物；光照仍按主世界原版规则，夜里/暗处才出。
         MobSpawnSettings.Builder spawnSettings = new MobSpawnSettings.Builder();
+        spawnSettings.addSpawn(MobCategory.MONSTER,
+                new MobSpawnSettings.SpawnerData(
+                        EntityTypeRegistry.SCOUT.get(), 40, 2, 4));
+        spawnSettings.addSpawn(MobCategory.MONSTER,
+                new MobSpawnSettings.SpawnerData(
+                        EntityTypeRegistry.MONOLITH.get(), 20, 1, 2));
+        spawnSettings.addSpawn(MobCategory.MONSTER,
+                new MobSpawnSettings.SpawnerData(
+                        EntityTypeRegistry.BONECRUSHER.get(), 25, 1, 3));
 
         // 2. 地形修饰：枯死灌木
         BiomeGenerationSettings.Builder genSettings = new BiomeGenerationSettings.Builder(features, carvers);
