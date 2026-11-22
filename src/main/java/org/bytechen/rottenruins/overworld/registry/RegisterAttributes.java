@@ -27,7 +27,8 @@ import org.jetbrains.annotations.NotNull;
  *   /attribute &#64;s rotten_ruins:mana_regeneration modifier add test 4 add
  *   /attribute &#64;s rotten_ruins:mana_restore modifier add test 0.5 multiply_total
  *   /attribute &#64;s rotten_ruins:magic_slots  modifier add test 4 add
- *   /attribute &#64;s rotten_ruins:cooldown_reduction modifier add test 0.25 add
+ *   /attribute &#64;s rotten_ruins:cooldown_reduction modifier add test 20 add
+ *   /attribute &#64;s rotten_ruins:life_steal     modifier add test 0.2 add
  *   /attribute &#64;s rotten_ruins:spell_power_fire   modifier add test 0.5 add
  * </pre>
  *
@@ -40,9 +41,11 @@ import org.jetbrains.annotations.NotNull;
  *       <td>{@code MagicStats.manaRegenPerSecond} → 每秒 = 1 + 它</td></tr>
  *   <tr><td>{@code magic_slots}</td><td>0</td><td>加成</td>
  *       <td>{@code MagicStats.slotCount} → 槽位 = 10 + 它（上限 64）</td></tr>
- *   <tr><td>{@code cooldown_reduction}</td><td>0</td><td>加成（比例，<b>上限 0.5</b>）</td>
+ *   <tr><td>{@code cooldown_reduction}</td><td>0</td><td>加成（百分比点数，<b>上限 50</b>）</td>
  *       <td>{@code MagicAttributeProvider#modifyCooldownTicks} →
- *           冷却 = 基值 × (1 − 它)，对全部法术生效</td></tr>
+ *           冷却 = 基值 × (1 − 它/100)，对全部法术生效</td></tr>
+ *   <tr><td>{@code life_steal}</td><td>0</td><td>加成（比例）</td>
+ *       <td>造成伤害时回复 {@code 实际伤害 × 它} 点生命，含 {@code SetHealthDieUnti} 这类改血路径</td></tr>
  *   <tr><td>{@code spell_power}</td><td>0</td><td>加成（通用）</td>
  *       <td>增伤 {@code (通用 + 流派×0.75)²/2 + 1}；半径/治疗等走 {@code 1 + 法强}</td></tr>
  *   <tr><td>{@code spell_power_&lt;流派&gt;}</td><td>0</td><td>加成（每个流派一个）</td>
@@ -97,21 +100,27 @@ public class RegisterAttributes {
                     () -> new RangedAttribute("attribute.name.rotten_ruins.spell_power",
                             0.0d, 0.0d, 100.0d).setSyncable(true));
 
+    /** 生命汲取。默认 0 = 不回血；造成伤害时按 {@code 实际伤害 × 本值} 回复等量生命。 */
+    public static final RegistryObject<Attribute> LIFE_STEAL =
+            ATTRIBUTES.register("life_steal",
+                    () -> new RangedAttribute("attribute.name.rotten_ruins.life_steal",
+                            0.0d, 0.0d, 10.0d).setSyncable(true));
+
     /** 魔法槽位数加成。默认 0 → 槽位 = 10 + 它（最终上限 {@code MagicStats.MAX_SLOT_COUNT}）。 */
     public static final RegistryObject<Attribute> MAGIC_SLOTS = ATTRIBUTES.register("magic_slots",
             () -> new RangedAttribute("attribute.name.rotten_ruins.magic_slots", 0.0d, 0.0d, 54.0d)
                     .setSyncable(true));
 
     /**
-     * <b>冷却缩减</b>（比例）。默认 {@code 0.0} = 不减。
+     * <b>冷却缩减</b>（百分比点数）。默认 {@code 0.0} = 不减，20 就是减 20%。
      *
-     * <p>属性的上限直接设成 {@code 0.5} —— 需求就是"最多叠加 50%"，
+     * <p>上限设在 {@link MagicStats#MAX_COOLDOWN_REDUCTION}（50）—— 需求是"最多减 50%"，
      * 交给 {@link RangedAttribute} 自己钳最省事：无论多少条 {@code add} 修饰器叠上来，
-     * 读到的值都不会超过 0.5。{@code MagicAttributeProvider} 那边还会再钳一次，
+     * 读到的值都不会超过 50。{@code MagicAttributeProvider} 那边还会再钳一次，
      * 防止有人绕过属性直接塞值。</p>
      *
      * <p>作用点：{@code MagicStats.cooldownTicks} —— 即
-     * {@code cooldown = 基值 × (1 − 本值)}，对<b>所有</b>法术生效
+     * {@code cooldown = 基值 × (1 − 本值/100)}，对<b>所有</b>法术生效
      * （冷却键仍是物品注册名，同名物品照样共享缩短后的冷却）。</p>
      */
     public static final RegistryObject<Attribute> COOLDOWN_REDUCTION =
@@ -196,6 +205,7 @@ public class RegisterAttributes {
         addToPlayer(event, MANA_REGENERATION.get());
         addToPlayer(event, MANA_RESTORE.get());
         addToPlayer(event, SPELL_POWER.get());
+        addToPlayer(event, LIFE_STEAL.get());
         addToPlayer(event, MAGIC_SLOTS.get());
         addToPlayer(event, COOLDOWN_REDUCTION.get());
         // 各流派的法强：遍历枚举，新增流派时这里自动跟上（属性本身还是要手动注册）
@@ -208,9 +218,9 @@ public class RegisterAttributes {
         // /attribute 会说"没有这个属性"，但加载过程一点错都不报。
         // 有这一行就能一眼区分"属性挂上了"和"根本没挂"。
         HallMod.LOGGER.info("[rotten_ruins] 已把 {} 个魔法属性挂到玩家身上"
-                        + "（max_mana / mana_regeneration / mana_restore / spell_power / magic_slots"
+                        + "（max_mana / mana_regeneration / mana_restore / spell_power / life_steal / magic_slots"
                         + " / cooldown_reduction / spell_power_<流派> x{}）",
-                6 + MagicType.values().length, MagicType.values().length);
+                7 + MagicType.values().length, MagicType.values().length);
     }
 
     private static void addToPlayer(EntityAttributeModificationEvent event, Attribute attribute) {

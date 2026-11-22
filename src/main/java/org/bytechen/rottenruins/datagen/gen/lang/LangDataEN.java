@@ -45,6 +45,9 @@ public class LangDataEN extends LanguageProvider {
         add("effect.rotten_ruins.holy_wings", "Holy Wings");
         add("effect.rotten_ruins.flame_slash", "Flame Cleave");
         add("effect.rotten_ruins.stun", "Stunned");
+        add("effect.rotten_ruins.ethereal", "Ethereal");
+        add("message.rotten_ruins.knowledge_gained", "Knowledge floods in: Spell Power +1, Magic Slots +1");
+        add("message.rotten_ruins.knowledge_exhausted", "This knowledge has nothing left to teach you");
         add("gui.rotten_ruins.jade.crafting", "Crafting %s%% · ~%s s");
 
         add("rotten_ruins.story.unknown", "Unknown story: %s");
@@ -313,6 +316,7 @@ public class LangDataEN extends LanguageProvider {
         add("attribute.name." + HallMod.MODID + ".spell_power", "Spell Power");
         add("attribute.name." + HallMod.MODID + ".magic_slots", "Magic Slots");
         add("attribute.name." + HallMod.MODID + ".cooldown_reduction", "Cooldown Reduction");
+        add("attribute.name." + HallMod.MODID + ".life_steal", "Life Steal");
         // Per-school spell power: ADDS to the general spell power (default 0).
         // Keys must match RegisterAttributes.spellPowerOf(String) exactly.
         add("attribute.name." + HallMod.MODID + ".spell_power_water", "Water Spell Power");
@@ -444,6 +448,18 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterItem.HOLY_WINGS.get(), "Holy Wings");
         add(RegisterItem.BLACK_HOLE.get(), "Black Hole");
         add(RegisterItem.VOID_ESSENCE.get(), "Void Essence");
+        add(RegisterItem.RAMPART_SHIELD_SHARD.get(), "Wall Shield Shard");
+        add(RegisterItem.KNOWLEDGE_MORTAL.get(), "Mortal Knowledge");
+        add(RegisterItem.KNOWLEDGE_INFERNAL.get(), "Infernal Knowledge");
+        add(RegisterItem.KNOWLEDGE_END.get(), "Final Knowledge");
+        add(RegisterItem.CRUDE_LIVING_HELMET.get(), "Crude Living Helmet");
+        add(RegisterItem.CRUDE_LIVING_CHESTPLATE.get(), "Crude Living Chestplate");
+        add(RegisterItem.CRUDE_LIVING_LEGGINGS.get(), "Crude Living Leggings");
+        add(RegisterItem.CRUDE_LIVING_BOOTS.get(), "Crude Living Boots");
+        add(RegisterItem.DREAMLIKE_HELMET.get(), "Dreamlike Helmet");
+        add(RegisterItem.DREAMLIKE_CHESTPLATE.get(), "Dreamlike Chestplate");
+        add(RegisterItem.DREAMLIKE_LEGGINGS.get(), "Dreamlike Leggings");
+        add(RegisterItem.DREAMLIKE_BOOTS.get(), "Dreamlike Boots");
         add("item.rotten_ruins.shield_ward.desc", "Raise a shield that absorbs a few hits before shattering");
         add("item.rotten_ruins.bark_armor.desc", "Wear bark armor: immune to all but lightning and fire, yet weak to fire");
         add("item.rotten_ruins.freezing_rain.desc", "Hold to summon freezing rain, chilling and slowing targets in range");

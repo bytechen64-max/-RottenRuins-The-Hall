@@ -70,7 +70,7 @@ public final class MagicStats {
     public static final double MAX_TARGET_RANGE = MagicMath.MAX_TARGET_RANGE;
 
     /**
-     * <b>冷却缩减</b>的硬上限：{@code 0.5}（50%）。
+     * <b>冷却缩减</b>的硬上限：{@code 50}，单位是百分比点数（即最多减 50%）。
      *
      * <p>需求就是"最多叠加 50%"。{@code cooldown_reduction} 属性的范围上限
      * 也设成它，这里再钳一次是为了防"绕过属性直接塞值"

@@ -1,6 +1,7 @@
 package org.bytechen.rottenruins.overworld.registry.entities.population.hall.ecological;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -25,11 +26,13 @@ import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
+import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.ToolActions;
@@ -47,6 +50,8 @@ import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /** 小 Boss：常态举盾，斧击可暂时破盾；攻击起手后固定方向。 */
@@ -68,6 +73,10 @@ public class RampartEntity extends BaseEcologicalEntity {
     private static final int HEAVY_STUN_DURATION = 100;
     private static final float HEAVY_RADIUS = 5.0F;
     private static final int HEAVY_ANGLE = 120;
+    /** 第二次判定掀起来的地面方块数量上限与初速。 */
+    private static final int LIFT_LIMIT = 18;
+    private static final double LIFT_SPEED_MIN = 0.34d;
+    private static final double LIFT_SPEED_MAX = 0.66d;
     private static final EntityDataAccessor<Boolean> SHIELDING = SynchedEntityData.defineId(RampartEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> ATTACKING = SynchedEntityData.defineId(RampartEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Float> ATTACK_YAW = SynchedEntityData.defineId(RampartEntity.class, EntityDataSerializers.FLOAT);
@@ -198,6 +207,60 @@ public class RampartEntity extends BaseEcologicalEntity {
         }
         RangeAttackUtils.perform(this, builder, RangeAttackCallback.ofAfterHit(
                 (target, hurt) -> CustomEffects.addEffect(target, RegisterCustomEffect.STUN, HEAVY_STUN_DURATION, 0)));
+        // 第二次落点把前方的地面掀起来（只掀真实地表，落地后原样铺回）。
+        riseGroundBlocks();
+    }
+
+    /**
+     * 前方扇形内的地表方块被震离地面：去掉本体后生成同款下落方块，给它一个向上的初速，
+     * 落地时自然铺回原处。{@code dropItem = false} 保证即使落点被占也不会掉物品。
+     */
+    private void riseGroundBlocks() {
+        if (!(level() instanceof ServerLevel server)) return;
+        Vec3 forward = new Vec3(attackDirection.x, 0, attackDirection.z);
+        if (forward.lengthSqr() < 1.0E-4d) return;
+        forward = forward.normalize();
+        Set<BlockPos> seen = new HashSet<>();
+        int raised = 0;
+        for (int ring = 0; ring < 3 && raised < LIFT_LIMIT; ring++) {
+            double radius = 1.6d + ring * 1.5d;
+            int samples = 12 + ring * 6;
+            for (int index = 0; index < samples && raised < LIFT_LIMIT; index++) {
+                double angle = (index + ring * 0.37d) / samples * Math.PI * 2.0d;
+                Vec3 dir = new Vec3(Math.cos(angle), 0, Math.sin(angle));
+                // 与朝向夹角超过约 56° 的采样点跳过，只留下前方扇形。
+                if (dir.dot(forward) < 0.55d) continue;
+                Vec3 sample = position().add(dir.x * radius, 0, dir.z * radius);
+                var hit = server.clip(new ClipContext(sample.add(0, 1.5, 0), sample.add(0, -2.5, 0),
+                        ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+                if (hit.getType() != HitResult.Type.BLOCK || hit.getDirection() != Direction.UP) continue;
+                BlockPos pos = hit.getBlockPos();
+                if (!seen.add(pos)) continue;
+                BlockState state = server.getBlockState(pos);
+                // 跳过不可破坏、带方块实体、非实心、隐形（barrier）与含流体的方块。
+                if (state.getDestroySpeed(server, pos) < 0) continue;
+                if (state.hasBlockEntity() || !state.getFluidState().isEmpty()) continue;
+                if (!state.isSolidRender(server, pos)) continue;
+                if (state.getRenderShape() == RenderShape.INVISIBLE) continue;
+                if (!server.removeBlock(pos, false)) continue;
+                raised++;
+                FallingBlockEntity block = FallingBlockEntity.fall(server, pos, state);
+                block.dropItem = false;
+                block.setDeltaMovement(0.0d, LIFT_SPEED_MIN + random.nextDouble() * (LIFT_SPEED_MAX - LIFT_SPEED_MIN), 0.0d);
+                // 起跳瞬间向上抛一把碎屑，让"被掀起"的读感更明确。
+                var particle = new BlockParticleOption(ParticleTypes.BLOCK, state);
+                Vec3 surface = hit.getLocation().add(0, 0.1, 0);
+                for (int shard = 0; shard < 4; shard++) {
+                    server.sendParticles(particle, surface.x, surface.y, surface.z, 0,
+                            (random.nextDouble() - 0.5d) * 0.18d,
+                            0.28d + random.nextDouble() * 0.3d,
+                            (random.nextDouble() - 0.5d) * 0.18d, 1);
+                }
+            }
+        }
+        if (raised > 0) {
+            playSound(SoundEvents.STONE_BREAK, 1.1F, 0.55F);
+        }
     }
 
     private void lockAttackRotation() {

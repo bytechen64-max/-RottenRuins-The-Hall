@@ -43,6 +43,9 @@ public class LangDataCN extends LanguageProvider {
         add("effect.rotten_ruins.holy_wings", "圣翼");
         add("effect.rotten_ruins.flame_slash", "焰斩");
         add("effect.rotten_ruins.stun", "晕眩");
+        add("effect.rotten_ruins.ethereal", "虚化");
+        add("message.rotten_ruins.knowledge_gained", "学识涌入脑海：法术强度 +1，魔法槽位 +1");
+        add("message.rotten_ruins.knowledge_exhausted", "这份学识对你已无用处");
         add("gui.rotten_ruins.jade.crafting", "合成中 %s%% · 约 %s 秒");
 
         add("rotten_ruins.story.unknown", "未知剧情：%s");
@@ -296,6 +299,7 @@ public class LangDataCN extends LanguageProvider {
         add("attribute.name." + HallMod.MODID + ".spell_power", "法术强度");
         add("attribute.name." + HallMod.MODID + ".magic_slots", "魔法槽位");
         add("attribute.name." + HallMod.MODID + ".cooldown_reduction", "冷却缩减");
+        add("attribute.name." + HallMod.MODID + ".life_steal", "生命汲取");
         // 各流派的法术强度：与通用法强**相加**（默认 0），键名必须和
         // RegisterAttributes.spellPowerOf(String) 拼出来的完全一致。
         add("attribute.name." + HallMod.MODID + ".spell_power_water", "水系法术强度");
@@ -427,6 +431,18 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.HOLY_WINGS.get(), "圣翼");
         add(RegisterItem.BLACK_HOLE.get(), "黑洞术");
         add(RegisterItem.VOID_ESSENCE.get(), "虚空精粹");
+        add(RegisterItem.RAMPART_SHIELD_SHARD.get(), "城墙碎盾");
+        add(RegisterItem.KNOWLEDGE_MORTAL.get(), "凡界之学识");
+        add(RegisterItem.KNOWLEDGE_INFERNAL.get(), "狱火之学识");
+        add(RegisterItem.KNOWLEDGE_END.get(), "终末之学识");
+        add(RegisterItem.CRUDE_LIVING_HELMET.get(), "粗制活体头盔");
+        add(RegisterItem.CRUDE_LIVING_CHESTPLATE.get(), "粗制活体胸甲");
+        add(RegisterItem.CRUDE_LIVING_LEGGINGS.get(), "粗制活体护腿");
+        add(RegisterItem.CRUDE_LIVING_BOOTS.get(), "粗制活体靴子");
+        add(RegisterItem.DREAMLIKE_HELMET.get(), "如梦头盔");
+        add(RegisterItem.DREAMLIKE_CHESTPLATE.get(), "如梦胸甲");
+        add(RegisterItem.DREAMLIKE_LEGGINGS.get(), "如梦护腿");
+        add(RegisterItem.DREAMLIKE_BOOTS.get(), "如梦靴子");
         add("item.rotten_ruins.shield_ward.desc", "蓄力后架起护盾，抵挡数次伤害后破碎");
         add("item.rotten_ruins.bark_armor.desc", "披上藤甲：免疫雷电与火焰之外的伤害，但怕火");
         add("item.rotten_ruins.freezing_rain.desc", "按住召来冻雨，持续冻伤并减速范围内的目标");

@@ -29,6 +29,7 @@
     "CrimsonVowBlockMixin",
     "CreativeModeInventoryScreenMixin",
     "GuiGraphicsTooltipInvoker",
+    "LivingEntityRendererEtherealMixin",
     "accessor.AccessorAbstractContainerScreen",
     "accessor.AccessorRenderStateShard",
     "TextEffectStringDecomposerMixin",

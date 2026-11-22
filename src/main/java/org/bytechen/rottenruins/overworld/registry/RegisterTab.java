@@ -120,7 +120,8 @@ public class RegisterTab {
                         RegisterItem.DOMERITE_STICK.get(),
                         RegisterItem.HEAT_ANOMALY_EXTRACT.get(),
                         RegisterItem.COLD_ANOMALY_EXTRACT.get(),
-                        RegisterItem.ACID_ANOMALY_EXTRACT.get());
+                        RegisterItem.ACID_ANOMALY_EXTRACT.get(),
+                        RegisterItem.RAMPART_SHIELD_SHARD.get());
                         // 腐化材料
                         items(output,
                         CorruptionItems.INFECTION_BONE.get(),
@@ -193,8 +194,12 @@ public class RegisterTab {
                         RegisterItem.FREEZING_RAIN.get(),
                         RegisterItem.FLAME_SLASH.get(),
                         RegisterItem.HOLY_WINGS.get(),
-                        RegisterItem.BLACK_HOLE.get())
-                        ;
+                        RegisterItem.BLACK_HOLE.get());
+                        // 学识：永久法强与法术槽
+                        items(output,
+                        RegisterItem.KNOWLEDGE_MORTAL.get(),
+                        RegisterItem.KNOWLEDGE_INFERNAL.get(),
+                        RegisterItem.KNOWLEDGE_END.get());
                     })
 
                     // ─────────────────────── 武器与工具（16） ───────────────────────
@@ -214,6 +219,16 @@ public class RegisterTab {
                         RegisterItem.TRUE_COPPER.get(),
                         RegisterItem.CRIMSON_VOW.get(),
                         RegisterItem.SILENT_DAYLIGHT.get());
+                        // 两套盔甲：粗制活体 / 如梦
+                        items(output,
+                        RegisterItem.CRUDE_LIVING_HELMET.get(),
+                        RegisterItem.CRUDE_LIVING_CHESTPLATE.get(),
+                        RegisterItem.CRUDE_LIVING_LEGGINGS.get(),
+                        RegisterItem.CRUDE_LIVING_BOOTS.get(),
+                        RegisterItem.DREAMLIKE_HELMET.get(),
+                        RegisterItem.DREAMLIKE_CHESTPLATE.get(),
+                        RegisterItem.DREAMLIKE_LEGGINGS.get(),
+                        RegisterItem.DREAMLIKE_BOOTS.get());
                         // 腐化工具与注射器
                         items(output,
                         CorruptionItems.CRUDE_SWORD.get(),

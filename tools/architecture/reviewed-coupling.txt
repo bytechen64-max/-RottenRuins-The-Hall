@@ -524,3 +524,9 @@ common-client | event/ClientModEventHandler.java -> org.bytechen.rottenruins.cli
 # JEI 分类本就要画界面，所以直接引用客户端绘制类型；配方列表仍从服务端配方管理器读取。
 common-client | compat/jei/PotentialCraftingJeiCategory.java -> net.minecraft.client.Minecraft
 common-client | compat/jei/PotentialCraftingJeiCategory.java -> net.minecraft.client.gui.GuiGraphics
+
+# 虚化：只有客户端渲染器知道实体贴图，所以在 getRenderType 里换成半透明类型；不改任何玩法状态。
+common-client | mixin/LivingEntityRendererEtherealMixin.java -> net.minecraft.client.renderer.RenderType
+common-client | mixin/LivingEntityRendererEtherealMixin.java -> net.minecraft.client.renderer.entity.LivingEntityRenderer
+common-client | mixin/LivingEntityRendererEtherealMixin.java -> net.minecraft.client.Minecraft
+common-client | mixin/LivingEntityRendererEtherealMixin.java -> net.minecraft.client.renderer.entity.EntityRenderer

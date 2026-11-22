@@ -1,5 +1,6 @@
 package org.bytechen.rottenruins.utils.entity;
 
+import javax.annotation.Nullable;
 import net.minecraft.world.entity.LivingEntity;
 
 import static net.minecraft.world.entity.LivingEntity.DATA_HEALTH_ID;
@@ -11,7 +12,9 @@ public class SetHealthDieUnti {
         if (target == null) {
             return;
         }
+        float before = target.getHealth();
         target.setHealth(count);
+        report(target, source, before - target.getHealth());
         dieIfDead(target, source);
     }
 
@@ -20,8 +23,17 @@ public class SetHealthDieUnti {
         if (target == null) {
             return;
         }
+        float before = target.getHealth();
         target.entityData.set(DATA_HEALTH_ID, count);
+        report(target, source, before - target.getHealth());
         dieIfDead(target, source);
+    }
+
+    /** 只把"掉血"报到 {@link DirectDamageHooks}，回血与无变化都忽略。 */
+    private static void report(LivingEntity target, @Nullable LivingEntity source, float delta) {
+        if (delta > 0.0F) {
+            DirectDamageHooks.fire(target, source, delta);
+        }
     }
 
     private static void dieIfDead(LivingEntity target, LivingEntity source) {

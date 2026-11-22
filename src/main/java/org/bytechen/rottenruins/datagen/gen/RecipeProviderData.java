@@ -73,6 +73,8 @@ public class RecipeProviderData extends RecipeProvider {
         addFleshRiftRecipe(consumer);
 
         addDeathStarRecipe(consumer);
+
+        addDragonEggRecipe(consumer);
     }
 
     private void addManaPlateRecipes(Consumer<FinishedRecipe> consumer) {
@@ -571,5 +573,19 @@ public class RecipeProviderData extends RecipeProvider {
                 .pattern("WWW")
                 .unlockedBy("has_nether_star", has(Items.NETHER_STAR))
                 .save(consumer);
+    }
+
+    /** 龙蛋：中间龙蛋、上下左右末地水晶、四角龙息，产出两个。 */
+    private void addDragonEggRecipe(Consumer<FinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, Items.DRAGON_EGG, 2)
+                .define('D', Items.DRAGON_BREATH)
+                .define('E', Items.END_CRYSTAL)
+                .define('G', Items.DRAGON_EGG)
+                .pattern("DED")
+                .pattern("EGE")
+                .pattern("DED")
+                .unlockedBy("has_dragon_egg", has(Items.DRAGON_EGG))
+                // 产物是原版物品，不指定 id 会落到 data/minecraft/recipes 覆盖原版命名空间
+                .save(consumer, new net.minecraft.resources.ResourceLocation(HallMod.MODID, "dragon_egg"));
     }
 }

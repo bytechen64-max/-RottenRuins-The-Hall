@@ -320,6 +320,77 @@ public class RegisterItem {
     public static final RegistryObject<Item> VOID_ESSENCE =
             ITEMS.register("void_essence", org.bytechen.rottenruins.content.magic.item.VoidEssence::new);
 
+    // ---- 学识 / 城墙碎盾 / 套装 ----
+    /** 城墙碎盾：城墙掉落的合成材料。 */
+    public static final RegistryObject<Item> RAMPART_SHIELD_SHARD = registerSimpleItem("rampart_shield_shard");
+
+    public static final RegistryObject<Item> KNOWLEDGE_MORTAL = knowledge("knowledge_mortal",
+            org.bytechen.rottenruins.content.item.KnowledgeTome.Branch.MORTAL);
+    public static final RegistryObject<Item> KNOWLEDGE_INFERNAL = knowledge("knowledge_infernal",
+            org.bytechen.rottenruins.content.item.KnowledgeTome.Branch.INFERNAL);
+    public static final RegistryObject<Item> KNOWLEDGE_END = knowledge("knowledge_end",
+            org.bytechen.rottenruins.content.item.KnowledgeTome.Branch.END);
+
+    public static final RegistryObject<Item> CRUDE_LIVING_HELMET =
+            crudeLiving(net.minecraft.world.item.ArmorItem.Type.HELMET);
+    public static final RegistryObject<Item> CRUDE_LIVING_CHESTPLATE =
+            crudeLiving(net.minecraft.world.item.ArmorItem.Type.CHESTPLATE);
+    public static final RegistryObject<Item> CRUDE_LIVING_LEGGINGS =
+            crudeLiving(net.minecraft.world.item.ArmorItem.Type.LEGGINGS);
+    public static final RegistryObject<Item> CRUDE_LIVING_BOOTS =
+            crudeLiving(net.minecraft.world.item.ArmorItem.Type.BOOTS);
+
+    public static final RegistryObject<Item> DREAMLIKE_HELMET =
+            dreamlike(net.minecraft.world.item.ArmorItem.Type.HELMET);
+    public static final RegistryObject<Item> DREAMLIKE_CHESTPLATE =
+            dreamlike(net.minecraft.world.item.ArmorItem.Type.CHESTPLATE);
+    public static final RegistryObject<Item> DREAMLIKE_LEGGINGS =
+            dreamlike(net.minecraft.world.item.ArmorItem.Type.LEGGINGS);
+    public static final RegistryObject<Item> DREAMLIKE_BOOTS =
+            dreamlike(net.minecraft.world.item.ArmorItem.Type.BOOTS);
+
+    private static RegistryObject<Item> knowledge(String name,
+                                                  org.bytechen.rottenruins.content.item.KnowledgeTome.Branch branch) {
+        return ITEMS.register(name, () -> new org.bytechen.rottenruins.content.item.KnowledgeTome(branch));
+    }
+
+    /** 粗制活体：下界合金护甲值，每件 +5% 移速 / +0.5 攻击 / +0.1 击退抗性。 */
+    private static RegistryObject<Item> crudeLiving(net.minecraft.world.item.ArmorItem.Type type) {
+        return ITEMS.register("crude_living_" + type.getName(), () ->
+                new org.bytechen.rottenruins.content.armor.ModArmorItem(
+                        org.bytechen.rottenruins.content.armor.ModArmorMaterial.CRUDE_LIVING, type,
+                        new Item.Properties(),
+                        new org.bytechen.rottenruins.content.armor.ModArmorItem.Extra(
+                                net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED, 0.05D,
+                                net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.MULTIPLY_TOTAL),
+                        new org.bytechen.rottenruins.content.armor.ModArmorItem.Extra(
+                                net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE, 0.5D,
+                                net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADDITION),
+                        new org.bytechen.rottenruins.content.armor.ModArmorItem.Extra(
+                                net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE, 0.1D,
+                                net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADDITION)));
+    }
+
+    /** 如梦：钻石护甲值，每件 +1 法强 / +5% 移速 / +5 冷缩 / +100 最大法力。 */
+    private static RegistryObject<Item> dreamlike(net.minecraft.world.item.ArmorItem.Type type) {
+        return ITEMS.register("dreamlike_" + type.getName(), () ->
+                new org.bytechen.rottenruins.content.armor.ModArmorItem(
+                        org.bytechen.rottenruins.content.armor.ModArmorMaterial.DREAMLIKE, type,
+                        new Item.Properties(),
+                        new org.bytechen.rottenruins.content.armor.ModArmorItem.Extra(
+                                RegisterAttributes.SPELL_POWER.get(), 1.0D,
+                                net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADDITION),
+                        new org.bytechen.rottenruins.content.armor.ModArmorItem.Extra(
+                                net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED, 0.05D,
+                                net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.MULTIPLY_TOTAL),
+                        new org.bytechen.rottenruins.content.armor.ModArmorItem.Extra(
+                                RegisterAttributes.COOLDOWN_REDUCTION.get(), 5.0D,
+                                net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADDITION),
+                        new org.bytechen.rottenruins.content.armor.ModArmorItem.Extra(
+                                RegisterAttributes.MAX_MANA.get(), 100.0D,
+                                net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADDITION)));
+    }
+
 
     public static final RegistryObject<Item> INF_PLAYER_SPAWN_EGG = registerSpawnEgg("hall_player",EntityTypeRegistry.INF_PLAYER);
     public static final RegistryObject<Item> INF_ENDERMAN_SPAWN_EGG = registerSpawnEgg("hall_enderman",EntityTypeRegistry.INF_ENDERMAN);

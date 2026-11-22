@@ -55,7 +55,11 @@ public class ItemGenData extends ItemModelProvider {
             "shield_ward", "bark_armor", "freezing_rain", "flame_slash", "holy_wings", "black_hole",
             "void_essence",
             // 奥秘仪台：方块几何由 GeckoLib 提供，方块模型留空；物品图标单独手写。
-            "potential_crafting_table"
+            "potential_crafting_table",
+            // 学识 / 城墙碎盾 / 两套盔甲：贴图借用原版或自带手写模型，见 models/item/*.json
+            "knowledge_mortal", "knowledge_infernal", "knowledge_end", "rampart_shield_shard",
+            "crude_living_helmet", "crude_living_chestplate", "crude_living_leggings", "crude_living_boots",
+            "dreamlike_helmet", "dreamlike_chestplate", "dreamlike_leggings", "dreamlike_boots"
     );
 
     @Override

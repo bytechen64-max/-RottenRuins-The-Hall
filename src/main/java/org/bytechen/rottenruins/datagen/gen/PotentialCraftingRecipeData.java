@@ -269,6 +269,56 @@ public final class PotentialCraftingRecipeData implements DataProvider {
                 .requires(Items.OBSIDIAN).requires(Items.OBSIDIAN)
                 .requires(RegisterItem.VOID_MANA_PLATE.get())
                 .save(new ItemStack(RegisterItem.BLACK_HOLE.get()));
+
+        // 凡界之学识：花 3 种 + 回响碎片 + 潮涌核心 + 嗅探兽蛋 + 书架 + 墨囊 + 绿宝石块
+        //              + 钻石块 + 钟 + 指南针 + 附魔台 + 书与笔 + 炼药台（共 15 份，正好一圈）
+        add("potential_crafting/knowledge_mortal", 0)
+                .requires(ItemTags.FLOWERS).requires(ItemTags.FLOWERS)
+                .requires(ItemTags.FLOWERS)
+                .requires(Items.ECHO_SHARD)
+                .requires(Items.CONDUIT)
+                .requires(Items.SNIFFER_EGG)
+                .requires(Items.BOOKSHELF)
+                .requires(Items.INK_SAC)
+                .requires(Items.EMERALD_BLOCK)
+                .requires(Items.DIAMOND_BLOCK)
+                .requires(Items.CLOCK)
+                .requires(Items.COMPASS)
+                .requires(Items.ENCHANTING_TABLE)
+                .requires(Items.WRITABLE_BOOK)
+                .requires(Items.BREWING_STAND)
+                .save(new ItemStack(RegisterItem.KNOWLEDGE_MORTAL.get()));
+
+        // 狱火之学识：黑曜石 2 + 哭泣黑曜石 2 + 烈焰棒 + 重生锚 + 下界合金锭 2 + 书与笔
+        //              + 书架 + 下界之星 + 金块 + 地狱疣 3（15 份）
+        add("potential_crafting/knowledge_infernal", 0)
+                .requires(Items.OBSIDIAN).requires(Items.OBSIDIAN)
+                .requires(Items.CRYING_OBSIDIAN).requires(Items.CRYING_OBSIDIAN)
+                .requires(Items.BLAZE_ROD)
+                .requires(Items.RESPAWN_ANCHOR)
+                .requires(Items.NETHERITE_INGOT).requires(Items.NETHERITE_INGOT)
+                .requires(Items.WRITABLE_BOOK)
+                .requires(Items.BOOKSHELF)
+                .requires(Items.NETHER_STAR)
+                .requires(Items.GOLD_BLOCK)
+                .requires(Items.NETHER_WART).requires(Items.NETHER_WART).requires(Items.NETHER_WART)
+                .save(new ItemStack(RegisterItem.KNOWLEDGE_INFERNAL.get()));
+
+        // 终末之学识：紫珀块 2 + 虚空精粹 2 + 龙蛋 + 末地水晶 2 + 潜影盒 + 末影箱 + 龙首
+        //              + 末地烛 2 + 鞘翅 + 书架 + 书与笔（15 份）
+        add("potential_crafting/knowledge_end", 0)
+                .requires(Items.PURPUR_BLOCK).requires(Items.PURPUR_BLOCK)
+                .requires(RegisterItem.VOID_ESSENCE.get()).requires(RegisterItem.VOID_ESSENCE.get())
+                .requires(Items.DRAGON_EGG)
+                .requires(Items.END_CRYSTAL).requires(Items.END_CRYSTAL)
+                .requires(Items.SHULKER_BOX)
+                .requires(Items.ENDER_CHEST)
+                .requires(Items.DRAGON_HEAD)
+                .requires(Items.END_ROD).requires(Items.END_ROD)
+                .requires(Items.ELYTRA)
+                .requires(Items.BOOKSHELF)
+                .requires(Items.WRITABLE_BOOK)
+                .save(new ItemStack(RegisterItem.KNOWLEDGE_END.get()));
     }
 
     /** 附魔书 NBT：只要包含指定附魔即算匹配（势能合成台按子集匹配）。 */

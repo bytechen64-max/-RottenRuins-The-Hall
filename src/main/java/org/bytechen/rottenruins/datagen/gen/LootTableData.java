@@ -69,6 +69,10 @@ public class LootTableData extends LootTableProvider {
                             )
             );
 
+            // 城墙碎盾：城墙掉落 1–3 个，受抢夺影响
+            this.add(EntityTypeRegistry.RAMPART.get(),
+                    LootTable.lootTable().withPool(materialDrop(RegisterItem.RAMPART_SHIELD_SHARD.get(), 1, 3)));
+
             // Bonecrusher 掉落 HALL_BONE_FRAGMENTS 和 HALL_TENDON
             this.add(EntityTypeRegistry.BONECRUSHER.get(),
                     LootTable.lootTable()
@@ -155,6 +159,7 @@ public class LootTableData extends LootTableProvider {
                     EntityTypeRegistry.INF_PLAYER.get(),
                     EntityTypeRegistry.DEATH_HUNTER.get(),
                     EntityTypeRegistry.BONECRUSHER.get(),
+                    EntityTypeRegistry.RAMPART.get(),
                     CorruptionEntityTypes.LONG_ARM_BEAST.get()
             ), Stream.of(hostTypes(), degenerateTypes(), refactoredTypes()).flatMap(types -> types));
         }

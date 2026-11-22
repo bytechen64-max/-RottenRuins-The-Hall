@@ -68,6 +68,10 @@ public final class RegisterCustomEffect {
     public static final org.bytechen.rottenruins.content.magic.effect.StunEffect STUN =
             CustomEffectRegistry.register(new org.bytechen.rottenruins.content.magic.effect.StunEffect(id("stun")));
 
+    /** 虚化：半透明 + 淡蓝白描边，详见 {@link org.bytechen.rottenruins.content.magic.effect.EtherealEffect}。 */
+    public static final org.bytechen.rottenruins.content.magic.effect.EtherealEffect ETHEREAL =
+            CustomEffectRegistry.register(new org.bytechen.rottenruins.content.magic.effect.EtherealEffect(id("ethereal")));
+
     private RegisterCustomEffect() {
     }
 

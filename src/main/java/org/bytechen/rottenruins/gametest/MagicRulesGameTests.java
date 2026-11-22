@@ -37,10 +37,11 @@ public final class MagicRulesGameTests {
         helper.assertTrue(MagicMath.ratio(Float.NaN) == 0 && MagicMath.chargeRatio(-1, 20) == 0
                         && MagicMath.chargeRatio(10, 20) == 0.5f && MagicMath.chargeRatio(21, 20) == 1
                         && MagicMath.chargeRatio(0, 0) == 1, "Preserve charge completion semantics");
-        helper.assertTrue(MagicMath.reducedCooldown(21, 0.5) == 11
-                        && MagicMath.reducedCooldown(21, 9) == 11
+        helper.assertTrue(MagicMath.reducedCooldown(21, 50) == 11
+                        && MagicMath.reducedCooldown(21, 90) == 11
+                        && MagicMath.reducedCooldown(21, 20) == 17
                         && MagicMath.reducedCooldown(21, -1) == 21,
-                "Cooldown reduction caps at 50 percent and rounds rather than truncates");
+                "Cooldown reduction is a percentage capped at 50 and rounds rather than truncates");
         helper.assertTrue(MagicMath.discountedCost(21, 1) == 20
                         && MagicMath.discountedCost(100, 99) == 75
                         && MagicMath.baseKillMana(20) == 20, "Preserve mana discount and refund formulas");
