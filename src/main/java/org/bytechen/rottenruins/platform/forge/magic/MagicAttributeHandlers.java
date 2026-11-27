@@ -56,7 +56,7 @@ public final class MagicAttributeHandlers {
     }
 
     /**
-     * 法术伤害：乘以增伤倍率 {@code [(通用法强 + 流派法强×0.75)² / 2 + 1]}。
+     * 法术伤害：乘以增伤倍率 {@code 1 + 分段曲线(通用法强 + 流派法强×0.75)}，曲线见 {@link org.bytechen.rottenruins.core.magic.rules.MagicMath#powerCurve}。
      *
      * <p>属性读取与"相加"规则都在 {@link MagicStats#damageMultiplier} 里，
      * 这里只乘一次结果，免得公式散落到多个地方。</p>

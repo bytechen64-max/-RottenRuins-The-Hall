@@ -48,8 +48,12 @@ import static net.minecraft.world.entity.LivingEntity.DATA_HEALTH_ID;
 public class SilentDaylight extends SwordItem implements ICustomOutline, IBlockingWeapon,
         IFlowingName, ITooltipStyle {
 
+    /**
+     * 攻击力 37：SwordItem 的修饰器是 {@code attackDamageIn + 材质加成}，下界合金加成 4，
+     * 所以这里传 32 得修饰器 36，加上玩家基础 1 点正好 37（原版 tooltip 显示的就是这个总数）。
+     */
     public SilentDaylight() {
-        super(Tiers.NETHERITE, 8, -2.4f, new Item.Properties().fireResistant());
+        super(Tiers.NETHERITE, 32, -2.4f, new Item.Properties().fireResistant());
     }
 
     /**

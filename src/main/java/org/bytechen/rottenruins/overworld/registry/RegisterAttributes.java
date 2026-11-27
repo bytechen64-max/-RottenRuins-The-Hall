@@ -47,7 +47,7 @@ import org.jetbrains.annotations.NotNull;
  *   <tr><td>{@code life_steal}</td><td>0</td><td>加成（比例）</td>
  *       <td>造成伤害时回复 {@code 实际伤害 × 它} 点生命，含 {@code SetHealthDieUnti} 这类改血路径</td></tr>
  *   <tr><td>{@code spell_power}</td><td>0</td><td>加成（通用）</td>
- *       <td>增伤 {@code (通用 + 流派×0.75)²/2 + 1}；半径/治疗等走 {@code 1 + 法强}</td></tr>
+ *       <td>增伤 {@code 1 + 分段曲线(通用 + 流派×0.75)}；半径/治疗等走 {@code 1 + 法强}</td></tr>
  *   <tr><td>{@code spell_power_&lt;流派&gt;}</td><td>0</td><td>加成（每个流派一个）</td>
  *       <td>同上，<b>与通用法强相加</b>。流派取 {@link MagicType}，共
  *           {@code WATER / FIRE / DEATH / NATURE / LIGHT / VOID / MYSTERIOUS} 七个</td></tr>

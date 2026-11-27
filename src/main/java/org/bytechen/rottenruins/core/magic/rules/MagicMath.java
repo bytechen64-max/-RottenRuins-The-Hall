@@ -50,10 +50,35 @@ public final class MagicMath {
         return 1.0d + Math.max(0.0d, power);
     }
 
-    /** 法术增伤倍率：{@code (通用法强 + 流派法强 × 0.75)² / 2 + 1}，0 法强时正好 1.0。 */
+    /** 0～10 段的斜率。 */
+    private static final double CURVE_SLOPE = 0.3d;
+    /** 10～16 段的起点。 */
+    private static final double CURVE_KNEE = 10.0d;
+    /** 10～16 段的终点，也是之后直线的起点。 */
+    private static final double CURVE_ELBOW = 16.0d;
+
+    /**
+     * 增伤附加值曲线（不含开头的 1.0）。
+     *
+     * <p>0～10：{@code 0.3x}；10～16：以 {@code (10,3)} 为起点、{@code (16,6)} 为终点、
+     * 且 16 处斜率正好 0.3 的二次函数 {@code 3 + 0.7(x-10) - (x-10)²/30}；
+     * 16 以后从 {@code (16,6)} 以 0.3 继续上升。</p>
+     */
+    public static double powerCurve(double power) {
+        double x = Math.max(0.0d, power);
+        if (x < CURVE_KNEE) {
+            return CURVE_SLOPE * x;
+        }
+        if (x <= CURVE_ELBOW) {
+            double t = x - CURVE_KNEE;
+            return 3.0d + 0.7d * t - t * t / 30.0d;
+        }
+        return 6.0d + CURVE_SLOPE * (x - CURVE_ELBOW);
+    }
+
+    /** 法术增伤倍率：{@code 1 + powerCurve(通用法强 + 流派法强 × 0.75)}，0 法强时正好 1.0。 */
     public static double powerMultiplier(double general, double schoolAverage) {
-        double power = general + schoolAverage * SCHOOL_POWER_WEIGHT;
-        return power * power / 2.0d + 1.0d;
+        return 1.0d + powerCurve(general + schoolAverage * SCHOOL_POWER_WEIGHT);
     }
 
     /** {@code reduction} 是百分比点数：20 表示冷却减 20%，钳在 {@code [0, 50]}。 */

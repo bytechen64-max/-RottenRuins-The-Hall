@@ -19,20 +19,31 @@ import org.bytechen.rottenruins.overworld.registry.effect.customEffect.RegisterC
 /**
  * 两套盔甲的全套效果。
  *
- * <p>粗制活体：血不满时自己掏饱食度回血（相当于永远"满饱食度自动回血"）；全套击杀额外回血/回饱食/给力量。<br>
- * 如梦：受伤有 {@code 3% × 幸运}（上限 99%）概率免伤，触发时进入虚化。</p>
+ * <p>粗制活体：血不满时自己掏饱食度换生命，换来的生命按最大生命值等比给；全套击杀额外回血/回饱食/给力量。<br>
+ * 如梦：受伤有 {@code 3% × 幸运}（上限 50%）概率免伤，触发时进入虚化。</p>
  */
 @net.minecraftforge.fml.common.Mod.EventBusSubscriber(modid = HallMod.MODID, bus = net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus.FORGE)
 public final class ArmorSetHandlers {
 
     /** 自动回血的间隔（tick）。 */
     private static final int HEAL_INTERVAL = 10;
-    /** 每次回 1 点血消耗的饱和度。 */
-    private static final float HEAL_SATURATION_COST = 6.0F;
+    /**
+     * 每消耗 1 点饱食度换来的生命，按最大生命值的比例算 —— 1 点饱食度是 20 点的 5%，
+     * 所以「回复百分比 = 消耗百分比」正好对上 {@code 0.05}。
+     */
+    private static final double HEAL_RATIO_PER_FOOD = 0.05D;
+    /** 吃饱和度时的额外治疗效力：1 点饱和度回 7.5% 而不是 5%。 */
+    private static final double SATURATION_HEAL_BONUS = 0.5D;
+    /** 饱食度最多消耗到这个值，再低就不回血了。 */
+    private static final int MIN_FOOD_LEVEL = 10;
     /** 全套击杀回血量。 */
     private static final float KILL_HEAL = 4.0F;
     /** 虚化持续（tick）。 */
     private static final int ETHEREAL_TICKS = 10;
+    /** 每点幸运提供的免伤概率。 */
+    private static final double DODGE_PER_LUCK = 0.03D;
+    /** 免伤概率上限。 */
+    private static final double MAX_DODGE = 0.50D;
 
     private ArmorSetHandlers() {
     }
@@ -52,16 +63,36 @@ public final class ArmorSetHandlers {
         if (player.getHealth() >= player.getMaxHealth()) {
             return;
         }
-        FoodData food = player.getFoodData();
-        if (food.getSaturationLevel() > 0.0F) {
-            food.setSaturation(Math.max(0.0F, food.getSaturationLevel() - HEAL_SATURATION_COST));
-        } else if (food.getFoodLevel() > 0) {
-            food.setFoodLevel(food.getFoodLevel() - 1);
-            food.setSaturation(0.0F);
-        } else {
+        int source = consumeFood(player.getFoodData());
+        if (source == FOOD_NONE) {
             return;
         }
-        player.heal(1.0F);
+        double ratio = source == FOOD_SATURATION
+                ? HEAL_RATIO_PER_FOOD * (1.0D + SATURATION_HEAL_BONUS)
+                : HEAL_RATIO_PER_FOOD;
+        player.heal((float) (player.getMaxHealth() * ratio));
+    }
+
+    private static final int FOOD_NONE = 0;
+    private static final int FOOD_LEVEL = 1;
+    private static final int FOOD_SATURATION = 2;
+
+    /**
+     * 先吃饱和度，饱和不够再吃饱食度；饱食度不降到 {@link #MIN_FOOD_LEVEL} 以下。
+     *
+     * @return {@link #FOOD_NONE} 没得吃 / {@link #FOOD_LEVEL} 吃的是饱食度 / {@link #FOOD_SATURATION} 吃的是饱和度
+     */
+    private static int consumeFood(FoodData food) {
+        if (food.getSaturationLevel() >= 1.0F) {
+            food.setSaturation(food.getSaturationLevel() - 1.0F);
+            return FOOD_SATURATION;
+        }
+        if (food.getFoodLevel() > MIN_FOOD_LEVEL) {
+            food.setFoodLevel(food.getFoodLevel() - 1);
+            food.setSaturation(Math.min(food.getFoodLevel(), food.getSaturationLevel()));
+            return FOOD_LEVEL;
+        }
+        return FOOD_NONE;
     }
 
     @SubscribeEvent
@@ -87,7 +118,7 @@ public final class ArmorSetHandlers {
         if (!ModArmorItem.wearingFullSet(player, ModArmorMaterial.DREAMLIKE)) {
             return;
         }
-        double chance = Math.min(0.99D, 0.03D * player.getAttributeValue(Attributes.LUCK));
+        double chance = Math.min(MAX_DODGE, DODGE_PER_LUCK * player.getAttributeValue(Attributes.LUCK));
         if (chance <= 0.0D || player.getRandom().nextDouble() >= chance) {
             return;
         }

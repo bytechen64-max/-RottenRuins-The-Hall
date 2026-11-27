@@ -14,7 +14,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.compat.BCCoreCompat;
+import org.bytechen.rottenruins.utils.entity.DirectHealth;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.SwordAuraEntity;
 import org.bytechen.rottenruins.utils.SpellDamageUtil;
 import org.bytechen.rottenruins.utils.ModUtils;
@@ -25,12 +25,12 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.UUID;
 
-import static net.minecraft.world.entity.LivingEntity.DATA_HEALTH_ID;
-
 /**
- * 寂寒白日 · 左键三连斩（由 {@code AttackEntityEvent} 驱动，原版那一刀本身保留）。
- * 每一斩出刀光并在中心 {@value #SLASH_RANGE} 格球内对所有生物结算：百分比改血走 {@code BCCoreCompat}
- * （无视护甲 / 无敌帧 / 伤害事件），冰伤走 {@link SpellDamageUtil} 包装层（护甲与别的模组减伤照常生效）。
+ * 寂寒白日 · 左键三连斩（由 {@code AttackEntityEvent} 驱动）。
+ * <p>普通攻击那一刀完全交给原版（普通伤害，护甲 / 抗性 / 无敌帧全参与），这里只负责随后的三斩：
+ * 每一斩出刀光、在中心 {@value #SLASH_RANGE} 格球内结算 —— 改血部分
+ * （{@value #PERCENT_HEALTH}% 最大生命，下限 1）走 {@code DirectHealth} 逆向改血，无视护甲 / 无敌帧；
+ * 冰伤走 {@link SpellDamageUtil} 包装层，护甲与别的模组减伤照常生效。</p>
  * 三斩跨 12 tick 而武器没有每 tick 回调，用 {@link TickEvent.ServerTickEvent} 队列调度，
  * 队列存 <b>UUID</b> 而非实体引用：目标被卸载时按 UUID 查不到就自然丢弃。
  */
@@ -44,8 +44,11 @@ public final class SilentDaylightAttack {
     /** 每一斩的<b>基准</b>冰伤（走包装层，吃护甲 / 事件）；实际值按攻击力等比放大。 */
     public static final float ICE_DAMAGE = 18.0F;
 
-    /** 基准攻击力（寂寒白日 8 点 + 玩家基础 1 点）：用它把 ATTACK_DAMAGE 归一化成倍率，拿本剑时正好 1.0。 */
-    public static final double REFERENCE_ATTACK_DAMAGE = 9.0D;
+    /**
+     * 基准攻击力（寂寒白日 36 点修饰器 + 玩家基础 1 点 = 37）：用它把 ATTACK_DAMAGE 归一化成倍率，
+     * 拿本剑时倍率正好 1.0，所以冰伤基准仍是 18 —— 武器加攻不会顺带把三斩冰伤一起抬上去。
+     */
+    public static final double REFERENCE_ATTACK_DAMAGE = 37.0D;
 
     /** 倍率上限：ATTACK_DAMAGE 能被别的模组叠到几十上百，不封顶三斩冰伤会失控。 */
     public static final double MAX_ATTACK_SCALE = 10.0D;
@@ -69,10 +72,12 @@ public final class SilentDaylightAttack {
         return (float) (ICE_DAMAGE * scale);
     }
 
-    /** 每一斩的改血百分比（目标最大生命值，下限 1 点）：直接写血量，无视护甲 / 抗性 / 无敌帧。 */
+    /**
+     * 每一斩的改血百分比（目标最大生命值，下限 1 点）：直接写血量，无视护甲 / 抗性 / 无敌帧。
+     * <p>这是整套攻击里<b>唯一</b>的改血部分 —— 普通攻击那一刀就是原版普通伤害，冰伤照旧走事件链。
+     * 觉得三斩总伤偏高/偏低就只调这一个数。</p>
+     */
     public static final float PERCENT_HEALTH = 5.0F;
-
-    public static final float NORMAL_ATTACK_PERCENT = 5.0F;
 
     public static final float SLASH_HEIGHT = 14.0F;
 
@@ -96,7 +101,10 @@ public final class SilentDaylightAttack {
     private SilentDaylightAttack() {
     }
 
-    /** 玩家挥刀（{@code AttackEntityEvent}）：马上结算普通攻击的 5% 改血，并把三斩排进队列。 */
+    /**
+     * 玩家挥刀（{@code AttackEntityEvent}）：原版那一刀自己照常结算普通伤害（护甲、抗性、无敌帧全都参与），
+     * 这里只把三斩排进队列 —— 不额外改血，否则"普通一刀"会变成"普通伤害 + 百分比改血"两段。
+     */
     public static void onAttackLanded(ServerPlayer player, LivingEntity target) {
         ItemStack held = player.getMainHandItem();
         if (!(held.getItem() instanceof SilentDaylight)) {
@@ -105,9 +113,6 @@ public final class SilentDaylightAttack {
         if (target == null || !target.isAlive()) {
             return;
         }
-
-        writePercentOfMax(player, target, NORMAL_ATTACK_PERCENT,
-                player.damageSources().playerAttack(player));
 
         for (int i = 0; i < SLASH_COUNT; i++) {
             PENDING.add(new PendingSlash(player.getUUID(), target.getUUID(),
@@ -156,7 +161,9 @@ public final class SilentDaylightAttack {
         }
 
         spawnSlashVisual(level, target.getBoundingBox().getCenter());
-        applySlashDamage(level, player, held, target.getBoundingBox().getCenter());
+        // 百分比改血每刀只算一次：只有第一斩带 5%，后两斩只补冰伤
+        applySlashDamage(level, player, held, target.getBoundingBox().getCenter(),
+                pending.index() == 0);
     }
 
     /**
@@ -207,7 +214,7 @@ public final class SilentDaylightAttack {
 
     /** 判定用"碰撞箱到球心的最近距离"而非脚底坐标（否则高个子目标的上半段会漏）；施法者自己除外。 */
     private static void applySlashDamage(ServerLevel level, ServerPlayer player, ItemStack held,
-                                         Vec3 center) {
+                                         Vec3 center, boolean percentPhase) {
         double rangeSqr = SLASH_RANGE * SLASH_RANGE;
         AABB box = new AABB(center, center).inflate(SLASH_RANGE);
 
@@ -215,24 +222,29 @@ public final class SilentDaylightAttack {
         for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, box,
                 e -> e != player && e.isAlive()
                         && e.getBoundingBox().distanceToSqr(center) <= rangeSqr)) {
-            hurtOneSlash(level, player, held, victim);
+            hurtOneSlash(level, player, held, victim, percentPhase);
         }
     }
 
-    /** 对单个目标结算一斩：百分比改血（下限 1）+ 冰伤 × 攻击力倍率，并顶满冻结计时。 */
+    /** 对单个目标结算一斩：第一斩带百分比改血（下限 1），每斩都带冰伤 × 攻击力倍率，并顶满冻结计时。 */
     private static void hurtOneSlash(ServerLevel level, ServerPlayer player, ItemStack held,
-                                     LivingEntity victim) {
+                                     LivingEntity victim, boolean percentPhase) {
         // 冰系来源：DamageTypes.FREEZE + 攻击者是玩家，伤害类型读作"冰冻"但归因仍是玩家（掉落 / 死亡消息正常）。
         DamageSource source = SpellDamageUtil.iceSourceOf(victim, player);
 
-        writePercentOfMax(player, victim, PERCENT_HEALTH, source);
+        // 首斩按目标最大生命百分比改血（下限 1），后续两斩只吃冰伤 —— 一刀里百分比只算一次。
+        if (percentPhase) {
+            writePercentOfMax(player, victim, PERCENT_HEALTH, source);
+        }
 
+        float ice = 0.0F;
+        boolean iceApplied = false;
         if (victim.isAlive()) {
             // 每斩前清一次无敌帧，保证 6 tick 间隔的连斩不会被"重复伤害"分支吃掉。
             SpellDamageUtil.prepareRepeatHit(victim);
-            float ice = iceDamageOf(player);
-            boolean applied = SpellDamageUtil.hurt(victim, source, held, player, ice);
-            if (!applied && victim.isAlive()) {
+            ice = iceDamageOf(player);
+            iceApplied = SpellDamageUtil.hurt(victim, source, held, player, ice);
+            if (!iceApplied && victim.isAlive()) {
                 // 冰伤是主要输出，不能静默消失 —— 直接改血兜底并留一条 WARN。
                 warnIceFallbackOnce(victim, ice);
                 writeIceDamage(player, victim, ice, source);
@@ -240,9 +252,8 @@ public final class SilentDaylightAttack {
             iceHitFeedback(level, victim);
         }
 
-        if (victim.isDeadOrDying() && !victim.isRemoved() && !victim.dead) {
-            victim.die(source);
-        }
+        // 血量已经归零就补一次真实死亡（掉落、死亡事件、boss 血条全靠 die）
+        DirectHealth.finishOff(victim, source);
 
         if (victim.isAlive() || victim.isDeadOrDying()) {
             victim.setTicksFrozen(victim.getTicksRequiredToFreeze());
@@ -254,28 +265,17 @@ public final class SilentDaylightAttack {
 
     /**
      * 冰伤的兜底结算：{@link SpellDamageUtil#hurt} 只要有一环把伤害取消/减到 0，冰伤就会静默消失，
-     * 所以补一条不经过事件的落地路径；先写击杀归因再改血，掉落才归给玩家。
+     * 所以补一条不经过事件的落地路径 —— 交给 {@link DirectHealth#damage}：它直写原始血量字段，
+     * 归零时走 {@code die(source)}，掉落与击杀归因都不会丢。
      */
     private static void writeIceDamage(ServerPlayer player, LivingEntity victim,
                                        float ice, DamageSource source) {
         if (victim == null || !victim.isAlive() || ice <= 0F) {
             return;
         }
-        float before = BCCoreCompat.getHealth(victim);
-        if (Float.isNaN(before)) {
-            before = victim.getHealth();
-        }
-        float after = before - ice;
-        if (after >= before) {
-            return;
-        }
+        // 改血不经过 hurt，lastHurtByPlayer 这类归因要自己写，掉落才归给玩家
         SpellDamageUtil.applyKillCredit(player, victim);
-        // 引擎写一次（能穿透"覆写 getHealth"的抗改血实现），再无条件写原版同步血量字段
-        BCCoreCompat.setHealth(victim, after);
-        victim.entityData.set(DATA_HEALTH_ID, after);
-        if (after <= 0F) {
-            victim.die(source);
-        }
+        DirectHealth.damage(victim, ice, source);
     }
 
     private static void warnIceFallbackOnce(LivingEntity victim, float ice) {
@@ -295,39 +295,24 @@ public final class SilentDaylightAttack {
     }
 
     /**
-     * 按目标最大生命值百分比改血（直接写血量）：写到 ≤0 后直接 {@code die(source)}，
-     * 死亡消息 / 战利品 / 击杀归因照常（{@code die()} 自带幂等保护）。
+     * 按目标最大生命值百分比改血（直接写血量）：统一交给 {@link DirectHealth#damage}，
+     * 写到 ≤0 时由它调 {@code die(source)}，死亡消息 / 战利品 / 击杀归因照常。
      */
-    private static void writePercentOfMax(ServerPlayer player, LivingEntity victim,
-                                          float percent, DamageSource source) {
+    private static float writePercentOfMax(ServerPlayer player, LivingEntity victim,
+                                           float percent, DamageSource source) {
         if (victim == null || !victim.isAlive() || percent <= 0F) {
-            return;
+            return 0.0F;
         }
         float max = victim.getMaxHealth();
         if (!Float.isFinite(max) || max <= 0F) {
-            return;
+            return 0.0F;
         }
         float amount = Math.max(1.0F, max * (percent / 100.0F));
 
-        float before = BCCoreCompat.getHealth(victim);
-        if (Float.isNaN(before)) {
-            before = victim.getHealth();
-        }
-        float after = before - amount;
-        if (after >= before) {
-            return;
-        }
-
         // 改血不经过 hurt，掉落表读的 lastHurtByPlayer 要自己写
         SpellDamageUtil.applyKillCredit(player, victim);
-
-        // 先让引擎写一次（可穿透"覆写 getHealth"的抗改血实现），再无条件写原版同步血量字段
-        BCCoreCompat.setHealth(victim, after);
-        victim.entityData.set(DATA_HEALTH_ID, after);
-
-        if (after <= 0F) {
-            victim.die(source);
-        }
+        DirectHealth.damage(victim, amount, source);
+        return amount;
     }
 
     @SubscribeEvent

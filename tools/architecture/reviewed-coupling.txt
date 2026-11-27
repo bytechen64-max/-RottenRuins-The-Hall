@@ -263,6 +263,7 @@ client-forge | client/tooltip/TooltipStyleHook.java -> net.minecraftforge.api.di
 client-forge | client/tooltip/TooltipStyleHook.java -> net.minecraftforge.api.distmarker.OnlyIn
 client-forge | client/tooltip/TooltipStyleHook.java -> net.minecraftforge.client.event.RenderTooltipEvent
 client-forge | client/tooltip/TooltipStyleHook.java -> net.minecraftforge.eventbus.api.SubscribeEvent
+client-forge | client/tooltip/TooltipStyleHook.java -> net.minecraftforge.eventbus.api.EventPriority
 
 # Existing guarded entries, client-only event/mixin/datagen surfaces and legacy content rendering debt.
 common-client | HallMod.java -> org.bytechen.rottenruins.client.cosmic.CosmicClient
@@ -508,6 +509,10 @@ client-forge | client/tooltip/SpellTooltipAnimator.java -> net.minecraftforge.cl
 client-forge | client/tooltip/SpellTooltipSections.java -> net.minecraftforge.api.distmarker.Dist
 client-forge | client/tooltip/SpellTooltipSections.java -> net.minecraftforge.api.distmarker.OnlyIn
 client-forge | client/tooltip/SpellTooltipSections.java -> net.minecraftforge.event.entity.player.ItemTooltipEvent
+# 盔甲 tooltip：与法术同一套 Shift 折叠结构，只能在客户端读 Shift 状态与语言表。
+client-forge | client/tooltip/ArmorTooltipSections.java -> net.minecraftforge.api.distmarker.Dist
+client-forge | client/tooltip/ArmorTooltipSections.java -> net.minecraftforge.api.distmarker.OnlyIn
+client-forge | client/tooltip/ArmorTooltipSections.java -> net.minecraftforge.event.entity.player.ItemTooltipEvent
 common-client | mixin/GuiGraphicsTooltipInvoker.java -> net.minecraft.client.gui.Font
 common-client | mixin/GuiGraphicsTooltipInvoker.java -> net.minecraft.client.gui.GuiGraphics
 common-client | mixin/GuiGraphicsTooltipInvoker.java -> net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent

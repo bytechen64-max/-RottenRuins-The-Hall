@@ -67,6 +67,15 @@ public final class MagicRulesGameTests {
         close(helper, MagicMath.spellPower(1, 0.6), 1.6);
         close(helper, MagicMath.spellPower(1), 1.0);
         close(helper, MagicMath.spellPower(-1, 0), 0);
+        // 增伤曲线：0～10 线性 0.3x，10～16 二次段在 16 处斜率 0.3，之后继续 0.3
+        close(helper, MagicMath.powerCurve(0), 0);
+        close(helper, MagicMath.powerCurve(5), 1.5);
+        close(helper, MagicMath.powerCurve(10), 3);
+        close(helper, MagicMath.powerCurve(16), 6);
+        close(helper, MagicMath.powerCurve(20), 7.2);
+        close(helper, MagicMath.powerMultiplier(0, 0), 1.0);
+        close(helper, MagicMath.powerMultiplier(10, 0), 4.0);
+        close(helper, MagicMath.powerMultiplier(12, 4), 1.0 + MagicMath.powerCurve(12 + 4 * MagicMath.SCHOOL_POWER_WEIGHT));
         String tooltip = MagicTooltips.typeLine(types).getString();
         helper.assertTrue(tooltip.contains(Component.translatable(FIRE.translationKey(HallMod.MODID)).getString())
                         && tooltip.contains(Component.translatable(WATER.translationKey(HallMod.MODID)).getString()),

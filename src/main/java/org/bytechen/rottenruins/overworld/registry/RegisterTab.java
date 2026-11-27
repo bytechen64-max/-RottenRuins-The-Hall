@@ -229,6 +229,9 @@ public class RegisterTab {
                         RegisterItem.DREAMLIKE_CHESTPLATE.get(),
                         RegisterItem.DREAMLIKE_LEGGINGS.get(),
                         RegisterItem.DREAMLIKE_BOOTS.get());
+                        // 饰品：铭刻之钟
+                        items(output,
+                        RegisterItem.INSCRIBED_BELL.get());
                         // 腐化工具与注射器
                         items(output,
                         CorruptionItems.CRUDE_SWORD.get(),

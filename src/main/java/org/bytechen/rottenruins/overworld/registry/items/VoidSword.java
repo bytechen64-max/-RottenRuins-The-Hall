@@ -15,7 +15,6 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.common.ForgeMod;
 import org.bytechen.rottenruins.api.IBlockingWeapon;
 import org.bytechen.rottenruins.api.ICustomOutline;
-import org.bytechen.rottenruins.compat.BCCoreCompat;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.SwordAuraEntity;
 
 import java.util.Map;
@@ -24,8 +23,8 @@ import java.util.Map;
  * VoidSword — cosmic starfield + 黑白流动描边。
  * <p>三层视觉：物品本体纹理、模型 JSON 走 {@code rotten_ruins:cosmic} 的星空层、本类实现的
  * {@link ICustomOutline} 流动描边（屏幕空间「剪影遮罩 + 环形膨胀」，只画在剪影外侧）。
- * <p>右键半径改血与蹲下左键斩杀都不在本模组实现：交给可选的 {@code vitalprobe}（ASM 数据流逆向
- * 找到真实血量存储，抗改血模组同样有效），经 {@link BCCoreCompat} 反射对接；没装就只是少了这一下。
+ * <p>??????????????????????{@link org.bytechen.rottenruins.utils.entity.DirectHealth}
+ * ?????????????????????
  * <p>攻击距离 100 格：给主手装备的这把剑加 {@code forge:entity_reach} 修饰符，客户端准星射线与服务端
  * 距离校验读的是同一属性（不是作弊包）；方块交互走 {@code forge:block_reach}，不受影响。
  */
@@ -101,17 +100,10 @@ public class VoidSword extends SwordItem implements ICustomOutline, IBlockingWea
     }
 
     /** 右键范围改血：只处理「对着空气右键」（方块/生物走 {@code useOn} / {@code interactLivingEntity}，
-     *  VitalProbe 自己监听两条路径并靠物品冷却去重）；客户端也要返回 success，否则手臂不挥。 */
+     *  客户端也要返回 success，否则手臂不挥。 */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-
-        if (BCCoreCompat.isAvailable()) {
-            if (!level.isClientSide()) {
-                BCCoreCompat.triggerVoidSword(player, stack);
-            }
-            return InteractionResultHolder.success(stack);
-        }
 
         return IBlockingWeapon.beginBlock(level, player, hand);
     }

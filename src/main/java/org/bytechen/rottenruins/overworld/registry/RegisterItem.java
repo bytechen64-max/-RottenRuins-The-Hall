@@ -320,9 +320,13 @@ public class RegisterItem {
     public static final RegistryObject<Item> VOID_ESSENCE =
             ITEMS.register("void_essence", org.bytechen.rottenruins.content.magic.item.VoidEssence::new);
 
-    // ---- 学识 / 城墙碎盾 / 套装 ----
+    // ---- 学识 / 城墙碎盾 / 套装 / 饰品 ----
     /** 城墙碎盾：城墙掉落的合成材料。 */
     public static final RegistryObject<Item> RAMPART_SHIELD_SHARD = registerSimpleItem("rampart_shield_shard");
+
+    /** 铭刻之钟：饰品，戴着给 10 点冷却缩减。 */
+    public static final RegistryObject<Item> INSCRIBED_BELL =
+            ITEMS.register("inscribed_bell", org.bytechen.rottenruins.content.item.InscribedBell::new);
 
     public static final RegistryObject<Item> KNOWLEDGE_MORTAL = knowledge("knowledge_mortal",
             org.bytechen.rottenruins.content.item.KnowledgeTome.Branch.MORTAL);

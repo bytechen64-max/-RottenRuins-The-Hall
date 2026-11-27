@@ -168,7 +168,7 @@ public final class MagicStats {
         return MagicMath.powerScale(spellPower(player, spell));
     }
 
-    /** 法术增伤倍率 {@code (通用 + 流派 × 0.75)² / 2 + 1}，0 法强 = 1.0 倍。 */
+    /** 法术增伤倍率 {@code 1 + MagicMath.powerCurve(通用 + 流派 × 0.75)}，0 法强 = 1.0 倍。 */
     public static double damageMultiplier(@Nullable Player player, @Nullable ItemStack spell) {
         if (player == null) return 1.0d;
         IMagicBaseItem item = spellOf(spell);

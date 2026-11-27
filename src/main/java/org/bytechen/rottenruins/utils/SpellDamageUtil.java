@@ -16,12 +16,12 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import org.bytechen.rottenruins.api.magic.MagicDamageEvent;
-import org.bytechen.rottenruins.compat.BCCoreCompat;
+import org.bytechen.rottenruins.utils.entity.DirectHealth;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * <b>法术伤害工具类</b>：把 VitalProbe（{@code BCCoreCompat}）的「直接改血」包装成「像原版 {@code hurt} 一样」的
+ * <b>法术伤害工具类</b>：把 {@link org.bytechen.rottenruins.utils.entity.DirectHealth} 的「直接改血」包装成「像原版 {@code hurt} 一样」的
  * 调用。改血绕过 {@code LivingEntity.hurt}，所以必须手动补两件事：① 击杀归因写 {@code lastHurtByPlayer} /
  * {@code lastHurtByMob}（战利品 killer 条件、进度、击杀回蓝都读它）；② 血量 ≤0 后用<b>原始 DamageSource</b> 补一次
  * 真实 hurt 引出 {@code die(source)} → dropAllDeathLoot，不能用 {@code kill()}（genericKill 来源会冲掉归因）。
@@ -95,7 +95,7 @@ public final class SpellDamageUtil {
         return hurt(target, spell, caster, max * (percent / 100f));
     }
 
-    /** <b>完全走原版 {@code hurt}</b>：护甲 / 抗性 / 无敌帧 / 减伤全部生效（不碰 VitalProbe）。 */
+    /** <b>完全走原版 {@code hurt}</b>：护甲 / 抗性 / 无敌帧 / 减伤全部生效（不碰直接改血）。 */
     public static boolean hurtVanilla(@NotNull LivingEntity target, @NotNull ItemStack spell,
                                      @Nullable ServerPlayer caster, float amount) {
         return hurt(target, spellSourceOf(target, caster), spell, caster, amount, false);
@@ -142,27 +142,17 @@ public final class SpellDamageUtil {
         }
 
         float applied;
-        if (useHealthWrite && BCCoreCompat.isHealthApiAvailable()) {
-            float before = BCCoreCompat.getHealth(target);
-            if (Float.isNaN(before)) {
-                // 读不到有效血量（目标没挂 VitalProbe 的引擎）→ 退回原版
-                applied = vanillaApply(target, source, amount);
-            } else {
-                float after = before - amount;   // 故意不钳制：允许 ≤0，避免浮点残值打不死
-                if (BCCoreCompat.setHealth(target, after)) {
-                    applied = amount;
-                    if (after <= 0f) {
-                        finishOff(target, source);
-                    }
-                } else {
-                    // 写失败（目标是"抗改血"实现）→ 退回原版
-                    applied = vanillaApply(target, source, amount);
-                }
+        if (useHealthWrite) {
+            float before = target.getHealth();
+            float after = before - amount;   // 不钳制：允许 <= 0，避免浮点残值打不死
+            DirectHealth.setHealth(target, after);
+            applied = amount;
+            if (after <= 0f) {
+                finishOff(target, source);
             }
         } else {
             applied = vanillaApply(target, source, amount);
         }
-
         if (applied <= 0f) {
             return false;
         }
@@ -184,10 +174,10 @@ public final class SpellDamageUtil {
      * 准备一次<b>必须真的落下去</b>的命中：清空无敌帧 + 拉满受击红闪（只在服务端调用）。同一目标 20 tick
      * 内要挨第二下的效果，每次结算前都要调，否则第二下会被 {@code invulnerableTime > 10} 分支当成重复伤害
      * （同数值只补差值 = 0）；红闪要自己拉满，因为改血路径不经过 {@code LivingEntity.hurt}，而清无敌帧的
-     * {@link BCCoreCompat#clearHurtGuard} 顺手把 {@code hurtTime} 清成了 0。
+     * {@link DirectHealth#clearHurtGuard} 顺手把 {@code hurtTime} 清成了 0。
      */
     public static void prepareRepeatHit(@NotNull LivingEntity target) {
-        BCCoreCompat.clearHurtGuard(target);
+        DirectHealth.clearHurtGuard(target);
         target.hurtTime = Math.max(target.hurtTime, target.hurtDuration);
     }
 
@@ -215,7 +205,7 @@ public final class SpellDamageUtil {
         if (!target.isAlive()) {
             return;
         }
-        BCCoreCompat.clearHurtGuard(target);
+        DirectHealth.clearHurtGuard(target);
 
         DamageSource src = source != null ? source : target.damageSources().genericKill();
         try {

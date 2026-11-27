@@ -40,7 +40,7 @@ public class BlackHoleEntity extends Entity {
             SynchedEntityData.defineId(BlackHoleEntity.class, EntityDataSerializers.FLOAT);
     /**
      * 每 tick 的改血伤害（点）：{@code 0}（默认）= 走处理器里原有的物理伤害路径，
-     * &gt;0 则表示技能召唤物、按此值走 VitalProbe 改血。判断与施加都在处理器里。
+     * &gt;0 则表示技能召唤物、按此值走 DirectHealth 改血。判断与施加都在处理器里。
      */
     private static final EntityDataAccessor<Float> DATA_BC_DAMAGE_PER_TICK =
             SynchedEntityData.defineId(BlackHoleEntity.class, EntityDataSerializers.FLOAT);
@@ -239,7 +239,7 @@ public class BlackHoleEntity extends Entity {
 
     /**
      * 技能召唤用工厂：额外指定每 tick 改血量与持续 tick。与 {@link #spawnSmall} 的区别在伤害语义 ——
-     * 这里走 {@code BCCoreCompat.damage} 改血，且只在 {@code damageTicks} 内生效。
+     * 这里走 {@code DirectHealth.damage} 改血，且只在 {@code damageTicks} 内生效。
      */
     public static BlackHoleEntity spawnSkill(Level level, Vec3 pos, int lifetime,
                                              float radius, float gravityRadius, float killRadius,

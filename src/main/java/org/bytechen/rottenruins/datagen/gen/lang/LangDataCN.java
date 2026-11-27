@@ -44,8 +44,16 @@ public class LangDataCN extends LanguageProvider {
         add("effect.rotten_ruins.flame_slash", "焰斩");
         add("effect.rotten_ruins.stun", "晕眩");
         add("effect.rotten_ruins.ethereal", "虚化");
-        add("message.rotten_ruins.knowledge_gained", "学识涌入脑海：法术强度 +1，魔法槽位 +1");
         add("message.rotten_ruins.knowledge_exhausted", "这份学识对你已无用处");
+        add("message.rotten_ruins.knowledge.gained.mortal", "你已领悟凡界的知识");
+        add("message.rotten_ruins.knowledge.gained.infernal", "你已领悟狱火的知识");
+        add("message.rotten_ruins.knowledge.gained.end", "你已领悟终末的知识");
+        add("tooltip.rotten_ruins.knowledge.desc.mortal",
+                "§9来自§[rrs:grad:#F5E05A:#3FBF5F]凡界§[/]§9的知识将祝你向前");
+        add("tooltip.rotten_ruins.knowledge.desc.infernal",
+                "§9来自§[rrs:grad:#FF5A3C:#861414]狱火§[/]§9的知识将祝你向前");
+        add("tooltip.rotten_ruins.knowledge.desc.end",
+                "§9来自§[rrs:grad:#B26BFF:#341040]终末§[/]§9的知识将祝你向前");
         add("gui.rotten_ruins.jade.crafting", "合成中 %s%% · 约 %s 秒");
 
         add("rotten_ruins.story.unknown", "未知剧情：%s");
@@ -290,6 +298,16 @@ public class LangDataCN extends LanguageProvider {
         add("tooltip." + HallMod.MODID + ".magic.charge", "蓄力时间：%s 秒");
         add("tooltip." + HallMod.MODID + ".magic.shift_hint", "按住 %s 获取更多信息");
         add("tooltip." + HallMod.MODID + ".magic.shift_key", "Shift");
+        // 盔甲：常显简介紫色；Shift 细节里的 *关键字* 渲染成金色
+        add("item." + HallMod.MODID + ".armor.crude_living.desc", "貌似加工没有那么精细");
+        add("item." + HallMod.MODID + ".armor.crude_living.detail.1", "当血量未满时，消耗*饱食度*恢复*生命值*");
+        add("item." + HallMod.MODID + ".armor.crude_living.detail.2", "恢复*生命值*的百分比等于消耗*饱食度*的百分比");
+        add("item." + HallMod.MODID + ".armor.crude_living.detail.3", "*饱和度*的治疗效力增加");
+        add("item." + HallMod.MODID + ".armor.crude_living.detail.4", "击杀目标时恢复*饱食度*和*生命值*");
+        add("item." + HallMod.MODID + ".armor.dreamlike.desc", "如梦般消散");
+        add("item." + HallMod.MODID + ".armor.dreamlike.detail.1", "根据*幸运值*，在受伤时有概率闪避");
+        add("item." + HallMod.MODID + ".armor.dreamlike.detail.2", "闪避率为 *3%* × 当前*幸运值*");
+        add("item." + HallMod.MODID + ".armor.dreamlike.dodge", "当前闪避率：%s");
 
         // ---- 魔法属性（见 RegisterAttributes） ----
         // 键名必须与 RangedAttribute 构造器里写死的那个字符串**完全一致**，
@@ -432,9 +450,9 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.BLACK_HOLE.get(), "黑洞术");
         add(RegisterItem.VOID_ESSENCE.get(), "虚空精粹");
         add(RegisterItem.RAMPART_SHIELD_SHARD.get(), "城墙碎盾");
-        add(RegisterItem.KNOWLEDGE_MORTAL.get(), "凡界之学识");
-        add(RegisterItem.KNOWLEDGE_INFERNAL.get(), "狱火之学识");
-        add(RegisterItem.KNOWLEDGE_END.get(), "终末之学识");
+        add(RegisterItem.KNOWLEDGE_MORTAL.get(), "§[rrs:grad:#F5E05A:#3FBF5F]凡界之学识§[/]");
+        add(RegisterItem.KNOWLEDGE_INFERNAL.get(), "§[rrs:grad:#FF5A3C:#861414]狱火之学识§[/]");
+        add(RegisterItem.KNOWLEDGE_END.get(), "§[rrs:grad:#B26BFF:#341040]终末之学识§[/]");
         add(RegisterItem.CRUDE_LIVING_HELMET.get(), "粗制活体头盔");
         add(RegisterItem.CRUDE_LIVING_CHESTPLATE.get(), "粗制活体胸甲");
         add(RegisterItem.CRUDE_LIVING_LEGGINGS.get(), "粗制活体护腿");
@@ -443,6 +461,9 @@ public class LangDataCN extends LanguageProvider {
         add(RegisterItem.DREAMLIKE_CHESTPLATE.get(), "如梦胸甲");
         add(RegisterItem.DREAMLIKE_LEGGINGS.get(), "如梦护腿");
         add(RegisterItem.DREAMLIKE_BOOTS.get(), "如梦靴子");
+        add(RegisterItem.INSCRIBED_BELL.get(), "铭刻之钟");
+        add("tooltip.rotten_ruins.inscribed_bell.cooldown", "冷却缩减 %s");
+        add("item.rotten_ruins.inscribed_bell.desc", "珍惜此刻的美好......");
         add("item.rotten_ruins.shield_ward.desc", "蓄力后架起护盾，抵挡数次伤害后破碎");
         add("item.rotten_ruins.bark_armor.desc", "披上藤甲：免疫雷电与火焰之外的伤害，但怕火");
         add("item.rotten_ruins.freezing_rain.desc", "按住召来冻雨，持续冻伤并减速范围内的目标");

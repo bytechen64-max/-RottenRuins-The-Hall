@@ -33,7 +33,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import org.bytechen.rottenruins.HallMod;
-import org.bytechen.rottenruins.compat.BCCoreCompat;
+import org.bytechen.rottenruins.utils.entity.DirectHealth;
 import org.bytechen.rottenruins.overworld.registry.entities.base.AbstractRottenEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.BlackHoleEntity;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.ShockwaveEntity;
@@ -50,7 +50,7 @@ import org.bytechen.rottenruins.overworld.registry.entities.base.RottenFaction;
 
 /**
  * 坍缩使徒（Collapsar）—— 只会飞、不会走，悬在目标上方，靠「坍缩黑洞」（前摇 60 tick → 冲击波 → 黑洞 60 tick）
- * 与「斩击风暴」（5 秒 20 刀，每刀按目标最大生命的 5%）打人，只有 idle 动画。伤害全走 {@link BCCoreCompat} 直接写血量存储：
+ * 与「斩击风暴」（5 秒 20 刀，每刀按目标最大生命的 5%）打人，只有 idle 动画。伤害全走 {@link DirectHealth} 直接写血量存储：
  * 无视无敌帧 / 护甲 / 抗性，算到 ≤0 补一次终结击。黑洞的伤害逻辑不在实体里（见 BlackHolePhysicsHandler）。
  */
 public class CollapsarEntity extends BaseApostleEntity {
@@ -174,7 +174,7 @@ public class CollapsarEntity extends BaseApostleEntity {
     private final ServerBossEvent bossEvent = new ServerBossEvent(
             this.getDisplayName(), BossEvent.BossBarColor.PURPLE, BossEvent.BossBarOverlay.PROGRESS);
 
-    /** 上次同步出去的血量比例：血量由 VitalProbe 直接写存储，只能每 tick 轮询比较后再发，避免每 tick 一个进度包。 */
+    /** 上次同步出去的血量比例：血量由 DirectHealth 直接写存储，只能每 tick 轮询比较后再发，避免每 tick 一个进度包。 */
     private float lastBossProgress = 1.0F;
 
     public CollapsarEntity(EntityType<? extends Monster> entityType, Level level,
@@ -393,7 +393,7 @@ public class CollapsarEntity extends BaseApostleEntity {
     @Override
     public void tick() {
         // 必须在 super.tick() 之前：原版 baseTick 会检查 isDeadOrDying() 并直接走 tickDeath()，
-        // 而 VitalProbe 改血绕过 hurt / applyCustomDamage，"改血到 0"只能在这里顶回去（否则尾杀没播完就被判死）。
+        // 而 DirectHealth 改血绕过 hurt / applyCustomDamage，"改血到 0"只能在这里顶回去（否则尾杀没播完就被判死）。
         guardHealthCap();
         guardFinisherHealth();
 
@@ -480,7 +480,7 @@ public class CollapsarEntity extends BaseApostleEntity {
                 what, before, written, corrected);
     }
 
-    /** 血量比例变了才发包（改血走 VitalProbe，绕过了 setHealth，所以只能轮询）。 */
+    /** 血量比例变了才发包（改血走 DirectHealth，绕过了 setHealth，所以只能轮询）。 */
     private void tickBossEvent() {
         float max = this.getMaxHealth();
         float progress = max <= 0.0F ? 0.0F : Mth.clamp(this.getHealth() / max, 0.0F, 1.0F);
@@ -829,17 +829,17 @@ public class CollapsarEntity extends BaseApostleEntity {
                 SLASH_SCALE, SLASH_HEIGHT, SLASH_RADIUS,
                 SLASH_MAX_AGE, SLASH_SHRINK_SPEED);
 
-        // 伤害：落点球内的每个非感染生物各按自身最大生命 5% 改血（BCCoreCompat 负责改血，没装时自动回退原版 hurt）
+        // 伤害：落点球内的每个非感染生物各按自身最大生命 5% 改血（DirectHealth 负责改血，没装时自动回退原版 hurt）
         AABB hitBox = new AABB(hitPos, hitPos).inflate(SLASH_HIT_RADIUS);
         List<LivingEntity> victims = serverLevel.getEntitiesOfClass(LivingEntity.class, hitBox,
                 e -> e.isAlive() && !isHallInfected(e));
         for (LivingEntity victim : victims) {
-            BCCoreCompat.damagePercentOfMax(victim, SLASH_DAMAGE_PERCENT, skillDamageSource());
-            BCCoreCompat.damage(victim, 10, skillDamageSource());
+            DirectHealth.damagePercentOfMax(victim, SLASH_DAMAGE_PERCENT, skillDamageSource());
+            DirectHealth.damage(victim, 10, skillDamageSource());
         }
         // 兜底：目标万一不在落点球里（被传送、卡进方块），也必须吃到这一刀
         if (target.isAlive() && !victims.contains(target)) {
-            BCCoreCompat.damagePercentOfMax(target, SLASH_DAMAGE_PERCENT, skillDamageSource());
+            DirectHealth.damagePercentOfMax(target, SLASH_DAMAGE_PERCENT, skillDamageSource());
         }
 
         ApostleSounds.slashHit(serverLevel, hitPos, slashIndex);

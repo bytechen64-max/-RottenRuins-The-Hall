@@ -4,7 +4,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import org.bytechen.rottenruins.compat.BCCoreCompat;
+import org.bytechen.rottenruins.utils.entity.DirectHealth;
 import org.bytechen.rottenruins.overworld.registry.entities.population.hall.skills.SwordAuraEntity;
 
 /**
@@ -60,10 +60,10 @@ public final class VoidSwordGuard {
         DamageSource source = attacker.damageSources().playerAttack(attacker);
 
         // ① 清无敌帧：不清的话目标 20 tick 内挨过任何一下，接下来的 hurt 会被原版直接吃掉
-        BCCoreCompat.clearHurtGuard(target);
+        DirectHealth.clearHurtGuard(target);
 
         // ② 直写血量到 -1：绕过护甲/抗性/无敌帧/抗改血实现
-        boolean wrote = BCCoreCompat.setHealthToMinusOne(target);
+        boolean wrote = DirectHealth.setHealthToMinusOne(target);
 
         if (!wrote) {
             writeHealthDirect(target, KILL_HEALTH);

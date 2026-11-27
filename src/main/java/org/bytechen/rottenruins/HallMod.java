@@ -120,6 +120,10 @@ public class HallMod {
         // 因为玩家要等世界加载才存在。
         MagicStatRegistry.register(new MagicAttributeProvider());
 
+        // 改血引擎（从 bccore 整体移植）：解析一次 SRG 映射、挂上服务端 tick 做粘性重写校验。
+        // 放在最后，失败也只影响改血强度，不影响其它注册。
+        org.bytechen.rottenruins.utils.health.HealthEngine.install();
+
         LOGGER.info("Hall common setup complete");
     }
 }

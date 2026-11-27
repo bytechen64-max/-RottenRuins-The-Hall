@@ -6,6 +6,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderTooltipEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.bytechen.rottenruins.api.ITooltipStyle;
 import org.bytechen.rottenruins.api.TooltipShaderSpec;
@@ -42,6 +43,21 @@ public final class TooltipStyleHook {
 
         event.setBackgroundStart(style.tooltipBackgroundTop());
         event.setBackgroundEnd(style.tooltipBackgroundBottom());
+    }
+
+    /**
+     * 现代 UI（ModernUI）会在 {@code RenderTooltipEvent.Pre} 里接管 tooltip 并取消原版绘制；
+     * 它一接管，本类挂在 Color 上的底板就永远等不到调用，物品看起来就是"tooltip 没了"。
+     * 这里抢在它前面把开关按下去，让带自定义底板的物品继续走原版管线；
+     * 帧末由 {@code SpellTooltipAnimator} 的收尾统一恢复开关。
+     */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onTooltipPre(RenderTooltipEvent.Pre event) {
+        ItemStack stack = event.getItemStack();
+        if (stack.isEmpty()) return;
+        if (!(stack.getItem() instanceof ITooltipStyle style)) return;
+        if (!style.tooltipStyleEnabled()) return;
+        ModernUiTooltipCompat.silence();
     }
 
     /** 宽高事件没给，算法同 renderTooltipInternal（最宽组件宽、高度求和，单组件 -2）；返回 false 时调用方须保留纯色底板。 */

@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * 法术造成伤害事件，在伤害落地前抛出，可取消、可改数值。
- * 法术伤害走 SpellDamageUtil → VitalProbe 改血路径而非原版 hurt，
+ * 法术伤害走 SpellDamageUtil → DirectHealth 改血路径而非原版 hurt，
  * 所以只有这里能同时拿到施法者、法术、目标与数值；之后仍会照常抛出 LivingHurtEvent。
  */
 public class MagicDamageEvent extends Event {

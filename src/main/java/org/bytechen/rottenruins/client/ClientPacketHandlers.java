@@ -51,6 +51,10 @@ public final class ClientPacketHandlers {
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
                 org.bytechen.rottenruins.client.tooltip.SpellTooltipSections::onItemTooltip);
 
+        // 两套盔甲的 tooltip：穿戴加成 / 套装简介 / Shift 展开的细节。
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
+                org.bytechen.rottenruins.client.tooltip.ArmorTooltipSections::onItemTooltip);
+
         // 法术物品 tooltip 的开合动画：Pre 里取消原版绘制后自己套裁剪 + 缩放重画，
         // 关闭用上一帧的快照补画（1.20.1 没有"画完之后"的事件）。
         // HIGHEST 优先级：Forge 先跑 HIGHEST，所以能抢在 ModernUI 之类的接管者之前取消事件。
@@ -66,6 +70,12 @@ public final class ClientPacketHandlers {
                 org.bytechen.rottenruins.client.tooltip.SpellTooltipAnimator::onGuiPre);
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
                 org.bytechen.rottenruins.client.tooltip.SpellTooltipAnimator::onGuiPost);
+
+        // 带自定义底板的非法术物品（寒寂白日 / 绯红誓约等）也要挡住 ModernUI 的接管，
+        // 否则 Color 事件不触发，底板着色器根本没机会画。
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
+                net.minecraftforge.eventbus.api.EventPriority.HIGHEST,
+                org.bytechen.rottenruins.client.tooltip.TooltipStyleHook::onTooltipPre);
 
         // 虚空剑「蹲下左键」的客户端选中：射线选中后发 C2S 包给服务端结算。
         // 挂在同一个 Forge 总线上，所以和上面的 tooltip 钩子一样走 addListener。

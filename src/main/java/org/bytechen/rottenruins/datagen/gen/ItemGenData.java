@@ -59,7 +59,9 @@ public class ItemGenData extends ItemModelProvider {
             // 学识 / 城墙碎盾 / 两套盔甲：贴图借用原版或自带手写模型，见 models/item/*.json
             "knowledge_mortal", "knowledge_infernal", "knowledge_end", "rampart_shield_shard",
             "crude_living_helmet", "crude_living_chestplate", "crude_living_leggings", "crude_living_boots",
-            "dreamlike_helmet", "dreamlike_chestplate", "dreamlike_leggings", "dreamlike_boots"
+            "dreamlike_helmet", "dreamlike_chestplate", "dreamlike_leggings", "dreamlike_boots",
+            // 铭刻之钟：暂无专属贴图，模型借原版时钟
+            "inscribed_bell"
     );
 
     @Override

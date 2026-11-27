@@ -1,6 +1,7 @@
 package org.bytechen.rottenruins.content.item;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import javax.annotation.Nullable;
@@ -18,6 +19,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import org.bytechen.rottenruins.overworld.registry.RegisterAttributes;
 
@@ -62,9 +64,23 @@ public class KnowledgeTome extends Item {
             stack.shrink(1);
         }
         server.displayClientMessage(
-                Component.translatable("message.rotten_ruins.knowledge_gained").withStyle(ChatFormatting.AQUA), true);
+                Component.translatable("message.rotten_ruins.knowledge.gained." + key()).withStyle(ChatFormatting.AQUA),
+                true);
         server.playNotifySound(SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0F, 1.15F);
         return InteractionResultHolder.success(stack);
+    }
+
+    /** 三种学识各有一句「来自…的知识」简介，颜色由 lang 里的 {@code §[rrs:grad:…]} 渐变决定。 */
+    @Override
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+        tooltip.add(Component.translatable("tooltip.rotten_ruins.knowledge.desc." + key())
+                .withStyle(ChatFormatting.GRAY));
+        super.appendHoverText(stack, level, tooltip, flag);
+    }
+
+    /** lang 键后缀：mortal / infernal / end。 */
+    private String key() {
+        return branch.name().toLowerCase(Locale.ROOT);
     }
 
     /** 这个玩家对该种学识已经吃了几次。 */

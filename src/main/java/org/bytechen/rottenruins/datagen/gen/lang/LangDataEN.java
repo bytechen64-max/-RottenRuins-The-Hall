@@ -46,8 +46,16 @@ public class LangDataEN extends LanguageProvider {
         add("effect.rotten_ruins.flame_slash", "Flame Cleave");
         add("effect.rotten_ruins.stun", "Stunned");
         add("effect.rotten_ruins.ethereal", "Ethereal");
-        add("message.rotten_ruins.knowledge_gained", "Knowledge floods in: Spell Power +1, Magic Slots +1");
         add("message.rotten_ruins.knowledge_exhausted", "This knowledge has nothing left to teach you");
+        add("message.rotten_ruins.knowledge.gained.mortal", "You have grasped the knowledge of the mortal realm");
+        add("message.rotten_ruins.knowledge.gained.infernal", "You have grasped the knowledge of the Inferno");
+        add("message.rotten_ruins.knowledge.gained.end", "You have grasped the knowledge of the End");
+        add("tooltip.rotten_ruins.knowledge.desc.mortal",
+                "§9The knowledge of §[rrs:grad:#F5E05A:#3FBF5F]the mortal realm§[/]§9 will carry you onward");
+        add("tooltip.rotten_ruins.knowledge.desc.infernal",
+                "§9The knowledge of §[rrs:grad:#FF5A3C:#861414]the Inferno§[/]§9 will carry you onward");
+        add("tooltip.rotten_ruins.knowledge.desc.end",
+                "§9The knowledge of §[rrs:grad:#B26BFF:#341040]the End§[/]§9 will carry you onward");
         add("gui.rotten_ruins.jade.crafting", "Crafting %s%% · ~%s s");
 
         add("rotten_ruins.story.unknown", "Unknown story: %s");
@@ -309,6 +317,16 @@ public class LangDataEN extends LanguageProvider {
         add("tooltip." + HallMod.MODID + ".magic.charge", "Charge Time: %s s");
         add("tooltip." + HallMod.MODID + ".magic.shift_hint", "Hold %s for more info");
         add("tooltip." + HallMod.MODID + ".magic.shift_key", "Shift");
+        // Armor: purple intro; *keyword* spans in the Shift details render gold
+        add("item." + HallMod.MODID + ".armor.crude_living.desc", "The workmanship is not exactly fine");
+        add("item." + HallMod.MODID + ".armor.crude_living.detail.1", "While not at full health, spend *food* to restore *health*");
+        add("item." + HallMod.MODID + ".armor.crude_living.detail.2", "Restored *health* percentage equals the *food* percentage spent");
+        add("item." + HallMod.MODID + ".armor.crude_living.detail.3", "*Saturation* heals more effectively");
+        add("item." + HallMod.MODID + ".armor.crude_living.detail.4", "Kills restore *food* and *health*");
+        add("item." + HallMod.MODID + ".armor.dreamlike.desc", "Fades away like a dream");
+        add("item." + HallMod.MODID + ".armor.dreamlike.detail.1", "Based on *Luck*, you may dodge when hurt");
+        add("item." + HallMod.MODID + ".armor.dreamlike.detail.2", "Dodge chance is *3%* x current *Luck*");
+        add("item." + HallMod.MODID + ".armor.dreamlike.dodge", "Current dodge: %s");
 
         // Keys must match the strings hard-coded in the RangedAttribute constructors exactly.
         add("attribute.name." + HallMod.MODID + ".max_mana", "Max Mana");        add("attribute.name." + HallMod.MODID + ".mana_regeneration", "Mana Regeneration");
@@ -449,9 +467,9 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterItem.BLACK_HOLE.get(), "Black Hole");
         add(RegisterItem.VOID_ESSENCE.get(), "Void Essence");
         add(RegisterItem.RAMPART_SHIELD_SHARD.get(), "Wall Shield Shard");
-        add(RegisterItem.KNOWLEDGE_MORTAL.get(), "Mortal Knowledge");
-        add(RegisterItem.KNOWLEDGE_INFERNAL.get(), "Infernal Knowledge");
-        add(RegisterItem.KNOWLEDGE_END.get(), "Final Knowledge");
+        add(RegisterItem.KNOWLEDGE_MORTAL.get(), "§[rrs:grad:#F5E05A:#3FBF5F]Mortal Knowledge§[/]");
+        add(RegisterItem.KNOWLEDGE_INFERNAL.get(), "§[rrs:grad:#FF5A3C:#861414]Infernal Knowledge§[/]");
+        add(RegisterItem.KNOWLEDGE_END.get(), "§[rrs:grad:#B26BFF:#341040]Final Knowledge§[/]");
         add(RegisterItem.CRUDE_LIVING_HELMET.get(), "Crude Living Helmet");
         add(RegisterItem.CRUDE_LIVING_CHESTPLATE.get(), "Crude Living Chestplate");
         add(RegisterItem.CRUDE_LIVING_LEGGINGS.get(), "Crude Living Leggings");
@@ -460,6 +478,9 @@ public class LangDataEN extends LanguageProvider {
         add(RegisterItem.DREAMLIKE_CHESTPLATE.get(), "Dreamlike Chestplate");
         add(RegisterItem.DREAMLIKE_LEGGINGS.get(), "Dreamlike Leggings");
         add(RegisterItem.DREAMLIKE_BOOTS.get(), "Dreamlike Boots");
+        add(RegisterItem.INSCRIBED_BELL.get(), "Inscribed Bell");
+        add("tooltip.rotten_ruins.inscribed_bell.cooldown", "Cooldown Reduction %s");
+        add("item.rotten_ruins.inscribed_bell.desc", "Cherish the beauty of this moment...");
         add("item.rotten_ruins.shield_ward.desc", "Raise a shield that absorbs a few hits before shattering");
         add("item.rotten_ruins.bark_armor.desc", "Wear bark armor: immune to all but lightning and fire, yet weak to fire");
         add("item.rotten_ruins.freezing_rain.desc", "Hold to summon freezing rain, chilling and slowing targets in range");
