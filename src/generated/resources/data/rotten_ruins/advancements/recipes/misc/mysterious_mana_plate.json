@@ -1,0 +1,48 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_element_bottle": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:mysterious_mana_bottle"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_source_mana_plate": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:source_mana_plate"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "rotten_ruins:mysterious_mana_plate"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_source_mana_plate",
+      "has_element_bottle",
+      "has_the_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "rotten_ruins:mysterious_mana_plate"
+    ]
+  },
+  "sends_telemetry_event": false
+}

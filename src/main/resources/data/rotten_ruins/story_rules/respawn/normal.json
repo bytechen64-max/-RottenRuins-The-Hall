@@ -1,0 +1,22 @@
+{
+  "event": "respawn",
+  "priority": 0,
+  "delay_ticks": 40,
+  "repeat_group": "rotten_ruins:respawn",
+  "avoid_repeat": true,
+  "conditions": {},
+  "choices": [
+    {
+      "story": "rotten_ruins:respawn/normal_0"
+    },
+    {
+      "story": "rotten_ruins:respawn/normal_1"
+    },
+    {
+      "story": "rotten_ruins:respawn/normal_2"
+    },
+    {
+      "story": "rotten_ruins:respawn/normal_3"
+    }
+  ]
+}

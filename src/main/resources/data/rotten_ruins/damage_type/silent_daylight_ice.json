@@ -1,0 +1,6 @@
+{
+  "message_id": "rotten_ruins.silent_daylight_ice",
+  "exhaustion": 0.0,
+  "scaling": "when_caused_by_living_non_player",
+  "effects": "freezing"
+}

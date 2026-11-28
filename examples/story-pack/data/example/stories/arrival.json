@@ -1,0 +1,24 @@
+{
+  "font": "wenkai",
+  "timing": "autoplay",
+  "placement": {
+    "distance": 1.6
+  },
+  "pages": [
+    {
+      "text": {
+        "text": "Welcome back, traveler."
+      },
+      "hold_ticks": 100
+    },
+    {
+      "text": {
+        "text": "The ruins remember your footsteps."
+      },
+      "placement": {
+        "angle": 45
+      },
+      "hold_ticks": 120
+    }
+  ]
+}

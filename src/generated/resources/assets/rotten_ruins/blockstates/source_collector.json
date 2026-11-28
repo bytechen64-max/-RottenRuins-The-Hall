@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "rotten_ruins:block/source_collector",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "rotten_ruins:block/source_collector"
+    },
+    "facing=south": {
+      "model": "rotten_ruins:block/source_collector",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "rotten_ruins:block/source_collector",
+      "y": 270
+    }
+  }
+}

@@ -46,7 +46,9 @@ configurations {
 minecraft {
     jarJar.enable()
     accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
-    mappings channel: 'official', version: '1.20.1'
+    // 单一真相：映射配置只在 gradle.properties 里维护（mapping_channel / mapping_version），
+    // 这里不要再写死一份，否则升级时改一处漏一处。
+    mappings channel: project.property('mapping_channel'), version: project.property('mapping_version')
 
     copyIdeResources = true
 
@@ -97,6 +99,18 @@ tasks.register('copyRefmap', Copy) {
     from layout.buildDirectory.dir("tmp/compileJava")
     into layout.buildDirectory.dir("resources/main")
     include "${mod_id}.refmap.json"
+    // 改名前遗留的 *.refmap.json（例如 hall.refmap.json）不匹配上面的 include，
+    // 所以不会被覆盖，会一路跟着 processResources 打进 release jar。复制前先清掉。
+    doFirst {
+        def keep = "${mod_id}.refmap.json"
+        def outDir = layout.buildDirectory.dir("resources/main").get().asFile
+        outDir.listFiles()?.each { f ->
+            if (f.name.endsWith('.refmap.json') && f.name != keep) {
+                logger.lifecycle("copyRefmap: 删除过期的 ${f.name}")
+                f.delete()
+            }
+        }
+    }
 }
 tasks.named('processResources').configure { dependsOn 'copyRefmap' }
 
@@ -104,6 +118,8 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
     flatDir { dir 'libs' }
+
+    mavenCentral { content { includeGroup 'org.commonmark' } }
 
     maven { url = 'https://maven.shedaniel.me/' }
 
@@ -114,8 +130,12 @@ repositories {
 
     maven { url = "https://modmaven.dev/" }
 
-    // 本地 maven — infcore 前置
-    mavenLocal()
+    // Curios（饰品栏）—— 硬前置。官方 maven。
+    maven {
+        name = "Curios"
+        url = "https://maven.theillusivec4.top/"
+    }
+
 }
 
 dependencies {
@@ -124,23 +144,54 @@ dependencies {
     // cloth-config + geckolib: compileOnly (compile-time) +
     // patchModuleInfo (for stripping module-info). The patched jars
     // are added to --module-path at launch so FML discovers them.
-    compileOnly fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.7.1")
-    patchModuleInfo fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.7.1")
+    compileOnly fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.4")
+    patchModuleInfo fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.4")
 
     compileOnly fg.deobf("me.shedaniel.cloth:cloth-config-forge:12.0.109")
     patchModuleInfo fg.deobf("me.shedaniel.cloth:cloth-config-forge:12.0.109")
 
     jarJar(group: 'me.shedaniel.cloth', name: 'cloth-config-forge', version: '[12.0.109,13)')
-    jarJar(group: 'software.bernie.geckolib', name: 'geckolib-forge-1.20.1', version: '[4.7.1,4.8)')
+    jarJar(group: 'software.bernie.geckolib', name: 'geckolib-forge-1.20.1', version: '[4.8.4,4.9)')
+
+    // Markdown is available as a library in dev runs and bundled in the release jar.
+    def markdownVersion = '0.33.0'
+    ['commonmark', 'commonmark-ext-gfm-tables', 'commonmark-ext-gfm-strikethrough', 'commonmark-ext-task-list-items'].each { artifact ->
+        minecraftLibrary "org.commonmark:${artifact}:${markdownVersion}"
+        jarJar(group: 'org.commonmark', name: artifact, version: markdownVersion) { dependency ->
+            jarJar.ranged(dependency, "[${markdownVersion}]")
+        }
+    }
 
     // JEI (optional)
     compileOnly fg.deobf("mezz.jei:jei-1.20.1-forge:15.2.0.27")
     runtimeOnly fg.deobf("mezz.jei:jei-1.20.1-forge:15.2.0.27")
 
-    // InfectionCoreFramework 前置 — 提供进化系统、击杀计数、方块扩散和全局难度框架
-    implementation fg.deobf("org.bytechen:infcore:0.1.1")
+    // Jade（可选集成）：只用它的 API 编译，jar 放在 libs/jade/（不入库，见 .gitignore）。
+    // 目录里没有 jar 时，下面 sourceSets 会排除 compat/jade 源码，工程照常构建。
+    if (file("libs/jade").exists()) {
+        compileOnly fg.deobf(fileTree("libs/jade") { include '*.jar' })
+    }
+
+    // Curios（饰品栏）—— **硬前置**（mods.toml 里 mandatory = true）。
+    //   compileOnly：只给我们的集成代码用，不打进产物 —— Curios 是独立模组，
+    //                不能 jarJar（那是给自己依赖的库用的）。
+    //   runtimeOnly：dev 环境**必须**能加载到它。因为声明是 mandatory，
+    //                少了它 runClient / runData 会直接以"缺少必需依赖"拒绝启动。
+    compileOnly fg.deobf("top.theillusivec4.curios:curios-forge:${curios_version}")
+    runtimeOnly fg.deobf("top.theillusivec4.curios:curios-forge:${curios_version}")
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}
+
+
+// 未完成的草稿文件：传 -PskipInProgress 时跳过（默认不跳过，正常构建不受影响）
+if (project.hasProperty("skipInProgress")) {
+    sourceSets.main.java.exclude "org/bytechen/rottenruins/content/magic/spell/SoulDrink.java"
+}
+
+// Jade 集成源码是可选：libs/jade/ 里没有 jar 就不编译它（编译依赖不存在）
+if (!file("libs/jade").exists() || !file("libs/jade").listFiles()?.any { it.name.endsWith(".jar") }) {
+    sourceSets.main.java.exclude "org/bytechen/rottenruins/compat/jade/**"
 }
 
 // ── Strip module-info from conflicting jars ─────────────────────────
@@ -228,6 +279,13 @@ tasks.named('processResources', ProcessResources).configure {
 
 tasks.named('jar', Jar).configure {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    // 兜底：即使 copyRefmap 被判定 up-to-date 没跑，也不让任何非当前 mod_id 的
+    // refmap 进 jar（历史遗留的 hall.refmap.json 曾这么混进来过）。
+    eachFile { fcd ->
+        if (fcd.name.endsWith('.refmap.json') && fcd.name != "${mod_id}.refmap.json") {
+            fcd.exclude()
+        }
+    }
     manifest {
         attributes([
                 "Specification-Title"     : mod_id,
@@ -241,6 +299,8 @@ tasks.named('jar', Jar).configure {
     }
     finalizedBy 'reobfJar'
 }
+
+
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     archiveClassifier = 'sources'
@@ -279,3 +339,229 @@ publishing {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
+
+// Core is a portable Java boundary, not a home for Minecraft/Forge implementations.
+def portableCoreSources = fileTree('src/main/java/org/bytechen/rottenruins/core') {
+    include '**/*.java'
+}
+
+tasks.register('checkCoreDependencies') {
+    group = 'verification'
+    description = 'Reject dependencies from core to game, loader, client, or other implementation packages'
+    inputs.files(portableCoreSources)
+    doLast {
+        def violations = []
+        portableCoreSources.files.sort().each { sourceFile ->
+            def source = sourceFile.getText('UTF-8')
+                .replaceAll('(?s)/\\*.*?\\*/', '')
+                .replaceAll('(?m)//.*$', '')
+            def imports = source =~ /(?m)^\s*import\s+(?:static\s+)?([\w.*]+)\s*;/
+            imports.each { match ->
+                def dependency = match[1]
+                if (!dependency.startsWith('java.') &&
+                        !dependency.startsWith('org.bytechen.rottenruins.core.')) {
+                    violations.add("${project.relativePath(sourceFile)} -> ${dependency}")
+                }
+            }
+        }
+        if (!violations.isEmpty()) {
+            throw new GradleException('Core must depend only on the JDK and other core classes:\n' +
+                    violations.join('\n'))
+        }
+        logger.lifecycle("Core dependency imports checked: ${portableCoreSources.files.size()} Java files")
+    }
+}
+
+// Compile on an empty dependency classpath as well: this catches fully-qualified usages
+// and implicit same-package dependencies that an import-only check cannot see.
+tasks.register('compileCoreJava', JavaCompile) {
+    group = 'verification'
+    description = 'Compile the portable core using only Java 17, without Minecraft or Forge'
+    dependsOn 'checkCoreDependencies'
+    source portableCoreSources
+    classpath = files()
+    destinationDirectory = layout.buildDirectory.dir('core-check/classes')
+    javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(17) }
+    options.release = 17
+    options.sourcepath = files()
+    options.annotationProcessorPath = files()
+    options.compilerArgs.add('-proc:none')
+}
+
+tasks.named('compileJava').configure { dependsOn 'compileCoreJava' }
+tasks.named('check').configure { dependsOn 'compileCoreJava' }
+
+tasks.register('checkSpellInventoryDependencies') {
+    group = 'verification'
+    description = 'Keep game spell inventory independent of Forge providers and storage codecs'
+    def inventorySources = fileTree('src/main/java/org/bytechen/rottenruins/gameplay/magic/inventory') {
+        include '**/*.java'
+    }
+    inputs.files(inventorySources)
+    doLast {
+        def violations = []
+        inventorySources.files.each { sourceFile ->
+            def code = sourceFile.getText('UTF-8')
+                .replaceAll('(?s)/\\*.*?\\*/', '')
+                .replaceAll('(?m)//.*$', '')
+            if (code =~ /net\.minecraftforge\b|net\.minecraft\.nbt\b|org\.bytechen\.rottenruins\.platform\b/) {
+                violations.add(project.relativePath(sourceFile))
+            }
+        }
+        if (!violations.isEmpty()) {
+            throw new GradleException('Game spell inventory must not reference Forge, NBT or platform implementations:\n' +
+                    violations.join('\n'))
+        }
+        logger.lifecycle("Spell inventory dependencies checked: ${inventorySources.files.size()} Java files")
+    }
+}
+tasks.named('compileJava').configure { dependsOn 'checkSpellInventoryDependencies' }
+tasks.named('check').configure { dependsOn 'checkSpellInventoryDependencies' }
+
+tasks.register('checkMagicApiDependencies') {
+    group = 'verification'
+    description = 'Keep magic extension contracts separate from concrete game and platform implementations'
+    def apiSources = fileTree('src/main/java/org/bytechen/rottenruins/api/magic') {
+        include '**/*.java'
+    }
+    inputs.files(apiSources)
+    doLast {
+        def violations = []
+        apiSources.files.each { sourceFile ->
+            def code = sourceFile.getText('UTF-8')
+                .replaceAll('(?s)/\\*.*?\\*/', '')
+                .replaceAll('(?m)//.*$', '')
+            def implementationRefs = code =~ /org\.bytechen\.rottenruins\.(?!(?:api|core)\.)[\w.]+/
+            implementationRefs.each { dependency ->
+                violations.add("${project.relativePath(sourceFile)} -> ${dependency}")
+            }
+        }
+        if (!violations.isEmpty()) {
+            throw new GradleException('Magic API may reference public contracts and core, not implementation packages:\n' +
+                    violations.join('\n'))
+        }
+        logger.lifecycle("Magic API dependencies checked: ${apiSources.files.size()} Java files")
+    }
+}
+tasks.named('compileJava').configure { dependsOn 'checkMagicApiDependencies' }
+tasks.named('check').configure { dependsOn 'checkMagicApiDependencies' }
+
+// Game execution may use Minecraft/content and public extension contracts, but must
+// obtain loader operations and registration values through installed runtime services.
+tasks.register('checkGameplayDependencies') {
+    group = 'verification'
+    description = 'Reject direct loader, platform, concrete content and registration dependencies in gameplay'
+    def gameSources = fileTree('src/main/java/org/bytechen/rottenruins/gameplay') { include '**/*.java' }
+    inputs.files(gameSources)
+    doLast {
+        def violations = []
+        gameSources.files.sort().each { sourceFile ->
+            def code = sourceFile.getText('UTF-8')
+                .replaceAll('(?s)/\\*.*?\\*/', '')
+                .replaceAll('(?m)//.*$', '')
+            if (code =~ /net\.minecraftforge\b|net\.minecraft\.client\b|org\.bytechen\.rottenruins\.(?:platform|content|client|overworld\.registry)\b|\b(?:getPersistentData|PERSISTED_NBT_TAG)\b/) {
+                violations.add(project.relativePath(sourceFile))
+            }
+        }
+        if (!violations.isEmpty()) {
+            throw new GradleException('Gameplay must use runtime services and game contracts instead of loader/platform/content/registration implementations:\n' + violations.join('\n'))
+        }
+        logger.lifecycle("Gameplay dependencies checked: ${gameSources.files.size()} Java files")
+    }
+}
+tasks.named('compileJava').configure { dependsOn 'checkGameplayDependencies' }
+tasks.named('check').configure { dependsOn 'checkGameplayDependencies' }
+
+tasks.register('checkMagicPacketDependencies') {
+    group = 'verification'
+    description = 'Keep Minecraft client types out of common magic synchronization packets'
+    def packetSources = fileTree('src/main/java/org/bytechen/rottenruins/platform/forge/magic/network') { include '**/*.java' }
+    inputs.files(packetSources)
+    doLast {
+        def violations = []
+        packetSources.files.each { sourceFile ->
+            def code = sourceFile.getText('UTF-8')
+                .replaceAll('(?s)/\\*.*?\\*/', '')
+                .replaceAll('(?m)//.*$', '')
+            if (code =~ /net\.minecraft\.client\b/) violations.add(project.relativePath(sourceFile))
+        }
+        if (!violations.isEmpty()) throw new GradleException('Use the guarded client handlers for client state access:\n' + violations.join('\n'))
+        logger.lifecycle("Magic packet dependencies checked: ${packetSources.files.size()} Java files")
+    }
+}
+tasks.named('compileJava').configure { dependsOn 'checkMagicPacketDependencies' }
+tasks.named('check').configure { dependsOn 'checkMagicPacketDependencies' }
+
+tasks.register('checkExtensionApiDependencies') {
+    group = 'verification'
+    description = 'Keep boomerang and combat extension APIs independent of concrete implementations'
+    def apiSources = fileTree('src/main/java/org/bytechen/rottenruins/api') {
+        include 'boomerang/**/*.java', 'combat/**/*.java'
+    }
+    inputs.files(apiSources)
+    doLast {
+        def violations = []
+        apiSources.files.each { sourceFile ->
+            def code = sourceFile.getText('UTF-8')
+                .replaceAll('(?s)/\\*.*?\\*/', '')
+                .replaceAll('(?m)//.*$', '')
+            def refs = code =~ /org\.bytechen\.rottenruins\.(?!(?:api|core)\.)[\w.]+/
+            refs.each { ref -> violations.add("${project.relativePath(sourceFile)} -> ${ref}") }
+        }
+        if (!violations.isEmpty()) throw new GradleException('Extension APIs must not reference concrete implementations:\n' + violations.join('\n'))
+        logger.lifecycle("Extension API dependencies checked: ${apiSources.files.size()} Java files")
+    }
+}
+
+tasks.register('checkStoryDependencies') {
+    group = 'verification'
+    description = 'Keep story scheduling separate from persistence and wire encodings'
+    def storySources = fileTree('src/main/java/org/bytechen/rottenruins/gameplay/story') { include '**/*.java' }
+    inputs.files(storySources)
+    doLast {
+        def violations = []
+        storySources.files.each { sourceFile ->
+            def code = sourceFile.getText('UTF-8')
+                .replaceAll('(?s)/\\*.*?\\*/', '')
+                .replaceAll('(?m)//.*$', '')
+            if (code =~ /net\.minecraft\.nbt\b|\b(?:CompoundTag|ListTag|FriendlyByteBuf|getPersistentData|PERSISTED_NBT_TAG)\b/) {
+                violations.add(project.relativePath(sourceFile))
+            }
+        }
+        if (!violations.isEmpty()) throw new GradleException('Use story messages/memory and platform codecs instead of NBT/player persistence in gameplay:\n' + violations.join('\n'))
+        logger.lifecycle("Story dependencies checked: ${storySources.files.size()} Java files")
+    }
+}
+tasks.named('compileJava').configure { dependsOn 'checkExtensionApiDependencies', 'checkStoryDependencies' }
+tasks.named('check').configure { dependsOn 'checkExtensionApiDependencies', 'checkStoryDependencies' }
+
+// Parse every maintained Java source, including legacy content and optional integrations.
+tasks.register('compileArchitectureChecker', JavaCompile) {
+    source fileTree('tools/architecture') { include '*.java' }
+    classpath = files()
+    destinationDirectory = layout.buildDirectory.dir('architecture-check/classes')
+    javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(17) }
+    options.release = 17
+    options.compilerArgs.add('-proc:none')
+}
+tasks.register('checkArchitectureDependencies', JavaExec) {
+    group = 'verification'
+    description = 'Check all maintained source boundaries, helper dependencies and reviewed legacy coupling'
+    dependsOn 'testArchitectureChecker'
+    classpath = files(layout.buildDirectory.dir('architecture-check/classes'))
+    mainClass = 'ArchitectureCheck'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(17) }
+    args file('src/main/java/org/bytechen/rottenruins').absolutePath,
+            file('tools/architecture/reviewed-coupling.txt').absolutePath
+    inputs.files(fileTree('src/main/java') { include '**/*.java' }, file('tools/architecture/reviewed-coupling.txt'))
+}
+tasks.register('testArchitectureChecker', JavaExec) {
+    group = 'verification'
+    description = 'Run JDK-only boundary regression fixtures (no game runtime)'
+    dependsOn 'compileArchitectureChecker'
+    classpath = files(layout.buildDirectory.dir('architecture-check/classes'))
+    mainClass = 'ArchitectureCheckTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(17) }
+}
+tasks.named('compileJava').configure { dependsOn 'checkArchitectureDependencies' }
+tasks.named('check').configure { dependsOn 'checkArchitectureDependencies' }

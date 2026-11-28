@@ -1,0 +1,24 @@
+const {chromium}=require('../../build/slash-editor-test/node_modules/playwright-core');
+const assert=require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--enable-unsafe-swiftshader']});
+ const page=await browser.newPage({viewport:{width:1500,height:1000},acceptDownloads:true});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8766');await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('已载入'));
+ assert.equal(await page.locator('#controls .slider').count(),15);
+ await page.locator('#chooseItem').click();await page.locator('#itemSearch').fill('domerite_longsword');assert.equal(await page.locator('.itemCard').count(),1);await page.locator('.itemCard').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('已载入'));
+ const catalog=await page.evaluate(()=>fetch('/api/catalog').then(r=>r.json()));assert(catalog.items.length>100);assert.equal(catalog.items.filter(x=>x.slashEnabled).length,3);
+ await page.locator('summary').filter({hasText:'设置游戏实例目录'}).click();await page.locator('#setGameDir').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('游戏实例目录已设置'));
+ await page.locator('#seek').fill('.8');await page.locator('#seek').dispatchEvent('input');await page.waitForTimeout(200);
+ const shot1=await page.locator('#scene').screenshot();
+ await page.locator('#width').fill('3');await page.locator('#width').dispatchEvent('input');await page.waitForTimeout(100);
+ const shot2=await page.locator('#scene').screenshot();assert.notDeepEqual(shot1,shot2,'Width must change actual rendered pixels');
+ await page.locator('#first').click();await page.waitForTimeout(100);const shot3=await page.locator('#scene').screenshot();assert.notDeepEqual(shot2,shot3,'Perspective mode must alter rendering');
+ await page.locator('[data-preset="frost"]').click();await page.locator('#orbit').click();await page.locator('#saveConfig').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('已保存到游戏配置'));
+ const saved=JSON.parse(await page.locator('#json').inputValue());assert.equal(saved.width,1.9);
+ const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#export').click()]);assert.equal(download.suggestedFilename(),'domerite_longsword.json');
+ await page.evaluate(()=>window.scrollTo(0,0));await page.waitForTimeout(150);await page.screenshot({path:'build/slash-effect-workbench.png',fullPage:true});
+ await page.locator('#chooseItem').click();await page.locator('#itemSearch').fill('true_copper');await page.locator('.itemCard').click();await page.waitForFunction(()=>document.querySelector('#selectedId').textContent==='rotten_ruins:true_copper');
+ await page.waitForFunction(()=>document.querySelector('#material').value==='texture');assert.equal(await page.locator('#material').inputValue(),'texture');
+ assert.equal(await page.locator('#scene').evaluate(c=>c.getContext('webgl').getError()),0);
+ assert.deepEqual(errors,[]);await browser.close();console.log('PASS: 3D rendering, visible width changes, camera modes, presets, JSON config save/export, texture weapon, no JS/GL errors');
+})().catch(e=>{console.error(e);process.exit(1);});

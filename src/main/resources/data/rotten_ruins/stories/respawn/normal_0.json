@@ -1,0 +1,12 @@
+{
+  "font": "wenkai",
+  "timing": "autoplay",
+  "pages": [
+    {
+      "text": {
+        "translate": "rotten_ruins.story.respawn.normal.0"
+      },
+      "hold_ticks": 120
+    }
+  ]
+}

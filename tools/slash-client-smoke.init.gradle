@@ -1,0 +1,24 @@
+gradle.beforeProject { p ->
+    p.afterEvaluate {
+        if(p.extensions.findByName('minecraft') != null) {
+            p.sourceSets.create('slashSmoke') {
+                java.srcDir p.file('tools/slash-client-smoke')
+                compileClasspath += p.sourceSets.main.output + p.sourceSets.main.compileClasspath
+                runtimeClasspath += output + compileClasspath
+            }
+            p.minecraft.runs.named('client').configure {
+                workingDirectory p.file('build/slash-client-smoke')
+                args '--width','854','--height','480'
+                mods { rotten_ruins { source p.sourceSets.slashSmoke } }
+            }
+        }
+    }
+    p.tasks.configureEach { t ->
+        if(t.name=='runClient') {
+            dependsOn 'compileSlashSmokeJava','patchModJars'
+            doFirst {
+                p.copy { from p.file('build/patched-mods'); into p.file('build/slash-client-smoke/mods') }
+            }
+        }
+    }
+}

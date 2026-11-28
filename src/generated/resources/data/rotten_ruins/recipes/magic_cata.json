@@ -1,0 +1,33 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "minecraft:gold_ingot"
+    },
+    {
+      "item": "rotten_ruins:light_mana_bottle"
+    },
+    {
+      "item": "rotten_ruins:fire_mana_bottle"
+    },
+    {
+      "item": "rotten_ruins:water_mana_bottle"
+    },
+    {
+      "item": "rotten_ruins:nature_mana_bottle"
+    },
+    {
+      "item": "rotten_ruins:death_mana_bottle"
+    },
+    {
+      "item": "rotten_ruins:void_mana_bottle"
+    },
+    {
+      "item": "rotten_ruins:mysterious_mana_bottle"
+    }
+  ],
+  "result": {
+    "item": "rotten_ruins:magic_cata"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:stonecutting",
+  "count": 1,
+  "ingredient": {
+    "item": "rotten_ruins:hall_sandstone"
+  },
+  "result": "rotten_ruins:hall_ash_cut_sandstone"
+}

@@ -1,0 +1,610 @@
+{
+  "entries": [
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_dirt",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:grass_block"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_dirt",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:podzol"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_dirt",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:mycelium"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_dirt",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:dirt"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_dirt",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:coarse_dirt"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_dirt",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:rooted_dirt"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_dirt",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:sand"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_dirt",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:red_sand"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_dirt",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:gravel"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_dirt",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:clay"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_stone",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:stone"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_stone",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:deepslate"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_stone",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:andesite"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_stone",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:diorite"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_stone",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:granite"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_stone",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:tuff"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_stone",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:calcite"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:infection_cobblestone_block",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:cobblestone"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:infection_cobblestone_block",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:mossy_cobblestone"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:infection_cobblestone_block",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:stone_bricks"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:infection_cobblestone_block",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:bricks"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:oak_leaves"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:spruce_leaves"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:birch_leaves"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:jungle_leaves"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:acacia_leaves"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:dark_oak_leaves"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:mangrove_leaves"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:cherry_leaves"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:azalea_leaves"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_leaves",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:flowering_azalea_leaves"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_wood",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:oak_log"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_wood",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:spruce_log"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_wood",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:birch_log"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_wood",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:jungle_log"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_wood",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:acacia_log"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_wood",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:dark_oak_log"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_wood",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:mangrove_log"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:spread_infection_wood",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:cherry_log"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:grass"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:tall_grass"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:fern"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:large_fern"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:dandelion"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:poppy"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:blue_orchid"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:allium"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:azure_bluet"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:red_tulip"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:orange_tulip"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:white_tulip"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:pink_tulip"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:oxeye_daisy"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:cornflower"
+    },
+    {
+      "type": "rotten_ruins:corruption",
+      "dropResources": false,
+      "results": [
+        {
+          "target": "rotten_ruins:variable_height_crop",
+          "weight": 100
+        }
+      ],
+      "source": "minecraft:lily_of_the_valley"
+    }
+  ],
+  "replace": false
+}

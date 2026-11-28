@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "P": {
+      "item": "rotten_ruins:source_mana_plate"
+    },
+    "S": {
+      "item": "rotten_ruins:chip_scan"
+    }
+  },
+  "pattern": [
+    "IGI",
+    "CSC",
+    "IPI"
+  ],
+  "result": {
+    "item": "rotten_ruins:analyzer"
+  },
+  "show_notification": true
+}

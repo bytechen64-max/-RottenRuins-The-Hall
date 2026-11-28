@@ -1,0 +1,36 @@
+{
+  "type": "rotten_ruins:source_charge_sand",
+  "conditions": [
+    {
+      "condition": "forge:loot_table_id",
+      "loot_table_id": "minecraft:blocks/gravel"
+    },
+    {
+      "condition": "minecraft:entity_properties",
+      "entity": "this",
+      "predicate": {
+        "type": "minecraft:player"
+      }
+    },
+    {
+      "condition": "minecraft:inverted",
+      "term": {
+        "condition": "minecraft:match_tool",
+        "predicate": {
+          "enchantments": [
+            {
+              "enchantment": "minecraft:silk_touch",
+              "levels": {
+                "min": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "chance": 0.4,
+      "condition": "minecraft:random_chance"
+    }
+  ]
+}

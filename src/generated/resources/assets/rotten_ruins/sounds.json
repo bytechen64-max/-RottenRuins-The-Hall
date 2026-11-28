@@ -1,0 +1,16 @@
+{
+  "biome_music": {
+    "sounds": [
+      {
+        "name": "rotten_ruins:biome_music",
+        "stream": true
+      }
+    ]
+  },
+  "rip_body": {
+    "sounds": [
+      "rotten_ruins:rip_body"
+    ],
+    "subtitle": "subtitles.rotten_ruins.rip_body"
+  }
+}

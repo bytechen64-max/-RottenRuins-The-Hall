@@ -1,0 +1,45 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "vertex": "rotten_ruins:cosmic",
+  "fragment": "rotten_ruins:cosmic",
+  "attributes": [
+    "Position",
+    "Color",
+    "UV0",
+    "UV2",
+    "Normal"
+  ],
+  "samplers": [
+    { "name": "Sampler0" },
+    { "name": "Sampler2" }
+  ],
+  "uniforms": [
+    {"name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]},
+    {"name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]},
+    {"name": "ColorModulator", "type": "float", "count": 4, "values": [1.0,1.0,1.0,1.0]},
+    {"name": "FogStart", "type": "float", "count": 1, "values": [0.0]},
+    {"name": "FogEnd", "type": "float", "count": 1, "values": [1.0]},
+    {"name": "FogColor", "type": "float", "count": 4, "values": [0.0,0.0,0.0,0.0]},
+    {"name": "FogShape", "type": "int", "count": 1, "values": [0]},
+    {"name": "time", "type": "float", "count": 1, "values": [0.0]},
+    {"name": "yaw", "type": "float", "count": 1, "values": [0.0]},
+    {"name": "pitch", "type": "float", "count": 1, "values": [0.0]},
+    {"name": "externalScale", "type": "float", "count": 1, "values": [0.0]},
+    {"name": "opacity", "type": "float", "count": 1, "values": [0.0]},
+    {"name": "useType", "type": "int", "count": 1, "values": [0]},
+    {"name": "cosmicuvs", "type": "matrix2x2", "count": 48, "values": [0.0]},
+    {"name": "blockPatternScale", "type": "float", "count": 1, "values": [120.0]},
+    {"name": "blockTimeScale", "type": "float", "count": 1, "values": [0.35]},
+    {"name": "blockTimeOffset", "type": "float", "count": 1, "values": [0.0]},
+    {"name": "waveTimeScale", "type": "float", "count": 1, "values": [0.025]},
+    {"name": "wavePatternScale", "type": "float", "count": 1, "values": [2.0]},
+    {"name": "maskUvMin", "type": "float", "count": 2, "values": [0.0,0.0]},
+    {"name": "maskUvSize", "type": "float", "count": 2, "values": [1.0,1.0]},
+    {"name": "flowMixStrength", "type": "float", "count": 1, "values": [0.65]},
+    {"name": "irisSpeed", "type": "float", "count": 1, "values": [1.0]}
+  ]
+}

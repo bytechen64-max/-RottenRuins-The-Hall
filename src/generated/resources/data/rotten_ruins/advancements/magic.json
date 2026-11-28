@@ -1,0 +1,38 @@
+{
+  "parent": "rotten_ruins:root",
+  "criteria": {
+    "source_charge_sand": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:source_charge_sand"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancements.rotten_ruins.magic.description"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "icon": {
+      "item": "rotten_ruins:source_charge_sand"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancements.rotten_ruins.magic.title"
+    }
+  },
+  "requirements": [
+    [
+      "source_charge_sand"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

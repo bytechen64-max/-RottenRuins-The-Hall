@@ -1,0 +1,36 @@
+{
+  "parent": "rotten_ruins:magic",
+  "criteria": {
+    "eat_void_essence": {
+      "conditions": {
+        "item": {
+          "items": [
+            "rotten_ruins:void_essence"
+          ]
+        }
+      },
+      "trigger": "minecraft:consume_item"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancements.rotten_ruins.magic/void_essence.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "item": "rotten_ruins:void_essence"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancements.rotten_ruins.magic/void_essence.title"
+    }
+  },
+  "requirements": [
+    [
+      "eat_void_essence"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

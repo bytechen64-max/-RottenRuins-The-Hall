@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "rotten_ruins:void_mana_bottle"
+    },
+    "P": {
+      "item": "rotten_ruins:source_mana_plate"
+    }
+  },
+  "pattern": [
+    "BBB",
+    "BPB",
+    "BBB"
+  ],
+  "result": {
+    "item": "rotten_ruins:void_mana_plate"
+  },
+  "show_notification": true
+}

@@ -1,0 +1,14 @@
+{
+  "type": "rotten_ruins:structure_spell",
+  "conditions": [
+    {
+      "condition": "forge:loot_table_id",
+      "loot_table_id": "minecraft:chests/desert_pyramid"
+    },
+    {
+      "chance": 0.3,
+      "condition": "minecraft:random_chance"
+    }
+  ],
+  "item": "rotten_ruins:sprint"
+}

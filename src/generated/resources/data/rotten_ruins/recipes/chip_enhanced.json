@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "rotten_ruins:chip_null"
+    },
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "pattern": [
+    " R ",
+    "GCG",
+    " R "
+  ],
+  "result": {
+    "item": "rotten_ruins:chip_enhanced"
+  },
+  "show_notification": true
+}

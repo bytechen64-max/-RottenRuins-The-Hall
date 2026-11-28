@@ -1,0 +1,20 @@
+{
+  "type": "rotten_ruins:potential_crafting",
+  "ingredients": [
+    {
+      "item": "rotten_ruins:mana_bottle",
+      "nbt": "{Charged:1b}"
+    },
+    {
+      "item": "rotten_ruins:domite_crystal"
+    },
+    {
+      "item": "rotten_ruins:domite_crystal"
+    }
+  ],
+  "output": {
+    "count": 3,
+    "item": "rotten_ruins:domite_crystal"
+  },
+  "outputtime": 300
+}

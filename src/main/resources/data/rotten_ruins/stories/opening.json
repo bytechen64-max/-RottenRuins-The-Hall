@@ -1,0 +1,11 @@
+{
+  "timing": "autoplay",
+  "pages": [
+    {
+      "text": {
+        "translate": "rotten_ruins.story.opening"
+      },
+      "hold_ticks": 180
+    }
+  ]
+}

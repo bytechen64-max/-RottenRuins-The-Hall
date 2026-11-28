@@ -1,0 +1,805 @@
+package org.bytechen.rottenruins.datagen.gen.lang;
+
+import org.bytechen.rottenruins.HallMod;
+import org.bytechen.rottenruins.datagen.gen.AdvancementProviderData;
+import org.bytechen.rottenruins.overworld.registry.EntityTypeRegistry;
+import org.bytechen.rottenruins.overworld.registry.RegisterBlock;
+import org.bytechen.rottenruins.overworld.registry.RegisterEffect;
+import org.bytechen.rottenruins.overworld.registry.RegisterItem;
+import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionBlocks;
+import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionEffects;
+import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionEntityTypes;
+import org.bytechen.rottenruins.overworld.registry.corruption.CorruptionItems;
+import org.bytechen.rottenruins.utils.TranslateUtils;
+import net.minecraft.data.PackOutput;
+import net.minecraftforge.common.data.LanguageProvider;
+
+public class LangDataCN extends LanguageProvider {
+    public LangDataCN(PackOutput output, String locale) { super(output, HallMod.MODID, locale); }
+
+    @Override
+    protected void addTranslations() {
+        add("biome.rotten_ruins.shattered_lands", "破碎之地");
+        add("biome.rotten_ruins.folded_fields", "折叠原野");
+        add("biome.rotten_ruins.pierced_continent", "穿孔大陆");
+
+        add("tooltip.rotten_ruins.boomerang.damage", "投掷伤害：%s");
+        add("tooltip.rotten_ruins.boomerang.cooldown", "投掷冷却：%s 秒");
+        add(RegisterItem.HALL_BOOMERANG.get(), "王庭回旋镖");
+        add(EntityTypeRegistry.BOOMERANG.get(), "王庭回旋镖");
+        add("gui.rotten_ruins.potential_crafting.start", "开始合成");
+        add("gui.rotten_ruins.potential_crafting.crafting", "合成中…");
+        add(RegisterItem.SOUL_DRINK.get(), "灵魂吸引");
+        add("staff_grade.rotten_ruins.common", "等级：普通");
+        add("staff_grade.rotten_ruins.epic", "等级：史诗");
+        add("staff_grade.rotten_ruins.legendary", "等级：传说");
+        add("tooltip.rotten_ruins.staff_grade_bonus", "同流派法术伤害 +%s");
+        add("effect.rotten_ruins.arcane_mark", "奥数印记");
+        add("effect.rotten_ruins.corrosion", "腐蚀");
+        add("effect.rotten_ruins.lethargy", "迟滞");
+        add("effect.rotten_ruins.frailty", "衰竭");
+        add("effect.rotten_ruins.shield", "护盾");
+        add("effect.rotten_ruins.bark_armor", "藤甲");
+        add("effect.rotten_ruins.holy_wings", "圣翼");
+        add("effect.rotten_ruins.flame_slash", "焰斩");
+        add("effect.rotten_ruins.stun", "晕眩");
+        add("effect.rotten_ruins.ethereal", "虚化");
+        add("message.rotten_ruins.knowledge_exhausted", "这份学识对你已无用处");
+        add("message.rotten_ruins.knowledge.gained.mortal", "你已领悟凡界的知识");
+        add("message.rotten_ruins.knowledge.gained.infernal", "你已领悟狱火的知识");
+        add("message.rotten_ruins.knowledge.gained.end", "你已领悟终末的知识");
+        add("tooltip.rotten_ruins.knowledge.desc.mortal",
+                "§9来自§[rrs:grad:#F5E05A:#3FBF5F]凡界§[/]§9的知识将祝你向前");
+        add("tooltip.rotten_ruins.knowledge.desc.infernal",
+                "§9来自§[rrs:grad:#FF5A3C:#861414]狱火§[/]§9的知识将祝你向前");
+        add("tooltip.rotten_ruins.knowledge.desc.end",
+                "§9来自§[rrs:grad:#B26BFF:#341040]终末§[/]§9的知识将祝你向前");
+        add("gui.rotten_ruins.jade.crafting", "合成中 %s%% · 约 %s 秒");
+
+        add("rotten_ruins.story.unknown", "未知剧情：%s");
+        add("rotten_ruins.story.missing_ritual", "仪式剧情不可用，请检查剧情数据包中的 fleshbed_start 规则与固定时间剧情。");
+        add("rotten_ruins.story.respawn.first.0", "……你回来了。\n别紧张。先看看自己有没有缺少什么吧。");
+        add("rotten_ruins.story.respawn.normal.0", "欢迎回来，要休息一下吗？");
+        add("rotten_ruins.story.respawn.normal.1", "刚才的路。\n我们再走一次吧。");
+        add("rotten_ruins.story.respawn.normal.2", "至少这一次，你知道危险在哪里了。");
+        add("rotten_ruins.story.respawn.normal.3", "慢慢来。\n等你准备好了，我们再出发。");
+        add("rotten_ruins.story.respawn.rapid.0", "慢一点，我们还有时间。");
+        add("rotten_ruins.story.respawn.rapid.1", "你又回来了");
+        add("rotten_ruins.story.respawn.fall.0", "下次落脚之前，先往下看一眼吧。");
+        add("rotten_ruins.story.respawn.fall.1", "试着找一条平稳些的路吧。");
+        add("rotten_ruins.story.respawn.drown.0", "现在，\n已经没事了。");
+        add("rotten_ruins.story.respawn.drown.1", "差一点。\n这一次，记得及时上浮。");
+        add("rotten_ruins.story.respawn.mob.0", "它还在那里等你。\n准备好了再回去吧。");
+        add("rotten_ruins.story.respawn.mob.1", "那个家伙不好对付。\n换个办法试试吧。");
+        add(RegisterItem.VOID_SHARD.get(), "虚空碎片");
+        add("rotten_ruins.story.fleshbed.1", "生命易逝，万物终将归为腐朽");
+        add("rotten_ruins.story.fleshbed.2", "你将带来本不属于这的东西...");
+        add("rotten_ruins.story.fleshbed.3", "当心它们");
+        add("rotten_ruins.story.fleshbed.4", "在挑战中寻找机遇...");
+        add("rotten_ruins.fleshbed.feed", "血肉温床：已喂养 %s/%s 个腐肉");
+        add("rotten_ruins.fleshbed.ready", "已喂满 %s/%s 个腐肉。再次右键启动仪式。");
+        add("rotten_ruins.fleshbed.started", "你赐予了生命");
+        add("rotten_ruins.fleshbed.running", "请等待...马上就好");
+        add("rotten_ruins.fleshbed.complete", "欣赏我们的杰作...");
+        add("rotten_ruins.fleshbed.space", "温床周围空间不足，请在四周预留可站立的空地。");
+        add("rotten_ruins.fleshbed.catalyst", "血肉温床：已投入 %s/%s 个魔法催化剂");
+        add("rotten_ruins.fleshbed.catalyst_ready", "已投入 %s/%s 个魔法催化剂。再次右键启用王庭召唤仪式。");
+        add("rotten_ruins.fleshbed.hall_started", "王庭正在降临……");
+        add("rotten_ruins.fleshbed.hall_running", "王庭召唤仪式进行中……");
+        add("rotten_ruins.fleshbed.hall_complete", "王庭已在此扎根。");
+        add("rotten_ruins.story.opening", "你好呀，欢迎来到这个时间\n你可能会比较迷惑...\n不过我会带你了解这个世界！去挖点沙砾试试？");
+        add(RegisterItem.TRUE_COPPER.get(), "§[rrs:grad:#B87333:#FFD1A3]真铜短剑§[/]");
+        add(RegisterItem.DEATH_DAGGER.get(), "死亡匕首");
+        add(RegisterEffect.APOPTOSIS.get(), "凋亡");
+        add("tooltip.rotten_ruins.death_dagger", "攻击有25%概率施加凋亡 I，持续8秒");
+        add("death.attack.apoptosis", "%1$s因凋亡而死");
+        add("death.attack.apoptosis.player", "%1$s在与%2$s战斗时因凋亡而死");
+
+        // 创造栏标签页 / 界面左上角的面板标题：带流动渐变（§6 垫底，特效关闭时退回原版金色）。
+        add("itemGroup." + HallMod.MODID + ".main",
+                "§[rrs:grad:#000000:#FFD700:speed=0.6]腐朽之疫§[/]");
+        // 创造物品栏的分区隔断行标题（见 SectionedCreativeModeTab / RegisterTab）
+        add("itemGroup." + HallMod.MODID + ".main.section.creatures", "刷怪蛋");
+        add("itemGroup." + HallMod.MODID + ".main.section.materials", "材料");
+        add("itemGroup." + HallMod.MODID + ".main.section.magic", "魔法");
+        add("itemGroup." + HallMod.MODID + ".main.section.gear", "武器与工具");
+        add("itemGroup." + HallMod.MODID + ".main.section.blocks", "方块");
+        add("itemGroup." + HallMod.MODID + ".main.section.misc", "其它");
+        add(RegisterItem.EXAMPLE_ITEM.get(), "测试物品");
+        add(RegisterItem.SIMPLE_FIELD_METER.get(), "简易场强计");
+        add(RegisterItem.VOID_SWORD.get(), "伪-虚无之刃");
+        add(RegisterItem.HALL_BONE_FRAGMENTS.get(),  "王庭骨");
+        add(RegisterItem.HALL_TENDON.get(), "王庭肌腱");
+        add(RegisterItem.INF_ENDER_PEAR.get(), "§[rrs:glitch:amp=2.0]畸骸末影珍珠§[/]");
+        add(RegisterItem.BONECRUSHER_CORE.get(), "碎骨核心");
+        add(RegisterItem.DOMITE_ORE.get(), "穹顶胚晶矿");
+        add(RegisterItem.DOMERITE_ORE.get(), "穹顶云铁矿");
+        add(RegisterItem.DOMITE_CRYSTAL.get(), "穹顶胚晶");
+        add(RegisterItem.DOMERITE_INGOT.get(), "穹顶云铁锭");
+        add(RegisterItem.DOMERITE_STICK.get(), "穹顶之杖");
+        add(RegisterItem.DOMERITE_SWORD.get(), "云顶之剑");
+        add(RegisterItem.DOMERITE_PICKAXE.get(), "云顶之镐");
+        add(RegisterItem.DOMERITE_AXE.get(), "云顶之斧");
+        add(RegisterItem.DOMERITE_SHOVEL.get(), "云顶之锹");
+        add(RegisterItem.DOMERITE_HOE.get(), "云顶之锄");
+        add(RegisterItem.DOMERITE_LONGSWORD.get(), "天穹裁决");
+        add(RegisterItem.CRIMSON_VOW.get(), "绯红誓约");
+        add(RegisterItem.SILENT_DAYLIGHT.get(), "寂寒白日");
+        add(RegisterItem.ACID_ANOMALY_EXTRACT.get(), "酸异常提取物");
+        add(RegisterItem.COLD_ANOMALY_EXTRACT.get(), "冷异常提取物");
+        add(RegisterItem.HEAT_ANOMALY_EXTRACT.get(), "热异常提取物");
+        add(RegisterItem.INF_PLAYER_SPAWN_EGG.get(), "畸骸玩家刷怪蛋");
+        add(RegisterItem.INF_ENDERMAN_SPAWN_EGG.get(), "畸骸末影人刷怪蛋");
+        add(RegisterItem.INF_SKELETON_SPAWN_EGG.get(), "畸骸骷髅刷怪蛋");
+        add(RegisterItem.SCOUT_SPAWN_EGG.get(), "溃烂纠察刷怪蛋");
+        add(RegisterItem.ABNORMAL_SQUID_SPAWN_EGG.get(), "畸鱿刷怪蛋");
+        add(RegisterItem.PURSUER_SPAWN_EGG.get(), "溃烂追蹤者刷怪蛋");
+        add(RegisterItem.MONOLITH_SPAWN_EGG.get(), "溃烂巨岩刷怪蛋");
+        add(RegisterItem.BONECRUSHER_SPAWN_EGG.get(), "王庭碎骨刷怪蛋");
+        add(RegisterItem.HEAVY_BOMB_SPAWN_EGG.get(), "王庭重型轰炸刷怪蛋");
+        add(RegisterItem.RAMPART_SPAWN_EGG.get(), "王庭城墙刷怪蛋");
+        add(RegisterItem.COLLAPSAR_SPAWN_EGG.get(), "萨米使徒刷怪蛋【未完成】");
+        add(RegisterItem.WINDING_COLUMN_SPAWN_EGG.get(), "缠绕之柱刷怪蛋");
+        add(RegisterBlock.HALL_GRASS_BLOCK.get(), "王庭草方块");
+        add(RegisterBlock.HALL_DIRT.get(), "王庭泥土");
+        add(RegisterBlock.HALL_STONE.get(), "王庭石块");
+        add(RegisterBlock.HALL_LOG.get(), "王庭原木");
+        add(RegisterBlock.HALL_LEAVES.get(), "王庭树叶");
+        add(RegisterBlock.HALL_PILLAR.get(), "王庭石柱");
+        add(RegisterBlock.HALL_PLANKS.get(), "王庭木板");
+        add(RegisterBlock.HALL_STAIRS.get(), "王庭楼梯");
+        add(RegisterBlock.HALL_SLAB.get(), "王庭台阶");
+        add(RegisterBlock.HALL_FENCE.get(), "王庭栅栏");
+        add(RegisterBlock.HALL_FENCE_GATE.get(), "王庭栅栏门");
+        add(RegisterBlock.HALL_DOOR.get(), "王庭木门");
+        add(RegisterBlock.HALL_TRAPDOOR.get(), "王庭木活板门");
+        add(RegisterBlock.HALL_BUTTON.get(), "王庭按钮");
+        add(RegisterBlock.HALL_PRESSURE_PLATE.get(), "王庭压力板");
+        add(RegisterBlock.HALL_STONE_STAIRS.get(), "王庭石楼梯");
+        add(RegisterBlock.HALL_STONE_SLAB.get(), "王庭石台阶");
+        add(RegisterBlock.HALL_STONE_WALL.get(), "王庭石墙");
+        add(RegisterBlock.HALL_STONE_BUTTON.get(), "王庭石质按钮");
+        add(RegisterBlock.HALL_STONE_PRESSURE_PLATE.get(), "王庭石质压力板");
+        add(RegisterBlock.DOMITE_MINERAL.get(), "穹顶胚晶矿石");
+        add(RegisterBlock.DOMERITE_MINERAL.get(), "穹顶云铁矿石");
+        add(RegisterBlock.HALL_VINE.get(), "王庭藤蔓");
+        add(RegisterBlock.HALL_FLOWER.get(), "王庭花");
+        add(RegisterBlock.HALL_GRASS.get(), "王庭草");
+        add(RegisterBlock.HALL_SANDSTONE.get(), "王庭砂岩");
+        add(RegisterBlock.HALL_ASH_SAND.get(), "王庭烬痕沙子");
+        add(RegisterBlock.HALL_ASH_CUT_SANDSTONE.get(), "王庭烬痕切制砂岩");
+        add(RegisterBlock.HALL_ASH_SMOOTH_SANDSTONE.get(), "王庭烬痕平滑砂岩");
+        add(RegisterBlock.HALL_ASH_COLLAPSED_CHISELED_SANDSTONE.get(), "王庭烬痕坍缩雕纹砂岩");
+        add(RegisterBlock.HALL_ASH_CACTUS.get(), "王庭烬痕仙人掌");
+        add(RegisterBlock.HALL_ASH_DEAD_BUSH.get(), "王庭烬痕枯灌木");
+        add(EntityTypeRegistry.INF_PLAYER.get(), "畸骸玩家");
+        add(EntityTypeRegistry.INF_ENDERMAN.get(), "畸骸末影人");
+        add(EntityTypeRegistry.INF_SKELETON.get(), "畸骸骷髅");
+        add(EntityTypeRegistry.INF_SKELETON_ARROW.get(), "畸骸骷髅炸弹");
+        add(EntityTypeRegistry.HEAVY_BOMB.get(), "王庭重型轰炸");
+        add(EntityTypeRegistry.RAMPART.get(), "王庭城墙");
+        add(EntityTypeRegistry.HEAVY_BOMB_TNT.get(), "重型炸弹TNT");
+        add(EntityTypeRegistry.HEARTHSTONE.get(), "王庭炉石");
+        add(EntityTypeRegistry.DEATH_HUNTER.get(), "死亡猎手");
+        add(EntityTypeRegistry.BONECRUSHER.get(), "王庭碎骨");
+        add(EntityTypeRegistry.COLLAPSAR.get(), "萨米使徒");
+        add(EntityTypeRegistry.SCOUT.get(), "溃烂纠察");
+        add(EntityTypeRegistry.ABNORMAL_SQUID.get(), "畸鱿");
+        add(EntityTypeRegistry.PURSUER.get(), "溃烂追蹤者");
+        add(EntityTypeRegistry.MONOLITH.get(), "溃烂巨岩");
+        // 防御型生物：缠绕之柱（不会移动 · 抓取 · 伤害传导 · 潜地偷袭）
+        add(EntityTypeRegistry.WINDING_COLUMN.get(), "缠绕之柱");
+        add(EntityTypeRegistry.SHOCKWAVE.get(), "冲击波");
+        add(EntityTypeRegistry.METEORITE.get(), "陨石");
+        // 天穹裁决 · 裁决领域的落剑（纯视觉技能实体，但仍给一个可读名字便于调试）
+        add(EntityTypeRegistry.VERDICT_SWORD_DROP.get(), "裁决落剑");
+        // 技能/投射物实体：不上生物列表，但受击死亡消息、Jade/TOP 等第三方读
+        // entity.<namespace>.<id>，缺键就会把 key 原文印到玩家界面上。
+        add(EntityTypeRegistry.FIRE_BALL.get(), "火球");
+        add(EntityTypeRegistry.SPEAR_OF_JUDGMENT.get(), "审判之矛");
+        add(EntityTypeRegistry.BLACK_HOLE.get(), "黑洞");
+        add(EntityTypeRegistry.COLLAPSE.get(), "坍缩");
+        add(EntityTypeRegistry.SWORD_AURA.get(), "剑气");
+        add(EntityTypeRegistry.METEOR_EVENT.get(), "天灾陨星");
+        add(EntityTypeRegistry.OLYMPIAD_CUBE.get(), "奥数立方");
+        add(EntityTypeRegistry.VERDICT_BEAM.get(), "裁决光柱");
+        add(EntityTypeRegistry.VERDICT_FIELD.get(), "裁决领域");
+        add(EntityTypeRegistry.CRIMSON_VOW_CHARGE.get(), "赤红誓约·蓄势");
+        add(EntityTypeRegistry.CRIMSON_VOW_FIELD.get(), "赤红誓约·血域");
+        add(RegisterEffect.ACID_ANOMALY_ADAPTATION.get(), "酸异常适应");
+        add(RegisterEffect.COLD_ANOMALY_ADAPTATION.get(), "冷异常适应");
+        add(RegisterEffect.HEAT_ANOMALY_ADAPTATION.get(), "热异常适应");
+        add(RegisterEffect.VERDICT.get(), "裁决");
+        add(RegisterEffect.MANIC_DISCOMFORT.get(), "狂躁不适");
+        // 天穹裁决：冷却中右键时的动作栏提示
+        add("item.rotten_ruins.domerite_longsword.cooldown", "裁决尚未就绪（%s 秒）");
+        // 天穹裁决：抬头不足，光柱无法立起（原本这一下是完全静默的）
+        add("item.rotten_ruins.domerite_longsword.no_aim", "未瞄准 · 抬头才能落下裁决");
+        // 天穹裁决：这一招完全落空（空放只记很短的一笔冷却）
+        add("item.rotten_ruins.domerite_longsword.missed", "落空 · 冷却已返还");
+        add(TranslateUtils.DIFFICULTY_EASY, "简单");
+        add(TranslateUtils.DIFFICULTY_NORMAL, "普通");
+        add(TranslateUtils.DIFFICULTY_HARD, "困难");
+        add(TranslateUtils.DIFFICULTY_INCOMPREHENSIBLE, "§[rrs:glitch:amp=1.4]无法理解§[/]");
+        add(TranslateUtils.DIFFICULTY_EASY_TOOLTIP, "轻松的体验氛围，适合养老玩家");
+        add(TranslateUtils.DIFFICULTY_NORMAL_TOOLTIP, "标准游戏体验");
+        // 难度档位文案是"单个 Component 直接绘制"（DifficultySelectScreen），可以安全地带标记；
+        // 注意：走 FlowingNameColors/TooltipLines 逐字拍平的那些 lore 行不能加标记
+        // （逐字重建会把标记拆散到不同组件里，反而显示成原文）。
+        add(TranslateUtils.DIFFICULTY_HARD_TOOLTIP, "§[rrs:shake:amp=1.0]哦不不不！这无疑是难以战胜的§[/]");
+        add(TranslateUtils.DIFFICULTY_INCOMPREHENSIBLE_TOOLTIP, "§[rrs:glitch:amp=2.0]你确定你要这么做吗？§[/]");
+        add(TranslateUtils.GUI_DIFFICULTY_SELECT_TITLE, "选择难度");
+        add(TranslateUtils.GUI_DIFFICULTY_SELECT_HINT, "请选择世界难度");
+
+        // ---- tooltip 文案 ----
+        // 机制说明共用一份（几把格挡武器是同一件事）；各物品只拥有自己的风味。
+        // "标签 + 正文"拆成两个键：渐变的逐字上色会把整行拍平，合成一条
+        // "%s …" 模板就分不出两种颜色（见 client.rend.text.TooltipLines）。
+        // %% 是原版 TranslatableContents 的转义（见其 FORMAT_PATTERN 那一段）。
+        add(TranslateUtils.TOOLTIP_LABEL_BLOCK, "格挡");
+        add(TranslateUtils.TOOLTIP_BLOCK, "按住右键举剑迎击 · 只挡正面来敌");
+        add(TranslateUtils.TOOLTIP_TRAIT, "不可损坏 · 火焰免疫 · 合成后归还");
+        add(TranslateUtils.TOOLTIP_BAR_LABEL, "格挡减伤");
+        add(TranslateUtils.TOOLTIP_BAR_VALUE, "%s%%");
+
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LORE, "「以血为誓，此刃不折。」");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_TRAIT, "誓约");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_LABEL_SIGIL, "起誓");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_SIGIL,
+                "潜行 + 右键举剑 · 蓄满后于视线所指展开绯红法阵（20 秒）");
+        add(TranslateUtils.CRIMSON_VOW_COOLDOWN, "誓约尚未就绪（%s 秒）");
+        add(TranslateUtils.CRIMSON_VOW_TOOLTIP_DEBUG,
+                "调试 · 格挡结算 ×%s%% · 仅正面 %s · 使用时长 %s tick · 实体范围 +%s");
+
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LORE, "「白昼无声，唯余一刃寒水。」");
+        // 寂寒白日专属冰伤类型的死亡消息（damage_type/silent_daylight_ice.json）
+        // %1$s = 死者，%2$s = 击杀者；这里刻意不写击杀者
+        add("death.attack.rotten_ruins.silent_daylight_ice", "%1$s被冰冰冰，队友CDU关一下");
+        add("death.attack.rotten_ruins.silent_daylight_ice.item", "%1$s被冰冰冰，队友CDU关一下");
+        add("death.attack.rotten_ruins.silent_daylight_ice.player", "%1$s被冰冰冰，队友CDU关一下");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TIDE, "湍流");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_TIDE, "剑刃浸在一层流动的水光里");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_TRAIT, "白日");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_SLASH, "斩击");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_SLASH,
+                "左键命中即追加 %s 道蓝白长斩 · 每道 %s 点冰伤 + 目标最大生命 %s%% · %s 格内全体受击");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_LABEL_WARD, "寒气");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_WARD,
+                "举剑展开 %s 格寒气领域 · 持续回血、冻结生物、吹散飞行物");
+        add(TranslateUtils.SILENT_DAYLIGHT_TOOLTIP_DEBUG,
+                "调试 · 格挡结算 ×%s%% · 仅正面 %s · 使用时长 %s tick");
+
+        // ---- 血肉庭园维度（hall:heall） ----
+        // 该维度的地形完全复用现有王庭方块，因此这里只有通道方块的译名
+        add(RegisterBlock.FLESH_RIFT.get(), "血肉裂隙");
+        // 死亡核心：第一个通过 BER 绘制 mask 着色器层的方块
+        add(RegisterBlock.DEATH_CORE.get(), "死亡核心");
+        add("dimension." + HallMod.MODID + ".heall", "血肉庭园");
+        add("biome." + HallMod.MODID + ".flesh_marrow", "血肉庭园");
+        add("biome." + HallMod.MODID + ".hall_ocean", "王庭海洋");
+        add(RegisterBlock.FLESH_RIFT.get().getDescriptionId() + ".no_dimension", "裂隙的另一端尚未形成……");
+
+        // ---- 魔法：流派名 + 物品介绍（见 MagicType / MagicTooltips） ----
+        // 流派名会被法术/饰品的介绍行用到；颜色由 MagicType#rgb() 提供，这里只管文字。
+        add("magic_type." + HallMod.MODID + ".water", "水");
+        add("magic_type." + HallMod.MODID + ".fire", "火焰");
+        add("magic_type." + HallMod.MODID + ".death", "死亡");
+        add("magic_type." + HallMod.MODID + ".nature", "自然");
+        add("magic_type." + HallMod.MODID + ".light", "光明");
+        add("magic_type." + HallMod.MODID + ".void", "虚空");
+        add("magic_type." + HallMod.MODID + ".mysterious", "神秘");
+        // 介绍行：参数统一 %s，数值部分在代码里按流派上色
+        add("tooltip." + HallMod.MODID + ".magic.type", "法术类型：%s");
+        add("tooltip." + HallMod.MODID + ".magic.cooldown", "冷却：%s 秒");
+        add("tooltip." + HallMod.MODID + ".magic.cooldown.none", "冷却：无");
+        add("tooltip." + HallMod.MODID + ".magic.mana", "法力消耗：%s");
+        add("tooltip." + HallMod.MODID + ".magic.mana.none", "法力消耗：无");
+        add("tooltip." + HallMod.MODID + ".magic.keep_cost", "持续消耗：%s 法力/秒");
+        add("tooltip." + HallMod.MODID + ".magic.charge", "蓄力时间：%s 秒");
+        add("tooltip." + HallMod.MODID + ".magic.shift_hint", "按住 %s 获取更多信息");
+        add("tooltip." + HallMod.MODID + ".magic.shift_key", "Shift");
+        // 盔甲：常显简介紫色；Shift 细节里的 *关键字* 渲染成金色
+        add("item." + HallMod.MODID + ".armor.crude_living.desc", "貌似加工没有那么精细");
+        add("item." + HallMod.MODID + ".armor.crude_living.detail.1", "当血量未满时，消耗*饱食度*恢复*生命值*");
+        add("item." + HallMod.MODID + ".armor.crude_living.detail.2", "恢复*生命值*的百分比等于消耗*饱食度*的百分比");
+        add("item." + HallMod.MODID + ".armor.crude_living.detail.3", "*饱和度*的治疗效力增加");
+        add("item." + HallMod.MODID + ".armor.crude_living.detail.4", "击杀目标时恢复*饱食度*和*生命值*");
+        add("item." + HallMod.MODID + ".armor.dreamlike.desc", "如梦般消散");
+        add("item." + HallMod.MODID + ".armor.dreamlike.detail.1", "根据*幸运值*，在受伤时有概率闪避");
+        add("item." + HallMod.MODID + ".armor.dreamlike.detail.2", "闪避率为 *3%* × 当前*幸运值*");
+        add("item." + HallMod.MODID + ".armor.dreamlike.dodge", "当前闪避率：%s");
+
+        // ---- 魔法属性（见 RegisterAttributes） ----
+        // 键名必须与 RangedAttribute 构造器里写死的那个字符串**完全一致**，
+        // 对不上就会在属性界面里显示原始键名。
+        add("attribute.name." + HallMod.MODID + ".max_mana", "法力上限");        add("attribute.name." + HallMod.MODID + ".mana_regeneration", "法力回复速度");
+        add("attribute.name." + HallMod.MODID + ".mana_restore", "法力回复量");
+        add("attribute.name." + HallMod.MODID + ".spell_power", "法术强度");
+        add("attribute.name." + HallMod.MODID + ".magic_slots", "魔法槽位");
+        add("attribute.name." + HallMod.MODID + ".cooldown_reduction", "冷却缩减");
+        add("attribute.name." + HallMod.MODID + ".life_steal", "生命汲取");
+        // 各流派的法术强度：与通用法强**相加**（默认 0），键名必须和
+        // RegisterAttributes.spellPowerOf(String) 拼出来的完全一致。
+        add("attribute.name." + HallMod.MODID + ".spell_power_water", "水系法术强度");
+        add("attribute.name." + HallMod.MODID + ".spell_power_fire", "火焰法术强度");
+        add("attribute.name." + HallMod.MODID + ".spell_power_death", "死亡法术强度");
+        add("attribute.name." + HallMod.MODID + ".spell_power_nature", "自然法术强度");
+        add("attribute.name." + HallMod.MODID + ".spell_power_light", "光明法术强度");
+        add("attribute.name." + HallMod.MODID + ".spell_power_void", "虚空法术强度");
+        add("attribute.name." + HallMod.MODID + ".spell_power_mysterious", "神秘法术强度");
+
+        // ---- 魔法体系 · 物品 ----
+        // 七个流派各有对应法力板，可用于合成与补充法杖魔能。
+        add(RegisterItem.DEATH_MANA_PLATE.get(), "死亡魔法版材");
+        add(RegisterItem.SOURCE_MANA_PLATE.get(), "源荷板材");
+        add(RegisterItem.FIRE_MANA_PLATE.get(), "火焰魔法版材");
+        add(RegisterItem.LIGHT_MANA_PLATE.get(), "光明魔法版材");
+        add(RegisterItem.NATURE_MANA_PLATE.get(), "自然魔法版材");
+        add(RegisterItem.VOID_MANA_PLATE.get(), "虚空魔法版材");
+        add(RegisterItem.WATER_MANA_PLATE.get(), "水魔法版材");
+        add(RegisterItem.MYSTERIOUS_MANA_PLATE.get(), "神秘魔法版材");
+        add(RegisterItem.MAGIC_CATA.get(), "魔法催化剂");
+        add(RegisterItem.VOID_RUNE.get(), "虚空符文");
+        add(RegisterItem.MANA_BOTTLE.get(), "储魔瓶");
+        add(RegisterItem.LIGHT_MANA_BOTTLE.get(), "储魔瓶[光明]");
+        add(RegisterItem.FIRE_MANA_BOTTLE.get(), "储魔瓶[火]");
+        add(RegisterItem.WATER_MANA_BOTTLE.get(), "储魔瓶[水]");
+        add(RegisterItem.NATURE_MANA_BOTTLE.get(), "储魔瓶[自然]");
+        add(RegisterItem.VOID_MANA_BOTTLE.get(), "储魔瓶[虚空]");
+        add(RegisterItem.DEATH_MANA_BOTTLE.get(), "储魔瓶[死亡]");
+        add(RegisterItem.MYSTERIOUS_MANA_BOTTLE.get(), "储魔瓶[神秘]");
+        add(RegisterItem.SOURCE_CHARGE_SAND.get(), "源荷砂");
+        add(RegisterItem.CHIP_NULL.get(), "空白芯片");
+        add(RegisterItem.CHIP_ENHANCED.get(), "增强芯片");
+        add(RegisterItem.CHIP_SCAN.get(), "扫描芯片");
+        add(RegisterItem.CHIP_EXTRACT.get(), "提取芯片");
+        add(RegisterBlock.GROUNDING_STAKE.get(), "接地桩");
+        add(RegisterBlock.SOURCE_WIRE.get(), "源导线");
+        add(RegisterBlock.SOURCE_FILTER.get(), "源荷滤波器");
+        add(RegisterBlock.SOURCE_COLLECTOR.get(), "集荷器");
+        add(RegisterBlock.POTENTIAL_CRAFTING_TABLE.get(), "奥秘仪台");
+        add("block.rotten_ruins.potential_crafting_table.hint",
+                "周围 15 格放材料，圆心为产物格；点「开始合成」后校验材料并开始，投入后不再退还");
+        add("block.rotten_ruins.potential_crafting_table.hint_power",
+                "需要接入势能（高势区 ↔ 接地桩 的源导线回路）才会工作，势能越高越快，最多省一半时间");
+        add("gui.rotten_ruins.potential_crafting.power", "势能 %s / %s");
+        add("gui.rotten_ruins.potential_crafting.remaining", "剩余 %s 秒");
+        add("gui.rotten_ruins.potential_crafting.needs_power", "需要接入势能");
+        add("gui.rotten_ruins.potential_crafting.idle", "放入材料开始合成");
+        add("gui.rotten_ruins.potential_crafting.no_recipe", "没有匹配的配方");
+        add("gui.rotten_ruins.potential_crafting.time", "耗时 %s 秒");
+        add("gui.rotten_ruins.potential_crafting.missing", "背包里缺少这件材料");
+        add(RegisterBlock.ANALYZER.get(), "解析仪");
+        add("gui.rotten_ruins.source.reference", "波段表");
+        add("gui.rotten_ruins.source.mode.0", "手动调谐");
+        add("gui.rotten_ruins.source.mode.1", "懒人模式");
+        add("gui.rotten_ruins.source.mode.2", "波段表");
+        add("gui.rotten_ruins.source.fine_tune", "手动微调");
+        add("gui.rotten_ruins.source.preset_hint", "一键配置%s：fc %s / B %s / G %s / φ %s。仍需有效源导线回路。");
+        add("gui.rotten_ruins.source.param.0.short", "中心频率 fc");
+        add("gui.rotten_ruins.source.param.1.short", "带宽 B");
+        add("gui.rotten_ruins.source.param.2.short", "增益 G");
+        add("gui.rotten_ruins.source.param.3.short", "相位 φ");
+        add("gui.rotten_ruins.source.ports_hint", "蓝口输入，橙口输出；空手潜行右键旋转。");
+        add("gui.rotten_ruins.source.reference_hint", "窗口含边界；参数步长 0.1；蓝口输入，橙口输出");
+        add("gui.rotten_ruins.source.spectrum", "场谱示波仪");
+        add("gui.rotten_ruins.source.unmatched", "未匹配有效元素窗口");
+        add("gui.rotten_ruins.source.tuned", "元素：%s");
+        add("gui.rotten_ruins.source.power", "强度 %s/15");
+        add("gui.rotten_ruins.source.input_bottle", "空瓶");
+        add("gui.rotten_ruins.source.output_bottle", "产物");
+        add("gui.rotten_ruins.source.no_power", "未通电：检查回路和开口方向");
+        add("gui.rotten_ruins.source.no_filter", "输入端未连接上游滤波器");
+        add("gui.rotten_ruins.source.invalid_band", "滤波参数未落入元素窗口");
+        add("gui.rotten_ruins.source.conflict", "上游滤波器设置冲突");
+        add("gui.rotten_ruins.source.output_full", "请取出产物后继续灌注");
+        add("gui.rotten_ruins.source.charging", "正在灌注源荷");
+        add("gui.rotten_ruins.source.insert_bottle", "放入普通储魔瓶开始灌注");
+        add("gui.rotten_ruins.source.param.0", "中心频率 fc：%s");
+        add("gui.rotten_ruins.source.param.1", "带宽 B：%s");
+        add("gui.rotten_ruins.source.param.2", "增益 G：%s");
+        add("gui.rotten_ruins.source.param.3", "相位 φ：%s");
+        add("gui.rotten_ruins.source.param.0.hint", "势差释放的主频。范围 0–10，步长 0.1。");
+        add("gui.rotten_ruins.source.param.1.hint", "通带宽度与相干性。范围 0–10，步长 0.1。");
+        add("gui.rotten_ruins.source.param.2.hint", "输出幅值与换能强度。范围 0–10；有效窗口内增益越高，灌注越快。");
+        add("gui.rotten_ruins.source.param.3.hint", "场相极性。仅有正相（+）与反相（−）；虚空要求反相。");
+        add("gui.rotten_ruins.source.element.light", "光");
+        add("gui.rotten_ruins.source.element.fire", "火");
+        add("gui.rotten_ruins.source.element.water", "水");
+        add("gui.rotten_ruins.source.element.nature", "自然");
+        add("gui.rotten_ruins.source.element.death", "死亡");
+        add("gui.rotten_ruins.source.element.void", "虚空");
+        add("gui.rotten_ruins.source.element.mysterious", "神秘");
+        add(RegisterItem.WAND.get(), "空法杖");
+        add(RegisterItem.WAND_NATURE.get(), "自然法杖");
+        add(RegisterItem.WAND_FIRE.get(), "火焰法杖");
+        add(RegisterItem.WAND_DEATH.get(), "死亡法杖");
+        add(RegisterItem.WAND_LIGHT.get(), "光明法杖");
+        add(RegisterItem.WAND_VOID.get(), "虚空法杖");
+        add(RegisterItem.WAND_WATER.get(), "水之法杖");
+        add(RegisterItem.WAND_MYSTERIOUS.get(), "神秘法杖");
+        add(RegisterItem.WAND_COMMON.get(), "通用法术法杖");
+        add("enchantment.rotten_ruins.mana_efficiency", "节能");
+        add("tooltip.rotten_ruins.wand_mana", "法杖魔能：%s / %s");
+        // 法术（上游 1.20.1forge「魔法更新」）
+        add(RegisterItem.FIRE_BALL.get(), "火球术");
+        add(RegisterItem.SPEAR_OF_JUDGMENT.get(), "审判之矛");
+        add(RegisterItem.SUPPRESSION_FIELD.get(), "抑制场");
+        add(RegisterItem.TIDAL_PULSE.get(), "潮汐冲击");
+        add(RegisterItem.BRIAR_SNARE.get(), "荆棘禁锢");
+        add(RegisterItem.PURIFYING_LIGHT.get(), "净化之光");
+        add(RegisterItem.ARCANE_STEP.get(), "奥术闪步");
+        add(RegisterItem.SPRINT.get(), "疾行");
+        add(RegisterItem.OLYMPIAD_CUBE.get(), "奥数立方");
+        add("item.rotten_ruins.tidal_pulse.desc", "击退周围生物；自身灭火，获得抗火、水下呼吸与海豚的恩惠");
+        add("item.rotten_ruins.briar_snare.desc", "在准星处伤害并强力减速生物，附加虚弱与中毒");
+        add("item.rotten_ruins.purifying_light.desc", "治疗、净化并保护友方；伤害敌对生物，对亡灵更强");
+        add("item.rotten_ruins.arcane_step.desc", "闪现至准星附近可站立的位置，短暂获得速度提升");
+        add("item.rotten_ruins.sprint.desc", "沿视线方向高速冲刺，伴随电火花");
+        add("item.rotten_ruins.fire_ball.desc", "掷出一颗火球，接触即爆");
+        add("item.rotten_ruins.olympiad_cube.desc", "掷出奥数立方，每一颗的形态都不同");
+        add("item.rotten_ruins.soul_drink.desc", "按住持续吸取周围生物的生命并回复自身，松手甩出骷髅头");
+        add("item.rotten_ruins.spear_of_judgment.desc", "蓄满后自身身后上方降下长矛，贯穿方块与生物");
+        add("item.rotten_ruins.suppression_field.desc", "按住压制周围空间，伤害并压下空中的目标");
+        // 1.0.0beta13 新增法术
+        add(RegisterItem.SHIELD_WARD.get(), "护盾术");
+        add(RegisterItem.BARK_ARMOR.get(), "藤甲术");
+        add(RegisterItem.FREEZING_RAIN.get(), "冻雨");
+        add(RegisterItem.FLAME_SLASH.get(), "焰斩");
+        add(RegisterItem.HOLY_WINGS.get(), "圣翼");
+        add(RegisterItem.BLACK_HOLE.get(), "黑洞术");
+        add(RegisterItem.VOID_ESSENCE.get(), "虚空精粹");
+        add(RegisterItem.RAMPART_SHIELD_SHARD.get(), "城墙碎盾");
+        add(RegisterItem.KNOWLEDGE_MORTAL.get(), "§[rrs:grad:#F5E05A:#3FBF5F]凡界之学识§[/]");
+        add(RegisterItem.KNOWLEDGE_INFERNAL.get(), "§[rrs:grad:#FF5A3C:#861414]狱火之学识§[/]");
+        add(RegisterItem.KNOWLEDGE_END.get(), "§[rrs:grad:#B26BFF:#341040]终末之学识§[/]");
+        add(RegisterItem.CRUDE_LIVING_HELMET.get(), "粗制活体头盔");
+        add(RegisterItem.CRUDE_LIVING_CHESTPLATE.get(), "粗制活体胸甲");
+        add(RegisterItem.CRUDE_LIVING_LEGGINGS.get(), "粗制活体护腿");
+        add(RegisterItem.CRUDE_LIVING_BOOTS.get(), "粗制活体靴子");
+        add(RegisterItem.DREAMLIKE_HELMET.get(), "如梦头盔");
+        add(RegisterItem.DREAMLIKE_CHESTPLATE.get(), "如梦胸甲");
+        add(RegisterItem.DREAMLIKE_LEGGINGS.get(), "如梦护腿");
+        add(RegisterItem.DREAMLIKE_BOOTS.get(), "如梦靴子");
+        add(RegisterItem.INSCRIBED_BELL.get(), "铭刻之钟");
+        add("tooltip.rotten_ruins.inscribed_bell.cooldown", "冷却缩减 %s");
+        add("item.rotten_ruins.inscribed_bell.desc", "珍惜此刻的美好......");
+        add("item.rotten_ruins.shield_ward.desc", "蓄力后架起护盾，抵挡数次伤害后破碎");
+        add("item.rotten_ruins.bark_armor.desc", "披上藤甲：免疫雷电与火焰之外的伤害，但怕火");
+        add("item.rotten_ruins.freezing_rain.desc", "按住召来冻雨，持续冻伤并减速范围内的目标");
+        add("item.rotten_ruins.flame_slash.desc", "持剑期间横扫出红色剑气，可连挥数次");
+        add("item.rotten_ruins.holy_wings.desc", "长出圣翼：空中可以滑翔，双击空格向前冲刺");
+        add("item.rotten_ruins.black_hole.desc", "在视线前方撕开黑洞，把周围一切拖向中心");
+        // Shift 折叠段的细节行（item.<id>.detail.1..N，从 1 连续编号，缺号即止）
+        add("item.rotten_ruins.briar_snare.detail.1", "蓝银囚笼！");
+        add("item.rotten_ruins.briar_snare.detail.2", "你已有取似之道");
+        add("item.rotten_ruins.suppression_field.detail.1", "曼巴out");
+        add("item.rotten_ruins.fire_ball.detail.1", "烈阳！撕裂长空!");
+        add("item.rotten_ruins.sprint.detail.1", "为我趋势的发射聚晶哀悼");
+        add("item.rotten_ruins.tidal_pulse.detail.1", "芜汐葱鸡💦");
+        add("item.rotten_ruins.purifying_light.detail.1", "光よ!");
+        add("item.rotten_ruins.arcane_step.detail.1", "我闪，年轻人不讲武德");
+        add("item.rotten_ruins.soul_drink.detail.1", "我吃吃吃");
+        add("item.rotten_ruins.olympiad_cube.detail.1", "是魔法，我加了魔法");
+        // 新法术：常显段是我总结的效果，update.txt 里的原话放进 Shift 折叠段
+        add("item.rotten_ruins.shield_ward.detail.1", "凝神定气，做好准备");
+        add("item.rotten_ruins.bark_armor.detail.1", "藤甲菌从无对手!饿啊,好热啊!");
+        add("item.rotten_ruins.freezing_rain.detail.1", "冰冰冰");
+        add("item.rotten_ruins.flame_slash.detail.1", "为世界上所有的美好而战！");
+        add("item.rotten_ruins.holy_wings.detail.1", "中国人能飞~");
+        add("item.rotten_ruins.black_hole.detail.1", "见识下星星粉碎的样子吧");
+        // Shift 折叠段的细节行由策划自行添加：item.<id>.detail.1..N，从 1 连续编号，缺号即止
+        // 死亡之星：下界之星 + 凋零玫瑰
+        add(RegisterItem.DEATH_STAR.get(), "死亡之星");
+
+        // ---- 魔法星图 GUI / 按键 ----
+        add("key.categories." + HallMod.MODID, "腐朽之疫");
+        add("key." + HallMod.MODID + ".open_magic", "打开魔法星图");
+        add("rotten_ruins.gui.magic.title", "魔法星图");
+        add("rotten_ruins.gui.magic.inventory", "背包中的法术");
+        add("rotten_ruins.gui.magic.empty", "背包里没有法术");
+        add("rotten_ruins.gui.magic.hint", "拖动法术放入槽位 · 点击槽位选中");
+        add("rotten_ruins.gui.magic.slots", "法术槽 %s / %s");
+        add("rotten_ruins.gui.magic.kind.active", "主动法术");
+        add("rotten_ruins.gui.magic.kind.passive", "被动法术");
+        add("rotten_ruins.gui.magic.mana", "耗蓝 %s");
+        add("rotten_ruins.gui.magic.cooldown", "冷却 %s 秒");
+        add("rotten_ruins.gui.magic.charge", "蓄力 %s 秒");
+        // ---- 施法轮盘 / 装载界面 ----
+        add("key." + HallMod.MODID + ".cast_wheel", "打开/关闭施法轮盘");
+        add("key." + HallMod.MODID + ".open_loadout", "魔法装载界面");
+        add("rotten_ruins.gui.wheel.title", "施法轮盘");
+        add("rotten_ruins.gui.wheel.loadout.title", "魔法装载");
+        add("rotten_ruins.wheel.hint.hold_staff", "需要手持法杖才能从轮盘施法");
+        add("rotten_ruins.wheel.hint.no_spells", "轮盘 I 上没有主动法术 — 按 V 配置");
+        add("rotten_ruins.wheel.begin.sustaining", "维持中 — 右键或再按 R 结束");
+        add("rotten_ruins.wheel.result.success", "施法成功");
+        add("rotten_ruins.wheel.result.invalid_staff", "需要手持法杖");
+        add("rotten_ruins.wheel.result.no_spell", "当前无法术，释放失败");
+        add("rotten_ruins.wheel.result.passive_spell", "被动法术不能施放");
+        add("rotten_ruins.wheel.result.on_cooldown", "冷却中");
+        add("rotten_ruins.wheel.result.not_enough_mana", "法力值不足，释放失败");
+        add("rotten_ruins.wheel.result.not_charged", "蓄力不足");
+        add("rotten_ruins.wheel.result.no_target", "没有目标");
+        add("rotten_ruins.wheel.result.cancelled", "已取消");
+        add("rotten_ruins.wheel.result.rejected", "被拒绝");
+        add("rotten_ruins.wheel.result.invalid_slot", "方位无效");
+        add("rotten_ruins.wheel.result.not_active", "没有进行中的施法");
+        // 轮盘 HUD / 装载界面（datagen 生成，代码里全部走 WheelI18n.tr）
+        add("rotten_ruins.wheel.title", "奥术轮盘");
+        add("rotten_ruins.wheel.subtitle", "%s 开关  |  点击方位施法");
+        add("rotten_ruins.wheel.active_sigils", "主动法术  %s / %s");
+        add("rotten_ruins.wheel.mana", "法力  %s / %s");
+        add("rotten_ruins.wand_hud.player_mana", "玩家魔能  %s / %s");
+        add("rotten_ruins.wand_hud.element_mana", "法杖%s储能  %s / %s");
+        add("rotten_ruins.wand_hud.common", "通用");
+        add("rotten_ruins.wand_hud.no_reserve", "法杖无元素储能");
+        add("rotten_ruins.wand_hud.skill", "当前技能  %s");
+        add("rotten_ruins.wand_hud.no_skill", "未选择");
+        add("rotten_ruins.wand_hud.picker_hint", "左键切换预备法术 · 右键/点击外侧收起");
+        add("rotten_ruins.wand_hud.picker_select", "预备：%s");
+        add("rotten_ruins.wand_hud.picker_empty", "本页没有其他已装载法术");
+        add("rotten_ruins.wand_hud.chat_hint", "右键图标选法术 · 滚轮缩放 · 拖动位置");
+        add("rotten_ruins.wand_hud.hide", "隐藏法杖状态");
+        add("rotten_ruins.wand_hud.show", "显示法杖状态");
+        add("rotten_ruins.wheel.release_to_cast", "点击方位施法");
+        add("rotten_ruins.wheel.rmb_cancel", "右键关闭");
+        add("rotten_ruins.wheel.page", "轮盘  %s");
+        add("rotten_ruins.wheel.ready", "就绪");
+        add("rotten_ruins.wheel.maintain", "维持中 %s 秒");
+        add("rotten_ruins.wheel.maintain_end", "右键 / 再按 R 结束");
+        add("rotten_ruins.wheel.center.wheel", "轮盘");
+        add("rotten_ruins.wheel.center.aim", "选择方位");
+        add("rotten_ruins.wheel.center.no_active", "没有主动法术");
+        add("rotten_ruins.wheel.center.sockets", "8 个方位");
+        add("rotten_ruins.wheel.center.release_hint", "点击施法");
+        add("rotten_ruins.wheel.center.bind_hint", "在装载界面绑定主动法术");
+        add("rotten_ruins.wheel.center.drag_hint", "把法术拖到方位上");
+        add("rotten_ruins.wheel.center.cooldown", "冷却 %s");
+        add("rotten_ruins.wheel.center.not_enough_mana", "法力不足");
+        add("rotten_ruins.wheel.center.charging", "蓄力 %s 秒");
+        add("rotten_ruins.wheel.center.ready", "就绪  |  %s 法力");
+        add("rotten_ruins.wheel.center.selected", "已选中");
+        add("rotten_ruins.wheel.school.water", "水");
+        add("rotten_ruins.wheel.school.fire", "火焰");
+        add("rotten_ruins.wheel.school.death", "死亡");
+        add("rotten_ruins.wheel.school.nature", "自然");
+        add("rotten_ruins.wheel.school.light", "光明");
+        add("rotten_ruins.wheel.school.void", "虚空");
+        add("rotten_ruins.wheel.school.mysterious", "神秘");
+        add("rotten_ruins.wheel.using.instant", "瞬发");
+        add("rotten_ruins.wheel.using.charge", "蓄力");
+        add("rotten_ruins.wheel.using.channel", "维持");
+        add("rotten_ruins.wheel.loadout.subtitle", "轮盘配置  -  第 %s 页");
+        add("rotten_ruins.wheel.loadout.close", "ESC  关闭");
+        add("rotten_ruins.wheel.loadout.preview", "轮盘预览");
+        add("rotten_ruins.wheel.loadout.preview_summary",
+                "轮盘 %s  |  %s / %s 方位");
+        add("rotten_ruins.wheel.loadout.drag_hint", "把法术拖到方位上");
+        add("rotten_ruins.wheel.loadout.unbind_hint", "右键方位解绑");
+        add("rotten_ruins.wheel.loadout.save_hint", "按 SAVE 后生效");
+        add("rotten_ruins.wheel.loadout.codex", "法术图鉴");
+        add("rotten_ruins.wheel.loadout.count_active", "%s 个主动");
+        add("rotten_ruins.wheel.loadout.count_passive", "%s 个被动");
+        add("rotten_ruins.wheel.loadout.tab.active", "主动");
+        add("rotten_ruins.wheel.loadout.tab.passive", "被动");
+        add("rotten_ruins.wheel.loadout.no_active", "没有主动法术");
+        add("rotten_ruins.wheel.loadout.no_passive", "没有被动法术");
+        add("rotten_ruins.wheel.loadout.passive_hint", "学会被动后会出现");
+        add("rotten_ruins.wheel.loadout.equip_hint", "在魔法星图中装备法术");
+        add("rotten_ruins.wheel.loadout.footer_readonly", "只读");
+        add("rotten_ruins.wheel.loadout.footer_active", "主动法术");
+        add("rotten_ruins.wheel.loadout.total", "共 %s 个");
+        add("rotten_ruins.wheel.loadout.scroll", "%s-%s / %s  -  滚轮");
+        add("rotten_ruins.wheel.loadout.slot_badge", "方位 %s");
+        add("rotten_ruins.wheel.loadout.passive_always", "被动  -  始终生效");
+        add("rotten_ruins.wheel.loadout.card_sub", "%s   %s 法力   %s");
+        add("rotten_ruins.wheel.loadout.details", "详情");
+        add("rotten_ruins.wheel.loadout.type", "类型");
+        add("rotten_ruins.wheel.loadout.mana", "法力");
+        add("rotten_ruins.wheel.loadout.cooldown", "冷却");
+        add("rotten_ruins.wheel.loadout.charge", "蓄力");
+        add("rotten_ruins.wheel.loadout.sustain", "维持");
+        add("rotten_ruins.wheel.loadout.assigned", "已绑定");
+        add("rotten_ruins.wheel.loadout.always_on", "始终生效");
+        add("rotten_ruins.wheel.loadout.not_assigned", "未绑定");
+        add("rotten_ruins.wheel.loadout.assigned_at", "轮盘 %s - 方位 %s");
+        add("rotten_ruins.wheel.loadout.description", "描述");
+        add("rotten_ruins.wheel.loadout.passive_warn1", "被动法术不能");
+        add("rotten_ruins.wheel.loadout.passive_warn2", "放入轮盘");
+        add("rotten_ruins.wheel.loadout.passive_lore",
+                "被动法术装备后始终生效，不能放入轮盘。");
+        add("rotten_ruins.wheel.loadout.desc.instant",
+                "瞬发法术：无前摇，施法即刻生效。");
+        add("rotten_ruins.wheel.loadout.desc.charge",
+                "按住蓄力后释放；蓄力越久威力越强，过早松手可能失败。");
+        add("rotten_ruins.wheel.loadout.desc.keep",
+                "选中后起手并持续维持，持续消耗法力；松开结束维持。");
+        add("rotten_ruins.wheel.loadout.socket", "方位 %s");
+        add("rotten_ruins.wheel.loadout.empty_socket", "空方位");
+        add("rotten_ruins.wheel.loadout.drag_here", "把法术拖到这里");
+        add("rotten_ruins.wheel.loadout.no_selection", "未选择法术");
+        add("rotten_ruins.wheel.loadout.click_hint", "点击法术或方位");
+        add("rotten_ruins.wheel.loadout.wheel_page", "轮盘页");
+        add("rotten_ruins.wheel.loadout.button.clear", "清空方位");
+        add("rotten_ruins.wheel.loadout.button.autofill", "自动填充");
+        add("rotten_ruins.wheel.loadout.button.save", "保存");
+        add("rotten_ruins.wheel.loadout.hint",
+                "把法术拖到方位   |   右键解绑   |   SAVE 保存到轮盘 %s");
+        add("rotten_ruins.wheel.loadout.hint_short",
+                "拖拽绑定   |   右键解绑   |   SAVE 保存当前页");
+        add("rotten_ruins.wheel.loadout.hint_tiny", "拖拽绑定   |   SAVE 保存");
+        add("rotten_ruins.wheel.loadout.per_second", "%s / 秒");
+        add("rotten_ruins.wheel.loadout.bind_to_slot", "绑定到方位 %s");
+        add("rotten_ruins.wheel.loadout.release_on_socket", "松开到方位");
+        // ---- 分节符文本特效 · 预览屏 / 命令 ----
+        add("rotten_ruins.gui.textfx.title", "§[rrs:grad:#6FBF4A:#8B1E2D]分节符文本特效§[/]");
+        add("rotten_ruins.gui.textfx.hint", "每行实时动画；按 ESC 关闭；输入 /rrsfx 查看更多");
+        add("rotten_ruins.command.rrsfx.enabled", "§a文本特效：开");
+        add("rotten_ruins.command.rrsfx.disabled", "§c文本特效：关");
+        add("rotten_ruins.gui.markdown.title", "文档阅读器");
+        add("rotten_ruins.gui.markdown.missing", "找不到文档 %s");
+        add("rotten_ruins.gui.markdown.unreadable", "无法读取文档 %s");
+        add("rotten_ruins.gui.markdown.invalid", "无效的文档 ID %s");
+
+        // ---- 音效字幕（见 SoundData）----
+        // 爆体音效：与 corruption 的 rip_body 同一条字幕文案，只是命名空间换成 hall。
+        add("subtitles." + HallMod.MODID + ".rip_body", "躯体爆裂");
+
+        // ====================================================================
+        // ---- 简化版腐化内容（自 corruption 工程迁入，沿用 rotten_ruins 命名空间）----
+        // 方块/物品/实体/效果都直接引用注册对象（CorruptionBlocks / CorruptionItems /
+        // CorruptionEntityTypes / CorruptionEffects），翻译键由注册 ID 自动推导，
+        // 注册名改动时编译器会直接报错，不会出现键名与注册名脱节。
+        // ====================================================================
+
+        // ---- A. 方块 block.rotten_ruins.<id>（21 个）----
+        add(CorruptionBlocks.SPREAD_DIRT.get(), "腐染泥土");
+        add(CorruptionBlocks.SPREAD_STONE.get(), "腐染原石");
+        add(CorruptionBlocks.INFECTION_COBBLESTONE_BLOCK.get(), "腐染圆石");
+        add(CorruptionBlocks.SPREAD_INFECTION_LEAVES.get(), "腐染树叶");
+        // corruption 里该方块注册为 spread_infection_wood，但那边两个语言文件都缺这条译名
+        add(CorruptionBlocks.SPREAD_INFECTION_WOOD.get(), "腐染原木");
+        add(CorruptionBlocks.CORRUPTION_GRASS.get(), "腐染矮草");
+        add(CorruptionBlocks.CORRUPTION_TRACHEA.get(), "呼吸道");
+        add(CorruptionBlocks.CONNECT_BLOCK.get(), "结缔块");
+        add(CorruptionBlocks.DECIDUAL_TISSUE_BLOCK.get(), "蜕膜组织");
+        add(CorruptionBlocks.FLESHBED.get(), "血肉温床");
+        add(CorruptionBlocks.DEGENERATE_REMAINS_SMALL.get(), "腐化种小型遗骸");
+        add(CorruptionBlocks.DEGENERATE_REMAINS_MEDIUM.get(), "腐化种中型遗骸");
+        add(CorruptionBlocks.DEGENERATE_REMAINS_LARGE.get(), "腐化种大型遗骸");
+        add(CorruptionBlocks.HOST_REMAINS_SMALL.get(), "同化种小型遗骸");
+        add(CorruptionBlocks.HOST_REMAINS_MEDIUM.get(), "同化种中型遗骸");
+        add(CorruptionBlocks.HOST_REMAINS_LARGE.get(), "同化种大型遗骸");
+        add(CorruptionBlocks.REFACTORED_REMAINS_SMALL.get(), "重构种小型遗骸");
+        add(CorruptionBlocks.REFACTORED_REMAINS_MEDIUM.get(), "重构种中型遗骸");
+        add(CorruptionBlocks.REFACTORED_REMAINS_LARGE.get(), "重构种大型遗骸");
+        add(CorruptionBlocks.VARIABLE_HEIGHT_CROP.get(), "腐染经络");
+        add(CorruptionBlocks.SPIRACLE_BLOCK.get(), "活体气门");
+
+        // ---- B. 物品 item.rotten_ruins.<id>（42 个：材料 14 + 工具 5 + 刷怪蛋 23）----
+        // 材料
+        add(CorruptionItems.INFECTION_BONE.get(), "感染的骨头");
+        add(CorruptionItems.HARD_FRAGMENTS.get(), "硬质碎片");
+        add(CorruptionItems.CHITIN_POLYMER.get(), "聚合甲壳");
+        add(CorruptionItems.LIVE_MEAT.get(), "活体肉块");
+        add(CorruptionItems.HOST_MEAT.get(), "被同化的肉");
+        add(CorruptionItems.HOST_CARAPACE.get(), "同化种甲壳");
+        add(CorruptionItems.HOST_TOOTH.get(), "被同化的牙齿");
+        add(CorruptionItems.DEGENERATE_HEART.get(), "腐化之心");
+        add(CorruptionItems.LONG_ARM_BEAST_HEAD.get(), "长臂兽头颅");
+        add(CorruptionItems.LONG_ARM_BEAST_TOOTH.get(), "长臂兽骨齿");
+        add(CorruptionItems.ACID_SAC.get(), "酸囊");
+        add(CorruptionItems.ACID_BALL.get(), "酸液球");
+        add(CorruptionItems.SYRINGE.get(), "注射器");
+        add(CorruptionItems.SYRINGE_BLOODY_CONCENTRATE.get(), "浓缩血液注射器");
+        // 工具
+        add(CorruptionItems.CRUDE_AXE.get(), "粗制斧");
+        add(CorruptionItems.CRUDE_HOE.get(), "粗制锄");
+        add(CorruptionItems.CRUDE_PICKAXE.get(), "粗制镐");
+        add(CorruptionItems.CRUDE_SHOVEL.get(), "粗制铲");
+        add(CorruptionItems.CRUDE_SWORD.get(), "粗制剑");
+        // 刷怪蛋（键名取实体 ID，值取「<实体名>刷怪蛋」）
+        add(CorruptionItems.CORRUPTION_ZOMBIE_SPAWN_EGG.get(), "同化僵尸刷怪蛋");
+        add(CorruptionItems.CORRUPTION_PLAYER_SPAWN_EGG.get(), "同化玩家刷怪蛋");
+        add(CorruptionItems.CORRUPTION_COW_SPAWN_EGG.get(), "同化牛刷怪蛋");
+        add(CorruptionItems.CORRUPTION_SHEEP_SPAWN_EGG.get(), "同化羊刷怪蛋");
+        add(CorruptionItems.CORRUPTION_PIG_SPAWN_EGG.get(), "同化猪刷怪蛋");
+        add(CorruptionItems.CORRUPTION_BAT_SPAWN_EGG.get(), "同化蝙蝠刷怪蛋");
+        add(CorruptionItems.CORRUPTION_SKELETON_SPAWN_EGG.get(), "同化骷髅刷怪蛋");
+        add(CorruptionItems.CORRUPTION_BONE_RUINS_SPAWN_EGG.get(), "骷髅遗骸刷怪蛋");
+        add(CorruptionItems.CORRUPTION_VILLAGER_SPAWN_EGG.get(), "同化村民刷怪蛋");
+        add(CorruptionItems.CORRUPTION_WOLF_SPAWN_EGG.get(), "同化狼刷怪蛋");
+        add(CorruptionItems.CORRUPTION_CHICKEN_SPAWN_EGG.get(), "同化鸡刷怪蛋");
+        add(CorruptionItems.DEGENERATE_PIG_SPAWN_EGG.get(), "腐化猪刷怪蛋");
+        add(CorruptionItems.DEGENERATE_ZOMBIE_SPAWN_EGG.get(), "腐化僵尸刷怪蛋");
+        add(CorruptionItems.DEGENERATE_VILLAGER_SPAWN_EGG.get(), "腐化村民刷怪蛋");
+        add(CorruptionItems.DEGENERATE_COW_SPAWN_EGG.get(), "腐化牛刷怪蛋");
+        add(CorruptionItems.GROVELER_SPAWN_EGG.get(), "匍匐者刷怪蛋");
+        add(CorruptionItems.ATTACKER_SPAWN_EGG.get(), "袭击者刷怪蛋");
+        add(CorruptionItems.BEARER_SPAWN_EGG.get(), "孕育者刷怪蛋");
+        add(CorruptionItems.LONG_ARM_BEAST_SPAWN_EGG.get(), "长臂兽刷怪蛋");
+        add(CorruptionItems.SHOCKER_SPAWN_EGG.get(), "震撼者刷怪蛋");
+        add(CorruptionItems.HUMUS_COLUMN_SPAWN_EGG.get(), "Ⅰ阶腐植柱刷怪蛋");
+        add(CorruptionItems.SUMMONING_PILLAR_SPAWN_EGG.get(), "Ⅰ阶召唤柱刷怪蛋");
+        add(CorruptionItems.ORIGINAL_BUG_SPAWN_EGG.get(), "原虫刷怪蛋");
+
+        // ---- C. 实体 entity.rotten_ruins.<id>（23 个）----
+        add(CorruptionEntityTypes.CORRUPTION_ZOMBIE.get(), "同化僵尸");
+        add(CorruptionEntityTypes.CORRUPTION_PLAYER.get(), "同化玩家");
+        add(CorruptionEntityTypes.CORRUPTION_COW.get(), "同化牛");
+        add(CorruptionEntityTypes.CORRUPTION_SHEEP.get(), "同化羊");
+        add(CorruptionEntityTypes.CORRUPTION_PIG.get(), "同化猪");
+        add(CorruptionEntityTypes.CORRUPTION_BAT.get(), "同化蝙蝠");
+        add(CorruptionEntityTypes.CORRUPTION_SKELETON.get(), "同化骷髅");
+        add(CorruptionEntityTypes.CORRUPTION_BONE_RUINS.get(), "骷髅遗骸");
+        add(CorruptionEntityTypes.CORRUPTION_VILLAGER.get(), "同化村民");
+        add(CorruptionEntityTypes.CORRUPTION_WOLF.get(), "同化狼");
+        add(CorruptionEntityTypes.CORRUPTION_CHICKEN.get(), "同化鸡");
+        add(CorruptionEntityTypes.DEGENERATE_PIG.get(), "腐化猪");
+        add(CorruptionEntityTypes.DEGENERATE_ZOMBIE.get(), "腐化僵尸");
+        add(CorruptionEntityTypes.DEGENERATE_VILLAGER.get(), "腐化村民");
+        add(CorruptionEntityTypes.DEGENERATE_COW.get(), "腐化牛");
+        add(CorruptionEntityTypes.GROVELER.get(), "匍匐者");
+        add(CorruptionEntityTypes.ATTACKER.get(), "袭击者");
+        add(CorruptionEntityTypes.BEARER.get(), "孕育者");
+        add(CorruptionEntityTypes.LONG_ARM_BEAST.get(), "长臂兽");
+        add(CorruptionEntityTypes.SHOCKER.get(), "震撼者");
+        add(CorruptionEntityTypes.HUMUS_COLUMN.get(), "Ⅰ阶腐植柱");
+        add(CorruptionEntityTypes.SUMMONING_PILLAR.get(), "Ⅰ阶召唤柱");
+        add(CorruptionEntityTypes.ORIGINAL_BUG.get(), "原虫");
+        // 腐化技能弹体：同上，只为死亡消息与第三方展示提供可读名字。
+        add(CorruptionEntityTypes.BONE_SPIKE.get(), "骨刺");
+        add(CorruptionEntityTypes.ACID_BALL.get(), "酸液球");
+        add(CorruptionEntityTypes.POISON_ARROW.get(), "腐毒箭");
+        add(CorruptionEntityTypes.CORRUPTION_DART.get(), "腐蚀弹");
+        add(CorruptionEntityTypes.CORRUPTION_POOL.get(), "腐蚀池");
+        add(CorruptionEntityTypes.CUBOID.get(), "血肉墙");
+        add(CorruptionEntityTypes.SHIELD.get(), "血肉护盾");
+
+        // ---- D. 状态效果 effect.rotten_ruins.<id>（6 个）----
+        add(CorruptionEffects.CORRUPTION.get(), "腐化");
+        add(CorruptionEffects.LYSIS.get(), "裂解");
+        add(CorruptionEffects.MIASMA.get(), "绝望");
+        add(CorruptionEffects.SCLEROSIS.get(), "硬化");
+        add(CorruptionEffects.BLEEDING.get(), "流血");
+        add(CorruptionEffects.FEAR.get(), "恐惧");
+
+        // ---- E. 成就 advancements.rotten_ruins.<path> ----
+        // 键名与 AdvancementProviderData 里生成 display 时用的键同源，避免两边手写不一致。
+        // 树根：玩家第一次进入世界时触发；标题另起，悬浮说明按需求原文显示。
+        // 成就标题/说明都是单个 Component 直接绘制（成就界面/Toast），可以安全使用文本特效标记。
+        add(AdvancementProviderData.titleKey(AdvancementProviderData.ROOT_PATH),
+                "§[rrs:grad:#6FBF4A:#8B1E2D:speed=0.5]腐朽之疫§[/]");
+        add(AdvancementProviderData.descriptionKey(AdvancementProviderData.ROOT_PATH), "身为神，体验作为人的自己");
+        // 死亡分支：获得死亡之星（DeathStar）时触发。
+        add(AdvancementProviderData.titleKey(AdvancementProviderData.DEATH_PATH), "死亡");
+        add(AdvancementProviderData.descriptionKey(AdvancementProviderData.DEATH_PATH),
+                "§[rrs:glitch:amp=1.5]获得死亡之星§[/]");
+        add(AdvancementProviderData.titleKey(AdvancementProviderData.MAGIC_PATH), "魔法，轻而易举啊！");
+        add(AdvancementProviderData.descriptionKey(AdvancementProviderData.MAGIC_PATH), "一门掌握自然的学问");
+        sourceAdvancement("field_meter","看不见，测得到","获得简易场强计，开始寻找势差");
+        sourceAdvancement("high_potential","势在必得","携带简易场强计进入一个高势区");
+        sourceAdvancement("grounding_stake","脚踏实地","获得接地桩，为势流建立接点");
+        sourceAdvancement("source_wire","这回不是红石","获得源导线，准备连接高低势区");
+        sourceAdvancement("source_filter","给混沌分个频","获得源荷滤波器");
+        sourceAdvancement("tuned_filter","对上频道","将源荷滤波器调入任意有效元素窗口");
+        sourceAdvancement("void_tuning","反着来","把滤波器调到虚空波段，并使用反相");
+        sourceAdvancement("source_collector","收得住，才算本事","获得集荷器，准备灌注储魔瓶");
+        sourceAdvancement("powered_circuit","有来有回","打开一台接入有效高低势回路的源荷设备");
+        sourceAdvancement("element_bottle","把势流装进瓶子","获得任意一瓶元素储魔瓶");
+        sourceAdvancement("all_bottles","七色收藏家","分别获得七系元素储魔瓶，无需同时持有");
+        sourceAdvancement("source_plate","万法之基","获得源荷板材");
+        sourceAdvancement("element_plate","魔法有了形状","获得任意一种元素魔法板材");
+        sourceAdvancement("all_plates","万象归板","分别获得全部七系魔法板材，无需同时持有");
+        // 【味大，无需多盐】：吃掉虚空精粹
+        add(AdvancementProviderData.titleKey(AdvancementProviderData.VOID_ESSENCE_PATH), "味大，无需多盐");
+        add(AdvancementProviderData.descriptionKey(AdvancementProviderData.VOID_ESSENCE_PATH), "嗯啊，劲啊");
+    }
+
+    private void sourceAdvancement(String name,String title,String description) {
+        String path=AdvancementProviderData.sourcePath(name);
+        add(AdvancementProviderData.titleKey(path),title);
+        add(AdvancementProviderData.descriptionKey(path),description);
+    }
+}

@@ -1,0 +1,21 @@
+{
+  "type": "rotten_ruins:potential_crafting",
+  "ingredients": [
+    {
+      "item": "minecraft:glass_bottle"
+    },
+    {
+      "item": "minecraft:glass_bottle"
+    },
+    {
+      "item": "minecraft:glass_bottle"
+    },
+    {
+      "item": "minecraft:glass_bottle"
+    },
+    {
+      "item": "rotten_ruins:source_charge_sand"
+    }
+  ],
+  "output": "rotten_ruins:mana_bottle"
+}

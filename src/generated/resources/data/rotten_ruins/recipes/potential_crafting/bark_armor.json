@@ -1,0 +1,36 @@
+{
+  "type": "rotten_ruins:potential_crafting",
+  "ingredients": [
+    {
+      "tag": "minecraft:logs"
+    },
+    {
+      "tag": "minecraft:logs"
+    },
+    {
+      "tag": "minecraft:logs"
+    },
+    {
+      "tag": "minecraft:logs"
+    },
+    {
+      "tag": "minecraft:logs"
+    },
+    {
+      "item": "minecraft:scute"
+    },
+    {
+      "item": "minecraft:scute"
+    },
+    {
+      "item": "minecraft:shield"
+    },
+    {
+      "item": "minecraft:honey_bottle"
+    },
+    {
+      "item": "rotten_ruins:nature_mana_plate"
+    }
+  ],
+  "output": "rotten_ruins:bark_armor"
+}

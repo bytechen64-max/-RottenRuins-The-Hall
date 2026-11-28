@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "rotten_ruins:domite_crystal"
+    },
+    "I": {
+      "item": "rotten_ruins:domerite_ingot"
+    }
+  },
+  "pattern": [
+    "CIC",
+    "CIC",
+    "CIC"
+  ],
+  "result": {
+    "item": "rotten_ruins:domerite_stick"
+  },
+  "show_notification": true
+}

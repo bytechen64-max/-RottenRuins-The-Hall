@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>§ 文本特效 Playground · Rotten Ruins Splendiding</title>
+<style>
+  :root{
+    --bg:#0b070b;
+    --panel:#171017;
+    --panel-2:#1d1420;
+    --line:#382a36;
+    --line-soft:#241a24;
+    --ink:#E8E4D8;
+    --dim:#9a8b99;
+    --dimmer:#6e626e;
+    --green:#6FBF4A;
+    --blood:#8B1E2D;
+    --accent:#C97A4A;
+    --mono:Consolas,"Cascadia Mono","SFMono-Regular",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    min-height:100vh;
+    color:var(--ink);
+    background:
+      radial-gradient(1100px 520px at 12% -8%, rgba(111,191,74,.10), transparent 60%),
+      radial-gradient(900px 520px at 96% 108%, rgba(139,30,45,.16), transparent 62%),
+      var(--bg);
+    font-family:"Segoe UI","Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+    font-size:14px;
+    line-height:1.6;
+    padding:34px 26px 60px;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:repeating-linear-gradient(to bottom, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);
+    mix-blend-mode:screen;
+  }
+  .wrap{position:relative; z-index:1; max-width:1240px; margin:0 auto}
+  /* ---------- header ---------- */
+  header{border-bottom:1px solid var(--line); padding-bottom:18px; margin-bottom:26px}
+  .kicker{
+    font-family:var(--mono); font-size:11px; letter-spacing:.22em; color:var(--dimmer);
+    text-transform:uppercase; margin-bottom:10px;
+  }
+  .kicker b{color:var(--green); font-weight:600}
+  h1{margin:0 0 6px; font-size:30px; line-height:1.25; letter-spacing:.01em; font-weight:700}
+  h1 .hash{color:var(--accent)}
+  .sub{margin:0; color:var(--dim); font-size:13px; max-width:960px}
+  .badges{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+  .badge{
+    font-family:var(--mono); font-size:11px; color:var(--dim);
+    border:1px solid var(--line-soft); background:rgba(255,255,255,.02);
+    padding:3px 9px; border-radius:999px;
+  }
+  .badge b{color:var(--ink); font-weight:600}
+  /* ---------- layout ---------- */
+  .layout{display:grid; grid-template-columns:minmax(0,1fr) 404px; gap:26px; align-items:start}
+  @media (max-width:1020px){ .layout{grid-template-columns:minmax(0,1fr)} }
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,.025), transparent 42%), var(--panel);
+    border:1px solid var(--line); border-radius:10px;
+    box-shadow:0 18px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.03);
+  }
+  /* ---------- stage ---------- */
+  .stage{padding:18px 18px 16px}
+  .stage-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:12px}
+  .stage-head h2{margin:0; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); font-weight:600}
+  .stage-head .clock{font-family:var(--mono); font-size:12px; color:var(--dimmer)}
+  .screen{
+    border:1px solid var(--line-soft); border-radius:6px; overflow:hidden;
+    background:#0d090d; box-shadow:inset 0 0 40px rgba(0,0,0,.8);
+  }
+  #stage{display:block; width:100%; max-width:720px; aspect-ratio:720/132; margin:0 auto; image-rendering:pixelated}
+  .controls{display:flex; flex-wrap:wrap; align-items:center; gap:16px; margin-top:16px}
+  .btn{
+    font:inherit; font-size:12.5px; color:var(--ink);
+    background:linear-gradient(180deg, #241826, #1a121b);
+    border:1px solid var(--line); border-radius:5px;
+    padding:7px 14px; cursor:pointer; letter-spacing:.04em;
+    transition:border-color .15s, background .15s, transform .05s;
+  }
+  .btn:hover{border-color:#5a4056; background:linear-gradient(180deg,#2b1c2e,#201723)}
+  .btn:active{transform:translateY(1px)}
+  .slider{display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--dim); white-space:nowrap}
+  .slider output{font-family:var(--mono); color:var(--ink); min-width:52px; font-size:12px}
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:150px; height:4px; border-radius:2px;
+    background:linear-gradient(90deg, var(--green), #4d7a44 55%, var(--blood));
+    outline:none; cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:13px; height:13px; border-radius:2px;
+    background:#E8E4D8; border:1px solid #0b070b;
+    box-shadow:0 0 0 1px #E8E4D8, 0 0 10px rgba(232,228,216,.25);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:13px; height:13px; border-radius:2px; background:#E8E4D8; border:1px solid #0b070b;
+  }
+  .state-line{
+    margin-top:14px; padding:9px 12px; border-radius:5px;
+    background:rgba(0,0,0,.25); border:1px solid var(--line-soft);
+    font-family:var(--mono); font-size:11.5px; color:var(--dim); word-break:break-all;
+  }
+  .state-line .warn{color:#D98F3F}
+  .formula{
+    margin-top:12px; padding:9px 12px; border-left:2px solid var(--accent);
+    background:rgba(201,122,74,.06); border-radius:0 5px 5px 0;
+    font-family:var(--mono); font-size:11.5px; color:#c9b8a8; word-break:break-word;
+  }
+  .caption{margin:12px 0 0; font-size:12px; color:var(--dimmer)}
+  /* ---------- side panel ---------- */
+  .panel{padding:18px}
+  .panel h2{
+    margin:0 0 10px; font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--dim); font-weight:600;
+  }
+  .panel h2:not(:first-child){margin-top:22px}
+  .effects{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  .effect{
+    position:relative; text-align:left; font:inherit; cursor:pointer;
+    background:linear-gradient(180deg, #1c131d, #150e16);
+    border:1px solid var(--line-soft); border-radius:6px;
+    padding:8px 9px 7px; color:var(--ink);
+    transition:border-color .15s, background .15s;
+    overflow:hidden;
+  }
+  .effect:hover{border-color:#4c3548; background:#1f1521}
+  .effect .fx-ns{
+    display:block; font-family:var(--mono); font-size:10.5px; color:var(--alias, var(--dim));
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .effect .fx-name{display:block; font-size:13px; margin-top:2px; color:var(--ink)}
+  .effect .fx-alias{
+    display:inline-block; margin-top:4px; font-family:var(--mono); font-size:10px;
+    color:var(--dimmer); border:1px solid var(--line-soft); border-radius:3px; padding:0 4px;
+  }
+  .effect[aria-pressed="true"]{
+    border-color:var(--accent);
+    background:linear-gradient(180deg, rgba(201,122,74,.16), rgba(201,122,74,.04));
+    box-shadow:inset 0 0 0 1px rgba(201,122,74,.25);
+  }
+  .effect[aria-pressed="true"] .fx-ns{color:var(--accent)}
+  .text-input{
+    width:100%; font:inherit; font-size:14px; color:var(--ink);
+    background:#0f0a10; border:1px solid var(--line); border-radius:5px;
+    padding:9px 11px; outline:none; letter-spacing:.02em;
+  }
+  .text-input:focus{border-color:var(--accent); box-shadow:0 0 0 2px rgba(201,122,74,.15)}
+  .example-row{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap}
+  .chip{
+    font:inherit; font-size:11px; color:var(--dim); cursor:pointer;
+    background:transparent; border:1px dashed var(--line); border-radius:4px; padding:3px 8px;
+  }
+  .chip:hover{color:var(--ink); border-color:var(--dim)}
+  .small{margin:8px 0 0; font-size:11.5px; color:var(--dimmer)}
+  .small code{color:#b9a99a; font-family:var(--mono); font-size:11px}
+  /* syntax table */
+  .syntax{width:100%; border-collapse:collapse; font-size:11.5px}
+  .syntax th{
+    text-align:left; font-weight:600; color:var(--dim); font-size:10.5px;
+    letter-spacing:.08em; text-transform:uppercase; padding:5px 6px;
+    border-bottom:1px solid var(--line);
+  }
+  .syntax td{padding:5px 6px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+  .syntax td.ns{font-family:var(--mono); font-size:10.5px; color:#c9b8a8; word-break:break-all}
+  .syntax td.alias{font-family:var(--mono); font-size:10.5px; color:var(--dim); white-space:nowrap}
+  .syntax td.name{color:var(--ink); font-size:11.5px; white-space:nowrap}
+  .syntax td.none{color:var(--dimmer)}
+  .syntax tr:last-child td{border-bottom:none}
+  .note{
+    margin-top:14px; font-size:11.5px; color:var(--dimmer);
+    border-top:1px dashed var(--line-soft); padding-top:12px;
+  }
+  .note strong{color:var(--dim); font-weight:600}
+  footer{
+    margin-top:34px; padding-top:16px; border-top:1px solid var(--line);
+    font-size:11.5px; color:var(--dimmer);
+  }
+  footer p{margin:4px 0}
+  footer code{font-family:var(--mono); color:#8f8090}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">Rotten Ruins Splendiding · <b>Minecraft 1.20.1 Horror Mod</b> · Proposal Preview</div>
+    <h1><span class="hash">§</span> 分节符文本特效 · 交互 Playground</h1>
+    <p class="sub">
+      与同目录 GIF / <code>generate.py</code> 使用同一套方案默认公式，在浏览器 canvas 上实时渲染。
+      支持 <strong>命名空间语法</strong>（默认）与 <strong>短别名</strong>（可选、默认关闭）两种写法，并可在输入框内叠加多个效果。
+    </p>
+    <div class="badges">
+      <span class="badge">画布 <b>720 × 132</b> = 240 × 44 GUI × 3</span>
+      <span class="badge">默认字高 <b>16 GUI px</b></span>
+      <span class="badge">MC 风格 1 px 暗影 ×<b>0.25</b></span>
+      <span class="badge">背景 <b>#151015</b></span>
+      <span class="badge">预览用实时 <b>60 fps</b>（GIF 为 20 fps 采样）</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- ================= 画布区 ================= -->
+    <section class="card stage" aria-label="预览画布">
+      <div class="stage-head">
+        <h2>Realtime Preview</h2>
+        <span class="clock" id="clock">t = 0.00 s</span>
+      </div>
+      <div class="screen">
+        <canvas id="stage" width="720" height="132" aria-label="文本特效实时预览"></canvas>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="playBtn" type="button">暂停</button>
+        <label class="slider" for="speed">
+          速度
+          <input id="speed" type="range" min="0.25" max="3" step="0.05" value="1">
+          <output id="speedOut">1.00×</output>
+        </label>
+        <label class="slider" for="amp">
+          幅度
+          <input id="amp" type="range" min="0" max="2" step="0.05" value="1">
+          <output id="ampOut">1.00×</output>
+        </label>
+      </div>
+
+      <div class="state-line" id="stateLine">加载中…</div>
+      <div class="formula" id="formula"></div>
+      <p class="caption">
+        滑杆是<strong>预览用</strong>参数（默认 1.00× 即方案默认值）：速度缩放时间 t，幅度缩放位移 / 呼吸深度，不改变公式本身。
+        中文使用系统 SimHei 16 px 二值化渲染，模拟 MC 像素字体的块状观感。
+      </p>
+    </section>
+
+    <!-- ================= 侧栏 ================= -->
+    <aside class="card panel">
+      <h2>效果列表</h2>
+      <div class="effects" id="effects"></div>
+
+      <h2>自定义文本</h2>
+      <input class="text-input" id="textInput" type="text" maxlength="120"
+             value="腐朽之疫：王庭" autocomplete="off" spellcheck="false"
+             aria-label="自定义文本（可内联 § 码）">
+      <div class="example-row">
+        <button class="chip" type="button" data-example="ns">示例：命名空间</button>
+        <button class="chip" type="button" data-example="alias">示例：短别名</button>
+        <button class="chip" type="button" data-example="clear">清空 § 码</button>
+      </div>
+      <p class="small">
+        不写 § 码时，整行套用左侧选中的效果；写入 § 码则按标记逐字叠加 / 切换，例如
+        <code>§[rrs:grad]腐朽之疫§[rrs:shake]：王庭§[/]</code>。
+      </p>
+
+      <h2>§ 语法提示</h2>
+      <table class="syntax">
+        <thead>
+          <tr><th>命名空间语法（默认）</th><th>短别名（可选）</th><th>效果</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="ns">§[rrs:grad]<br>§[rrs:grad:#6FBF4A:#8B1E2D]</td><td class="alias">§g</td><td class="name">渐变·腐化</td></tr>
+          <tr><td class="ns">§[rrs:rainbow]</td><td class="alias">§h</td><td class="name">彩虹流彩</td></tr>
+          <tr><td class="ns">§[rrs:pulse]</td><td class="alias">§p</td><td class="name">呼吸</td></tr>
+          <tr><td class="ns">§[rrs:solid:#E8E4D8]</td><td class="alias none">—（无别名）</td><td class="name">苍白 / 纯色</td></tr>
+          <tr><td class="ns">§[rrs:shake]</td><td class="alias">§s</td><td class="name">抖动</td></tr>
+          <tr><td class="ns">§[rrs:wave]</td><td class="alias">§w</td><td class="name">波浪</td></tr>
+          <tr><td class="ns">§[rrs:glitch]</td><td class="alias">§q</td><td class="name">故障</td></tr>
+          <tr><td class="ns">§[rrs:type]</td><td class="alias">§t</td><td class="name">打字机</td></tr>
+          <tr><td class="ns">§[/] 或 §[/grad]</td><td class="alias">§[/]</td><td class="name">关闭 / 重置效果</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>为什么用命名空间？</strong>
+        原版 MC 的 § 是单字符格式码，裸单字母很容易和 Bedrock 材质色码、Phoenix / Brilliant Text 等 mod 的语法冲突。
+        方案默认使用 <code>§[rrs:…]</code>，短别名仅在配置开启时生效。<br>
+        <strong>叠加：</strong>上色类（grad / rainbow / pulse / solid）与运动类（shake / wave / glitch / typewriter）可以叠加，
+        例如 <code>§[rrs:grad]…§[rrs:shake]…§[/]</code>。关闭标记 <code>§[/]</code> 之后恢复默认白字。
+      </div>
+    </aside>
+  </div>
+
+  <footer>
+    <p>
+      本页面是<strong>方案级视觉预览</strong>，非游戏内真实渲染：字形来自系统字体二值化，实际游戏内以 MC 像素字体 + 阴影为准；
+      GIF 版本为 20 fps / 256 色调色板采样，本页为实时真彩渲染，观感可能略有差异。
+    </p>
+    <p>
+      公式与默认参数见 <code>README.md</code> 的公式表；生成脚本 <code>generate.py</code>（Pillow）与页面内 JS 使用相同数学。
+      <code>§q</code> 的颜色通道偏移在纯白字色下不可见（R/B 交换对白色无效、+0.35 青色会被截断为白），
+      可在本页输入 <code>§[rrs:grad]…§[rrs:glitch]…</code> 观察色偏。
+    </p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =========================================================================
+   * 0. 常量（与 generate.py 保持一致）
+   * ========================================================================= */
+  const GUI_W = 240, GUI_H = 44, SCALE = 3;
+  const W = GUI_W * SCALE, H = GUI_H * SCALE;
+  const BG = '#151015';
+  const DEFAULT_TEXT = '腐朽之疫：王庭';
+  const FONT_STACK = '"SimHei","Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif';
+  const FONT_SIZES = [16, 15, 14, 13, 12, 11, 10];
+  const TYPE_PERIOD = 3.2, TYPE_REVEAL = 1.6, TYPE_CPS = 12;
+  const SHADOW_OFFSET = 1;         // GUI px
+  const SHADOW_SCALE = 0.25;
+
+  const A_RGB = [0x6F, 0xBF, 0x4A];
+  const B_RGB = [0x8B, 0x1E, 0x2D];
+  const PALE_RGB = [0xE8, 0xE4, 0xD8];
+  const A_LIN = A_RGB.map(function (v) { return srgbToLinear(v / 255); });
+  const B_LIN = B_RGB.map(function (v) { return srgbToLinear(v / 255); });
+  const PALE01 = PALE_RGB.map(function (v) { return v / 255; });
+
+  /* =========================================================================
+   * 1. 数学 / 颜色工具
+   * ========================================================================= */
+  function srgbToLinear(c) {
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  }
+  function linearToSrgb(c) {
+    c = Math.max(0, Math.min(1, c));
+    return c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+  }
+  function lerpLinear(a, b, p) {
+    return [0, 1, 2].map(function (k) {
+      return linearToSrgb(srgbToLinear(a[k]) + (srgbToLinear(b[k]) - srgbToLinear(a[k])) * p);
+    });
+  }
+  function gradientColor(p) {
+    return [0, 1, 2].map(function (k) { return linearToSrgb(A_LIN[k] + (B_LIN[k] - A_LIN[k]) * p); });
+  }
+  function hsvToRgb(h, s, v) {
+    h = ((h % 1) + 1) % 1;
+    const sector = Math.floor(h * 6) % 6;
+    const f = h * 6 - Math.floor(h * 6);
+    const p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+    const table = [[v, t, p], [q, v, p], [p, v, t], [p, q, v], [t, p, v], [v, p, q]];
+    return table[sector];
+  }
+  function hashU32(i, b, salt) {
+    let x = (Math.imul(i, 374761393) + Math.imul(b, 668265263) +
+             Math.imul(salt, 2246822519 | 0) + 0x9E3779B9) >>> 0;
+    x = Math.imul(x ^ (x >>> 13), 1274126177) >>> 0;
+    x = (x ^ (x >>> 16)) >>> 0;
+    return x;
+  }
+  function hash01(i, b, salt) { return hashU32(i, b, salt) / 4294967296; }
+  function round1(v) { return Math.round(v * 10) / 10; }
+  function rgbCss(c) {
+    return 'rgb(' + Math.round(c[0] * 255) + ',' + Math.round(c[1] * 255) + ',' + Math.round(c[2] * 255) + ')';
+  }
+  function parseHex(token) {
+    if (!token) return null;
+    const m = /^#?([0-9a-fA-F]{6})$/.exec(token.trim());
+    if (!m) return null;
+    const n = parseInt(m[1], 16);
+    return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+  }
+  function hexCss(c) {
+    return '#' + c.map(function (v) {
+      return Math.round(v * 255).toString(16).padStart(2, '0');
+    }).join('').toUpperCase();
+  }
+
+  /* =========================================================================
+   * 2. 效果清单（UI / 整行默认效果）
+   * ========================================================================= */
+  const EFFECTS = [
+    { key: 'g',  ns: '§[rrs:grad]',    alias: '§g', name: '渐变·腐化',
+      formula: 'p = i/(n−1) · linearRGB 空间 lerp(#6FBF4A → #8B1E2D)（静止）' },
+    { key: 'h',  ns: '§[rrs:rainbow]', alias: '§h', name: '彩虹流彩',
+      formula: 'hue = (0.055·i + 0.12·t) mod 1 · S = 0.72 · V = 1.0 · HSV→RGB' },
+    { key: 'p',  ns: '§[rrs:pulse]',   alias: '§p', name: '呼吸',
+      formula: 'k = 0.65 + 0.35·(0.5 + 0.5·sin(2π·(0.8·t + 0.03·i))) · RGB × k' },
+    { key: 'i',  ns: '§[rrs:solid:#E8E4D8]', alias: '—', name: '苍白',
+      formula: '固定色 #E8E4D8（常量，不随时间 / 字序变化）' },
+    { key: 's',  ns: '§[rrs:shake]',   alias: '§s', name: '抖动',
+      formula: 'dx = 1.3·sin(11t+2.1i) + 0.7·sin(17.3t+5.7i)；dy = 1.3·sin(13.7t+1.3i) + 0.7·cos(19.1t+3.9i)' },
+    { key: 'w',  ns: '§[rrs:wave]',    alias: '§w', name: '波浪',
+      formula: 'dy = 1.6·sin(0.55·i − 4.0·t)，dx = 0' },
+    { key: 'q',  ns: '§[rrs:glitch]',  alias: '§q', name: '故障',
+      formula: 'b = ⌊12t⌋；hash(i,b) < 0.10 → dx = ±(3~7)、alpha ×0.55、R/B 交换或 +0.35 青色' },
+    { key: 't',  ns: '§[rrs:type]',    alias: '§t', name: '打字机',
+      formula: '周期 3.2 s：前 1.6 s 以 12 字/s 逐字显现，后 1.6 s 全部显示（未显现的字不绘制）' },
+    { key: 'gs', ns: '§[rrs:grad] + §[rrs:shake]', alias: '§g + §s', name: '组合示例',
+      formula: '§g 的逐字渐变与 §s 的逐字抖动同时生效（命名空间代码可叠加）' }
+  ];
+  const ACTIVE_STACKS = {
+    g:  [{ code: 'g' }],
+    h:  [{ code: 'h' }],
+    p:  [{ code: 'p' }],
+    i:  [{ code: 'i' }],
+    s:  [{ code: 's' }],
+    w:  [{ code: 'w' }],
+    q:  [{ code: 'q' }],
+    t:  [{ code: 't' }],
+    gs: [{ code: 'g' }, { code: 's' }]
+  };
+  const KIND_TO_CODE = { grad: 'g', rainbow: 'h', pulse: 'p', solid: 'i', shake: 's', wave: 'w', glitch: 'q', type: 't' };
+  const CODE_TO_NS = { g: '§[rrs:grad]', h: '§[rrs:rainbow]', p: '§[rrs:pulse]', i: '§[rrs:solid:#E8E4D8]', s: '§[rrs:shake]', w: '§[rrs:wave]', q: '§[rrs:glitch]', t: '§[rrs:type]' };
+  const ALIAS_TO_CODE = { g: 'g', h: 'h', p: 'p', i: 'i', s: 's', w: 'w', q: 'q', t: 't' };
+
+  /* =========================================================================
+   * 3. 像素字体：canvas 上取二值墨迹，再 3× 最近邻放大
+   * ========================================================================= */
+  const glyphCache = new Map();
+  const metricsCache = new Map();
+  let measureCtx = null;
+
+  function fontSpec(size) { return size + 'px ' + FONT_STACK; }
+
+  function getMeasureCtx() {
+    if (!measureCtx) {
+      const c = document.createElement('canvas');
+      c.width = 8; c.height = 8;
+      measureCtx = c.getContext('2d');
+    }
+    return measureCtx;
+  }
+
+  function getMetrics(size) {
+    let m = metricsCache.get(size);
+    if (m) return m;
+    const g = getMeasureCtx();
+    g.font = fontSpec(size);
+    const tm = g.measureText('Hg腐');
+    let asc = tm.fontBoundingBoxAscent;
+    let desc = tm.fontBoundingBoxDescent;
+    if (!isFinite(asc) || asc == null) asc = size * 0.88;
+    if (!isFinite(desc) || desc == null) desc = size * 0.22;
+    m = { ascent: Math.ceil(asc), descent: Math.ceil(desc) };
+    metricsCache.set(size, m);
+    return m;
+  }
+
+  function getGlyph(ch, size) {
+    const key = size + '|' + ch;
+    let gl = glyphCache.get(key);
+    if (gl) return gl;
+
+    const pad = 16;
+    const cw = Math.ceil(size * 2.6) + pad * 2;
+    const chh = Math.ceil(size * 2.6) + pad * 2;
+    const baseline = size * 2 + pad;
+    const drawX = pad;
+
+    const c = document.createElement('canvas');
+    c.width = cw; c.height = chh;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.font = fontSpec(size);
+    g.textBaseline = 'alphabetic';
+    g.fillStyle = '#fff';
+    g.fillText(ch, drawX, baseline);
+
+    const data = g.getImageData(0, 0, cw, chh).data;
+    let minX = cw, minY = chh, maxX = -1, maxY = -1;
+    for (let y = 0; y < chh; y++) {
+      for (let x = 0; x < cw; x++) {
+        if (data[(y * cw + x) * 4 + 3] >= 128) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    const advance = g.measureText(ch).width;
+
+    if (maxX < 0) {  // 空格 / 无墨迹 / 字体缺字
+      gl = { w: 0, h: 0, offX: 0, offY: 0, advance: advance, sprite: null };
+      glyphCache.set(key, gl);
+      return gl;
+    }
+
+    const w = maxX - minX + 1;
+    const h = maxY - minY + 1;
+    const offX = minX - drawX;
+    const offY = minY - baseline;
+
+    const sprite = document.createElement('canvas');
+    sprite.width = w * SCALE;
+    sprite.height = h * SCALE;
+    const sctx = sprite.getContext('2d');
+    const out = sctx.createImageData(sprite.width, sprite.height);
+    for (let yy = 0; yy < h * SCALE; yy++) {
+      const sy = minY + Math.floor(yy / SCALE);
+      for (let xx = 0; xx < w * SCALE; xx++) {
+        const sx = minX + Math.floor(xx / SCALE);
+        if (data[(sy * cw + sx) * 4 + 3] >= 128) {
+          const o = (yy * sprite.width + xx) * 4;
+          out.data[o] = 255; out.data[o + 1] = 255; out.data[o + 2] = 255; out.data[o + 3] = 255;
+        }
+      }
+    }
+    sctx.putImageData(out, 0, 0);
+
+    gl = { w: w, h: h, offX: offX, offY: offY, advance: advance, sprite: sprite };
+    glyphCache.set(key, gl);
+    return gl;
+  }
+
+  function layoutChars(chars, size, spacing) {
+    const items = [];
+    let x = 0;
+    for (let i = 0; i < chars.length; i++) {
+      const glyph = getGlyph(chars[i].ch, size);
+      items.push({ ch: chars[i].ch, stack: chars[i].stack, glyph: glyph, x: x });
+      x += glyph.advance + spacing;
+    }
+    return { items: items, width: Math.max(0, x - spacing) };
+  }
+
+  /* =========================================================================
+   * 4. 命名空间 / 短别名语法解析
+   * ========================================================================= */
+  function makeStackItem(kind, parts) {
+    const code = KIND_TO_CODE[kind];
+    if (!code) return null;
+    const item = { code: code };
+    if (code === 'g') {
+      const a = parseHex(parts[1]);
+      const b = parseHex(parts[2]);
+      if (a && b) item.colors = { a: a, b: b };
+    } else if (code === 'i') {
+      const a = parseHex(parts[1]);
+      if (a) item.colors = { a: a };
+    }
+    return item;
+  }
+
+  function stackUpsert(stack, item) {
+    for (let i = stack.length - 1; i >= 0; i--) {
+      if (stack[i].code === item.code) stack.splice(i, 1);
+    }
+    stack.push(item);
+    return stack;
+  }
+
+  function parseMarkup(input) {
+    const cps = Array.from(input);
+    const chars = [];
+    let stack = [];
+    let hasCodes = false;
+    let i = 0;
+    while (i < cps.length) {
+      const ch = cps[i];
+      if (ch === '§') {
+        hasCodes = true;
+        const rest = cps.slice(i).join('');
+
+        let m = /^§\[rrs:([^\]\[]+)\]/.exec(rest);
+        if (m) {
+          const parts = m[1].split(':');
+          const item = makeStackItem(parts[0], parts);
+          if (item) stack = stackUpsert(stack, item);
+          i += Array.from(m[0]).length;
+          continue;
+        }
+        m = /^§\[\/\]/.exec(rest);
+        if (m) { stack = []; i += Array.from(m[0]).length; continue; }
+
+        m = /^§\[\/([a-z]+)\]/.exec(rest);
+        if (m) {
+          const code = KIND_TO_CODE[m[1]];
+          if (code) stack = stack.filter(function (it) { return it.code !== code; });
+          i += Array.from(m[0]).length;
+          continue;
+        }
+        m = /^§([ghpswqti])/.exec(rest);
+        if (m) {
+          stack = stackUpsert(stack, { code: ALIAS_TO_CODE[m[1]] });
+          i += 2;
+          continue;
+        }
+        // 其它原版 § 格式码 / 未知标记：吞掉 § 与下一字符，不进入渲染
+        i += 2;
+        continue;
+      }
+      chars.push({ ch: ch, stack: stack.slice() });
+      i += 1;
+    }
+    return { chars: chars, hasCodes: hasCodes };
+  }
+
+  /* =========================================================================
+   * 5. 每字效果状态（与 generate.py 的 char_state 等价）
+   * ========================================================================= */
+  function typewriterVisible(i, t) {
+    const phase = ((t % TYPE_PERIOD) + TYPE_PERIOD) % TYPE_PERIOD;
+    if (phase >= TYPE_REVEAL) return true;
+    return i < Math.floor(phase * TYPE_CPS);
+  }
+
+  function charState(stack, i, n, t, amp) {
+    let color = [1, 1, 1];
+    let dx = 0, dy = 0, alpha = 1, visible = true;
+    for (let k = 0; k < stack.length; k++) {
+      const item = stack[k];
+      switch (item.code) {
+        case 'g':
+          color = item.colors ? lerpLinear(item.colors.a, item.colors.b, n > 1 ? i / (n - 1) : 0)
+                              : gradientColor(n > 1 ? i / (n - 1) : 0);
+          break;
+        case 'h':
+          color = hsvToRgb((i * 0.055 + t * 0.12) % 1, 0.72, 1.0);
+          break;
+        case 'p': {
+          const kk = 1 - 0.35 * amp * (0.5 - 0.5 * Math.sin(2 * Math.PI * (t * 0.8 + i * 0.03)));
+          color = color.map(function (c) { return c * kk; });
+          break;
+        }
+        case 'i':
+          color = (item.colors ? item.colors.a : PALE01).slice();
+          break;
+        case 's': {
+          const sx = 1.3 * Math.sin(t * 11 + i * 2.1) + 0.7 * Math.sin(t * 17.3 + i * 5.7);
+          const sy = 1.3 * Math.sin(t * 13.7 + i * 1.3) + 0.7 * Math.cos(t * 19.1 + i * 3.9);
+          dx += sx * amp;
+          dy += sy * amp;
+          break;
+        }
+        case 'w':
+          dy += 1.6 * amp * Math.sin(i * 0.55 - t * 4.0);
+          break;
+        case 'q': {
+          const b = Math.floor(t * 12);
+          if (hash01(i, b, 1) < 0.10) {
+            const dh = hash01(i, b, 2);
+            const sign = dh < 0.5 ? 1 : -1;
+            const mag = (3 + 4 * ((dh * 2) % 1)) * amp;
+            dx += sign * mag;
+            alpha *= 0.55;
+            const mode = hash01(i, b, 3);
+            if (mode < 0.5) color = [color[2], color[1], color[0]];
+            else color = [color[0], Math.min(1, color[1] + 0.35), Math.min(1, color[2] + 0.35)];
+          }
+          break;
+        }
+        case 't':
+          visible = visible && typewriterVisible(i, t);
+          break;
+      }
+    }
+    return { color: color, dx: round1(dx), dy: round1(dy), alpha: alpha, visible: visible };
+  }
+
+  /* =========================================================================
+   * 6. 画布渲染
+   * ========================================================================= */
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const scratch = document.createElement('canvas');
+  scratch.width = 192; scratch.height = 192;
+  const sctx = scratch.getContext('2d');
+
+  const view = {
+    items: [], width: 0, fontSize: 16, lineTop: 0, lineX: 0,
+    ascent: 0, overflow: false, hasCodes: false
+  };
+
+  function drawGlyph(glyph, baseX, baseY, effDx, effDy, color, alpha) {
+    const sw = glyph.sprite.width;
+    const sh = glyph.sprite.height;
+    const snapX = Math.floor(baseX + 0.5);
+    const snapY = Math.floor(baseY + 0.5);
+    const dxImg = snapX * SCALE + (baseX + effDx - snapX) * SCALE;
+    const dyImg = snapY * SCALE + (baseY + effDy - snapY) * SCALE;
+    const smooth = Math.abs(dxImg - Math.round(dxImg)) > 1e-6 ||
+                   Math.abs(dyImg - Math.round(dyImg)) > 1e-6;
+
+    // 用 source-in 把白色墨迹染成当前颜色
+    sctx.globalCompositeOperation = 'source-over';
+    sctx.clearRect(0, 0, sw, sh);
+    sctx.drawImage(glyph.sprite, 0, 0);
+    sctx.globalCompositeOperation = 'source-in';
+    sctx.fillStyle = rgbCss(color);
+    sctx.fillRect(0, 0, sw, sh);
+    sctx.globalCompositeOperation = 'source-over';
+
+    ctx.globalAlpha = alpha;
+    ctx.imageSmoothingEnabled = smooth;
+    ctx.drawImage(scratch, 0, 0, sw, sh, dxImg, dyImg, sw, sh);
+    ctx.globalAlpha = 1;
+  }
+
+  function render(t) {
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, W, H);
+    const items = view.items;
+    const n = items.length;
+    if (n === 0) return;
+
+    const states = new Array(n);
+    for (let i = 0; i < n; i++) {
+      states[i] = charState(items[i].stack, i, n, t, state.amp);
+    }
+    const ascent = view.ascent;
+
+    for (let pass = 0; pass < 2; pass++) {
+      const shadow = pass === 0;  // 先整行暗影，再整行主字
+      for (let i = 0; i < n; i++) {
+        const st = states[i];
+        if (!st.visible) continue;
+        const glyph = items[i].glyph;
+        if (!glyph.sprite) continue;
+        const baseX = view.lineX + items[i].x + glyph.offX;
+        const baseY = view.lineTop + ascent + glyph.offY;
+        const color = shadow
+          ? [st.color[0] * SHADOW_SCALE, st.color[1] * SHADOW_SCALE, st.color[2] * SHADOW_SCALE]
+          : st.color;
+        drawGlyph(glyph, baseX, baseY,
+                  st.dx + (shadow ? SHADOW_OFFSET : 0),
+                  st.dy + (shadow ? SHADOW_OFFSET : 0),
+                  color, st.alpha);
+      }
+    }
+  }
+
+  /* =========================================================================
+   * 7. 文档状态 / UI
+   * ========================================================================= */
+  const state = { playing: true, speed: 1, amp: 1, t: 0, activeEffect: 'g' };
+
+  const els = {
+    effects: document.getElementById('effects'),
+    text: document.getElementById('textInput'),
+    stateLine: document.getElementById('stateLine'),
+    formula: document.getElementById('formula'),
+    clock: document.getElementById('clock'),
+    playBtn: document.getElementById('playBtn'),
+    speed: document.getElementById('speed'),
+    speedOut: document.getElementById('speedOut'),
+    amp: document.getElementById('amp'),
+    ampOut: document.getElementById('ampOut')
+  };
+
+  function stackLabel(stack) {
+    if (!stack || stack.length === 0) return '默认白字';
+    return stack.map(function (item) {
+      if (item.code === 'g' && item.colors) {
+        return '§[rrs:grad:' + hexCss(item.colors.a) + ':' + hexCss(item.colors.b) + ']';
+      }
+      if (item.code === 'i' && item.colors) {
+        return '§[rrs:solid:' + hexCss(item.colors.a) + ']';
+      }
+      return CODE_TO_NS[item.code] || item.code;
+    }).join(' → ');
+  }
+
+  function rebuild() {
+    const parsed = parseMarkup(els.text.value);
+    const activeStack = ACTIVE_STACKS[state.activeEffect] || [];
+    const chars = parsed.chars.map(function (c) {
+      return { ch: c.ch, stack: parsed.hasCodes ? c.stack : activeStack };
+    });
+
+    let chosen = null;
+    for (let s = 0; s < FONT_SIZES.length; s++) {
+      const lay = layoutChars(chars, FONT_SIZES[s], 1.0);
+      if (lay.width <= GUI_W - 8) { chosen = { size: FONT_SIZES[s], lay: lay }; break; }
+    }
+    if (!chosen) {
+      const lay = layoutChars(chars, FONT_SIZES[FONT_SIZES.length - 1], 1.0);
+      chosen = { size: FONT_SIZES[FONT_SIZES.length - 1], lay: lay };
+    }
+
+    view.items = chosen.lay.items;
+    view.width = chosen.lay.width;
+    view.fontSize = chosen.size;
+    const metrics = getMetrics(chosen.size);
+    view.ascent = metrics.ascent;
+    view.lineTop = Math.floor((GUI_H - (metrics.ascent + metrics.descent)) / 2);
+    view.lineX = (GUI_W - chosen.lay.width) / 2;
+    view.overflow = chosen.lay.width > GUI_W - 8 + 0.5;
+    view.hasCodes = parsed.hasCodes;
+
+    // 状态行
+    let text;
+    if (chars.length === 0) {
+      text = '（空文本）';
+    } else if (parsed.hasCodes) {
+      text = '内联 § 码 · ' + chars.length + ' 个可视字符 · 首字符效果：' +
+             stackLabel(chars[0].stack) + ' · 末字符效果：' + stackLabel(chars[chars.length - 1].stack);
+    } else {
+      text = '整行效果：' + stackLabel(activeStack) + ' · ' + chars.length + ' 个可视字符';
+    }
+    if (view.fontSize !== 16) text += ' · 字号自动缩至 ' + view.fontSize + ' GUI px';
+    if (view.overflow) text += ' · ⚠ 文本超出画布宽度，两侧将被裁切';
+    els.stateLine.textContent = text;
+
+    // 当前效果公式
+    const fx = EFFECTS.filter(function (e) { return e.key === state.activeEffect; })[0];
+    els.formula.textContent = (fx ? fx.formula : '') +
+      '　·　当前用参数：速度 ' + state.speed.toFixed(2) + '×、幅度 ' + state.amp.toFixed(2) + '×（默认 1.00× 即方案默认值）';
+  }
+
+  /* ---- 效果按钮 ---- */
+  function buildEffectButtons() {
+    EFFECTS.forEach(function (fx) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'effect';
+      b.dataset.key = fx.key;
+      b.setAttribute('aria-pressed', fx.key === state.activeEffect ? 'true' : 'false');
+      b.innerHTML =
+        '<span class="fx-ns">' + fx.ns + '</span>' +
+        '<span class="fx-name">' + fx.name + '</span>' +
+        '<span class="fx-alias">' + fx.alias + '</span>';
+      b.addEventListener('click', function () {
+        state.activeEffect = fx.key;
+        Array.prototype.forEach.call(els.effects.children, function (node) {
+          node.setAttribute('aria-pressed', node.dataset.key === fx.key ? 'true' : 'false');
+        });
+        rebuild();
+      });
+      els.effects.appendChild(b);
+    });
+  }
+
+  /* ---- 文本输入 / 示例 ---- */
+  els.text.addEventListener('input', rebuild);
+  document.querySelectorAll('[data-example]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const kind = btn.dataset.example;
+      if (kind === 'ns') {
+        els.text.value = '§[rrs:grad:#6FBF4A:#8B1E2D]腐朽之疫：王庭§[rrs:shake]· 陨落§[/]';
+      } else if (kind === 'alias') {
+        els.text.value = '§g腐朽之疫：王庭§s· 陨落§[/]';
+      } else {
+        els.text.value = DEFAULT_TEXT;
+        state.activeEffect = 'g';
+        Array.prototype.forEach.call(els.effects.children, function (node) {
+          node.setAttribute('aria-pressed', node.dataset.key === 'g' ? 'true' : 'false');
+        });
+      }
+      rebuild();
+    });
+  });
+
+  /* ---- 滑杆 / 暂停 ---- */
+  els.speed.addEventListener('input', function () {
+    state.speed = parseFloat(els.speed.value);
+    els.speedOut.textContent = state.speed.toFixed(2) + '×';
+    rebuild();
+  });
+  els.amp.addEventListener('input', function () {
+    state.amp = parseFloat(els.amp.value);
+    els.ampOut.textContent = state.amp.toFixed(2) + '×';
+    rebuild();
+  });
+  els.playBtn.addEventListener('click', function () {
+    state.playing = !state.playing;
+    els.playBtn.textContent = state.playing ? '暂停' : '继续';
+  });
+
+  /* =========================================================================
+   * 8. 主循环
+   * ========================================================================= */
+  let lastTs = 0;
+  function frame(ts) {
+    if (!lastTs) lastTs = ts;
+    let dt = (ts - lastTs) / 1000;
+    lastTs = ts;
+    if (dt > 0.05) dt = 0.05;   // 切后台 / 掉帧时避免时间跳变
+    if (state.playing) state.t += dt * state.speed;
+    render(state.t);
+    els.clock.textContent = 't = ' + state.t.toFixed(2) + ' s';
+    requestAnimationFrame(frame);
+  }
+
+  /* ---- boot ---- */
+  buildEffectButtons();
+  els.text.value = DEFAULT_TEXT;
+  rebuild();
+  els.speedOut.textContent = '1.00×';
+  els.ampOut.textContent = '1.00×';
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

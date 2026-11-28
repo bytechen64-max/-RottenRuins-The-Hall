@@ -1,0 +1,47 @@
+{
+  "ambientocclusion": false,
+  "elements": [
+    {
+      "faces": {
+        "down": {
+          "forge_data": {
+            "block_light": 15,
+            "sky_light": 15
+          },
+          "texture": "#line",
+          "tintindex": 0,
+          "uv": [
+            0.0,
+            16.0,
+            16.0,
+            0.0
+          ]
+        },
+        "up": {
+          "forge_data": {
+            "block_light": 15,
+            "sky_light": 15
+          },
+          "texture": "#line",
+          "tintindex": 0
+        }
+      },
+      "from": [
+        0,
+        0.25,
+        0
+      ],
+      "shade": false,
+      "to": [
+        16,
+        0.25,
+        16
+      ]
+    }
+  ],
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "line": "minecraft:block/redstone_dust_dot",
+    "particle": "minecraft:block/redstone_dust_dot"
+  }
+}

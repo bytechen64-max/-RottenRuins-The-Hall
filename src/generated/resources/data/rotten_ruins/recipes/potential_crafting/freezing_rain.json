@@ -1,0 +1,31 @@
+{
+  "type": "rotten_ruins:potential_crafting",
+  "ingredients": [
+    {
+      "item": "minecraft:powder_snow_bucket"
+    },
+    {
+      "item": "minecraft:powder_snow_bucket"
+    },
+    {
+      "item": "minecraft:water_bucket"
+    },
+    {
+      "item": "minecraft:conduit"
+    },
+    {
+      "item": "minecraft:potion",
+      "nbt": "{Potion:\"minecraft:water\"}"
+    },
+    {
+      "item": "minecraft:blue_ice"
+    },
+    {
+      "item": "minecraft:blue_ice"
+    },
+    {
+      "item": "rotten_ruins:water_mana_plate"
+    }
+  ],
+  "output": "rotten_ruins:freezing_rain"
+}

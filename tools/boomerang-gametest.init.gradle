@@ -1,0 +1,28 @@
+gradle.beforeProject { testProject ->
+    testProject.afterEvaluate {
+        if (testProject.extensions.findByName('minecraft') != null) {
+            testProject.minecraft.runs.named('gameTestServer').configure {
+                workingDirectory testProject.file('build/boomerang-game-test')
+                property 'forge.enabledGameTestNamespaces', 'rotten_ruins_boomerang_tests'
+                args '--universe', testProject.file('build/boomerang-game-test/worlds').absolutePath,
+                        '--world', 'boomerang-world'
+            }
+        }
+    }
+    testProject.tasks.configureEach { testTask ->
+        if (testTask.name == 'runGameTestServer') {
+            dependsOn 'patchModJars'
+            doFirst {
+                testProject.file('build/boomerang-game-test').mkdirs()
+                testProject.copy {
+                    from testProject.file('build/patched-mods')
+                    into testProject.file('build/boomerang-game-test/mods')
+                }
+                testProject.copy {
+                    from testProject.file('run/eula.txt')
+                    into testProject.file('build/boomerang-game-test')
+                }
+            }
+        }
+    }
+}

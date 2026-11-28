@@ -1,0 +1,116 @@
+{
+  "parent": "rotten_ruins:magic/source_plate",
+  "criteria": {
+    "obtain_death_mana_plate": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:death_mana_plate"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "obtain_fire_mana_plate": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:fire_mana_plate"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "obtain_light_mana_plate": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:light_mana_plate"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "obtain_mysterious_mana_plate": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:mysterious_mana_plate"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "obtain_nature_mana_plate": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:nature_mana_plate"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "obtain_void_mana_plate": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:void_mana_plate"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "obtain_water_mana_plate": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:water_mana_plate"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancements.rotten_ruins.magic/element_plate.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "item": "rotten_ruins:water_mana_plate"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancements.rotten_ruins.magic/element_plate.title"
+    }
+  },
+  "requirements": [
+    [
+      "obtain_light_mana_plate",
+      "obtain_fire_mana_plate",
+      "obtain_water_mana_plate",
+      "obtain_nature_mana_plate",
+      "obtain_death_mana_plate",
+      "obtain_void_mana_plate",
+      "obtain_mysterious_mana_plate"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

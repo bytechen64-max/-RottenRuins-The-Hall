@@ -1,0 +1,10 @@
+{
+  "event": "login",
+  "delay_ticks": 60,
+  "once_key": "rotten_ruins:opening_story_seen",
+  "choices": [
+    {
+      "story": "rotten_ruins:opening"
+    }
+  ]
+}

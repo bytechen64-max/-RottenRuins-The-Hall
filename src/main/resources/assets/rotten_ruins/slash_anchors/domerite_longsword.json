@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "firstPerson": {
+    "enabled": true,
+    "points": [
+      [
+        7.75,
+        4.25,
+        8
+      ],
+      [
+        14.25,
+        15.25,
+        8
+      ]
+    ],
+    "start": 0.32,
+    "end": 0.62,
+    "lifetimeTicks": 9,
+    "maxDistance": 4,
+    "maxSamples": 128,
+    "subdivisions": 6
+  },
+  "thirdPerson": {
+    "enabled": true,
+    "points": [
+      [
+        7.75,
+        4.25,
+        8
+      ],
+      [
+        14.25,
+        15.25,
+        8
+      ]
+    ],
+    "start": 0.32,
+    "end": 0.62,
+    "lifetimeTicks": 9,
+    "maxDistance": 4,
+    "maxSamples": 128,
+    "subdivisions": 6
+  }
+}

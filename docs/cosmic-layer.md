@@ -18,7 +18,7 @@ Cosmic layer 是从 Live 模组移植的程序化星空着色器渲染层。它�
 
 ## 视觉样式预设
 
-6 种预设样式，注册时通过 `CosmicStyle` 枚举选择：
+预设样式，注册时通过 `CosmicStyle` 枚举选择：
 
 | 预设 | 枚举值 | 背景 | 星星颜色 | 效果 |
 |------|--------|------|----------|------|
@@ -28,6 +28,55 @@ Cosmic layer 是从 Live 模组移植的程序化星空着色器渲染层。它�
 | **水晶梦** | `CRYSTAL_DREAM` | 深蓝紫 | 水晶闪烁 + 蓝辉光 | 空灵魔法感 |
 | **丰富星云** | `NEBULA_RICH` | 多层紫色星云 + 尘埃 | 紫白拖尾 | 浓郁厚重 |
 | **粉蓝双色** | `PINK_BLUE_DUAL` | 灰黑底 | 粉+蓝双色 | 锐利对比、未来感 |
+| **绯红誓约** | `CRIMSON_VOW`(17) | 深粉 blocks 图案 | **无星空** | 结构化 Voronoi 方块，`crimson_vow` 用 |
+| **静默白昼** | `SILENT_DAYLIGHT`(18) | 水面湍流 | **无星空** | 迭代三角反馈的冷色水光，`silent_daylight` 用 |
+
+### 两条「无星空」的独立片元路径（`useType` 17 / 18）
+
+17 与 18 在 `cosmic.fsh` 里都是**提前 return 的独立片元路径**：它们不采样那 12 张星点，
+省掉 16 次星空采样和整个恒星色分支。两条路径的公共约定：
+
+- 输出前一律 `col.a *= mask.r * opacity`，再 `clamp(col * ColorModulator, 0, 1)` ——
+  遮罩就是它们的「可见范围」（白 = 有图案，黑 = 露出本体贴图）；
+- 都只用 `hall:cosmic` 这个 loader，模型 JSON 里靠 `"style": 17 / 18` 选路径。
+
+区别在**图案怎么落在物品上**，这也是移植 shadertoy 时最容易踩的一处：
+
+| | 图案坐标 | 时间 |
+|---|---|---|
+| 17 `CRIMSON_VOW` | `texCoord0 - 0.5`（图集坐标直接乘 `blockPatternScale`） | `time * blockTimeScale + blockTimeOffset` |
+| 18 `SILENT_DAYLIGHT` | `(texCoord0 - maskUvMin) / maskUvSize` —— 先折回遮罩 sprite 内的 0..1，再乘 `wavePatternScale` | `time * waveTimeScale`（默认 `0.025` ＝原作 0.5 倍速 / 20 tick） |
+
+> ⚠️ `texCoord0` 是**图集坐标**，不是 sprite 内的 0..1。48px 的遮罩在方块图集里只占
+> 0.047 UV，直接拿来当 uv 用会让整把武器落在同一格图案里（看起来就是一块渐变），
+> 而且相位会随 sprite 在图集里的排布漂移——换资源包 / 加贴图就变样。
+> `maskUvMin` / `maskUvSize` 这两个 uniform 由 Java 侧在每条 cosmic 绘制前写入
+> （`CosmicShaders.setMaskSlice(sprite)`），**两个调用点缺一不可**：
+> `MixinItemRendererCosmic` 的即时路径，以及 `BakedModelCosmic#renderShaderLayer`
+> 的光影延迟回放路径。
+
+18 号样式的可调参数（都在 `cosmic.json` 里给默认值，改数值不用碰 GLSL）：
+
+| uniform | 默认 | 说明 |
+|---|---|---|
+| `waveTimeScale` | `0.025` | 动画速度。cosmic 的 `time` 是**游戏 tick**（20/秒），原作 `iTime` 是秒，所以 0.025 ≈ 原作的 0.5 倍速；调大更快、更"电风扇" |
+| `wavePatternScale` | `2.0` | 1.0 UV 上重复几格图案。默认 2 格 —— 再小水纹会糊成一大块，再大就碎成噪点（3 个档位的对照图见下） |
+
+这两个数不是拍脑袋定的：`docs/probe/WaterTurbulenceProbe.py` 用 float32 把着色器数学
+在 CPU 上复算一遍，输出「合成到剑上的预览图」和两个量化指标 —— 遮罩内的空间动态范围
+（太小 = 整片一个颜色）与**相邻 tick 的平均变化 ÷ 标准差**（cosmic 是 20 Hz，
+这个比值就是"每 tick 走图案的百分之几"，太大就会看成抖动而不是流动）。实测：
+
+| `wavePatternScale` | 空间动态范围 | 每 tick 变化比 | 观感 |
+|---|---|---|---|
+| 1.0 | 0.99 | 0.067 | 水纹只有一大块，剑身上读不出"水" |
+| **2.0（默认）** | **0.98** | **0.098** | 明暗斑块清楚，像流动的水光 |
+| 4.0 | 0.98 | 0.088 | 偏碎，接近噪点 |
+
+调参时直接改这一个脚本里的常量重跑即可，不必进游戏。
+
+移植说明（原作结构一个都没动，只换了输入接口）写在 `cosmic.fsh` 的
+`waterTurbulence()` 上方，包括原作者的注释与那三处改写的理由。
 
 选择预设的方式取决于集成方式：
 
@@ -203,6 +252,15 @@ public static void onClientSetup(FMLClientSetupEvent event) {
 ```
 
 简单做法：将物品的原始纹理去色（灰度化），黑色背景保留黑色，物品区域变白。实际上 Live 模组的 void_sword_mask.png 就是 void_sword.png 的 Alpha→Red 通道转换版本。
+
+遮罩与本体贴图**必须是同一张画布**（同尺寸、同对齐）：着色器是拿 quad 的 UV 去采遮罩的，
+不是各自独立对齐。项目里三张现成的例子：
+
+| 遮罩 | 白区盖住 | 用途 |
+|---|---|---|
+| `void_sword_mask.png` | 整个剑身 | `void_sword` 的星空 |
+| `crimson_vow_mask.png` | 剑刃 | `crimson_vow` 的 blocks 图案（剑柄另有一张 `_mask_glow` 交给泛光层） |
+| `silent_daylight_mask.png` | 剑刃 | `silent_daylight` 的水面湍流 —— 白区就是"水位线" |
 
 ---
 

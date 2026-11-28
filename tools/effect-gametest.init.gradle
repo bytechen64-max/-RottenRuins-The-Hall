@@ -1,0 +1,28 @@
+// Configure the run before ForgeGradle generates launch files, not only JavaExec's workingDir.
+gradle.beforeProject { effectProject ->
+    effectProject.afterEvaluate {
+        if (effectProject.extensions.findByName('minecraft') != null) {
+            effectProject.minecraft.runs.named('gameTestServer').configure {
+                workingDirectory effectProject.file('build/effect-game-test')
+                property 'forge.enabledGameTestNamespaces', 'rotten_ruins_effect_tests'
+                args '--universe', effectProject.file('build/effect-game-test/worlds').absolutePath, '--world', (effectProject.findProperty('effectTestWorld') ?: 'effect-world')
+            }
+        }
+    }
+    effectProject.tasks.configureEach { effectTask ->
+        if (effectTask.name == 'runGameTestServer') {
+            dependsOn 'patchModJars'
+            doFirst {
+                effectProject.file('build/effect-game-test').mkdirs()
+                effectProject.copy {
+                    from effectProject.file('build/patched-mods')
+                    into effectProject.file('build/effect-game-test/mods')
+                }
+                effectProject.copy {
+                    from effectProject.file('run/eula.txt')
+                    into effectProject.file('build/effect-game-test')
+                }
+            }
+        }
+    }
+}

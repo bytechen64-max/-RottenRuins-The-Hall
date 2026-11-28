@@ -1,0 +1,38 @@
+{
+  "parent": "rotten_ruins:magic",
+  "criteria": {
+    "obtain": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "rotten_ruins:source_wire"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancements.rotten_ruins.magic/source_wire.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "item": "rotten_ruins:source_wire"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancements.rotten_ruins.magic/source_wire.title"
+    }
+  },
+  "requirements": [
+    [
+      "obtain"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

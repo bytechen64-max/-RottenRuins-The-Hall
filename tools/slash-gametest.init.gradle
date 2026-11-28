@@ -1,0 +1,28 @@
+// Configure the run before ForgeGradle generates launch files, not only JavaExec's workingDir.
+gradle.beforeProject { slashProject ->
+    slashProject.afterEvaluate {
+        if (slashProject.extensions.findByName('minecraft') != null) {
+            slashProject.minecraft.runs.named('gameTestServer').configure {
+                workingDirectory slashProject.file('build/slash-game-test')
+                property 'forge.enabledGameTestNamespaces', 'rotten_ruins_slash_tests'
+                args '--universe', slashProject.file('build/slash-game-test/worlds').absolutePath, '--world', 'slash-world'
+            }
+        }
+    }
+    slashProject.tasks.configureEach { slashTask ->
+        if (slashTask.name == 'runGameTestServer') {
+            dependsOn 'patchModJars'
+            doFirst {
+                slashProject.file('build/slash-game-test').mkdirs()
+                slashProject.copy {
+                    from slashProject.file('build/patched-mods')
+                    into slashProject.file('build/slash-game-test/mods')
+                }
+                slashProject.copy {
+                    from slashProject.file('run/eula.txt')
+                    into slashProject.file('build/slash-game-test')
+                }
+            }
+        }
+    }
+}

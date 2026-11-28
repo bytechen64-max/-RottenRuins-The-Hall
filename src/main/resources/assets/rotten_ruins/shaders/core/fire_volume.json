@@ -1,0 +1,32 @@
+{
+  "vertex": "rotten_ruins:fire_volume",
+  "fragment": "rotten_ruins:fire_volume",
+  "attributes": [
+    "Position",
+    "UV0"
+  ],
+  "samplers": [
+    { "name": "DepthSampler" },
+    { "name": "MaskBlur" }
+  ],
+  "uniforms": [
+    { "name": "ScreenSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "InvProj", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+    { "name": "Proj", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+    { "name": "UseMask", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "BoxMin", "type": "float", "count": 3, "values": [ -1.0, -1.0, -1.0 ] },
+    { "name": "BoxMax", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] },
+    { "name": "ItemMin", "type": "float", "count": 3, "values": [ -0.5, -0.5, -0.5 ] },
+    { "name": "ItemMax", "type": "float", "count": 3, "values": [ 0.5, 0.5, 0.5 ] },
+    { "name": "CamRight", "type": "float", "count": 3, "values": [ 1.0, 0.0, 0.0 ] },
+    { "name": "CamUp", "type": "float", "count": 3, "values": [ 0.0, 1.0, 0.0 ] },
+    { "name": "CamFwd", "type": "float", "count": 3, "values": [ 0.0, 0.0, 1.0 ] },
+    { "name": "CamPos", "type": "float", "count": 3, "values": [ 0.0, 0.0, 0.0 ] },
+    { "name": "ItemBottomY", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "Time", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "Opacity", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "UseDepth", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "ColorHot", "type": "float", "count": 3, "values": [ 1.0, 0.75, 0.35 ] },
+    { "name": "ColorCool", "type": "float", "count": 3, "values": [ 0.55, 0.10, 0.02 ] }
+  ]
+}

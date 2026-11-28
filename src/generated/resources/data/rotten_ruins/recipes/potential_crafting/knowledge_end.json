@@ -1,0 +1,51 @@
+{
+  "type": "rotten_ruins:potential_crafting",
+  "ingredients": [
+    {
+      "item": "minecraft:purpur_block"
+    },
+    {
+      "item": "minecraft:purpur_block"
+    },
+    {
+      "item": "rotten_ruins:void_essence"
+    },
+    {
+      "item": "rotten_ruins:void_essence"
+    },
+    {
+      "item": "minecraft:dragon_egg"
+    },
+    {
+      "item": "minecraft:end_crystal"
+    },
+    {
+      "item": "minecraft:end_crystal"
+    },
+    {
+      "item": "minecraft:shulker_box"
+    },
+    {
+      "item": "minecraft:ender_chest"
+    },
+    {
+      "item": "minecraft:dragon_head"
+    },
+    {
+      "item": "minecraft:end_rod"
+    },
+    {
+      "item": "minecraft:end_rod"
+    },
+    {
+      "item": "minecraft:elytra"
+    },
+    {
+      "item": "minecraft:bookshelf"
+    },
+    {
+      "item": "minecraft:writable_book"
+    }
+  ],
+  "output": "rotten_ruins:knowledge_end"
+}

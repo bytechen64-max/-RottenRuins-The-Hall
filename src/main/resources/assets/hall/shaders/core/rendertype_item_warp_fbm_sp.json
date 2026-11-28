@@ -1,1 +1,0 @@
-{"vertex":"hall:rendertype_item_warp_fbm_sp","fragment":"hall:rendertype_item_warp_fbm","attributes":["Position","Color","UV0"],"samplers":[{"name":"Sampler0"}],"uniforms":[{"name":"ColorModulator","type":"float","count":4,"values":[1,1,1,1]},{"name":"Time","type":"float","count":1,"values":[0]},{"name":"TintColor","type":"float","count":4,"values":[1,1,1,0]}]}

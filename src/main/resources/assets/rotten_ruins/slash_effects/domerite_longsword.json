@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "renderer": "shader",
+  "texture": "rotten_ruins:textures/effect/slash_crescent.png",
+  "color": "#B2D9FF",
+  "opacity": 0.96,
+  "brightness": 1.65,
+  "width": 1.9,
+  "curvature": 0.035,
+  "lifetimeTicks": 8,
+  "coreWidth": 0.045,
+  "fill": 0.65,
+  "glow": 0.6,
+  "noise": 0.3,
+  "flowSpeed": 1.2,
+  "tailPower": 1.3,
+  "particles": 1,
+  "stability": 0.85,
+  "refraction": 9,
+  "dispersion": 0.15
+}

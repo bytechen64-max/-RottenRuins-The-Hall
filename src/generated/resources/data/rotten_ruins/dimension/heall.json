@@ -1,0 +1,162 @@
+{
+  "type": "rotten_ruins:heall",
+  "generator": {
+    "type": "minecraft:noise",
+    "biome_source": {
+      "type": "minecraft:multi_noise",
+      "biomes": [
+        {
+          "biome": "rotten_ruins:hall_ocean",
+          "parameters": {
+            "continentalness": [
+              -2.0,
+              0.05
+            ],
+            "depth": [
+              -2.0,
+              2.0
+            ],
+            "erosion": [
+              -2.0,
+              2.0
+            ],
+            "humidity": [
+              -2.0,
+              2.0
+            ],
+            "offset": 0.0,
+            "temperature": [
+              -2.0,
+              2.0
+            ],
+            "weirdness": [
+              -2.0,
+              2.0
+            ]
+          }
+        },
+        {
+          "biome": "rotten_ruins:shattered_lands",
+          "parameters": {
+            "continentalness": [
+              0.05,
+              2.0
+            ],
+            "depth": [
+              -2.0,
+              2.0
+            ],
+            "erosion": [
+              -2.0,
+              2.0
+            ],
+            "humidity": [
+              -2.0,
+              2.0
+            ],
+            "offset": 0.0,
+            "temperature": [
+              -2.0,
+              -0.35
+            ],
+            "weirdness": [
+              -2.0,
+              2.0
+            ]
+          }
+        },
+        {
+          "biome": "rotten_ruins:folded_fields",
+          "parameters": {
+            "continentalness": [
+              0.05,
+              2.0
+            ],
+            "depth": [
+              -2.0,
+              2.0
+            ],
+            "erosion": [
+              -2.0,
+              2.0
+            ],
+            "humidity": [
+              -2.0,
+              2.0
+            ],
+            "offset": 0.0,
+            "temperature": [
+              -0.35,
+              -0.05
+            ],
+            "weirdness": [
+              -2.0,
+              2.0
+            ]
+          }
+        },
+        {
+          "biome": "rotten_ruins:pierced_continent",
+          "parameters": {
+            "continentalness": [
+              0.05,
+              2.0
+            ],
+            "depth": [
+              -2.0,
+              2.0
+            ],
+            "erosion": [
+              -2.0,
+              2.0
+            ],
+            "humidity": [
+              -2.0,
+              2.0
+            ],
+            "offset": 0.0,
+            "temperature": [
+              -0.05,
+              0.25
+            ],
+            "weirdness": [
+              -2.0,
+              2.0
+            ]
+          }
+        },
+        {
+          "biome": "rotten_ruins:flesh_marrow",
+          "parameters": {
+            "continentalness": [
+              0.05,
+              2.0
+            ],
+            "depth": [
+              -2.0,
+              2.0
+            ],
+            "erosion": [
+              -2.0,
+              2.0
+            ],
+            "humidity": [
+              -2.0,
+              2.0
+            ],
+            "offset": 0.0,
+            "temperature": [
+              0.25,
+              2.0
+            ],
+            "weirdness": [
+              -2.0,
+              2.0
+            ]
+          }
+        }
+      ]
+    },
+    "settings": "rotten_ruins:flesh_marrow"
+  }
+}

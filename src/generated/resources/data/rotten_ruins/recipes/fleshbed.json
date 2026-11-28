@@ -1,0 +1,50 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "M": [
+      {
+        "item": "minecraft:beef"
+      },
+      {
+        "item": "minecraft:porkchop"
+      },
+      {
+        "item": "minecraft:chicken"
+      },
+      {
+        "item": "minecraft:mutton"
+      },
+      {
+        "item": "minecraft:rabbit"
+      },
+      {
+        "item": "minecraft:cooked_beef"
+      },
+      {
+        "item": "minecraft:cooked_porkchop"
+      },
+      {
+        "item": "minecraft:cooked_chicken"
+      },
+      {
+        "item": "minecraft:cooked_mutton"
+      },
+      {
+        "item": "minecraft:cooked_rabbit"
+      }
+    ]
+  },
+  "pattern": [
+    "MMM",
+    "MGM",
+    "MMM"
+  ],
+  "result": {
+    "item": "rotten_ruins:fleshbed"
+  },
+  "show_notification": true
+}

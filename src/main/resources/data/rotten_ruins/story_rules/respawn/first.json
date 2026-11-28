@@ -1,0 +1,16 @@
+{
+  "event": "respawn",
+  "priority": 100,
+  "delay_ticks": 40,
+  "repeat_group": "rotten_ruins:respawn",
+  "avoid_repeat": true,
+  "conditions": {
+    "max_deaths": 1,
+    "min_deaths": 1
+  },
+  "choices": [
+    {
+      "story": "rotten_ruins:respawn/first_0"
+    }
+  ]
+}

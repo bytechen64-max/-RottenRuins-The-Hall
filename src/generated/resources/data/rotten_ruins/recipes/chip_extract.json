@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "rotten_ruins:chip_null"
+    },
+    "H": {
+      "item": "minecraft:hopper"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "P": {
+      "item": "minecraft:piston"
+    }
+  },
+  "pattern": [
+    " H ",
+    "ICI",
+    " P "
+  ],
+  "result": {
+    "item": "rotten_ruins:chip_extract"
+  },
+  "show_notification": true
+}

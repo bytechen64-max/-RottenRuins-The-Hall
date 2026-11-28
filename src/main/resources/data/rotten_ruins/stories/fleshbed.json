@@ -1,0 +1,28 @@
+{
+  "font": "wenkai",
+  "timing": "clocked",
+  "priority": 100,
+  "duration_ticks": 200,
+  "pages": [
+    {
+      "text": {
+        "translate": "rotten_ruins.story.fleshbed.1"
+      }
+    },
+    {
+      "text": {
+        "translate": "rotten_ruins.story.fleshbed.2"
+      }
+    },
+    {
+      "text": {
+        "translate": "rotten_ruins.story.fleshbed.3"
+      }
+    },
+    {
+      "text": {
+        "translate": "rotten_ruins.story.fleshbed.4"
+      }
+    }
+  ]
+}

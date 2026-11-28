@@ -1,0 +1,9 @@
+{
+	"credit": "几何由 GeckoLib 的 geo/potential_crafting_table.geo.json 提供；方块模型留空，避免两套几何重叠。粒子仍用方块贴图。",
+	"parent": "minecraft:block/block",
+	"texture_size": [16, 16],
+	"textures": {
+		"particle": "rotten_ruins:block/potential_crafting_table"
+	},
+	"elements": []
+}

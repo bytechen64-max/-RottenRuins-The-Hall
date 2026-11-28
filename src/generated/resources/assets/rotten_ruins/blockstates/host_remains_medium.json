@@ -1,0 +1,30 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "rotten_ruins:block/host_remains_medium",
+      "x": 180
+    },
+    "facing=east": {
+      "model": "rotten_ruins:block/host_remains_medium",
+      "x": 90,
+      "y": 90
+    },
+    "facing=north": {
+      "model": "rotten_ruins:block/host_remains_medium",
+      "x": 90
+    },
+    "facing=south": {
+      "model": "rotten_ruins:block/host_remains_medium",
+      "x": 90,
+      "y": 180
+    },
+    "facing=up": {
+      "model": "rotten_ruins:block/host_remains_medium"
+    },
+    "facing=west": {
+      "model": "rotten_ruins:block/host_remains_medium",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "event": "fleshbed_start",
+  "choices": [
+    {
+      "story": "rotten_ruins:fleshbed"
+    }
+  ]
+}
