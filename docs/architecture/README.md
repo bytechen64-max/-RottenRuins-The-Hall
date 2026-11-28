@@ -15,6 +15,7 @@
 | 查看已停用的王座与海冠方案 | [庭园巨构历史方案](garden-monuments.md) |
 | 调整血肉庭园与王庭海洋的矿脉 | [庭园矿脉生成](garden-ores.md) |
 | 查看运行时接入、内容与平台边界 | [运行时与内容分层](runtime-boundaries.md) |
+| 编写本地化 Markdown 文档或在 GUI 中嵌入阅读器 | [Markdown 阅读器](markdown-gui.md) |
 | 接入武器挥砍、范围命中、回调和刀光 | [武器挥砍接口](../slash-api.md) |
 | 准备升级版本、了解剩余耦合 | [版本迁移清单](migration-checklist.md) |
 | 新增法术、设置基础值、组合多个流派 | [法术定义与物品接入](spell-definition.md) |

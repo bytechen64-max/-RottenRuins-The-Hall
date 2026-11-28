@@ -487,6 +487,8 @@ common-client | overworld/registry/items/ItemGlowLayer.java -> net.minecraft.cli
 common-client | overworld/registry/items/SilentDaylight.java -> org.bytechen.rottenruins.client.rend.text.FlowingNameColors
 common-client | overworld/registry/items/SilentDaylight.java -> org.bytechen.rottenruins.client.rend.text.TooltipLines
 common-client | platform/forge/combat/slash/SlashNetwork.java -> org.bytechen.rottenruins.client.combat.slash.SlashClient
+common-client | platform/forge/client/MarkdownClientCommands.java -> net.minecraftforge.client.event.RegisterClientCommandsEvent
+common-client | platform/forge/client/MarkdownClientCommands.java -> org.bytechen.rottenruins.client.gui.markdown.MarkdownScreen
 common-client | platform/forge/magic/network/s2c/MagicPoolSyncPacket.java -> org.bytechen.rottenruins.client.magic.MagicPacketHandlers
 common-client | platform/forge/magic/network/s2c/ManaSyncPacket.java -> org.bytechen.rottenruins.client.magic.MagicPacketHandlers
 

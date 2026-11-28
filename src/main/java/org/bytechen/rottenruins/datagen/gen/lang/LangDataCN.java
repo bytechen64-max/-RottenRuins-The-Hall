@@ -637,6 +637,10 @@ public class LangDataCN extends LanguageProvider {
         add("rotten_ruins.gui.textfx.hint", "每行实时动画；按 ESC 关闭；输入 /rrsfx 查看更多");
         add("rotten_ruins.command.rrsfx.enabled", "§a文本特效：开");
         add("rotten_ruins.command.rrsfx.disabled", "§c文本特效：关");
+        add("rotten_ruins.gui.markdown.title", "文档阅读器");
+        add("rotten_ruins.gui.markdown.missing", "找不到文档 %s");
+        add("rotten_ruins.gui.markdown.unreadable", "无法读取文档 %s");
+        add("rotten_ruins.gui.markdown.invalid", "无效的文档 ID %s");
 
         // ---- 音效字幕（见 SoundData）----
         // 爆体音效：与 corruption 的 rip_body 同一条字幕文案，只是命名空间换成 hall。

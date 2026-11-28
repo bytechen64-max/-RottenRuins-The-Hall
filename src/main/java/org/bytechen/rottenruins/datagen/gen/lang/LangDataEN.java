@@ -654,6 +654,10 @@ public class LangDataEN extends LanguageProvider {
         add("rotten_ruins.gui.textfx.hint", "Each row animates live; press ESC to close; type /rrsfx for more");
         add("rotten_ruins.command.rrsfx.enabled", "§aText effects: ON");
         add("rotten_ruins.command.rrsfx.disabled", "§cText effects: OFF");
+        add("rotten_ruins.gui.markdown.title", "Document Reader");
+        add("rotten_ruins.gui.markdown.missing", "Document %s was not found");
+        add("rotten_ruins.gui.markdown.unreadable", "Could not read document %s");
+        add("rotten_ruins.gui.markdown.invalid", "Invalid document ID %s");
 
         // ---- Sound subtitles (see SoundData) ----
         // Body-explosion sound: same subtitle text as corruption's rip_body, hall namespace.

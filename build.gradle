@@ -119,6 +119,8 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 repositories {
     flatDir { dir 'libs' }
 
+    mavenCentral { content { includeGroup 'org.commonmark' } }
+
     maven { url = 'https://maven.shedaniel.me/' }
 
     maven {
@@ -150,6 +152,15 @@ dependencies {
 
     jarJar(group: 'me.shedaniel.cloth', name: 'cloth-config-forge', version: '[12.0.109,13)')
     jarJar(group: 'software.bernie.geckolib', name: 'geckolib-forge-1.20.1', version: '[4.8.4,4.9)')
+
+    // Markdown is available as a library in dev runs and bundled in the release jar.
+    def markdownVersion = '0.33.0'
+    ['commonmark', 'commonmark-ext-gfm-tables', 'commonmark-ext-gfm-strikethrough', 'commonmark-ext-task-list-items'].each { artifact ->
+        minecraftLibrary "org.commonmark:${artifact}:${markdownVersion}"
+        jarJar(group: 'org.commonmark', name: artifact, version: markdownVersion) { dependency ->
+            jarJar.ranged(dependency, "[${markdownVersion}]")
+        }
+    }
 
     // JEI (optional)
     compileOnly fg.deobf("mezz.jei:jei-1.20.1-forge:15.2.0.27")
